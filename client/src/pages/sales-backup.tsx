@@ -14,106 +14,129 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
+import { queryClient, apiRequest } from "@/lib/queryClient";
+import { insertQuotationSchema, type Quotation, type Customer, type Product } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Customer, Product } from "@shared/schema";
 
-const quotationItemSchema = z.object({
-  productId: z.number().optional(),
-  productName: z.string(),
-  description: z.string().optional(),
-  quantity: z.number().min(1),
-  unitPrice: z.number().min(0),
-  total: z.number().min(0),
+interface QuotationItem {
+  productId?: number;
+  productName?: string;
+  description?: string;
+  product?: Product;
+  quantity: number;
+  unitPrice: number;
+  total: number;
+}
+
+interface QuotationFormData {
+  quotationNumber: string;
+  customerId: number;
+  date: string;
+  validUntil: string;
+  subtotal: number;
+  discountPercent: number;
+  discountAmount: number;
+  taxPercent: number;
+  taxAmount: number;
+  grandTotal: number;
+  status: string;
+  notes?: string;
+  terms?: string;
+  paymentTerms?: string;
+  taxInclusive: boolean;
+  items: QuotationItem[];
+}
+
+const quotationFormSchema = insertQuotationSchema.extend({
+  items: z.array(z.object({
+    productId: z.number().optional(),
+    productName: z.string().min(1, "ต้องระบุชื่อสินค้า"),
+    description: z.string().optional(),
+    quantity: z.number().min(1),
+    unitPrice: z.number().min(0),
+    total: z.number().min(0)
+  })).min(1, "ต้องมีรายการสินค้าอย่างน้อย 1 รายการ")
 });
-
-const quotationFormSchema = z.object({
-  quotationNumber: z.string(),
-  customerId: z.number(),
-  date: z.string(),
-  validUntil: z.string(),
-  status: z.string(),
-  subtotal: z.number().min(0),
-  discountPercent: z.number().min(0).max(100),
-  discountAmount: z.number().min(0),
-  taxPercent: z.number().min(0),
-  taxAmount: z.number().min(0),
-  grandTotal: z.number().min(0),
-  notes: z.string().optional(),
-  terms: z.string().optional(),
-  taxInclusive: z.boolean(),
-  items: z.array(quotationItemSchema).min(1),
-});
-
-type QuotationFormData = z.infer<typeof quotationFormSchema>;
 
 export default function Sales() {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingQuotation, setEditingQuotation] = useState<any>(null);
-  const { user, tenant } = useAuth();
   const { t } = useLanguage();
+  const { tenant } = useAuth();
   const { toast } = useToast();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
+
+  // Get today's date and 30 days later for default values
+  const getDefaultDates = () => {
+    const today = new Date();
+    const validUntil = new Date();
+    validUntil.setDate(today.getDate() + 30);
+    
+    return {
+      date: today.toISOString().split('T')[0],
+      validUntil: validUntil.toISOString().split('T')[0]
+    };
+  };
+
+  // Generate quotation number in format QT+YYYY+MM+sequence
+  const generateQuotationNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+    return `QT${year}${month}-${sequence}`;
+  };
 
   const form = useForm<QuotationFormData>({
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
       quotationNumber: "",
       customerId: 0,
-      date: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: "draft",
+      ...getDefaultDates(),
       subtotal: 0,
       discountPercent: 0,
       discountAmount: 0,
       taxPercent: 7,
       taxAmount: 0,
       grandTotal: 0,
+      status: "draft",
       notes: "",
       terms: "",
+      paymentTerms: "",
       taxInclusive: false,
-      items: [],
-    },
+      items: []
+    }
   });
 
   const { fields, append, remove } = useFieldArray({
     control: form.control,
-    name: "items",
-  });
-
-  // Fetch quotations
-  const { data: quotations = [] } = useQuery({
-    queryKey: ["/api/quotations"],
-    enabled: !!tenant?.id,
+    name: "items"
   });
 
   // Fetch customers
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
-    enabled: !!tenant?.id,
+    enabled: !!tenant
   });
 
   // Fetch products
   const { data: products = [] } = useQuery({
     queryKey: ["/api/products"],
-    enabled: !!tenant?.id,
+    enabled: !!tenant
   });
 
-  // Generate quotation number
-  const generateQuotationNumber = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const timestamp = Date.now().toString().slice(-6);
-    return `QT${year}${month}${day}${timestamp}`;
-  };
+  // Fetch quotations
+  const { data: quotations = [] } = useQuery({
+    queryKey: ["/api/quotations"],
+    enabled: !!tenant
+  });
 
-  // Quotation mutation
+  // Create/Update quotation mutation
   const quotationMutation = useMutation({
     mutationFn: async (data: QuotationFormData) => {
       const url = editingQuotation ? `/api/quotations/${editingQuotation.id}` : "/api/quotations";
       const method = editingQuotation ? "PATCH" : "POST";
-      return apiRequest(url, { method, body: data });
+      
+      return apiRequest(url, method, { ...data, tenantId: tenant?.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
@@ -133,7 +156,7 @@ export default function Sales() {
     },
   });
 
-  // Calculate totals
+  // Calculate totals with tax inclusive/exclusive options
   const calculateTotals = useCallback(() => {
     const items = form.getValues("items");
     const discountPercent = form.getValues("discountPercent") || 0;
@@ -143,8 +166,10 @@ export default function Sales() {
     let subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
     
     if (taxInclusive) {
+      // If prices are tax-inclusive, extract the tax amount
       const taxMultiplier = 1 + (taxPercent / 100);
       const baseAmount = subtotal / taxMultiplier;
+      const taxAmount = subtotal - baseAmount;
       const discountAmount = (baseAmount * discountPercent) / 100;
       const afterDiscount = baseAmount - discountAmount;
       const finalTax = (afterDiscount * taxPercent) / 100;
@@ -155,6 +180,7 @@ export default function Sales() {
       form.setValue("taxAmount", finalTax, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
       form.setValue("grandTotal", grandTotal, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
     } else {
+      // Tax-exclusive calculation (original method)
       const discountAmount = (subtotal * discountPercent) / 100;
       const afterDiscount = subtotal - discountAmount;
       const taxAmount = (afterDiscount * taxPercent) / 100;
@@ -179,40 +205,18 @@ export default function Sales() {
     });
   };
 
-  // Update item total
+  // Update item total when quantity or price changes
   const updateItemTotal = (index: number, quantity: number, unitPrice: number) => {
     const total = quantity * unitPrice;
     form.setValue(`items.${index}.total`, total, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+    
+    // Calculate totals without triggering infinite loop
     setTimeout(() => calculateTotals(), 0);
   };
 
   // Handle form submission
   const onSubmit = (data: QuotationFormData) => {
     quotationMutation.mutate(data);
-  };
-
-  // Handle add new
-  const handleAddNew = () => {
-    setEditingQuotation(null);
-    const quotationNumber = generateQuotationNumber();
-    form.reset({
-      quotationNumber,
-      customerId: 0,
-      date: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      status: "draft",
-      subtotal: 0,
-      discountPercent: 0,
-      discountAmount: 0,
-      taxPercent: 7,
-      taxAmount: 0,
-      grandTotal: 0,
-      notes: "",
-      terms: "",
-      taxInclusive: false,
-      items: [{ productId: undefined, productName: "", description: "", quantity: 1, unitPrice: 0, total: 0 }],
-    });
-    setIsDialogOpen(true);
   };
 
   // Handle edit
@@ -232,28 +236,52 @@ export default function Sales() {
       status: quotation.status,
       notes: quotation.notes || "",
       terms: quotation.terms || "",
+      paymentTerms: quotation.paymentTerms || "",
       taxInclusive: quotation.taxInclusive || false,
       items: (quotation.items || []).map((item: any) => ({
         productId: item.productId,
-        productName: item.productName,
+        productName: item.productName || "",
         description: item.description || "",
         quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        total: item.total,
-      })),
+        unitPrice: parseFloat(item.unitPrice) || 0,
+        total: parseFloat(item.total) || 0
+      }))
     });
     setIsDialogOpen(true);
   };
 
-  // Get status badge
+  // Handle new quotation
+  const handleAddNew = () => {
+    setEditingQuotation(null);
+    const newQuotationNumber = generateQuotationNumber();
+    form.reset({
+      quotationNumber: newQuotationNumber,
+      customerId: 0,
+      ...getDefaultDates(),
+      subtotal: 0,
+      discountPercent: 0,
+      discountAmount: 0,
+      taxPercent: 7,
+      taxAmount: 0,
+      grandTotal: 0,
+      status: "draft",
+      notes: "",
+      terms: "",
+      paymentTerms: "",
+      taxInclusive: false,
+      items: []
+    });
+    setIsDialogOpen(true);
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      draft: { label: "ร่าง", variant: "secondary" as const },
-      sent: { label: "ส่งแล้ว", variant: "default" as const },
-      accepted: { label: "ยอมรับ", variant: "default" as const },
-      rejected: { label: "ปฏิเสธ", variant: "destructive" as const },
+      draft: { label: t("sales.status.draft"), variant: "secondary" as const },
+      sent: { label: t("sales.status.sent"), variant: "default" as const },
+      accepted: { label: t("sales.status.accepted"), variant: "default" as const },
+      rejected: { label: t("sales.status.rejected"), variant: "destructive" as const }
     };
-
+    
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
@@ -895,6 +923,399 @@ export default function Sales() {
               </table>
             </div>
           )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">{t("sales.items")}</h3>
+                    <Button type="button" onClick={addItem} size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      {t("sales.add_item")}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="bg-white border rounded-lg p-4 shadow-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Product Selection */}
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                สินค้า
+                              </label>
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.productId`}
+                                render={({ field: productField }) => (
+                                  <Select 
+                                    onValueChange={(value) => {
+                                      if (value === "custom") {
+                                        productField.onChange(undefined);
+                                        form.setValue(`items.${index}.productName`, "");
+                                      } else {
+                                        const selectedProduct = (products as any[]).find(p => p.id.toString() === value);
+                                        productField.onChange(parseInt(value));
+                                        if (selectedProduct) {
+                                          form.setValue(`items.${index}.productName`, selectedProduct.name);
+                                        }
+                                      }
+                                    }} 
+                                    value={productField.value?.toString() || "custom"}
+                                  >
+                                    <SelectTrigger className="w-full">
+                                      <SelectValue placeholder="เลือกสินค้าหรือพิมพ์เอง" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="custom">พิมพ์ชื่อสินค้าเอง</SelectItem>
+                                      {(products as any[]).map((product: Product) => (
+                                        <SelectItem key={product.id} value={product.id.toString()}>
+                                          {product.name} ({product.sku})
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                              />
+                            </div>
+                            
+                            {/* Custom Product Name Input */}
+                            {!form.watch(`items.${index}.productId`) && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  ชื่อสินค้า
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.productName`}
+                                  render={({ field: nameField }) => (
+                                    <Input
+                                      {...nameField}
+                                      placeholder="ระบุชื่อสินค้า"
+                                      className="w-full"
+                                    />
+                                  )}
+                                />
+                              </div>
+                            )}
+
+                            {/* Product Description */}
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                รายละเอียดสินค้า
+                              </label>
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.description`}
+                                render={({ field: descField }) => (
+                                  <Textarea
+                                    {...descField}
+                                    placeholder="รายละเอียด คุณสมบัติ หรือข้อมูลเพิ่มเติม"
+                                    rows={2}
+                                    className="w-full"
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Quantity and Pricing */}
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  จำนวน
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.quantity`}
+                                  render={({ field: qtyField }) => (
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      className="w-full"
+                                      {...qtyField}
+                                      onChange={(e) => {
+                                        const quantity = parseInt(e.target.value) || 0;
+                                        qtyField.onChange(quantity);
+                                        const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                        updateItemTotal(index, quantity, unitPrice);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  ราคาต่อหน่วย (บาท)
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.unitPrice`}
+                                  render={({ field: priceField }) => (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="w-full"
+                                      {...priceField}
+                                      onChange={(e) => {
+                                        const unitPrice = parseFloat(e.target.value) || 0;
+                                        priceField.onChange(unitPrice);
+                                        const quantity = form.getValues(`items.${index}.quantity`);
+                                        updateItemTotal(index, quantity, unitPrice);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                ราคารวม (บาท)
+                              </label>
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.total`}
+                                render={({ field: totalField }) => (
+                                  <Input
+                                    type="number"
+                                    className="w-full bg-gray-50 font-medium"
+                                    {...totalField}
+                                    readOnly
+                                  />
+                                )}
+                              />
+                            </div>
+
+                            <div className="flex justify-end pt-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => remove(index)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                ลบรายการ
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {fields.length === 0 && (
+                      <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                        <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p>ยังไม่มีรายการสินค้า</p>
+                        <p className="text-sm">กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Totals Section */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <FormField
+                      control={form.control}
+                      name="notes"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>{t("sales.notes")}</FormLabel>
+                          <FormControl>
+                            <Textarea {...field} rows={3} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="paymentTerms"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>เงื่อนไขการชำระเงิน</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              rows={2}
+                              placeholder="เช่น ชำระเงินภายใน 30 วัน, โอนเงินผ่านธนาคาร, เงินสดเท่านั้น"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="terms"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>โน้ตภายในบริษัท</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              rows={3}
+                              placeholder="บันทึกภายในบริษัท (ลูกค้าจะไม่เห็น)"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-3">
+                      <div className="flex justify-between">
+                        <span>{t("sales.subtotal")}:</span>
+                        <span>฿{form.watch("subtotal")?.toLocaleString() || "0"}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span>{t("sales.discount")} (%):</span>
+                        <div className="flex items-center space-x-2">
+                          <FormField
+                            control={form.control}
+                            name="discountPercent"
+                            render={({ field }) => (
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                className="w-20"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(parseFloat(e.target.value) || 0);
+                                  calculateTotals();
+                                }}
+                              />
+                            )}
+                          />
+                          <span>= ฿{form.watch("discountAmount")?.toLocaleString() || "0"}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span>{t("sales.tax")} (%):</span>
+                        <div className="flex items-center space-x-2">
+                          <FormField
+                            control={form.control}
+                            name="taxPercent"
+                            render={({ field }) => (
+                              <Input
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.1"
+                                className="w-20"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(parseFloat(e.target.value) || 0);
+                                  calculateTotals();
+                                }}
+                              />
+                            )}
+                          />
+                          <span>= ฿{form.watch("taxAmount")?.toLocaleString() || "0"}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-3">
+                        <div className="flex justify-between font-bold text-lg">
+                          <span>{t("sales.grand_total")}:</span>
+                          <span>฿{form.watch("grandTotal")?.toLocaleString() || "0"}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)}>
+                    {t("common.cancel")}
+                  </Button>
+                  <Button type="submit" disabled={quotationMutation.isPending}>
+                    {quotationMutation.isPending 
+                      ? t("common.loading") 
+                      : editingQuotation 
+                        ? "บันทึกการแก้ไข" 
+                        : "สร้างใบเสนอราคา"
+                    }
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("sales.quotations")}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4">
+            {(quotations as any[]).map((quotation: any) => {
+              const customer = (customers as any[]).find((c: any) => c.id === quotation.customerId);
+              return (
+                <div key={quotation.id} className="border rounded-lg p-4 hover:bg-gray-50">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <h3 className="font-semibold text-lg">{quotation.quotationNumber}</h3>
+                        {getStatusBadge(quotation.status)}
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                        <div className="flex items-center">
+                          <User className="h-4 w-4 mr-1" />
+                          {customer?.name} {customer?.companyName && `(${customer.companyName})`}
+                        </div>
+                        <div className="flex items-center">
+                          <Calendar className="h-4 w-4 mr-1" />
+                          {quotation.date} - {quotation.validUntil}
+                        </div>
+                        <div className="flex items-center">
+                          <Calculator className="h-4 w-4 mr-1" />
+                          รวม: ฿{parseFloat(quotation.grandTotal).toLocaleString()}
+                        </div>
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 mr-1" />
+                          รายการ: {quotation.items ? quotation.items.length : 0} รายการ
+                        </div>
+                      </div>
+                      
+                      {quotation.notes && (
+                        <p className="text-sm text-gray-500 mt-2">{quotation.notes}</p>
+                      )}
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(quotation)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {(quotations as any[]).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                ยังไม่มีใบเสนอราคา
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
