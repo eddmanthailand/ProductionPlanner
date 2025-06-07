@@ -31,7 +31,7 @@ import {
   type InsertSize
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, and, desc, sql, asc } from "drizzle-orm";
 
 export interface IStorage {
   // Users
@@ -342,7 +342,7 @@ export class DatabaseStorage implements IStorage {
 
   // Colors methods
   async getColors(tenantId: string): Promise<Color[]> {
-    return await db.select().from(colors).where(eq(colors.tenantId, tenantId)).orderBy(colors.name);
+    return await db.select().from(colors).where(eq(colors.tenantId, tenantId)).orderBy(asc(colors.sortOrder), asc(colors.id));
   }
 
   async getColor(id: number, tenantId: string): Promise<Color | undefined> {
@@ -374,7 +374,7 @@ export class DatabaseStorage implements IStorage {
 
   // Sizes methods
   async getSizes(tenantId: string): Promise<Size[]> {
-    return await db.select().from(sizes).where(eq(sizes.tenantId, tenantId)).orderBy(sizes.sortOrder, sizes.name);
+    return await db.select().from(sizes).where(eq(sizes.tenantId, tenantId)).orderBy(asc(sizes.sortOrder), asc(sizes.name));
   }
 
   async getSize(id: number, tenantId: string): Promise<Size | undefined> {
