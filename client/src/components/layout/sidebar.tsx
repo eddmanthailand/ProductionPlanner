@@ -14,18 +14,19 @@ import {
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: ChartLine },
-  { name: "วางแผนการผลิต", href: "/production", icon: Settings2 },
-  { name: "ระบบบัญชี", href: "/accounting", icon: Calculator },
-  { name: "สินค้าคงคลัง", href: "/inventory", icon: Package },
-  { name: "รายงาน", href: "/reports", icon: FileText },
-  { name: "จัดการผู้ใช้", href: "/users", icon: Users },
-];
-
 export default function Sidebar() {
   const [location] = useLocation();
   const { user, tenant } = useAuth();
+  const { t } = useLanguage();
+
+  const navigation = [
+    { name: t("nav.dashboard"), href: "/", icon: ChartLine },
+    { name: t("nav.production"), href: "/production", icon: Settings2 },
+    { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
+    { name: t("nav.inventory"), href: "/inventory", icon: Package },
+    { name: t("nav.reports"), href: "/reports", icon: FileText },
+    { name: t("nav.users"), href: "/users", icon: Users },
+  ];
 
   const handleLogout = () => {
     logout();
@@ -91,7 +92,7 @@ export default function Sidebar() {
           className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
         >
           <LogOut className="w-4 h-4" />
-          <span>ออกจากระบบ</span>
+          <span>{t("nav.logout")}</span>
         </button>
       </div>
     </aside>

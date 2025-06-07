@@ -1,3 +1,4 @@
+import { useLanguage } from "@/hooks/use-language";
 import MetricsCards from "@/components/dashboard/metrics-cards";
 import ProductionSchedule from "@/components/dashboard/production-schedule";
 import FinancialSummary from "@/components/dashboard/financial-summary";
