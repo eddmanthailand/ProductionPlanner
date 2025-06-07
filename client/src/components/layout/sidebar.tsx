@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useLanguage } from "@/hooks/use-language";
 import TenantSelector from "@/components/tenant/tenant-selector";
 import { 
   ChartLine, 
