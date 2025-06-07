@@ -135,7 +135,6 @@ export const colors = pgTable("colors", {
 export const sizes = pgTable("sizes", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // S, M, L, XL หรือ 28, 30, 32
-  category: text("category"), // เสื้อผ้า, รองเท้า, หมวก
   sortOrder: integer("sort_order").default(0),
   description: text("description"),
   isActive: boolean("is_active").default(true),

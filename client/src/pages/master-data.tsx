@@ -51,9 +51,6 @@ export default function MasterData() {
     resolver: zodResolver(insertSizeSchema.omit({ tenantId: true })),
     defaultValues: {
       name: "",
-      category: "",
-      sortOrder: 0,
-      description: "",
       isActive: true
     }
   });
@@ -146,9 +143,6 @@ export default function MasterData() {
     setEditingSize(size);
     sizeForm.reset({
       name: size.name,
-      category: size.category || "",
-      sortOrder: size.sortOrder || 0,
-      description: size.description || "",
       isActive: size.isActive ?? true
     });
     setIsSizeDialogOpen(true);
@@ -451,56 +445,7 @@ export default function MasterData() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={sizeForm.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>หมวดหมู่</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="เลือกหมวดหมู่" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="เสื้อผ้า">เสื้อผ้า</SelectItem>
-                              <SelectItem value="รองเท้า">รองเท้า</SelectItem>
-                              <SelectItem value="หมวก">หมวก</SelectItem>
-                              <SelectItem value="กระเป๋า">กระเป๋า</SelectItem>
-                              <SelectItem value="อื่นๆ">อื่นๆ</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={sizeForm.control}
-                      name="sortOrder"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ลำดับการแสดง</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="number" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={sizeForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>คำอธิบาย</FormLabel>
-                          <FormControl>
-                            <Textarea {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+
                     <div className="flex justify-end space-x-2">
                       <Button type="button" variant="outline" onClick={() => setIsSizeDialogOpen(false)}>
                         ยกเลิก
@@ -523,10 +468,6 @@ export default function MasterData() {
                     <TableRow>
                       <TableHead className="w-8"></TableHead>
                       <TableHead>ชื่อไซส์</TableHead>
-                      <TableHead>หมวดหมู่</TableHead>
-                      <TableHead>ลำดับ</TableHead>
-                      <TableHead>คำอธิบาย</TableHead>
-                      <TableHead>สถานะ</TableHead>
                       <TableHead>จัดการ</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -545,14 +486,6 @@ export default function MasterData() {
                                   <GripVertical className="h-4 w-4 text-gray-400" />
                                 </TableCell>
                                 <TableCell className="font-medium">{size.name}</TableCell>
-                                <TableCell>{size.category || "-"}</TableCell>
-                                <TableCell>{size.sortOrder || "-"}</TableCell>
-                                <TableCell>{size.description || "-"}</TableCell>
-                                <TableCell>
-                                  <Badge variant={size.isActive ? "default" : "secondary"}>
-                                    {size.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
-                                  </Badge>
-                                </TableCell>
                                 <TableCell>
                                   <div className="flex space-x-2">
                                     <Button variant="outline" size="sm" onClick={() => handleEditSize(size)}>
@@ -575,7 +508,7 @@ export default function MasterData() {
                         {provided.placeholder}
                         {sizes?.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                            <TableCell colSpan={3} className="text-center py-8 text-gray-500">
                               ยังไม่มีข้อมูลไซส์
                             </TableCell>
                           </TableRow>
