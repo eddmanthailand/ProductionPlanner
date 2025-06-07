@@ -99,6 +99,50 @@ export const activities = pgTable("activities", {
   createdAt: timestamp("created_at").defaultNow()
 });
 
+// Customers table
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  email: text("email"),
+  phone: text("phone"),
+  address: text("address"),
+  city: text("city"),
+  province: text("province"),
+  postalCode: text("postal_code"),
+  country: text("country").default("Thailand"),
+  contactPerson: text("contact_person"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Colors table
+export const colors = pgTable("colors", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  code: text("code"), // รหัสสี เช่น #FF0000
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Sizes table
+export const sizes = pgTable("sizes", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // S, M, L, XL หรือ 28, 30, 32
+  category: text("category"), // เสื้อผ้า, รองเท้า, หมวก
+  sortOrder: integer("sort_order").default(0),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Relations
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
@@ -106,7 +150,10 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   productionOrders: many(productionOrders),
   inventory: many(inventory),
   transactions: many(transactions),
-  activities: many(activities)
+  activities: many(activities),
+  customers: many(customers),
+  colors: many(colors),
+  sizes: many(sizes)
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -166,6 +213,27 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   })
 }));
 
+export const customersRelations = relations(customers, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [customers.tenantId],
+    references: [tenants.id]
+  })
+}));
+
+export const colorsRelations = relations(colors, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [colors.tenantId],
+    references: [tenants.id]
+  })
+}));
+
+export const sizesRelations = relations(sizes, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [sizes.tenantId],
+    references: [tenants.id]
+  })
+}));
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
@@ -207,6 +275,24 @@ export const insertActivitySchema = createInsertSchema(activities).omit({
   createdAt: true
 });
 
+export const insertCustomerSchema = createInsertSchema(customers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertColorSchema = createInsertSchema(colors).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertSizeSchema = createInsertSchema(sizes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Types
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -228,3 +314,12 @@ export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = z.infer<typeof insertActivitySchema>;
+
+export type Customer = typeof customers.$inferSelect;
+export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
+
+export type Color = typeof colors.$inferSelect;
+export type InsertColor = z.infer<typeof insertColorSchema>;
+
+export type Size = typeof sizes.$inferSelect;
+export type InsertSize = z.infer<typeof insertSizeSchema>;
