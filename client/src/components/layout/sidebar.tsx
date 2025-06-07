@@ -10,7 +10,8 @@ import {
   FileText, 
   Users, 
   Settings,
-  LogOut
+  LogOut,
+  ShoppingCart
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 
@@ -21,6 +22,7 @@ export default function Sidebar() {
 
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: ChartLine },
+    { name: t("nav.sales"), href: "/sales", icon: ShoppingCart },
     { name: t("nav.production"), href: "/production", icon: Settings2 },
     { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
     { name: t("nav.inventory"), href: "/inventory", icon: Package },

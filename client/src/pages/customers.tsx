@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -177,6 +177,9 @@ export default function Customers() {
               <DialogTitle>
                 {editingCustomer ? "แก้ไขข้อมูลลูกค้า" : "เพิ่มลูกค้าใหม่"}
               </DialogTitle>
+              <DialogDescription>
+                {editingCustomer ? "แก้ไขข้อมูลลูกค้าที่เลือก" : "กรอกข้อมูลลูกค้าใหม่"}
+              </DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
@@ -323,6 +326,9 @@ export default function Customers() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>ค้นหาลูกค้า</DialogTitle>
+            <DialogDescription>
+              ค้นหาลูกค้าจากชื่อ บริษัท อีเมล เบอร์โทร หรือเลขที่ผู้เสียภาษี
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <Input
@@ -383,9 +389,6 @@ export default function Customers() {
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
                       <h3 className="font-semibold text-lg">{customer.name}</h3>
-                      <Badge variant={customer.isActive ? "default" : "secondary"}>
-                        {customer.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
-                      </Badge>
                     </div>
                     {customer.companyName && (
                       <p className="text-sm text-gray-600 mb-1">บริษัท: {customer.companyName}</p>
