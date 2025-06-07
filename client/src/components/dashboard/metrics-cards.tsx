@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/use-language";
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Clock, Package, Users, DollarSign } from "lucide-react";
 
@@ -13,6 +14,7 @@ interface MetricsData {
 }
 
 export default function MetricsCards() {
+  const { t } = useLanguage();
   const { data: metrics, isLoading } = useQuery<MetricsData>({
     queryKey: ["/api/dashboard/metrics"]
   });
@@ -33,7 +35,7 @@ export default function MetricsCards() {
 
   const cards = [
     {
-      title: "รายได้รวม",
+      title: t("dashboard.revenue"),
       value: `฿${metrics?.revenue.current?.toLocaleString() || "0"}`,
       change: `${metrics?.revenue.growth?.toFixed(1) || "0"}%`,
       changeType: (metrics?.revenue.growth || 0) >= 0 ? "increase" : "decrease",
@@ -41,15 +43,15 @@ export default function MetricsCards() {
       color: "bg-green-100 text-green-600"
     },
     {
-      title: "ออเดอร์รอผลิต",
+      title: t("dashboard.pending_orders"),
       value: metrics?.pendingOrders?.toString() || "0",
-      change: "กำลังผลิต",
+      change: t("production.status.in_progress") || "กำลังผลิต",
       changeType: "neutral",
       icon: Clock,
       color: "bg-orange-100 text-orange-600"
     },
     {
-      title: "ผู้ใช้งาน",
+      title: t("dashboard.active_users"),
       value: metrics?.activeUsers?.toString() || "0",
       change: "ทั้งหมด",
       changeType: "neutral",
@@ -57,9 +59,9 @@ export default function MetricsCards() {
       color: "bg-blue-100 text-blue-600"
     },
     {
-      title: "สินค้าคงคลัง",
+      title: t("dashboard.inventory_value"),
       value: `฿${(metrics?.inventoryValue || 0).toLocaleString()}`,
-      change: `${metrics?.lowStockItems || 0} รายการใกล้หมด`,
+      change: `${metrics?.lowStockItems || 0} ${t("dashboard.low_stock")}`,
       changeType: "warning",
       icon: Package,
       color: "bg-amber-100 text-amber-600"

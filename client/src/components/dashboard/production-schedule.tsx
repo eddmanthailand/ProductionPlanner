@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/use-language";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface ProductionOrder {
 }
 
 export default function ProductionSchedule() {
+  const { t } = useLanguage();
   const { data: orders, isLoading } = useQuery<ProductionOrder[]>({
     queryKey: ["/api/production-orders"]
   });

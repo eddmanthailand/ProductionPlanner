@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useMutation } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,6 +11,7 @@ import { login } from "@/lib/auth";
 import { Settings2 } from "lucide-react";
 
 export default function Login() {
+  const { t } = useLanguage();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [formData, setFormData] = useState({

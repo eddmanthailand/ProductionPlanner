@@ -27,6 +27,10 @@ const translations = {
     "dashboard.view_all": "ดูทั้งหมด",
     
     "production.title": "วางแผนการผลิต",
+    "production.status.completed": "เสร็จสิ้น",
+    "production.status.in_progress": "กำลังผลิต",
+    "production.status.pending": "รอเริ่มผลิต",
+    "production.status.delayed": "ล่าช้า",
     "production.order_number": "หมายเลขออเดอร์",
     "production.product": "ผลิตภัณฑ์",
     "production.quantity": "จำนวน",
