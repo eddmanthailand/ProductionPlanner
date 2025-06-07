@@ -12,13 +12,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCustomerSchema, type Customer } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Phone, Mail, MapPin } from "lucide-react";
+import { Plus, Edit, Trash2, Phone, Mail, MapPin, Search } from "lucide-react";
 
 export default function Customers() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<Customer[]>([]);
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"]
@@ -98,6 +101,44 @@ export default function Customers() {
     deleteMutation.mutate(id);
   };
 
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    if (!term.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    const filtered = customers?.filter(customer => 
+      customer.name.toLowerCase().includes(term.toLowerCase()) ||
+      customer.companyName?.toLowerCase().includes(term.toLowerCase()) ||
+      customer.email?.toLowerCase().includes(term.toLowerCase()) ||
+      customer.phone?.includes(term) ||
+      customer.taxId?.includes(term) ||
+      customer.contactPerson?.toLowerCase().includes(term.toLowerCase())
+    ) || [];
+    
+    setSearchResults(filtered);
+  };
+
+  const handleSearchDialogOpen = () => {
+    setIsSearchDialogOpen(true);
+    setSearchTerm("");
+    setSearchResults([]);
+  };
+
+  const selectCustomerFromSearch = (customer: Customer) => {
+    setIsSearchDialogOpen(false);
+    // Scroll to customer in the main list
+    const element = document.getElementById(`customer-${customer.id}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      element.classList.add('ring-2', 'ring-blue-500');
+      setTimeout(() => {
+        element.classList.remove('ring-2', 'ring-blue-500');
+      }, 3000);
+    }
+  };
+
   const handleAddNew = () => {
     setEditingCustomer(null);
     form.reset();
@@ -119,13 +160,18 @@ export default function Customers() {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">{t("nav.customers")}</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              เพิ่มลูกค้าใหม่
-            </Button>
-          </DialogTrigger>
+        <div className="flex space-x-2">
+          <Button variant="outline" onClick={handleSearchDialogOpen}>
+            <Search className="h-4 w-4 mr-2" />
+            ค้นหาลูกค้า
+          </Button>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={handleAddNew}>
+                <Plus className="h-4 w-4 mr-2" />
+                เพิ่มลูกค้าใหม่
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
@@ -269,7 +315,57 @@ export default function Customers() {
             </Form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
+
+      {/* Search Dialog */}
+      <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>ค้นหาลูกค้า</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="ค้นหาจากชื่อ, บริษัท, อีเมล, เบอร์โทร, เลขที่ผู้เสียภาษี..."
+              value={searchTerm}
+              onChange={(e) => handleSearch(e.target.value)}
+            />
+            <div className="max-h-96 overflow-y-auto space-y-2">
+              {searchResults.length > 0 ? (
+                searchResults.map((customer) => (
+                  <div 
+                    key={customer.id} 
+                    className="border rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => selectCustomerFromSearch(customer)}
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-medium">{customer.name}</h4>
+                        {customer.companyName && (
+                          <p className="text-sm text-gray-600">บริษัท: {customer.companyName}</p>
+                        )}
+                        {customer.email && (
+                          <p className="text-sm text-gray-600">{customer.email}</p>
+                        )}
+                        {customer.phone && (
+                          <p className="text-sm text-gray-600">{customer.phone}</p>
+                        )}
+                      </div>
+                      <Badge variant={customer.isActive ? "default" : "secondary"}>
+                        {customer.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))
+              ) : searchTerm ? (
+                <p className="text-center text-gray-500 py-4">ไม่พบลูกค้าที่ค้นหา</p>
+              ) : (
+                <p className="text-center text-gray-500 py-4">กรุณาใส่คำค้นหา</p>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader>
@@ -278,7 +374,11 @@ export default function Customers() {
         <CardContent>
           <div className="grid gap-4">
             {customers?.map((customer) => (
-              <div key={customer.id} className="border rounded-lg p-4 hover:bg-gray-50">
+              <div 
+                key={customer.id} 
+                id={`customer-${customer.id}`}
+                className="border rounded-lg p-4 hover:bg-gray-50 transition-all duration-300"
+              >
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-2">
