@@ -299,7 +299,7 @@ export default function Sales() {
         </Button>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-7xl max-h-[95vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingQuotation ? "แก้ไขใบเสนอราคา" : "สร้างใบเสนอราคาใหม่"}
@@ -311,135 +311,623 @@ export default function Sales() {
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Basic Information */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="quotationNumber"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("sales.quotation_number")}</FormLabel>
-                        <FormControl>
-                          <Input {...field} readOnly className="bg-gray-50" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="customerId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("sales.customer")}</FormLabel>
-                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder={t("sales.select_customer")} />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {(customers as any[]).map((customer: Customer) => (
-                              <SelectItem key={customer.id} value={customer.id.toString()}>
-                                {customer.name} {customer.companyName && `(${customer.companyName})`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("sales.status")}</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="draft">แบบร่าง</SelectItem>
-                            <SelectItem value="sent">ส่งแล้ว</SelectItem>
-                            <SelectItem value="accepted">ยอมรับ</SelectItem>
-                            <SelectItem value="rejected">ปฏิเสธ</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                {/* Header with quotation number and action buttons */}
+                <div className="flex justify-between items-start bg-white p-4 border-b">
+                  <div className="flex items-center space-x-4">
+                    <div className="text-blue-600">
+                      <FileText className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800">สร้างใบเสนอราคา</h2>
+                      <FormField
+                        control={form.control}
+                        name="quotationNumber"
+                        render={({ field }) => (
+                          <div className="flex items-center space-x-2 mt-1">
+                            <span className="text-lg font-medium text-blue-600">{field.value}</span>
+                            <Button type="button" variant="ghost" size="sm">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="flex space-x-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setIsDialogOpen(false)}>
+                      ยกเลิก
+                    </Button>
+                    <Button type="submit" size="sm" className="bg-green-600 hover:bg-green-700">
+                      บันทึกข้อมูล
+                    </Button>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="date"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("sales.date")}</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="validUntil"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t("sales.valid_until")}</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                {/* Tax Calculation Option */}
-                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
-                  <FormField
-                    control={form.control}
-                    name="taxInclusive"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                        <FormControl>
-                          <input
-                            type="checkbox"
-                            checked={field.value}
-                            onChange={(e) => {
-                              field.onChange(e.target.checked);
-                              calculateTotals();
-                            }}
-                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
-                          />
-                        </FormControl>
-                        <div className="space-y-1 leading-none">
-                          <FormLabel className="text-sm font-normal">
-                            ราคารวมภาษี (ราคาที่ใส่รวมภาษีแล้ว)
-                          </FormLabel>
-                          <p className="text-xs text-gray-600">
-                            {field.value ? "ราคาสินค้ารวมภาษีมูลค่าเพิ่ม" : "ราคาสินค้าไม่รวมภาษีมูลค่าเพิ่ม"}
-                          </p>
+                {/* Two column layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-4">
+                  {/* Left column - Customer and details */}
+                  <div className="lg:col-span-2 space-y-6">
+                    {/* Customer Information */}
+                    <div className="bg-white border rounded-lg p-4">
+                      <h3 className="text-sm font-medium text-gray-700 mb-3">ลูกค้า</h3>
+                      <div className="space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="customerId"
+                          render={({ field }) => (
+                            <div>
+                              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                                <SelectTrigger className="w-full">
+                                  <SelectValue placeholder="เลือกลูกค้า หรือสร้างลูกค้าใหม่" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {(customers as any[]).map((customer: Customer) => (
+                                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                                      {customer.name} {customer.companyName && `(${customer.companyName})`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        />
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <label className="text-gray-600">ชื่อลูกค้า</label>
+                            <input 
+                              type="text" 
+                              className="w-full mt-1 p-2 border rounded bg-gray-50" 
+                              placeholder="ชื่อบริษัท/ลูกค้า"
+                              readOnly 
+                            />
+                          </div>
+                          <div>
+                            <label className="text-gray-600">เลขประจำตัวผู้เสียภาษี</label>
+                            <input 
+                              type="text" 
+                              className="w-full mt-1 p-2 border rounded bg-gray-50" 
+                              placeholder="เลขประจำตัวผู้เสียภาษี"
+                              readOnly 
+                            />
+                          </div>
+                          <div className="col-span-2">
+                            <label className="text-gray-600">ที่อยู่</label>
+                            <textarea 
+                              className="w-full mt-1 p-2 border rounded bg-gray-50" 
+                              rows={2}
+                              placeholder="ที่อยู่ลูกค้า"
+                              readOnly
+                            />
+                          </div>
                         </div>
-                      </FormItem>
-                    )}
-                  />
+                      </div>
+                    </div>
+
+                    {/* Project Details */}
+                    <div className="bg-white border rounded-lg p-4">
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <label className="text-sm text-gray-600">โครงการ</label>
+                          <Select>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="เลือกโครงการ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="project1">โครงการ A</SelectItem>
+                              <SelectItem value="project2">โครงการ B</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm text-gray-600">เพื่อการขาย</label>
+                          <Select>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="เลือกประเภท" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sale1">การขายทั่วไป</SelectItem>
+                              <SelectItem value="sale2">การขายส่ง</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm text-gray-600">ราคาเสนอจ่าย</label>
+                          <Select>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="ราคาโดยรวมที่เสนอ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="price1">ราคามาตรฐาน</SelectItem>
+                              <SelectItem value="price2">ราคาพิเศษ</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <label className="text-sm text-gray-600">รายละเอียด</label>
+                          <Select>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="ระบุรายละเอียด" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="detail1">รายละเอียดทั่วไป</SelectItem>
+                              <SelectItem value="detail2">รายละเอียดพิเศษ</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div>
+                          <label className="text-sm text-gray-600">คลังสินค้า</label>
+                          <Select>
+                            <SelectTrigger className="w-full mt-1">
+                              <SelectValue placeholder="คลังสินค้า" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="warehouse1">คลังหลัก</SelectItem>
+                              <SelectItem value="warehouse2">คลังสำรอง</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right column - Summary */}
+                  <div className="space-y-4">
+                    <div className="bg-white border rounded-lg p-4">
+                      <h3 className="text-lg font-bold text-center mb-2">จำนวนเงินรวมทั้งสิ้น</h3>
+                      <div className="text-center text-3xl font-bold text-blue-600 mb-4">
+                        <FormField
+                          control={form.control}
+                          name="grandTotal"
+                          render={({ field }) => (
+                            <span>{field.value?.toFixed(2) || "0.00"}</span>
+                          )}
+                        />
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span>วันที่:</span>
+                          <FormField
+                            control={form.control}
+                            name="date"
+                            render={({ field }) => (
+                              <input 
+                                type="date" 
+                                {...field} 
+                                className="border rounded px-2 py-1 text-xs"
+                              />
+                            )}
+                          />
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>หมดวันที่ (วัน):</span>
+                          <input 
+                            type="number" 
+                            className="border rounded px-2 py-1 w-16 text-xs" 
+                            defaultValue="0"
+                          />
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>หมดวันที่:</span>
+                          <FormField
+                            control={form.control}
+                            name="validUntil"
+                            render={({ field }) => (
+                              <input 
+                                type="date" 
+                                {...field} 
+                                className="border rounded px-2 py-1 text-xs"
+                              />
+                            )}
+                          />
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>ผู้ขาย/พนง:</span>
+                          <Select>
+                            <SelectTrigger className="w-32 h-7 text-xs">
+                              <SelectValue placeholder="เลือก" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="sales1">พนักงานขาย A</SelectItem>
+                              <SelectItem value="sales2">พนักงานขาย B</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex justify-between items-center">
+                          <span>สกุลเงิน:</span>
+                          <div className="flex items-center space-x-1">
+                            <span className="w-6 h-4 bg-red-500 rounded-sm flex items-center justify-center">
+                              <span className="text-white text-xs font-bold">TH</span>
+                            </span>
+                            <span className="text-xs">- ไทย</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
-                {/* Items Section */}
-                <div className="space-y-4">
+                {/* Items Section with Table */}
+                <div className="p-4">
+                  <div className="bg-white border rounded-lg overflow-hidden">
+                    {/* Table Header */}
+                    <div className="bg-cyan-500 text-white">
+                      <div className="grid grid-cols-12 gap-2 p-3 text-sm font-medium">
+                        <div className="col-span-1 text-center">ลำดับ</div>
+                        <div className="col-span-4">รายการ / รายละเอียด</div>
+                        <div className="col-span-1 text-center">จำนวน</div>
+                        <div className="col-span-1 text-center">หน่วย</div>
+                        <div className="col-span-2 text-center">ราคาต่อหน่วย</div>
+                        <div className="col-span-2 text-center">ส่วนลด (%)</div>
+                        <div className="col-span-1 text-center">รวมราคา</div>
+                      </div>
+                    </div>
+
+                    {/* Table Body */}
+                    <div className="divide-y">
+                      {fields.map((field, index) => (
+                        <div key={field.id} className="grid grid-cols-12 gap-2 p-3 items-center">
+                          <div className="col-span-1 text-center text-sm font-medium">
+                            {index + 1}
+                          </div>
+                          
+                          <div className="col-span-4 space-y-2">
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.productId`}
+                              render={({ field: productField }) => (
+                                <Select 
+                                  onValueChange={(value) => {
+                                    if (value === "custom") {
+                                      productField.onChange(undefined);
+                                      form.setValue(`items.${index}.productName`, "");
+                                    } else {
+                                      const selectedProduct = (products as any[]).find(p => p.id.toString() === value);
+                                      productField.onChange(parseInt(value));
+                                      if (selectedProduct) {
+                                        form.setValue(`items.${index}.productName`, selectedProduct.name);
+                                      }
+                                    }
+                                  }} 
+                                  value={productField.value?.toString() || "custom"}
+                                >
+                                  <SelectTrigger className="w-full h-8 text-xs">
+                                    <SelectValue placeholder="เลือกสินค้า" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="custom">พิมพ์ชื่อสินค้าเอง</SelectItem>
+                                    {(products as any[]).map((product: Product) => (
+                                      <SelectItem key={product.id} value={product.id.toString()}>
+                                        {product.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              )}
+                            />
+                            
+                            {!form.watch(`items.${index}.productId`) && (
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.productName`}
+                                render={({ field: nameField }) => (
+                                  <Input 
+                                    {...nameField}
+                                    placeholder="ชื่อสินค้า"
+                                    className="h-8 text-xs"
+                                  />
+                                )}
+                              />
+                            )}
+                            
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.description`}
+                              render={({ field: descField }) => (
+                                <Input 
+                                  {...descField}
+                                  placeholder="รายละเอียด"
+                                  className="h-8 text-xs"
+                                />
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="col-span-1">
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.quantity`}
+                              render={({ field: qtyField }) => (
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  className="w-full h-8 text-xs text-center"
+                                  {...qtyField}
+                                  onChange={(e) => {
+                                    const quantity = parseInt(e.target.value) || 0;
+                                    qtyField.onChange(quantity);
+                                    const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                    updateItemTotal(index, quantity, unitPrice);
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="col-span-1 text-center text-xs text-gray-600">
+                            ชิ้น
+                          </div>
+                          
+                          <div className="col-span-2">
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.unitPrice`}
+                              render={({ field: priceField }) => (
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  step="0.01"
+                                  className="w-full h-8 text-xs text-right"
+                                  {...priceField}
+                                  onChange={(e) => {
+                                    const unitPrice = parseFloat(e.target.value) || 0;
+                                    priceField.onChange(unitPrice);
+                                    const quantity = form.getValues(`items.${index}.quantity`);
+                                    updateItemTotal(index, quantity, unitPrice);
+                                  }}
+                                />
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="col-span-2">
+                            <Input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              className="w-full h-8 text-xs text-center"
+                              placeholder="0"
+                            />
+                          </div>
+                          
+                          <div className="col-span-1">
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.total`}
+                              render={({ field: totalField }) => (
+                                <div className="text-right text-sm font-medium">
+                                  {totalField.value?.toFixed(2) || "0.00"}
+                                </div>
+                              )}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {/* Empty rows to show 3 total rows like in the image */}
+                      {Array.from({ length: Math.max(0, 3 - fields.length) }).map((_, index) => (
+                        <div key={`empty-${index}`} className="grid grid-cols-12 gap-2 p-3 items-center min-h-[60px]">
+                          <div className="col-span-1 text-center text-sm font-medium">
+                            {fields.length + index + 1}
+                          </div>
+                          <div className="col-span-4"></div>
+                          <div className="col-span-1"></div>
+                          <div className="col-span-1"></div>
+                          <div className="col-span-2"></div>
+                          <div className="col-span-2"></div>
+                          <div className="col-span-1 text-right text-sm font-medium">0.00</div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Add Item Button */}
+                    <div className="p-3 border-t bg-gray-50">
+                      <Button type="button" onClick={addItem} variant="outline" size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        เพิ่มรายการสินค้า
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {/* Summary Section */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    {/* Left side - Notes and Terms */}
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">หมายเหตุ:</label>
+                        <FormField
+                          control={form.control}
+                          name="notes"
+                          render={({ field }) => (
+                            <Textarea 
+                              {...field}
+                              className="min-h-[80px] resize-none"
+                              placeholder="หมายเหตุเพิ่มเติม"
+                            />
+                          )}
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="text-sm font-medium text-gray-700 mb-2 block">เงื่อนไขการชำระเงิน:</label>
+                        <FormField
+                          control={form.control}
+                          name="terms"
+                          render={({ field }) => (
+                            <Textarea 
+                              {...field}
+                              className="min-h-[80px] resize-none"
+                              placeholder="เงื่อนไขการชำระเงิน"
+                            />
+                          )}
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Right side - Price Summary */}
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">รวมเป็นเงิน:</span>
+                        <span className="font-medium">
+                          <FormField
+                            control={form.control}
+                            name="subtotal"
+                            render={({ field }) => (
+                              <span>{field.value?.toFixed(2) || "0.00"}</span>
+                            )}
+                          />
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">ส่วนลดรวม:</span>
+                        <span className="font-medium">
+                          <FormField
+                            control={form.control}
+                            name="discountAmount"
+                            render={({ field }) => (
+                              <span>{field.value?.toFixed(2) || "0.00"}</span>
+                            )}
+                          />
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">จำนวนเงินก่อนภาษี:</span>
+                        <span className="font-medium">0.00</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center space-x-2">
+                          <FormField
+                            control={form.control}
+                            name="taxInclusive"
+                            render={({ field }) => (
+                              <input
+                                type="checkbox"
+                                checked={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.checked);
+                                  calculateTotals();
+                                }}
+                                className="w-4 h-4"
+                              />
+                            )}
+                          />
+                          <span className="text-blue-600">ภาษีมูลค่าเพิ่ม 7%</span>
+                        </div>
+                        <span className="font-medium">
+                          <FormField
+                            control={form.control}
+                            name="taxAmount"
+                            render={({ field }) => (
+                              <span>{field.value?.toFixed(2) || "0.00"}</span>
+                            )}
+                          />
+                        </span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span className="text-blue-600">จำนวนเงินรวมทั้งสิ้น:</span>
+                        <span className="font-medium">
+                          <FormField
+                            control={form.control}
+                            name="grandTotal"
+                            render={({ field }) => (
+                              <span>{field.value?.toFixed(2) || "0.00"}</span>
+                            )}
+                          />
+                        </span>
+                      </div>
+                      
+                      <div className="pt-3 border-t">
+                        <div className="text-right">
+                          <span className="text-blue-600 font-medium">ยอดเป็น ตัวอักษร</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {/* Quotations Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <FileText className="h-5 w-5" />
+            <span>{t("sales.quotations")}</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {quotations?.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              ไม่มีใบเสนอราคา
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left p-3">{t("sales.quotation_number")}</th>
+                    <th className="text-left p-3">{t("sales.customer")}</th>
+                    <th className="text-left p-3">{t("sales.date")}</th>
+                    <th className="text-left p-3">{t("sales.grand_total")}</th>
+                    <th className="text-left p-3">{t("common.status")}</th>
+                    <th className="text-left p-3">{t("common.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {quotations?.map((quotation: any) => {
+                    const customer = customers?.find(c => c.id === quotation.customerId);
+                    return (
+                      <tr key={quotation.id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">{quotation.quotationNumber}</td>
+                        <td className="p-3">{customer?.name}</td>
+                        <td className="p-3">{quotation.date}</td>
+                        <td className="p-3">฿{parseFloat(quotation.grandTotal || 0).toFixed(2)}</td>
+                        <td className="p-3">
+                          {getStatusBadge(quotation.status)}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(quotation)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
                   <div className="flex justify-between items-center">
                     <h3 className="text-lg font-semibold">{t("sales.items")}</h3>
                     <Button type="button" onClick={addItem} size="sm">
