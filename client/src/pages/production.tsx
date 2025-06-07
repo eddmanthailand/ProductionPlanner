@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ interface ProductionOrder {
 }
 
 export default function Production() {
+  const { t } = useLanguage();
   const { toast } = useToast();
   const { data: orders, isLoading } = useQuery<ProductionOrder[]>({
     queryKey: ["/api/production-orders"]
@@ -43,13 +45,13 @@ export default function Production() {
   const getStatusText = (status: string) => {
     switch (status) {
       case "completed":
-        return "เสร็จสิ้น";
+        return t("production.status.completed") || "เสร็จสิ้น";
       case "in_progress":
-        return "กำลังผลิต";
+        return t("production.status.in_progress") || "กำลังผลิต";
       case "pending":
-        return "รอเริ่มผลิต";
+        return t("production.status.pending") || "รอเริ่มผลิต";
       case "delayed":
-        return "ล่าช้า";
+        return t("production.status.delayed") || "ล่าช้า";
       default:
         return status;
     }
@@ -72,8 +74,8 @@ export default function Production() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">วางแผนการผลิต</h1>
-          <Button disabled>เพิ่มออเดอร์ใหม่</Button>
+          <h1 className="text-2xl font-bold">{t("production.title")}</h1>
+          <Button disabled>{t("production.add_order")}</Button>
         </div>
         <div className="grid gap-4">
           {[...Array(5)].map((_, i) => (
