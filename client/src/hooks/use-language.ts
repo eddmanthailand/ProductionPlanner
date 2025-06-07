@@ -126,6 +126,10 @@ const translations = {
     "dashboard.view_all": "View All",
     
     "production.title": "Production Planning",
+    "production.status.completed": "Completed",
+    "production.status.in_progress": "In Progress", 
+    "production.status.pending": "Pending",
+    "production.status.delayed": "Delayed",
     "production.order_number": "Order Number",
     "production.product": "Product",
     "production.quantity": "Quantity",
