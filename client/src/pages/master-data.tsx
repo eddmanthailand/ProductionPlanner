@@ -358,7 +358,6 @@ export default function MasterData() {
                       <TableHead>ชื่อสี</TableHead>
                       <TableHead>ชื่อภาษาอังกฤษ</TableHead>
                       <TableHead>คำอธิบาย</TableHead>
-                      <TableHead>สถานะ</TableHead>
                       <TableHead>จัดการ</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -379,11 +378,6 @@ export default function MasterData() {
                                 <TableCell className="font-medium">{color.name}</TableCell>
                                 <TableCell>{color.code || "-"}</TableCell>
                                 <TableCell>{color.description || "-"}</TableCell>
-                                <TableCell>
-                                  <Badge variant={color.isActive ? "default" : "secondary"}>
-                                    {color.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
-                                  </Badge>
-                                </TableCell>
                                 <TableCell>
                                   <div className="flex space-x-2">
                                     <Button variant="outline" size="sm" onClick={() => handleEditColor(color)}>
@@ -406,7 +400,7 @@ export default function MasterData() {
                         {provided.placeholder}
                         {colors?.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                            <TableCell colSpan={5} className="text-center py-8 text-gray-500">
                               ยังไม่มีข้อมูลสี
                             </TableCell>
                           </TableRow>
