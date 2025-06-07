@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -143,6 +143,38 @@ export const sizes = pgTable("sizes", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Quotations table
+export const quotations = pgTable("quotations", {
+  id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  quotationNumber: varchar("quotation_number", { length: 50 }).notNull(),
+  customerId: integer("customer_id").notNull().references(() => customers.id),
+  date: date("date").notNull(),
+  validUntil: date("valid_until").notNull(),
+  subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
+  discountPercent: decimal("discount_percent", { precision: 5, scale: 2 }).default("0"),
+  discountAmount: decimal("discount_amount", { precision: 12, scale: 2 }).default("0"),
+  taxPercent: decimal("tax_percent", { precision: 5, scale: 2 }).default("7"),
+  taxAmount: decimal("tax_amount", { precision: 12, scale: 2 }).default("0"),
+  grandTotal: decimal("grand_total", { precision: 12, scale: 2 }).notNull(),
+  status: varchar("status", { length: 20 }).notNull().default("draft"), // draft, sent, accepted, rejected, expired
+  notes: text("notes"),
+  terms: text("terms"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Quotation Items table
+export const quotationItems = pgTable("quotation_items", {
+  id: serial("id").primaryKey(),
+  quotationId: integer("quotation_id").notNull().references(() => quotations.id, { onDelete: "cascade" }),
+  productId: integer("product_id").notNull().references(() => products.id),
+  quantity: integer("quantity").notNull(),
+  unitPrice: decimal("unit_price", { precision: 12, scale: 2 }).notNull(),
+  total: decimal("total", { precision: 12, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
@@ -153,7 +185,8 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   activities: many(activities),
   customers: many(customers),
   colors: many(colors),
-  sizes: many(sizes)
+  sizes: many(sizes),
+  quotations: many(quotations)
 }));
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -234,6 +267,29 @@ export const sizesRelations = relations(sizes, ({ one }) => ({
   })
 }));
 
+export const quotationsRelations = relations(quotations, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [quotations.tenantId],
+    references: [tenants.id]
+  }),
+  customer: one(customers, {
+    fields: [quotations.customerId],
+    references: [customers.id]
+  }),
+  items: many(quotationItems)
+}));
+
+export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
+  quotation: one(quotations, {
+    fields: [quotationItems.quotationId],
+    references: [quotations.id]
+  }),
+  product: one(products, {
+    fields: [quotationItems.productId],
+    references: [products.id]
+  })
+}));
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
@@ -293,6 +349,17 @@ export const insertSizeSchema = createInsertSchema(sizes).omit({
   updatedAt: true
 });
 
+export const insertQuotationSchema = createInsertSchema(quotations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit({
+  id: true,
+  createdAt: true
+});
+
 // Types
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -323,3 +390,9 @@ export type InsertColor = z.infer<typeof insertColorSchema>;
 
 export type Size = typeof sizes.$inferSelect;
 export type InsertSize = z.infer<typeof insertSizeSchema>;
+
+export type Quotation = typeof quotations.$inferSelect;
+export type InsertQuotation = z.infer<typeof insertQuotationSchema>;
+
+export type QuotationItem = typeof quotationItems.$inferSelect;
+export type InsertQuotationItem = z.infer<typeof insertQuotationItemSchema>;
