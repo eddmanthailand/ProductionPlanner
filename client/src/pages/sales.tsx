@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -157,7 +157,7 @@ export default function Sales() {
   });
 
   // Calculate totals with tax inclusive/exclusive options
-  const calculateTotals = () => {
+  const calculateTotals = useCallback(() => {
     const items = form.getValues("items");
     const discountPercent = form.getValues("discountPercent") || 0;
     const taxPercent = form.getValues("taxPercent") || 7;
@@ -175,10 +175,10 @@ export default function Sales() {
       const finalTax = (afterDiscount * taxPercent) / 100;
       const grandTotal = afterDiscount + finalTax;
 
-      form.setValue("subtotal", baseAmount, { shouldValidate: false });
-      form.setValue("discountAmount", discountAmount, { shouldValidate: false });
-      form.setValue("taxAmount", finalTax, { shouldValidate: false });
-      form.setValue("grandTotal", grandTotal, { shouldValidate: false });
+      form.setValue("subtotal", baseAmount, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+      form.setValue("discountAmount", discountAmount, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+      form.setValue("taxAmount", finalTax, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+      form.setValue("grandTotal", grandTotal, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
     } else {
       // Tax-exclusive calculation (original method)
       const discountAmount = (subtotal * discountPercent) / 100;
@@ -186,12 +186,12 @@ export default function Sales() {
       const taxAmount = (afterDiscount * taxPercent) / 100;
       const grandTotal = afterDiscount + taxAmount;
 
-      form.setValue("subtotal", subtotal, { shouldValidate: false });
-      form.setValue("discountAmount", discountAmount, { shouldValidate: false });
-      form.setValue("taxAmount", taxAmount, { shouldValidate: false });
-      form.setValue("grandTotal", grandTotal, { shouldValidate: false });
+      form.setValue("subtotal", subtotal, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+      form.setValue("discountAmount", discountAmount, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+      form.setValue("taxAmount", taxAmount, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+      form.setValue("grandTotal", grandTotal, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
     }
-  };
+  }, [form]);
 
   // Add new item
   const addItem = () => {
@@ -208,19 +208,11 @@ export default function Sales() {
   // Update item total when quantity or price changes
   const updateItemTotal = (index: number, quantity: number, unitPrice: number) => {
     const total = quantity * unitPrice;
-    form.setValue(`items.${index}.total`, total);
-    calculateTotals();
+    form.setValue(`items.${index}.total`, total, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+    
+    // Calculate totals without triggering infinite loop
+    setTimeout(() => calculateTotals(), 0);
   };
-
-  // Watch for changes in items, discount, and tax to recalculate
-  useEffect(() => {
-    const subscription = form.watch((value, { name }) => {
-      if (name?.startsWith('items.') || name === 'discountPercent' || name === 'taxPercent' || name === 'taxInclusive') {
-        calculateTotals();
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Handle form submission
   const onSubmit = (data: QuotationFormData) => {
@@ -312,6 +304,9 @@ export default function Sales() {
               <DialogTitle>
                 {editingQuotation ? "แก้ไขใบเสนอราคา" : "สร้างใบเสนอราคาใหม่"}
               </DialogTitle>
+              <DialogDescription>
+                {editingQuotation ? "แก้ไขข้อมูลใบเสนอราคา" : "กรอกข้อมูลสำหรับสร้างใบเสนอราคาใหม่"}
+              </DialogDescription>
             </DialogHeader>
             
             <Form {...form}>

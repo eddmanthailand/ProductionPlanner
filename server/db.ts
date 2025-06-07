@@ -5,7 +5,6 @@ import * as schema from "@shared/schema";
 
 neonConfig.webSocketConstructor = ws;
 neonConfig.useSecureWebSocket = false;
-neonConfig.pipelineTries = 1;
 neonConfig.pipelineConnect = false;
 
 if (!process.env.DATABASE_URL) {
