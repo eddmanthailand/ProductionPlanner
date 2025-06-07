@@ -339,7 +339,7 @@ export default function Sales() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {customers?.map((customer: Customer) => (
+                            {customers.map((customer: Customer) => (
                               <SelectItem key={customer.id} value={customer.id.toString()}>
                                 {customer.name} {customer.companyName && `(${customer.companyName})`}
                               </SelectItem>
@@ -417,7 +417,7 @@ export default function Sales() {
                                       <SelectValue placeholder={t("sales.select_product")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {products?.map((product: Product) => (
+                                      {products.map((product: Product) => (
                                         <SelectItem key={product.id} value={product.id.toString()}>
                                           {product.name} ({product.sku})
                                         </SelectItem>
@@ -621,8 +621,8 @@ export default function Sales() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            {quotations?.map((quotation: Quotation) => {
-              const customer = customers?.find((c: Customer) => c.id === quotation.customerId);
+            {quotations.map((quotation: any) => {
+              const customer = customers.find((c: any) => c.id === quotation.customerId);
               return (
                 <div key={quotation.id} className="border rounded-lg p-4 hover:bg-gray-50">
                   <div className="flex justify-between items-start">
@@ -647,7 +647,7 @@ export default function Sales() {
                         </div>
                         <div className="flex items-center">
                           <FileText className="h-4 w-4 mr-1" />
-                          รายการ: {quotation.items?.length || 0} รายการ
+                          รายการ: {quotation.items ? quotation.items.length : 0} รายการ
                         </div>
                       </div>
                       
@@ -666,7 +666,7 @@ export default function Sales() {
               );
             })}
             
-            {quotations?.length === 0 && (
+            {quotations.length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 ยังไม่มีใบเสนอราคา
               </div>
