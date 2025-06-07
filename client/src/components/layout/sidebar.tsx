@@ -24,6 +24,8 @@ export default function Sidebar() {
     { name: t("nav.production"), href: "/production", icon: Settings2 },
     { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
     { name: t("nav.inventory"), href: "/inventory", icon: Package },
+    { name: t("nav.customers"), href: "/customers", icon: Users },
+    { name: t("nav.master_data"), href: "/master-data", icon: Settings },
     { name: t("nav.reports"), href: "/reports", icon: FileText },
     { name: t("nav.users"), href: "/users", icon: Users },
   ];

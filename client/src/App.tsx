@@ -12,6 +12,8 @@ import Dashboard from "@/pages/dashboard";
 import Production from "@/pages/production";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
+import Customers from "@/pages/customers";
+import MasterData from "@/pages/master-data";
 import Reports from "@/pages/reports";
 import Users from "@/pages/users";
 
