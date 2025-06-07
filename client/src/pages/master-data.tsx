@@ -14,7 +14,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertColorSchema, insertSizeSchema, type Color, type Size } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Palette, Ruler } from "lucide-react";
+import { Plus, Edit, Trash2, Palette, Ruler, GripVertical } from "lucide-react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function MasterData() {
   const { t } = useLanguage();
@@ -160,6 +162,60 @@ export default function MasterData() {
     deleteSizeMutation.mutate(id);
   };
 
+  // Handle drag and drop for colors
+  const handleColorDragEnd = (result: DropResult) => {
+    if (!result.destination || !colors) return;
+    
+    const items = Array.from(colors);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Update the sort order for all items
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      sortOrder: index + 1
+    }));
+    
+    // Update each item's sort order in the database
+    updatedItems.forEach(async (item) => {
+      try {
+        await apiRequest(`/api/colors/${item.id}`, "PATCH", { sortOrder: item.sortOrder });
+      } catch (error) {
+        console.error("Error updating color order:", error);
+      }
+    });
+    
+    // Refresh the data
+    queryClient.invalidateQueries({ queryKey: ["/api/colors"] });
+  };
+
+  // Handle drag and drop for sizes
+  const handleSizeDragEnd = (result: DropResult) => {
+    if (!result.destination || !sizes) return;
+    
+    const items = Array.from(sizes);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+    
+    // Update the sort order for all items
+    const updatedItems = items.map((item, index) => ({
+      ...item,
+      sortOrder: index + 1
+    }));
+    
+    // Update each item's sort order in the database
+    updatedItems.forEach(async (item) => {
+      try {
+        await apiRequest(`/api/sizes/${item.id}`, "PATCH", { sortOrder: item.sortOrder });
+      } catch (error) {
+        console.error("Error updating size order:", error);
+      }
+    });
+    
+    // Refresh the data
+    queryClient.invalidateQueries({ queryKey: ["/api/sizes"] });
+  };
+
   const handleAddNewColor = () => {
     setEditingColor(null);
     colorForm.reset();
@@ -294,44 +350,72 @@ export default function MasterData() {
 
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {colors?.map((color) => (
-                  <div key={color.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold">{color.name}</h3>
-                      </div>
-                      <Badge variant={color.isActive ? "default" : "secondary"}>
-                        {color.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
-                      </Badge>
-                    </div>
-                    {color.code && (
-                      <p className="text-sm text-gray-600 mb-2 font-medium">ชื่อภาษาอังกฤษ: {color.code}</p>
+              <DragDropContext onDragEnd={handleColorDragEnd}>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8"></TableHead>
+                      <TableHead>ชื่อสี</TableHead>
+                      <TableHead>ชื่อภาษาอังกฤษ</TableHead>
+                      <TableHead>คำอธิบาย</TableHead>
+                      <TableHead>สถานะ</TableHead>
+                      <TableHead>จัดการ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <Droppable droppableId="colors">
+                    {(provided) => (
+                      <TableBody {...provided.droppableProps} ref={provided.innerRef}>
+                        {colors?.map((color, index) => (
+                          <Draggable key={color.id} draggableId={color.id.toString()} index={index}>
+                            {(provided, snapshot) => (
+                              <TableRow 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={snapshot.isDragging ? "bg-gray-100" : ""}
+                              >
+                                <TableCell {...provided.dragHandleProps} className="cursor-grab">
+                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                                </TableCell>
+                                <TableCell className="font-medium">{color.name}</TableCell>
+                                <TableCell>{color.code || "-"}</TableCell>
+                                <TableCell>{color.description || "-"}</TableCell>
+                                <TableCell>
+                                  <Badge variant={color.isActive ? "default" : "secondary"}>
+                                    {color.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleEditColor(color)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => handleDeleteColor(color.id)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                        {colors?.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                              ยังไม่มีข้อมูลสี
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
                     )}
-                    {color.description && (
-                      <p className="text-sm text-gray-500 mb-3">{color.description}</p>
-                    )}
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditColor(color)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDeleteColor(color.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {colors?.length === 0 && (
-                  <div className="col-span-full text-center py-8 text-gray-500">
-                    ยังไม่มีข้อมูลสี
-                  </div>
-                )}
-              </div>
+                  </Droppable>
+                </Table>
+              </DragDropContext>
             </CardContent>
           </Card>
         </TabsContent>
@@ -439,42 +523,74 @@ export default function MasterData() {
 
           <Card>
             <CardContent className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {sizes?.map((size) => (
-                  <div key={size.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-semibold">{size.name}</h3>
-                      <Badge variant={size.isActive ? "default" : "secondary"}>
-                        {size.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
-                      </Badge>
-                    </div>
-                    {size.category && (
-                      <p className="text-sm text-gray-600 mb-2">หมวดหมู่: {size.category}</p>
+              <DragDropContext onDragEnd={handleSizeDragEnd}>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-8"></TableHead>
+                      <TableHead>ชื่อไซส์</TableHead>
+                      <TableHead>หมวดหมู่</TableHead>
+                      <TableHead>ลำดับ</TableHead>
+                      <TableHead>คำอธิบาย</TableHead>
+                      <TableHead>สถานะ</TableHead>
+                      <TableHead>จัดการ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <Droppable droppableId="sizes">
+                    {(provided) => (
+                      <TableBody {...provided.droppableProps} ref={provided.innerRef}>
+                        {sizes?.map((size, index) => (
+                          <Draggable key={size.id} draggableId={size.id.toString()} index={index}>
+                            {(provided, snapshot) => (
+                              <TableRow 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={snapshot.isDragging ? "bg-gray-100" : ""}
+                              >
+                                <TableCell {...provided.dragHandleProps} className="cursor-grab">
+                                  <GripVertical className="h-4 w-4 text-gray-400" />
+                                </TableCell>
+                                <TableCell className="font-medium">{size.name}</TableCell>
+                                <TableCell>{size.category || "-"}</TableCell>
+                                <TableCell>{size.sortOrder || "-"}</TableCell>
+                                <TableCell>{size.description || "-"}</TableCell>
+                                <TableCell>
+                                  <Badge variant={size.isActive ? "default" : "secondary"}>
+                                    {size.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button variant="outline" size="sm" onClick={() => handleEditSize(size)}>
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                    <Button 
+                                      variant="outline" 
+                                      size="sm" 
+                                      onClick={() => handleDeleteSize(size.id)}
+                                      className="text-red-600 hover:text-red-700"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                        {sizes?.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-gray-500">
+                              ยังไม่มีข้อมูลไซส์
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
                     )}
-                    {size.description && (
-                      <p className="text-sm text-gray-500 mb-3">{size.description}</p>
-                    )}
-                    <div className="flex space-x-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditSize(size)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => handleDeleteSize(size.id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-                {sizes?.length === 0 && (
-                  <div className="col-span-full text-center py-8 text-gray-500">
-                    ยังไม่มีข้อมูลไซส์
-                  </div>
-                )}
-              </div>
+                  </Droppable>
+                </Table>
+              </DragDropContext>
             </CardContent>
           </Card>
         </TabsContent>
