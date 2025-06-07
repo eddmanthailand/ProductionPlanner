@@ -20,7 +20,8 @@ import { insertQuotationSchema, type Quotation, type Customer, type Product } fr
 import { useToast } from "@/hooks/use-toast";
 
 interface QuotationItem {
-  productId: number;
+  productId?: number;
+  productName?: string;
   product?: Product;
   quantity: number;
   unitPrice: number;
@@ -41,6 +42,8 @@ interface QuotationFormData {
   status: string;
   notes?: string;
   terms?: string;
+  paymentTerms?: string;
+  taxInclusive: boolean;
   items: QuotationItem[];
 }
 
@@ -60,16 +63,6 @@ export default function Sales() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
 
-  // Generate quotation number
-  const generateQuotationNumber = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-    return `QT${year}${month}${day}-${random}`;
-  };
-
   // Get today's date and 30 days later for default values
   const getDefaultDates = () => {
     const today = new Date();
@@ -85,7 +78,7 @@ export default function Sales() {
   const form = useForm<QuotationFormData>({
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
-      quotationNumber: generateQuotationNumber(),
+      quotationNumber: "",
       customerId: 0,
       ...getDefaultDates(),
       subtotal: 0,
@@ -96,7 +89,9 @@ export default function Sales() {
       grandTotal: 0,
       status: "draft",
       notes: "",
-      terms: "ชำระเงินภายใน 30 วัน",
+      terms: "",
+      paymentTerms: "",
+      taxInclusive: false,
       items: []
     }
   });
@@ -123,6 +118,25 @@ export default function Sales() {
     queryKey: ['/api/products'],
     enabled: !!tenant?.id,
   });
+
+  // Generate sequential quotation number
+  const generateQuotationNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    
+    // Find the highest sequence number for this month
+    const monthPrefix = `QT${year}${month}`;
+    const existingNumbers = (quotations as any[])
+      .filter((q: any) => q.quotationNumber.startsWith(monthPrefix))
+      .map((q: any) => {
+        const parts = q.quotationNumber.split('-');
+        return parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
+      });
+    
+    const nextSequence = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
+    return `QT${year}${month}-${String(nextSequence).padStart(3, '0')}`;
+  };
 
   // Create/Update quotation mutation
   const quotationMutation = useMutation({
@@ -183,28 +197,48 @@ export default function Sales() {
     },
   });
 
-  // Calculate totals when items change
+  // Calculate totals with tax inclusive/exclusive options
   const calculateTotals = () => {
     const items = form.watch("items");
     const discountPercent = form.getValues("discountPercent") || 0;
     const taxPercent = form.getValues("taxPercent") || 7;
+    const taxInclusive = form.getValues("taxInclusive") || false;
 
-    const subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
-    const discountAmount = (subtotal * discountPercent) / 100;
-    const afterDiscount = subtotal - discountAmount;
-    const taxAmount = (afterDiscount * taxPercent) / 100;
-    const grandTotal = afterDiscount + taxAmount;
+    let subtotal = items.reduce((sum, item) => sum + (item.total || 0), 0);
+    
+    if (taxInclusive) {
+      // If prices are tax-inclusive, extract the tax amount
+      const taxMultiplier = 1 + (taxPercent / 100);
+      const baseAmount = subtotal / taxMultiplier;
+      const taxAmount = subtotal - baseAmount;
+      const discountAmount = (baseAmount * discountPercent) / 100;
+      const afterDiscount = baseAmount - discountAmount;
+      const finalTax = (afterDiscount * taxPercent) / 100;
+      const grandTotal = afterDiscount + finalTax;
 
-    form.setValue("subtotal", subtotal);
-    form.setValue("discountAmount", discountAmount);
-    form.setValue("taxAmount", taxAmount);
-    form.setValue("grandTotal", grandTotal);
+      form.setValue("subtotal", baseAmount);
+      form.setValue("discountAmount", discountAmount);
+      form.setValue("taxAmount", finalTax);
+      form.setValue("grandTotal", grandTotal);
+    } else {
+      // Tax-exclusive calculation (original method)
+      const discountAmount = (subtotal * discountPercent) / 100;
+      const afterDiscount = subtotal - discountAmount;
+      const taxAmount = (afterDiscount * taxPercent) / 100;
+      const grandTotal = afterDiscount + taxAmount;
+
+      form.setValue("subtotal", subtotal);
+      form.setValue("discountAmount", discountAmount);
+      form.setValue("taxAmount", taxAmount);
+      form.setValue("grandTotal", grandTotal);
+    }
   };
 
   // Add new item
   const addItem = () => {
     append({
-      productId: 0,
+      productId: undefined,
+      productName: "",
       quantity: 1,
       unitPrice: 0,
       total: 0
@@ -268,7 +302,9 @@ export default function Sales() {
       grandTotal: 0,
       status: "draft",
       notes: "",
-      terms: "ชำระเงินภายใน 30 วัน",
+      terms: "",
+      paymentTerms: "",
+      taxInclusive: false,
       items: []
     });
     setIsDialogOpen(true);
@@ -375,6 +411,37 @@ export default function Sales() {
                           <Input type="date" {...field} />
                         </FormControl>
                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Tax Calculation Option */}
+                <div className="flex items-center space-x-4 p-4 bg-gray-50 rounded-lg">
+                  <FormField
+                    control={form.control}
+                    name="taxInclusive"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                        <FormControl>
+                          <input
+                            type="checkbox"
+                            checked={field.value}
+                            onChange={(e) => {
+                              field.onChange(e.target.checked);
+                              calculateTotals();
+                            }}
+                            className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded"
+                          />
+                        </FormControl>
+                        <div className="space-y-1 leading-none">
+                          <FormLabel className="text-sm font-normal">
+                            ราคารวมภาษี (ราคาที่ใส่รวมภาษีแล้ว)
+                          </FormLabel>
+                          <p className="text-xs text-gray-600">
+                            {field.value ? "ราคาสินค้ารวมภาษีมูลค่าเพิ่ม" : "ราคาสินค้าไม่รวมภาษีมูลค่าเพิ่ม"}
+                          </p>
+                        </div>
                       </FormItem>
                     )}
                   />
