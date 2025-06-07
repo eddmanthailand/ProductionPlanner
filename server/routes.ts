@@ -474,6 +474,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Quotations routes
+  app.get("/api/quotations", authenticateToken, async (req: any, res) => {
+    try {
+      const quotations = await storage.getQuotations(req.user.tenantId);
+      res.json(quotations);
+    } catch (error) {
+      console.error("Error fetching quotations:", error);
+      res.status(500).json({ error: "Failed to fetch quotations" });
+    }
+  });
+
+  app.get("/api/quotations/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const quotation = await storage.getQuotation(id, req.user.tenantId);
+      if (!quotation) {
+        return res.status(404).json({ error: "Quotation not found" });
+      }
+      res.json(quotation);
+    } catch (error) {
+      console.error("Error fetching quotation:", error);
+      res.status(500).json({ error: "Failed to fetch quotation" });
+    }
+  });
+
+  app.post("/api/quotations", authenticateToken, async (req: any, res) => {
+    try {
+      const quotationData = { ...req.body, tenantId: req.user.tenantId };
+      const quotation = await storage.createQuotation(quotationData);
+      res.status(201).json(quotation);
+    } catch (error) {
+      console.error("Error creating quotation:", error);
+      res.status(500).json({ error: "Failed to create quotation" });
+    }
+  });
+
+  app.patch("/api/quotations/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const quotation = await storage.updateQuotation(id, req.body, req.user.tenantId);
+      if (!quotation) {
+        return res.status(404).json({ error: "Quotation not found" });
+      }
+      res.json(quotation);
+    } catch (error) {
+      console.error("Error updating quotation:", error);
+      res.status(500).json({ error: "Failed to update quotation" });
+    }
+  });
+
+  app.delete("/api/quotations/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteQuotation(id, req.user.tenantId);
+      if (!success) {
+        return res.status(404).json({ error: "Quotation not found" });
+      }
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting quotation:", error);
+      res.status(500).json({ error: "Failed to delete quotation" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

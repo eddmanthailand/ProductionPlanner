@@ -416,6 +416,99 @@ export class DatabaseStorage implements IStorage {
     );
     return (result.rowCount ?? 0) > 0;
   }
+
+  // Quotations
+  async getQuotations(tenantId: string): Promise<Quotation[]> {
+    return await db.query.quotations.findMany({
+      where: eq(quotations.tenantId, tenantId),
+      with: {
+        customer: true,
+        items: {
+          with: {
+            product: true
+          }
+        }
+      },
+      orderBy: [desc(quotations.createdAt)]
+    });
+  }
+
+  async getQuotation(id: number, tenantId: string): Promise<Quotation | undefined> {
+    const [quotation] = await db.query.quotations.findMany({
+      where: and(eq(quotations.id, id), eq(quotations.tenantId, tenantId)),
+      with: {
+        customer: true,
+        items: {
+          with: {
+            product: true
+          }
+        }
+      }
+    });
+    return quotation || undefined;
+  }
+
+  async createQuotation(insertQuotation: InsertQuotation): Promise<Quotation> {
+    const { items, ...quotationData } = insertQuotation as any;
+    
+    // Create quotation first
+    const [quotation] = await db
+      .insert(quotations)
+      .values(quotationData)
+      .returning();
+
+    // Create quotation items if provided
+    if (items && items.length > 0) {
+      const itemsData = items.map((item: any) => ({
+        ...item,
+        quotationId: quotation.id
+      }));
+      
+      await db.insert(quotationItems).values(itemsData);
+    }
+
+    // Return full quotation with relations
+    return await this.getQuotation(quotation.id, quotation.tenantId) as Quotation;
+  }
+
+  async updateQuotation(id: number, updateData: Partial<InsertQuotation>, tenantId: string): Promise<Quotation | undefined> {
+    const { items, ...quotationData } = updateData as any;
+    
+    // Update quotation
+    const [quotation] = await db
+      .update(quotations)
+      .set(quotationData)
+      .where(and(eq(quotations.id, id), eq(quotations.tenantId, tenantId)))
+      .returning();
+
+    if (!quotation) return undefined;
+
+    // Update items if provided
+    if (items) {
+      // Delete existing items
+      await db.delete(quotationItems).where(eq(quotationItems.quotationId, id));
+      
+      // Insert new items
+      if (items.length > 0) {
+        const itemsData = items.map((item: any) => ({
+          ...item,
+          quotationId: id
+        }));
+        
+        await db.insert(quotationItems).values(itemsData);
+      }
+    }
+
+    // Return updated quotation with relations
+    return await this.getQuotation(id, tenantId);
+  }
+
+  async deleteQuotation(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.delete(quotations).where(
+      and(eq(quotations.id, id), eq(quotations.tenantId, tenantId))
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();

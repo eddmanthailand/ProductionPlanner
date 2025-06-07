@@ -107,34 +107,49 @@ export default function Sales() {
   });
 
   // Fetch quotations
-  const { data: quotations, isLoading: isLoadingQuotations } = useQuery({
+  const { data: quotations = [], isLoading: isLoadingQuotations } = useQuery({
     queryKey: ['/api/quotations'],
     enabled: !!tenant?.id,
   });
 
   // Fetch customers
-  const { data: customers } = useQuery({
+  const { data: customers = [] } = useQuery({
     queryKey: ['/api/customers'],
     enabled: !!tenant?.id,
   });
 
   // Fetch products
-  const { data: products } = useQuery({
+  const { data: products = [] } = useQuery({
     queryKey: ['/api/products'],
     enabled: !!tenant?.id,
   });
 
   // Create/Update quotation mutation
   const quotationMutation = useMutation({
-    mutationFn: async (data: QuotationFormData) => {
+    mutationFn: async (data: QuotationFormData & { tenantId: string }) => {
       const endpoint = editingQuotation 
         ? `/api/quotations/${editingQuotation.id}`
         : '/api/quotations';
       
-      return apiRequest(endpoint, {
-        method: editingQuotation ? 'PATCH' : 'POST',
-        body: JSON.stringify(data),
-      });
+      if (editingQuotation) {
+        return fetch(endpoint, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify(data),
+        }).then(res => res.json());
+      } else {
+        return fetch(endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+          body: JSON.stringify(data),
+        }).then(res => res.json());
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/quotations'] });
@@ -212,11 +227,28 @@ export default function Sales() {
   };
 
   // Handle edit
-  const handleEdit = (quotation: Quotation) => {
+  const handleEdit = (quotation: any) => {
     setEditingQuotation(quotation);
     form.reset({
-      ...quotation,
-      items: quotation.items || []
+      quotationNumber: quotation.quotationNumber,
+      customerId: quotation.customerId,
+      date: quotation.date,
+      validUntil: quotation.validUntil,
+      subtotal: parseFloat(quotation.subtotal) || 0,
+      discountPercent: parseFloat(quotation.discountPercent) || 0,
+      discountAmount: parseFloat(quotation.discountAmount) || 0,
+      taxPercent: parseFloat(quotation.taxPercent) || 7,
+      taxAmount: parseFloat(quotation.taxAmount) || 0,
+      grandTotal: parseFloat(quotation.grandTotal) || 0,
+      status: quotation.status,
+      notes: quotation.notes || "",
+      terms: quotation.terms || "",
+      items: quotation.items?.map((item: any) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: parseFloat(item.unitPrice),
+        total: parseFloat(item.total)
+      })) || []
     });
     setIsDialogOpen(true);
   };
