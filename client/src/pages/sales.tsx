@@ -158,7 +158,7 @@ export default function Sales() {
 
   // Calculate totals with tax inclusive/exclusive options
   const calculateTotals = () => {
-    const items = form.watch("items");
+    const items = form.getValues("items");
     const discountPercent = form.getValues("discountPercent") || 0;
     const taxPercent = form.getValues("taxPercent") || 7;
     const taxInclusive = form.getValues("taxInclusive") || false;
@@ -175,10 +175,10 @@ export default function Sales() {
       const finalTax = (afterDiscount * taxPercent) / 100;
       const grandTotal = afterDiscount + finalTax;
 
-      form.setValue("subtotal", baseAmount);
-      form.setValue("discountAmount", discountAmount);
-      form.setValue("taxAmount", finalTax);
-      form.setValue("grandTotal", grandTotal);
+      form.setValue("subtotal", baseAmount, { shouldValidate: false });
+      form.setValue("discountAmount", discountAmount, { shouldValidate: false });
+      form.setValue("taxAmount", finalTax, { shouldValidate: false });
+      form.setValue("grandTotal", grandTotal, { shouldValidate: false });
     } else {
       // Tax-exclusive calculation (original method)
       const discountAmount = (subtotal * discountPercent) / 100;
@@ -186,10 +186,10 @@ export default function Sales() {
       const taxAmount = (afterDiscount * taxPercent) / 100;
       const grandTotal = afterDiscount + taxAmount;
 
-      form.setValue("subtotal", subtotal);
-      form.setValue("discountAmount", discountAmount);
-      form.setValue("taxAmount", taxAmount);
-      form.setValue("grandTotal", grandTotal);
+      form.setValue("subtotal", subtotal, { shouldValidate: false });
+      form.setValue("discountAmount", discountAmount, { shouldValidate: false });
+      form.setValue("taxAmount", taxAmount, { shouldValidate: false });
+      form.setValue("grandTotal", grandTotal, { shouldValidate: false });
     }
   };
 
@@ -212,13 +212,15 @@ export default function Sales() {
     calculateTotals();
   };
 
-  // Watch for changes and recalculate
+  // Watch for changes in items, discount, and tax to recalculate
   useEffect(() => {
-    const subscription = form.watch(() => {
-      calculateTotals();
+    const subscription = form.watch((value, { name }) => {
+      if (name?.startsWith('items.') || name === 'discountPercent' || name === 'taxPercent' || name === 'taxInclusive') {
+        calculateTotals();
+      }
     });
     return () => subscription.unsubscribe();
-  }, [form.watch]);
+  }, []);
 
   // Handle form submission
   const onSubmit = (data: QuotationFormData) => {
