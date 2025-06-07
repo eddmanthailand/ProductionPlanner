@@ -153,15 +153,11 @@ export default function MasterData() {
   };
 
   const handleDeleteColor = (id: number) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบสีนี้?")) {
-      deleteColorMutation.mutate(id);
-    }
+    deleteColorMutation.mutate(id);
   };
 
   const handleDeleteSize = (id: number) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบไซส์นี้?")) {
-      deleteSizeMutation.mutate(id);
-    }
+    deleteSizeMutation.mutate(id);
   };
 
   const handleAddNewColor = () => {

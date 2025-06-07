@@ -28,6 +28,8 @@ export default function Customers() {
     resolver: zodResolver(insertCustomerSchema.omit({ tenantId: true })),
     defaultValues: {
       name: "",
+      companyName: "",
+      taxId: "",
       email: "",
       phone: "",
       address: "",
@@ -80,6 +82,8 @@ export default function Customers() {
     setEditingCustomer(customer);
     form.reset({
       name: customer.name,
+      companyName: customer.companyName || "",
+      taxId: customer.taxId || "",
       email: customer.email || "",
       phone: customer.phone || "",
       address: customer.address || "",
@@ -95,9 +99,7 @@ export default function Customers() {
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบลูกค้านี้?")) {
-      deleteMutation.mutate(id);
-    }
+    deleteMutation.mutate(id);
   };
 
   const handleAddNew = () => {
@@ -145,6 +147,34 @@ export default function Customers() {
                         <FormLabel>ชื่อลูกค้า *</FormLabel>
                         <FormControl>
                           <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="companyName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ชื่อบริษัท</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="taxId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>เลขที่ผู้เสียภาษี</FormLabel>
+                        <FormControl>
+                          <Input {...field} placeholder="เช่น 0123456789012" />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -289,6 +319,12 @@ export default function Customers() {
                         {customer.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
                       </Badge>
                     </div>
+                    {customer.companyName && (
+                      <p className="text-sm text-gray-600 mb-1">บริษัท: {customer.companyName}</p>
+                    )}
+                    {customer.taxId && (
+                      <p className="text-sm text-gray-600 mb-1">เลขที่ผู้เสียภาษี: {customer.taxId}</p>
+                    )}
                     {customer.contactPerson && (
                       <p className="text-sm text-gray-600 mb-1">ผู้ติดต่อ: {customer.contactPerson}</p>
                     )}
