@@ -33,8 +33,6 @@ export default function Customers() {
       email: "",
       phone: "",
       address: "",
-      city: "",
-      province: "",
       postalCode: "",
       country: "Thailand",
       contactPerson: "",
@@ -87,8 +85,6 @@ export default function Customers() {
       email: customer.email || "",
       phone: customer.phone || "",
       address: customer.address || "",
-      city: customer.city || "",
-      province: customer.province || "",
       postalCode: customer.postalCode || "",
       country: customer.country || "Thailand",
       contactPerson: customer.contactPerson || "",
@@ -235,47 +231,19 @@ export default function Customers() {
                     </FormItem>
                   )}
                 />
-                <div className="grid grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>เมือง</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="province"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>จังหวัด</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="postalCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>รหัสไปรษณีย์</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                <FormField
+                  control={form.control}
+                  name="postalCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>รหัสไปรษณีย์</FormLabel>
+                      <FormControl>
+                        <Input {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="notes"
@@ -341,12 +309,7 @@ export default function Customers() {
                           {customer.phone}
                         </div>
                       )}
-                      {customer.city && customer.province && (
-                        <div className="flex items-center">
-                          <MapPin className="h-4 w-4 mr-1" />
-                          {customer.city}, {customer.province}
-                        </div>
-                      )}
+
                     </div>
                     {customer.notes && (
                       <p className="text-sm text-gray-500 mt-2">{customer.notes}</p>

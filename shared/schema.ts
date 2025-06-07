@@ -108,8 +108,6 @@ export const customers = pgTable("customers", {
   email: text("email"),
   phone: text("phone"),
   address: text("address"),
-  city: text("city"),
-  province: text("province"),
   postalCode: text("postal_code"),
   country: text("country").default("Thailand"),
   contactPerson: text("contact_person"),
