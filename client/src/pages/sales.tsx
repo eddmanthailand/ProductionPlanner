@@ -22,6 +22,7 @@ import { useToast } from "@/hooks/use-toast";
 interface QuotationItem {
   productId?: number;
   productName?: string;
+  description?: string;
   product?: Product;
   quantity: number;
   unitPrice: number;
@@ -49,7 +50,9 @@ interface QuotationFormData {
 
 const quotationFormSchema = insertQuotationSchema.extend({
   items: z.array(z.object({
-    productId: z.number(),
+    productId: z.number().optional(),
+    productName: z.string().min(1, "ต้องระบุชื่อสินค้า"),
+    description: z.string().optional(),
     quantity: z.number().min(1),
     unitPrice: z.number().min(0),
     total: z.number().min(0)
@@ -239,6 +242,7 @@ export default function Sales() {
     append({
       productId: undefined,
       productName: "",
+      description: "",
       quantity: 1,
       unitPrice: 0,
       total: 0
@@ -458,22 +462,16 @@ export default function Sales() {
                     </Button>
                   </div>
 
-                  <div className="border rounded-lg">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t("sales.product")}</TableHead>
-                          <TableHead className="w-24">{t("sales.quantity")}</TableHead>
-                          <TableHead className="w-32">{t("sales.unit_price")}</TableHead>
-                          <TableHead className="w-32">{t("sales.total")}</TableHead>
-                          <TableHead className="w-16"></TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {fields.map((field, index) => (
-                          <TableRow key={field.id}>
-                            <TableCell className="space-y-2">
-                              {/* Product Selection Dropdown */}
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="bg-white border rounded-lg p-4 shadow-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Product Selection */}
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                สินค้า
+                              </label>
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.productId`}
@@ -493,7 +491,7 @@ export default function Sales() {
                                     }} 
                                     value={productField.value?.toString() || "custom"}
                                   >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full">
                                       <SelectValue placeholder="เลือกสินค้าหรือพิมพ์เอง" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -507,30 +505,63 @@ export default function Sales() {
                                   </Select>
                                 )}
                               />
-                              
-                              {/* Custom Product Name Input */}
-                              {!form.watch(`items.${index}.productId`) && (
+                            </div>
+                            
+                            {/* Custom Product Name Input */}
+                            {!form.watch(`items.${index}.productId`) && (
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  ชื่อสินค้า
+                                </label>
                                 <FormField
                                   control={form.control}
                                   name={`items.${index}.productName`}
                                   render={({ field: nameField }) => (
                                     <Input
                                       {...nameField}
-                                      placeholder="ชื่อสินค้า"
-                                      className="text-sm"
+                                      placeholder="ระบุชื่อสินค้า"
+                                      className="w-full"
                                     />
                                   )}
                                 />
-                              )}
-                            </TableCell>
-                            <TableCell>
+                              </div>
+                            )}
+
+                            {/* Product Description */}
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                รายละเอียดสินค้า
+                              </label>
                               <FormField
                                 control={form.control}
-                                name={`items.${index}.quantity`}
+                                name={`items.${index}.description`}
+                                render={({ field: descField }) => (
+                                  <Textarea
+                                    {...descField}
+                                    placeholder="รายละเอียด คุณสมบัติ หรือข้อมูลเพิ่มเติม"
+                                    rows={2}
+                                    className="w-full"
+                                  />
+                                )}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Quantity and Pricing */}
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  จำนวน
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.quantity`}
                                 render={({ field: qtyField }) => (
                                   <Input
                                     type="number"
                                     min="1"
+                                    className="w-full"
                                     {...qtyField}
                                     onChange={(e) => {
                                       const quantity = parseInt(e.target.value) || 0;
@@ -541,55 +572,76 @@ export default function Sales() {
                                   />
                                 )}
                               />
-                            </TableCell>
-                            <TableCell>
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.unitPrice`}
-                                render={({ field: priceField }) => (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    {...priceField}
-                                    onChange={(e) => {
-                                      const unitPrice = parseFloat(e.target.value) || 0;
-                                      priceField.onChange(unitPrice);
-                                      const quantity = form.getValues(`items.${index}.quantity`);
-                                      updateItemTotal(index, quantity, unitPrice);
-                                    }}
-                                  />
-                                )}
-                              />
-                            </TableCell>
-                            <TableCell>
+                              </div>
+
+                              <div>
+                                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                  ราคาต่อหน่วย (บาท)
+                                </label>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.unitPrice`}
+                                  render={({ field: priceField }) => (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="w-full"
+                                      {...priceField}
+                                      onChange={(e) => {
+                                        const unitPrice = parseFloat(e.target.value) || 0;
+                                        priceField.onChange(unitPrice);
+                                        const quantity = form.getValues(`items.${index}.quantity`);
+                                        updateItemTotal(index, quantity, unitPrice);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                ราคารวม (บาท)
+                              </label>
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.total`}
                                 render={({ field: totalField }) => (
                                   <Input
                                     type="number"
+                                    className="w-full bg-gray-50 font-medium"
                                     {...totalField}
                                     readOnly
-                                    className="bg-gray-50"
                                   />
                                 )}
                               />
-                            </TableCell>
-                            <TableCell>
+                            </div>
+
+                            <div className="flex justify-end pt-2">
                               <Button
                                 type="button"
-                                variant="ghost"
+                                variant="outline"
                                 size="sm"
                                 onClick={() => remove(index)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                ลบรายการ
                               </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {fields.length === 0 && (
+                      <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
+                        <Package className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                        <p>ยังไม่มีรายการสินค้า</p>
+                        <p className="text-sm">กดปุ่ม "เพิ่มรายการ" เพื่อเริ่มต้น</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
