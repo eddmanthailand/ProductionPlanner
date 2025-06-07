@@ -1,18 +1,17 @@
-import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Plus, Edit, Trash2, FileText, Calendar, User, Calculator } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Plus, Edit, Trash2, Calculator, User, Calendar, FileText, Package2 as Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useLanguage } from "@/hooks/use-language";
 import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
@@ -78,6 +77,15 @@ export default function Sales() {
     };
   };
 
+  // Generate quotation number in format QT+YYYY+MM+sequence
+  const generateQuotationNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+    return `QT${year}${month}-${sequence}`;
+  };
+
   const form = useForm<QuotationFormData>({
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
@@ -104,98 +112,46 @@ export default function Sales() {
     name: "items"
   });
 
-  // Fetch quotations
-  const { data: quotations = [], isLoading: isLoadingQuotations } = useQuery({
-    queryKey: ['/api/quotations'],
-    enabled: !!tenant?.id,
-  });
-
   // Fetch customers
   const { data: customers = [] } = useQuery({
-    queryKey: ['/api/customers'],
-    enabled: !!tenant?.id,
+    queryKey: ["/api/customers"],
+    enabled: !!tenant
   });
 
   // Fetch products
   const { data: products = [] } = useQuery({
-    queryKey: ['/api/products'],
-    enabled: !!tenant?.id,
+    queryKey: ["/api/products"],
+    enabled: !!tenant
   });
 
-  // Generate sequential quotation number
-  const generateQuotationNumber = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    
-    // Find the highest sequence number for this month
-    const monthPrefix = `QT${year}${month}`;
-    const existingNumbers = (quotations as any[])
-      .filter((q: any) => q.quotationNumber.startsWith(monthPrefix))
-      .map((q: any) => {
-        const parts = q.quotationNumber.split('-');
-        return parts.length > 1 ? parseInt(parts[1]) || 0 : 0;
-      });
-    
-    const nextSequence = existingNumbers.length > 0 ? Math.max(...existingNumbers) + 1 : 1;
-    return `QT${year}${month}-${String(nextSequence).padStart(3, '0')}`;
-  };
+  // Fetch quotations
+  const { data: quotations = [] } = useQuery({
+    queryKey: ["/api/quotations"],
+    enabled: !!tenant
+  });
 
   // Create/Update quotation mutation
   const quotationMutation = useMutation({
-    mutationFn: async (data: QuotationFormData & { tenantId: string }) => {
-      const endpoint = editingQuotation 
-        ? `/api/quotations/${editingQuotation.id}`
-        : '/api/quotations';
+    mutationFn: async (data: QuotationFormData) => {
+      const url = editingQuotation ? `/api/quotations/${editingQuotation.id}` : "/api/quotations";
+      const method = editingQuotation ? "PATCH" : "POST";
       
-      if (editingQuotation) {
-        return fetch(endpoint, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify(data),
-        }).then(res => res.json());
-      } else {
-        return fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify(data),
-        }).then(res => res.json());
-      }
+      return apiRequest(url, method, { ...data, tenantId: tenant?.id });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/quotations'] });
-      toast({
-        title: editingQuotation ? "อัปเดตใบเสนอราคาสำเร็จ" : "สร้างใบเสนอราคาสำเร็จ",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       setIsDialogOpen(false);
-      setEditingQuotation(null);
-      form.reset({
-        quotationNumber: generateQuotationNumber(),
-        customerId: 0,
-        ...getDefaultDates(),
-        subtotal: 0,
-        discountPercent: 0,
-        discountAmount: 0,
-        taxPercent: 7,
-        taxAmount: 0,
-        grandTotal: 0,
-        status: "draft",
-        notes: "",
-        terms: "ชำระเงินภายใน 30 วัน",
-        items: []
+      form.reset();
+      toast({
+        title: editingQuotation ? "แก้ไขใบเสนอราคาสำเร็จ" : "สร้างใบเสนอราคาสำเร็จ",
+        description: editingQuotation ? "บันทึกการแก้ไขเรียบร้อยแล้ว" : "ใบเสนอราคาใหม่ถูกสร้างแล้ว"
       });
     },
     onError: (error: any) => {
       toast({
         title: "เกิดข้อผิดพลาด",
         description: error.message || "ไม่สามารถบันทึกใบเสนอราคาได้",
-        variant: "destructive",
+        variant: "destructive"
       });
     },
   });
@@ -256,12 +212,17 @@ export default function Sales() {
     calculateTotals();
   };
 
+  // Watch for changes and recalculate
+  useEffect(() => {
+    const subscription = form.watch(() => {
+      calculateTotals();
+    });
+    return () => subscription.unsubscribe();
+  }, [form.watch]);
+
   // Handle form submission
   const onSubmit = (data: QuotationFormData) => {
-    quotationMutation.mutate({
-      ...data,
-      tenantId: tenant!.id
-    });
+    quotationMutation.mutate(data);
   };
 
   // Handle edit
@@ -281,12 +242,16 @@ export default function Sales() {
       status: quotation.status,
       notes: quotation.notes || "",
       terms: quotation.terms || "",
-      items: quotation.items?.map((item: any) => ({
+      paymentTerms: quotation.paymentTerms || "",
+      taxInclusive: quotation.taxInclusive || false,
+      items: (quotation.items || []).map((item: any) => ({
         productId: item.productId,
+        productName: item.productName || "",
+        description: item.description || "",
         quantity: item.quantity,
-        unitPrice: parseFloat(item.unitPrice),
-        total: parseFloat(item.total)
-      })) || []
+        unitPrice: parseFloat(item.unitPrice) || 0,
+        total: parseFloat(item.total) || 0
+      }))
     });
     setIsDialogOpen(true);
   };
@@ -320,39 +285,37 @@ export default function Sales() {
       draft: { label: t("sales.status.draft"), variant: "secondary" as const },
       sent: { label: t("sales.status.sent"), variant: "default" as const },
       accepted: { label: t("sales.status.accepted"), variant: "default" as const },
-      rejected: { label: t("sales.status.rejected"), variant: "destructive" as const },
-      expired: { label: t("sales.status.expired"), variant: "outline" as const },
+      rejected: { label: t("sales.status.rejected"), variant: "destructive" as const }
     };
     
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.draft;
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
-  if (isLoadingQuotations) {
-    return <div className="p-6">{t("common.loading")}</div>;
-  }
-
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">{t("sales.title")}</h1>
+        <div>
+          <h1 className="text-3xl font-bold">{t("sales.title")}</h1>
+          <p className="text-gray-600 mt-2">จัดการใบเสนอราคาและการขาย</p>
+        </div>
+        <Button onClick={handleAddNew} size="lg" className="bg-blue-600 hover:bg-blue-700">
+          <Plus className="h-5 w-5 mr-2" />
+          สร้างใบเสนอราคาใหม่
+        </Button>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAddNew}>
-              <Plus className="h-4 w-4 mr-2" />
-              {t("sales.new_quotation")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
-                {editingQuotation ? "แก้ไขใบเสนอราคา" : t("sales.new_quotation")}
+                {editingQuotation ? "แก้ไขใบเสนอราคา" : "สร้างใบเสนอราคาใหม่"}
               </DialogTitle>
             </DialogHeader>
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                {/* Header Information */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Basic Information */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <FormField
                     control={form.control}
                     name="quotationNumber"
@@ -366,7 +329,7 @@ export default function Sales() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="customerId"
@@ -380,7 +343,7 @@ export default function Sales() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {customers.map((customer: Customer) => (
+                            {(customers as any[]).map((customer: Customer) => (
                               <SelectItem key={customer.id} value={customer.id.toString()}>
                                 {customer.name} {customer.companyName && `(${customer.companyName})`}
                               </SelectItem>
@@ -392,6 +355,32 @@ export default function Sales() {
                     )}
                   />
 
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t("sales.status")}</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">แบบร่าง</SelectItem>
+                            <SelectItem value="sent">ส่งแล้ว</SelectItem>
+                            <SelectItem value="accepted">ยอมรับ</SelectItem>
+                            <SelectItem value="rejected">ปฏิเสธ</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="date"
@@ -455,8 +444,8 @@ export default function Sales() {
                 {/* Items Section */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">{t("sales.items")}</h3>
-                    <Button type="button" variant="outline" onClick={addItem}>
+                    <h3 className="text-lg font-semibold">{t("sales.items")}</h3>
+                    <Button type="button" onClick={addItem} size="sm">
                       <Plus className="h-4 w-4 mr-2" />
                       {t("sales.add_item")}
                     </Button>
@@ -557,21 +546,21 @@ export default function Sales() {
                                 <FormField
                                   control={form.control}
                                   name={`items.${index}.quantity`}
-                                render={({ field: qtyField }) => (
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    className="w-full"
-                                    {...qtyField}
-                                    onChange={(e) => {
-                                      const quantity = parseInt(e.target.value) || 0;
-                                      qtyField.onChange(quantity);
-                                      const unitPrice = form.getValues(`items.${index}.unitPrice`);
-                                      updateItemTotal(index, quantity, unitPrice);
-                                    }}
-                                  />
-                                )}
-                              />
+                                  render={({ field: qtyField }) => (
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      className="w-full"
+                                      {...qtyField}
+                                      onChange={(e) => {
+                                        const quantity = parseInt(e.target.value) || 0;
+                                        qtyField.onChange(quantity);
+                                        const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                        updateItemTotal(index, quantity, unitPrice);
+                                      }}
+                                    />
+                                  )}
+                                />
                               </div>
 
                               <div>
@@ -791,8 +780,8 @@ export default function Sales() {
         </CardHeader>
         <CardContent>
           <div className="grid gap-4">
-            {quotations.map((quotation: any) => {
-              const customer = customers.find((c: any) => c.id === quotation.customerId);
+            {(quotations as any[]).map((quotation: any) => {
+              const customer = (customers as any[]).find((c: any) => c.id === quotation.customerId);
               return (
                 <div key={quotation.id} className="border rounded-lg p-4 hover:bg-gray-50">
                   <div className="flex justify-between items-start">
@@ -836,7 +825,7 @@ export default function Sales() {
               );
             })}
             
-            {quotations.length === 0 && (
+            {(quotations as any[]).length === 0 && (
               <div className="text-center py-8 text-gray-500">
                 ยังไม่มีใบเสนอราคา
               </div>
