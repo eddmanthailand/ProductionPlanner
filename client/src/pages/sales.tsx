@@ -633,12 +633,12 @@ export default function Sales() {
                       name="terms"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>{t("sales.terms")}</FormLabel>
+                          <FormLabel>โน้ตภายในบริษัท</FormLabel>
                           <FormControl>
                             <Textarea 
                               {...field} 
                               rows={3}
-                              placeholder="ข้อกำหนดและเงื่อนไขอื่นๆ"
+                              placeholder="บันทึกภายในบริษัท (ลูกค้าจะไม่เห็น)"
                             />
                           </FormControl>
                           <FormMessage />
