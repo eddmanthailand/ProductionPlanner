@@ -124,6 +124,7 @@ export const colors = pgTable("colors", {
   name: text("name").notNull(),
   code: text("code"), // รหัสสี เช่น #FF0000
   description: text("description"),
+  sortOrder: integer("sort_order").default(0),
   isActive: boolean("is_active").default(true),
   tenantId: uuid("tenant_id").references(() => tenants.id),
   createdAt: timestamp("created_at").defaultNow(),

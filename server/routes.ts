@@ -373,6 +373,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/colors/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const colorId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const color = await storage.updateColor(colorId, updateData, req.user.tenantId);
+      if (!color) {
+        return res.status(404).json({ message: "Color not found" });
+      }
+
+      res.json(color);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update color", error });
+    }
+  });
+
   app.delete("/api/colors/:id", authenticateToken, async (req: any, res) => {
     try {
       const colorId = parseInt(req.params.id);
@@ -417,6 +433,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validatedData = insertSizeSchema.partial().parse(req.body);
       
       const size = await storage.updateSize(sizeId, validatedData, req.user.tenantId);
+      if (!size) {
+        return res.status(404).json({ message: "Size not found" });
+      }
+
+      res.json(size);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update size", error });
+    }
+  });
+
+  app.patch("/api/sizes/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const sizeId = parseInt(req.params.id);
+      const updateData = req.body;
+      
+      const size = await storage.updateSize(sizeId, updateData, req.user.tenantId);
       if (!size) {
         return res.status(404).json({ message: "Size not found" });
       }
