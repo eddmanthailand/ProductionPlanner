@@ -9,6 +9,8 @@ import {
   customers,
   colors,
   sizes,
+  quotations,
+  quotationItems,
   type User,
   type InsertUser,
   type Tenant,
@@ -28,7 +30,11 @@ import {
   type Color,
   type InsertColor,
   type Size,
-  type InsertSize
+  type InsertSize,
+  type Quotation,
+  type InsertQuotation,
+  type QuotationItem,
+  type InsertQuotationItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -97,6 +103,13 @@ export interface IStorage {
   createSize(size: InsertSize): Promise<Size>;
   updateSize(id: number, size: Partial<InsertSize>, tenantId: string): Promise<Size | undefined>;
   deleteSize(id: number, tenantId: string): Promise<boolean>;
+
+  // Quotations
+  getQuotations(tenantId: string): Promise<Quotation[]>;
+  getQuotation(id: number, tenantId: string): Promise<Quotation | undefined>;
+  createQuotation(quotation: InsertQuotation): Promise<Quotation>;
+  updateQuotation(id: number, quotation: Partial<InsertQuotation>, tenantId: string): Promise<Quotation | undefined>;
+  deleteQuotation(id: number, tenantId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {

@@ -9,6 +9,7 @@ import MainLayout from "@/components/layout/main-layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+import Sales from "@/pages/sales";
 import Production from "@/pages/production";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
@@ -80,6 +81,12 @@ function Router() {
       <Route path="/">
         <ProtectedRoute>
           <Dashboard />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales">
+        <ProtectedRoute>
+          <Sales />
         </ProtectedRoute>
       </Route>
 
