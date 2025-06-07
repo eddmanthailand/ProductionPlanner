@@ -89,7 +89,7 @@ export default function Customers() {
       country: customer.country || "Thailand",
       contactPerson: customer.contactPerson || "",
       notes: customer.notes || "",
-      isActive: customer.isActive
+      isActive: customer.isActive ?? true
     });
     setIsDialogOpen(true);
   };

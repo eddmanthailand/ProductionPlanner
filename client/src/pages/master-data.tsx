@@ -135,7 +135,7 @@ export default function MasterData() {
       name: color.name,
       code: color.code || "",
       description: color.description || "",
-      isActive: color.isActive
+      isActive: color.isActive ?? true
     });
     setIsColorDialogOpen(true);
   };
@@ -147,7 +147,7 @@ export default function MasterData() {
       category: size.category || "",
       sortOrder: size.sortOrder || 0,
       description: size.description || "",
-      isActive: size.isActive
+      isActive: size.isActive ?? true
     });
     setIsSizeDialogOpen(true);
   };

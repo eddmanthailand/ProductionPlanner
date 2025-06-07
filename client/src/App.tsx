@@ -101,6 +101,18 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/customers">
+        <ProtectedRoute>
+          <Customers />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/master-data">
+        <ProtectedRoute>
+          <MasterData />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/reports">
         <ProtectedRoute>
           <Reports />
