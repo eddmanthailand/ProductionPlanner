@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -277,6 +277,168 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(usersWithoutPasswords);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Customers routes
+  app.get("/api/customers", authenticateToken, async (req: any, res) => {
+    try {
+      const customers = await storage.getCustomers(req.user.tenantId);
+      res.json(customers);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch customers" });
+    }
+  });
+
+  app.post("/api/customers", authenticateToken, async (req: any, res) => {
+    try {
+      const validatedData = insertCustomerSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId
+      });
+      const customer = await storage.createCustomer(validatedData);
+      res.status(201).json(customer);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create customer", error });
+    }
+  });
+
+  app.put("/api/customers/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      const validatedData = insertCustomerSchema.partial().parse(req.body);
+      
+      const customer = await storage.updateCustomer(customerId, validatedData, req.user.tenantId);
+      if (!customer) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      res.json(customer);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update customer", error });
+    }
+  });
+
+  app.delete("/api/customers/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const customerId = parseInt(req.params.id);
+      const deleted = await storage.deleteCustomer(customerId, req.user.tenantId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Customer not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete customer", error });
+    }
+  });
+
+  // Colors routes
+  app.get("/api/colors", authenticateToken, async (req: any, res) => {
+    try {
+      const colors = await storage.getColors(req.user.tenantId);
+      res.json(colors);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch colors" });
+    }
+  });
+
+  app.post("/api/colors", authenticateToken, async (req: any, res) => {
+    try {
+      const validatedData = insertColorSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId
+      });
+      const color = await storage.createColor(validatedData);
+      res.status(201).json(color);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create color", error });
+    }
+  });
+
+  app.put("/api/colors/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const colorId = parseInt(req.params.id);
+      const validatedData = insertColorSchema.partial().parse(req.body);
+      
+      const color = await storage.updateColor(colorId, validatedData, req.user.tenantId);
+      if (!color) {
+        return res.status(404).json({ message: "Color not found" });
+      }
+
+      res.json(color);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update color", error });
+    }
+  });
+
+  app.delete("/api/colors/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const colorId = parseInt(req.params.id);
+      const deleted = await storage.deleteColor(colorId, req.user.tenantId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Color not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete color", error });
+    }
+  });
+
+  // Sizes routes
+  app.get("/api/sizes", authenticateToken, async (req: any, res) => {
+    try {
+      const sizes = await storage.getSizes(req.user.tenantId);
+      res.json(sizes);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch sizes" });
+    }
+  });
+
+  app.post("/api/sizes", authenticateToken, async (req: any, res) => {
+    try {
+      const validatedData = insertSizeSchema.parse({
+        ...req.body,
+        tenantId: req.user.tenantId
+      });
+      const size = await storage.createSize(validatedData);
+      res.status(201).json(size);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to create size", error });
+    }
+  });
+
+  app.put("/api/sizes/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const sizeId = parseInt(req.params.id);
+      const validatedData = insertSizeSchema.partial().parse(req.body);
+      
+      const size = await storage.updateSize(sizeId, validatedData, req.user.tenantId);
+      if (!size) {
+        return res.status(404).json({ message: "Size not found" });
+      }
+
+      res.json(size);
+    } catch (error) {
+      res.status(400).json({ message: "Failed to update size", error });
+    }
+  });
+
+  app.delete("/api/sizes/:id", authenticateToken, async (req: any, res) => {
+    try {
+      const sizeId = parseInt(req.params.id);
+      const deleted = await storage.deleteSize(sizeId, req.user.tenantId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Size not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      res.status(400).json({ message: "Failed to delete size", error });
     }
   });
 

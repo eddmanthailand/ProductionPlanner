@@ -22,7 +22,13 @@ import {
   type Transaction,
   type InsertTransaction,
   type Activity,
-  type InsertActivity
+  type InsertActivity,
+  type Customer,
+  type InsertCustomer,
+  type Color,
+  type InsertColor,
+  type Size,
+  type InsertSize
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql } from "drizzle-orm";
@@ -70,6 +76,27 @@ export interface IStorage {
 
   // Dashboard metrics
   getDashboardMetrics(tenantId: string): Promise<any>;
+
+  // Customers
+  getCustomers(tenantId: string): Promise<Customer[]>;
+  getCustomer(id: number, tenantId: string): Promise<Customer | undefined>;
+  createCustomer(customer: InsertCustomer): Promise<Customer>;
+  updateCustomer(id: number, customer: Partial<InsertCustomer>, tenantId: string): Promise<Customer | undefined>;
+  deleteCustomer(id: number, tenantId: string): Promise<boolean>;
+
+  // Colors
+  getColors(tenantId: string): Promise<Color[]>;
+  getColor(id: number, tenantId: string): Promise<Color | undefined>;
+  createColor(color: InsertColor): Promise<Color>;
+  updateColor(id: number, color: Partial<InsertColor>, tenantId: string): Promise<Color | undefined>;
+  deleteColor(id: number, tenantId: string): Promise<boolean>;
+
+  // Sizes
+  getSizes(tenantId: string): Promise<Size[]>;
+  getSize(id: number, tenantId: string): Promise<Size | undefined>;
+  createSize(size: InsertSize): Promise<Size>;
+  updateSize(id: number, size: Partial<InsertSize>, tenantId: string): Promise<Size | undefined>;
+  deleteSize(id: number, tenantId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -279,6 +306,102 @@ export class DatabaseStorage implements IStorage {
         return sum + (item.quantity * 100); // Approximate value
       }, 0)
     };
+  }
+
+  // Customers methods
+  async getCustomers(tenantId: string): Promise<Customer[]> {
+    return await db.select().from(customers).where(eq(customers.tenantId, tenantId)).orderBy(customers.name);
+  }
+
+  async getCustomer(id: number, tenantId: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(
+      and(eq(customers.id, id), eq(customers.tenantId, tenantId))
+    );
+    return customer || undefined;
+  }
+
+  async createCustomer(insertCustomer: InsertCustomer): Promise<Customer> {
+    const [customer] = await db.insert(customers).values(insertCustomer).returning();
+    return customer;
+  }
+
+  async updateCustomer(id: number, updateData: Partial<InsertCustomer>, tenantId: string): Promise<Customer | undefined> {
+    const [customer] = await db.update(customers)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(customers.id, id), eq(customers.tenantId, tenantId)))
+      .returning();
+    return customer || undefined;
+  }
+
+  async deleteCustomer(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.delete(customers).where(
+      and(eq(customers.id, id), eq(customers.tenantId, tenantId))
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Colors methods
+  async getColors(tenantId: string): Promise<Color[]> {
+    return await db.select().from(colors).where(eq(colors.tenantId, tenantId)).orderBy(colors.name);
+  }
+
+  async getColor(id: number, tenantId: string): Promise<Color | undefined> {
+    const [color] = await db.select().from(colors).where(
+      and(eq(colors.id, id), eq(colors.tenantId, tenantId))
+    );
+    return color || undefined;
+  }
+
+  async createColor(insertColor: InsertColor): Promise<Color> {
+    const [color] = await db.insert(colors).values(insertColor).returning();
+    return color;
+  }
+
+  async updateColor(id: number, updateData: Partial<InsertColor>, tenantId: string): Promise<Color | undefined> {
+    const [color] = await db.update(colors)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(colors.id, id), eq(colors.tenantId, tenantId)))
+      .returning();
+    return color || undefined;
+  }
+
+  async deleteColor(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.delete(colors).where(
+      and(eq(colors.id, id), eq(colors.tenantId, tenantId))
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Sizes methods
+  async getSizes(tenantId: string): Promise<Size[]> {
+    return await db.select().from(sizes).where(eq(sizes.tenantId, tenantId)).orderBy(sizes.sortOrder, sizes.name);
+  }
+
+  async getSize(id: number, tenantId: string): Promise<Size | undefined> {
+    const [size] = await db.select().from(sizes).where(
+      and(eq(sizes.id, id), eq(sizes.tenantId, tenantId))
+    );
+    return size || undefined;
+  }
+
+  async createSize(insertSize: InsertSize): Promise<Size> {
+    const [size] = await db.insert(sizes).values(insertSize).returning();
+    return size;
+  }
+
+  async updateSize(id: number, updateData: Partial<InsertSize>, tenantId: string): Promise<Size | undefined> {
+    const [size] = await db.update(sizes)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(sizes.id, id), eq(sizes.tenantId, tenantId)))
+      .returning();
+    return size || undefined;
+  }
+
+  async deleteSize(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.delete(sizes).where(
+      and(eq(sizes.id, id), eq(sizes.tenantId, tenantId))
+    );
+    return (result.rowCount ?? 0) > 0;
   }
 }
 
