@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
@@ -216,6 +216,12 @@ export default function MasterData() {
                   <DialogTitle>
                     {editingColor ? "แก้ไขข้อมูลสี" : "เพิ่มสีใหม่"}
                   </DialogTitle>
+                  <DialogDescription>
+                    {editingColor 
+                      ? "แก้ไขข้อมูลสีที่มีอยู่ในระบบ รวมถึงชื่อสี รหัสสี และคำอธิบาย" 
+                      : "เพิ่มสีใหม่ลงในระบบ กรุณาใส่ชื่อสีและรหัสสี (ถ้ามี) พร้อมคำอธิบายเพิ่มเติม"
+                    }
+                  </DialogDescription>
                 </DialogHeader>
                 <Form {...colorForm}>
                   <form onSubmit={colorForm.handleSubmit(handleColorSubmit)} className="space-y-4">
@@ -237,9 +243,23 @@ export default function MasterData() {
                       name="code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>รหัสสี (เช่น #FF0000)</FormLabel>
+                          <FormLabel>ชื่อสีภาษาอังกฤษ (เช่น Red, Blue, Green)</FormLabel>
                           <FormControl>
-                            <Input {...field} type="color" />
+                            <Input 
+                              {...field} 
+                              placeholder="ใส่ชื่อสีภาษาอังกฤษ"
+                              onChange={(e) => {
+                                // แปลงเป็นภาษาอังกฤษโดยอัตโนมัติ
+                                const englishValue = e.target.value
+                                  .toLowerCase()
+                                  .replace(/[^a-z\s]/g, '') // เอาเฉพาะตัวอักษรและช่องว่าง
+                                  .replace(/\s+/g, ' ') // ลดช่องว่างซ้ำ
+                                  .split(' ')
+                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                                  .join(' ');
+                                field.onChange(englishValue);
+                              }}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -279,12 +299,6 @@ export default function MasterData() {
                   <div key={color.id} className="border rounded-lg p-4 hover:bg-gray-50">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex items-center space-x-2">
-                        {color.code && (
-                          <div 
-                            className="w-6 h-6 rounded border border-gray-300"
-                            style={{ backgroundColor: color.code }}
-                          />
-                        )}
                         <h3 className="font-semibold">{color.name}</h3>
                       </div>
                       <Badge variant={color.isActive ? "default" : "secondary"}>
@@ -292,7 +306,7 @@ export default function MasterData() {
                       </Badge>
                     </div>
                     {color.code && (
-                      <p className="text-sm text-gray-600 mb-2">{color.code}</p>
+                      <p className="text-sm text-gray-600 mb-2 font-medium">ชื่อภาษาอังกฤษ: {color.code}</p>
                     )}
                     {color.description && (
                       <p className="text-sm text-gray-500 mb-3">{color.description}</p>
@@ -337,6 +351,12 @@ export default function MasterData() {
                   <DialogTitle>
                     {editingSize ? "แก้ไขข้อมูลไซส์" : "เพิ่มไซส์ใหม่"}
                   </DialogTitle>
+                  <DialogDescription>
+                    {editingSize 
+                      ? "แก้ไขข้อมูลไซส์ที่มีอยู่ในระบบ รวมถึงชื่อไซส์ หมวดหมู่ และลำดับการแสดง" 
+                      : "เพิ่มไซส์ใหม่ลงในระบบ กรุณาระบุชื่อไซส์ หมวดหมู่ และลำดับการแสดงผล"
+                    }
+                  </DialogDescription>
                 </DialogHeader>
                 <Form {...sizeForm}>
                   <form onSubmit={sizeForm.handleSubmit(handleSizeSubmit)} className="space-y-4">
