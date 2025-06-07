@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +23,7 @@ interface InventoryItem {
 }
 
 export default function Inventory() {
+  const { t } = useLanguage();
   const { data: inventory, isLoading: inventoryLoading } = useQuery<InventoryItem[]>({
     queryKey: ["/api/inventory"]
   });

@@ -1,8 +1,10 @@
+import { useLanguage } from "@/hooks/use-language";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { FileText, Download, Calendar, TrendingUp } from "lucide-react";
 
 export default function Reports() {
+  const { t } = useLanguage();
   const reportTypes = [
     {
       title: "รายงานการผลิต",

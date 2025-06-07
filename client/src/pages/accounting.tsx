@@ -17,6 +17,7 @@ interface Transaction {
 }
 
 export default function Accounting() {
+  const { t } = useLanguage();
   const { data: transactions, isLoading } = useQuery<Transaction[]>({
     queryKey: ["/api/transactions"]
   });
