@@ -290,8 +290,9 @@ export default function Sales() {
   // Handle new quotation
   const handleAddNew = () => {
     setEditingQuotation(null);
+    const newQuotationNumber = generateQuotationNumber();
     form.reset({
-      quotationNumber: generateQuotationNumber(),
+      quotationNumber: newQuotationNumber,
       customerId: 0,
       ...getDefaultDates(),
       subtotal: 0,
@@ -471,20 +472,33 @@ export default function Sales() {
                       <TableBody>
                         {fields.map((field, index) => (
                           <TableRow key={field.id}>
-                            <TableCell>
+                            <TableCell className="space-y-2">
+                              {/* Product Selection Dropdown */}
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.productId`}
                                 render={({ field: productField }) => (
                                   <Select 
-                                    onValueChange={(value) => productField.onChange(parseInt(value))} 
-                                    value={productField.value?.toString()}
+                                    onValueChange={(value) => {
+                                      if (value === "custom") {
+                                        productField.onChange(undefined);
+                                        form.setValue(`items.${index}.productName`, "");
+                                      } else {
+                                        const selectedProduct = (products as any[]).find(p => p.id.toString() === value);
+                                        productField.onChange(parseInt(value));
+                                        if (selectedProduct) {
+                                          form.setValue(`items.${index}.productName`, selectedProduct.name);
+                                        }
+                                      }
+                                    }} 
+                                    value={productField.value?.toString() || "custom"}
                                   >
                                     <SelectTrigger>
-                                      <SelectValue placeholder={t("sales.select_product")} />
+                                      <SelectValue placeholder="เลือกสินค้าหรือพิมพ์เอง" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {products.map((product: Product) => (
+                                      <SelectItem value="custom">พิมพ์ชื่อสินค้าเอง</SelectItem>
+                                      {(products as any[]).map((product: Product) => (
                                         <SelectItem key={product.id} value={product.id.toString()}>
                                           {product.name} ({product.sku})
                                         </SelectItem>
@@ -493,6 +507,21 @@ export default function Sales() {
                                   </Select>
                                 )}
                               />
+                              
+                              {/* Custom Product Name Input */}
+                              {!form.watch(`items.${index}.productId`) && (
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.productName`}
+                                  render={({ field: nameField }) => (
+                                    <Input
+                                      {...nameField}
+                                      placeholder="ชื่อสินค้า"
+                                      className="text-sm"
+                                    />
+                                  )}
+                                />
+                              )}
                             </TableCell>
                             <TableCell>
                               <FormField
@@ -583,12 +612,34 @@ export default function Sales() {
 
                     <FormField
                       control={form.control}
+                      name="paymentTerms"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>เงื่อนไขการชำระเงิน</FormLabel>
+                          <FormControl>
+                            <Textarea 
+                              {...field} 
+                              rows={2}
+                              placeholder="เช่น ชำระเงินภายใน 30 วัน, โอนเงินผ่านธนาคาร, เงินสดเท่านั้น"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
                       name="terms"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>{t("sales.terms")}</FormLabel>
                           <FormControl>
-                            <Textarea {...field} rows={3} />
+                            <Textarea 
+                              {...field} 
+                              rows={3}
+                              placeholder="ข้อกำหนดและเงื่อนไขอื่นๆ"
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
