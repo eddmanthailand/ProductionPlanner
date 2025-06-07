@@ -184,7 +184,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.update(products)
       .set({ isActive: false, updatedAt: new Date() })
       .where(and(eq(products.id, id), eq(products.tenantId, tenantId)));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 
   async getProductionOrders(tenantId: string): Promise<ProductionOrder[]> {

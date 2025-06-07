@@ -60,15 +60,13 @@ export default function Sidebar() {
             
             return (
               <li key={item.name}>
-                <Link href={item.href}>
-                  <a className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
-                    isActive 
-                      ? "bg-primary text-white" 
-                      : "text-gray-600 hover:bg-gray-100"
-                  }`}>
-                    <Icon className="w-5 h-5" />
-                    <span className="font-medium">{item.name}</span>
-                  </a>
+                <Link href={item.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}>
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.name}</span>
                 </Link>
               </li>
             );
