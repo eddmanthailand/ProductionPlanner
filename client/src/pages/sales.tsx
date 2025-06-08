@@ -18,6 +18,7 @@ import type { Customer, Product, Quotation } from "@shared/schema";
 // Schema for validation with proper transformations
 const quotationFormSchema = z.object({
   customerId: z.string().min(1, "กรุณาเลือกลูกค้า"),
+  projectName: z.string().default(""),
   date: z.string().min(1, "กรุณาใส่วันที่"),
   validUntil: z.string().min(1, "กรุณาใส่วันหมดอายุ"),
   priceIncludesVat: z.boolean().default(false),
@@ -94,6 +95,7 @@ export default function Sales() {
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
       customerId: "",
+      projectName: "",
       date: new Date().toISOString().split('T')[0],
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       priceIncludesVat: false,

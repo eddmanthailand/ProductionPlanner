@@ -149,6 +149,7 @@ export const quotations = pgTable("quotations", {
   tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
   quotationNumber: varchar("quotation_number", { length: 50 }).notNull(),
   customerId: integer("customer_id").notNull().references(() => customers.id),
+  projectName: varchar("project_name", { length: 200 }),
   date: date("date").notNull(),
   validUntil: date("valid_until").notNull(),
   subtotal: decimal("subtotal", { precision: 12, scale: 2 }).notNull(),
