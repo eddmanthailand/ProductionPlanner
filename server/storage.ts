@@ -15,6 +15,9 @@ import {
   teams,
   employees,
   workSteps,
+  productionCapacity,
+  workQueue,
+  holidays,
   type User,
   type InsertUser,
   type Tenant,
@@ -46,7 +49,13 @@ import {
   type Employee,
   type InsertEmployee,
   type WorkStep,
-  type InsertWorkStep
+  type InsertWorkStep,
+  type ProductionCapacity,
+  type InsertProductionCapacity,
+  type WorkQueue,
+  type InsertWorkQueue,
+  type Holiday,
+  type InsertHoliday
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -155,6 +164,27 @@ export interface IStorage {
   createEmployee(employee: InsertEmployee): Promise<Employee>;
   updateEmployee(id: string, employee: Partial<InsertEmployee>, tenantId: string): Promise<Employee | undefined>;
   deleteEmployee(id: string, tenantId: string): Promise<boolean>;
+
+  // Production Capacity
+  getProductionCapacities(tenantId: string): Promise<ProductionCapacity[]>;
+  getProductionCapacityByTeam(teamId: string, tenantId: string): Promise<ProductionCapacity | undefined>;
+  createProductionCapacity(capacity: InsertProductionCapacity): Promise<ProductionCapacity>;
+  updateProductionCapacity(id: string, capacity: Partial<InsertProductionCapacity>, tenantId: string): Promise<ProductionCapacity | undefined>;
+  deleteProductionCapacity(id: string, tenantId: string): Promise<boolean>;
+
+  // Work Queue
+  getWorkQueues(tenantId: string): Promise<WorkQueue[]>;
+  getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<WorkQueue[]>;
+  getWorkQueue(id: string, tenantId: string): Promise<WorkQueue | undefined>;
+  createWorkQueue(workQueue: InsertWorkQueue): Promise<WorkQueue>;
+  updateWorkQueue(id: string, workQueue: Partial<InsertWorkQueue>, tenantId: string): Promise<WorkQueue | undefined>;
+  deleteWorkQueue(id: string, tenantId: string): Promise<boolean>;
+
+  // Holidays
+  getHolidays(tenantId: string): Promise<Holiday[]>;
+  getHolidaysByDateRange(tenantId: string, startDate: Date, endDate: Date): Promise<Holiday[]>;
+  createHoliday(holiday: InsertHoliday): Promise<Holiday>;
+  deleteHoliday(id: string, tenantId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -799,6 +829,147 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(employees)
       .where(and(eq(employees.id, id), eq(employees.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Production Capacity methods
+  async getProductionCapacities(tenantId: string): Promise<ProductionCapacity[]> {
+    return await db
+      .select()
+      .from(productionCapacity)
+      .where(eq(productionCapacity.tenantId, tenantId))
+      .orderBy(asc(productionCapacity.createdAt));
+  }
+
+  async getProductionCapacityByTeam(teamId: string, tenantId: string): Promise<ProductionCapacity | undefined> {
+    const [result] = await db
+      .select()
+      .from(productionCapacity)
+      .where(and(eq(productionCapacity.teamId, teamId), eq(productionCapacity.tenantId, tenantId)));
+    return result || undefined;
+  }
+
+  async createProductionCapacity(insertCapacity: InsertProductionCapacity): Promise<ProductionCapacity> {
+    const [capacity] = await db
+      .insert(productionCapacity)
+      .values({
+        ...insertCapacity,
+        id: nanoid()
+      })
+      .returning();
+    return capacity;
+  }
+
+  async updateProductionCapacity(id: string, updateData: Partial<InsertProductionCapacity>, tenantId: string): Promise<ProductionCapacity | undefined> {
+    const [result] = await db
+      .update(productionCapacity)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(eq(productionCapacity.id, id), eq(productionCapacity.tenantId, tenantId)))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteProductionCapacity(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(productionCapacity)
+      .where(and(eq(productionCapacity.id, id), eq(productionCapacity.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Work Queue methods
+  async getWorkQueues(tenantId: string): Promise<WorkQueue[]> {
+    return await db
+      .select()
+      .from(workQueue)
+      .where(eq(workQueue.tenantId, tenantId))
+      .orderBy(asc(workQueue.priority), asc(workQueue.createdAt));
+  }
+
+  async getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<WorkQueue[]> {
+    return await db
+      .select()
+      .from(workQueue)
+      .where(and(eq(workQueue.teamId, teamId), eq(workQueue.tenantId, tenantId)))
+      .orderBy(asc(workQueue.priority), asc(workQueue.createdAt));
+  }
+
+  async getWorkQueue(id: string, tenantId: string): Promise<WorkQueue | undefined> {
+    const [result] = await db
+      .select()
+      .from(workQueue)
+      .where(and(eq(workQueue.id, id), eq(workQueue.tenantId, tenantId)));
+    return result || undefined;
+  }
+
+  async createWorkQueue(insertWorkQueue: InsertWorkQueue): Promise<WorkQueue> {
+    const [queue] = await db
+      .insert(workQueue)
+      .values({
+        ...insertWorkQueue,
+        id: nanoid()
+      })
+      .returning();
+    return queue;
+  }
+
+  async updateWorkQueue(id: string, updateData: Partial<InsertWorkQueue>, tenantId: string): Promise<WorkQueue | undefined> {
+    const [result] = await db
+      .update(workQueue)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(eq(workQueue.id, id), eq(workQueue.tenantId, tenantId)))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteWorkQueue(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(workQueue)
+      .where(and(eq(workQueue.id, id), eq(workQueue.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Holidays methods
+  async getHolidays(tenantId: string): Promise<Holiday[]> {
+    return await db
+      .select()
+      .from(holidays)
+      .where(eq(holidays.tenantId, tenantId))
+      .orderBy(asc(holidays.date));
+  }
+
+  async getHolidaysByDateRange(tenantId: string, startDate: Date, endDate: Date): Promise<Holiday[]> {
+    return await db
+      .select()
+      .from(holidays)
+      .where(and(
+        eq(holidays.tenantId, tenantId),
+        sql`${holidays.date} >= ${startDate.toISOString().split('T')[0]}`,
+        sql`${holidays.date} <= ${endDate.toISOString().split('T')[0]}`
+      ))
+      .orderBy(asc(holidays.date));
+  }
+
+  async createHoliday(insertHoliday: InsertHoliday): Promise<Holiday> {
+    const [holiday] = await db
+      .insert(holidays)
+      .values({
+        ...insertHoliday,
+        id: nanoid()
+      })
+      .returning();
+    return holiday;
+  }
+
+  async deleteHoliday(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(holidays)
+      .where(and(eq(holidays.id, id), eq(holidays.tenantId, tenantId)));
     return (result.rowCount ?? 0) > 0;
   }
 }

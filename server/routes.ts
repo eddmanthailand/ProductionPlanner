@@ -1263,6 +1263,193 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Work Queue routes
+  app.get("/api/work-queues", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const workQueues = await storage.getWorkQueues(tenantId);
+      res.json(workQueues);
+    } catch (error) {
+      console.error("Get work queues error:", error);
+      res.status(500).json({ message: "Failed to fetch work queues" });
+    }
+  });
+
+  app.get("/api/work-queues/team/:teamId", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { teamId } = req.params;
+      
+      const workQueues = await storage.getWorkQueuesByTeam(teamId, tenantId);
+      res.json(workQueues);
+    } catch (error) {
+      console.error("Get work queues by team error:", error);
+      res.status(500).json({ message: "Failed to fetch work queues" });
+    }
+  });
+
+  app.post("/api/work-queues", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const validatedData = insertWorkQueueSchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const workQueue = await storage.createWorkQueue(validatedData);
+      res.status(201).json(workQueue);
+    } catch (error) {
+      console.error("Create work queue error:", error);
+      res.status(500).json({ message: "Failed to create work queue" });
+    }
+  });
+
+  app.put("/api/work-queues/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const validatedData = insertWorkQueueSchema.partial().parse(req.body);
+      
+      const workQueue = await storage.updateWorkQueue(id, validatedData, tenantId);
+      if (!workQueue) {
+        return res.status(404).json({ message: "Work queue not found" });
+      }
+      
+      res.json(workQueue);
+    } catch (error) {
+      console.error("Update work queue error:", error);
+      res.status(500).json({ message: "Failed to update work queue" });
+    }
+  });
+
+  app.delete("/api/work-queues/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteWorkQueue(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Work queue not found" });
+      }
+      
+      res.json({ message: "Work queue deleted successfully" });
+    } catch (error) {
+      console.error("Delete work queue error:", error);
+      res.status(500).json({ message: "Failed to delete work queue" });
+    }
+  });
+
+  // Production Capacity routes
+  app.get("/api/production-capacity", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const capacities = await storage.getProductionCapacities(tenantId);
+      res.json(capacities);
+    } catch (error) {
+      console.error("Get production capacities error:", error);
+      res.status(500).json({ message: "Failed to fetch production capacities" });
+    }
+  });
+
+  app.get("/api/production-capacity/team/:teamId", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { teamId } = req.params;
+      
+      const capacity = await storage.getProductionCapacityByTeam(teamId, tenantId);
+      res.json(capacity);
+    } catch (error) {
+      console.error("Get production capacity by team error:", error);
+      res.status(500).json({ message: "Failed to fetch production capacity" });
+    }
+  });
+
+  app.post("/api/production-capacity", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const validatedData = insertProductionCapacitySchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const capacity = await storage.createProductionCapacity(validatedData);
+      res.status(201).json(capacity);
+    } catch (error) {
+      console.error("Create production capacity error:", error);
+      res.status(500).json({ message: "Failed to create production capacity" });
+    }
+  });
+
+  // Holidays routes
+  app.get("/api/holidays", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const holidays = await storage.getHolidays(tenantId);
+      res.json(holidays);
+    } catch (error) {
+      console.error("Get holidays error:", error);
+      res.status(500).json({ message: "Failed to fetch holidays" });
+    }
+  });
+
+  app.post("/api/holidays", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const validatedData = insertHolidaySchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const holiday = await storage.createHoliday(validatedData);
+      res.status(201).json(holiday);
+    } catch (error) {
+      console.error("Create holiday error:", error);
+      res.status(500).json({ message: "Failed to create holiday" });
+    }
+  });
+
+  app.delete("/api/holidays/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteHoliday(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Holiday not found" });
+      }
+      
+      res.json({ message: "Holiday deleted successfully" });
+    } catch (error) {
+      console.error("Delete holiday error:", error);
+      res.status(500).json({ message: "Failed to delete holiday" });
+    }
+  });
+
   return httpServer;
 }
 
