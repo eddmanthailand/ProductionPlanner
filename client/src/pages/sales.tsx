@@ -88,12 +88,37 @@ export default function Sales() {
     queryKey: ["/api/quotations"],
   });
 
-  // Fetch customers from database API
-  const { data: customers = [], isLoading: customersLoading, error: customersError } = useQuery({
-    queryKey: ["/api/customers"],
-    retry: false,
-    refetchOnWindowFocus: false,
-  });
+  // Fetch customers using direct fetch approach
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [customersLoading, setCustomersLoading] = useState(true);
+  const [customersError, setCustomersError] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchCustomers = async () => {
+      try {
+        console.log('Direct fetch: Getting customers...');
+        const response = await fetch('/api/customers');
+        console.log('Direct fetch: Response status:', response.status);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('Direct fetch: Received data:', data.length, 'customers');
+        setCustomers(data);
+        setCustomersError(null);
+      } catch (error) {
+        console.error('Direct fetch: Error:', error);
+        setCustomersError(error);
+        setCustomers([]);
+      } finally {
+        setCustomersLoading(false);
+      }
+    };
+
+    fetchCustomers();
+  }, []);
 
   // Debug customers data
   console.log('Customers data:', customers);
