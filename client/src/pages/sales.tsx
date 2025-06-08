@@ -91,6 +91,19 @@ export default function Sales() {
   // Fetch customers
   const { data: customers = [], isLoading: customersLoading, error: customersError } = useQuery({
     queryKey: ["/api/customers"],
+    queryFn: async () => {
+      console.log('Direct fetch for customers...');
+      const response = await fetch('/api/customers');
+      console.log('Response status:', response.status);
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Customer data received:', data);
+      return data;
+    },
+    retry: false,
+    refetchOnWindowFocus: false,
   });
 
   // Debug customers data
