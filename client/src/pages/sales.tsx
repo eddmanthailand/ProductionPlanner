@@ -558,7 +558,7 @@ export default function Sales() {
                                               form.setValue(`items.${index}.productName`, product.name);
                                               form.setValue(`items.${index}.description`, product.description || '');
                                               form.setValue(`items.${index}.unit`, product.unit);
-                                              form.setValue(`items.${index}.unitPrice`, product.price || 0);
+                                              form.setValue(`items.${index}.unitPrice`, typeof product.price === 'number' ? product.price : 0);
                                               
                                               // Close dropdown
                                               setProductDropdownStates(prev => ({
@@ -568,7 +568,7 @@ export default function Sales() {
                                               
                                               // Calculate total
                                               const quantity = parseFloat(form.getValues(`items.${index}.quantity`)) || 1;
-                                              const unitPrice = product.price || 0;
+                                              const unitPrice = typeof product.price === 'number' ? product.price : 0;
                                               const discount = parseFloat(form.getValues(`items.${index}.discount`)) || 0;
                                               updateItemTotal(index, quantity, unitPrice, discount);
                                             }}
