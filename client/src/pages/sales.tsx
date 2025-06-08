@@ -464,6 +464,18 @@ export default function Sales() {
                                       {...field}
                                       placeholder="ชื่อสินค้า"
                                       className="w-full border-0 focus:ring-0 p-2 text-sm"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Tab' && !e.shiftKey) {
+                                          // Tab ปกติ - ไปช่องถัดไป
+                                        } else if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          // Enter - ไปช่องรายละเอียด
+                                          const descInput = document.querySelector(`input[name="items.${index}.description"]`) as HTMLInputElement;
+                                          if (descInput) {
+                                            descInput.focus();
+                                          }
+                                        }
+                                      }}
                                     />
                                   )}
                                 />
@@ -477,8 +489,22 @@ export default function Sales() {
                                   render={({ field }) => (
                                     <Input 
                                       {...field}
-                                      placeholder="รายละเอียด"
+                                      placeholder="รายละเอียด (กด Enter เพื่อเพิ่มแถวใหม่)"
                                       className="w-full border-0 focus:ring-0 p-2 text-sm"
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          addItem();
+                                          // Focus ใส่ชื่อสินค้าของแถวใหม่
+                                          setTimeout(() => {
+                                            const newRowIndex = form.getValues('items').length - 1;
+                                            const newInput = document.querySelector(`input[name="items.${newRowIndex}.productName"]`) as HTMLInputElement;
+                                            if (newInput) {
+                                              newInput.focus();
+                                            }
+                                          }, 100);
+                                        }
+                                      }}
                                     />
                                   )}
                                 />
@@ -501,6 +527,15 @@ export default function Sales() {
                                         const unitPrice = form.getValues(`items.${index}.unitPrice`);
                                         const discount = form.getValues(`items.${index}.discount`);
                                         updateItemTotal(index, quantity, unitPrice, discount);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          const priceInput = document.querySelector(`input[name="items.${index}.unitPrice"]`) as HTMLInputElement;
+                                          if (priceInput) {
+                                            priceInput.focus();
+                                          }
+                                        }
                                       }}
                                     />
                                   )}
@@ -532,6 +567,15 @@ export default function Sales() {
                                         const discount = form.getValues(`items.${index}.discount`);
                                         updateItemTotal(index, quantity, unitPrice, discount);
                                       }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          const discountInput = document.querySelector(`input[name="items.${index}.discount"]`) as HTMLInputElement;
+                                          if (discountInput) {
+                                            discountInput.focus();
+                                          }
+                                        }
+                                      }}
                                     />
                                   )}
                                 />
@@ -556,6 +600,29 @@ export default function Sales() {
                                         const quantity = form.getValues(`items.${index}.quantity`);
                                         const unitPrice = form.getValues(`items.${index}.unitPrice`);
                                         updateItemTotal(index, quantity, unitPrice, discount);
+                                      }}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          // เมื่อกด Enter ในช่องส่วนลดแถวสุดท้าย จะเพิ่มแถวใหม่
+                                          const isLastRow = index === form.getValues('items').length - 1;
+                                          if (isLastRow) {
+                                            addItem();
+                                            setTimeout(() => {
+                                              const newRowIndex = form.getValues('items').length - 1;
+                                              const newInput = document.querySelector(`input[name="items.${newRowIndex}.productName"]`) as HTMLInputElement;
+                                              if (newInput) {
+                                                newInput.focus();
+                                              }
+                                            }, 100);
+                                          } else {
+                                            // ไปแถวถัดไป
+                                            const nextRowInput = document.querySelector(`input[name="items.${index + 1}.productName"]`) as HTMLInputElement;
+                                            if (nextRowInput) {
+                                              nextRowInput.focus();
+                                            }
+                                          }
+                                        }
                                       }}
                                     />
                                   )}
