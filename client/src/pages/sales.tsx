@@ -92,6 +92,24 @@ export default function Sales() {
   const [productDropdownStates, setProductDropdownStates] = useState<{[key: number]: boolean}>({});
   const [productTypeFilter, setProductTypeFilter] = useState<{[key: number]: string}>({});
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.product-dropdown')) {
+        setProductDropdownStates({});
+      }
+      if (!target.closest('.unit-dropdown')) {
+        setUnitDropdownStates({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Form - use any to bypass strict typing issues
   const form = useForm<any>({
     resolver: zodResolver(quotationFormSchema),
@@ -524,7 +542,7 @@ export default function Sales() {
                                   </div>
                                   
                                   {/* Product Dropdown */}
-                                  <div className="relative">
+                                  <div className="relative product-dropdown">
                                     <Button
                                       type="button"
                                       size="sm"
@@ -544,51 +562,86 @@ export default function Sales() {
                                     </Button>
                                     
                                     {productDropdownStates[index] && (
-                                      <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
-                                        {products?.filter((product: Product) => {
-                                          if (!productTypeFilter[index]) return true;
-                                          return product.type === productTypeFilter[index];
-                                        }).map((product: Product) => (
-                                          <div
-                                            key={product.id}
-                                            className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 text-xs"
-                                            onClick={() => {
-                                              // Update form with selected product
-                                              form.setValue(`items.${index}.productId`, product.id);
-                                              form.setValue(`items.${index}.productName`, product.name);
-                                              form.setValue(`items.${index}.description`, product.description || '');
-                                              form.setValue(`items.${index}.unit`, product.unit);
-                                              form.setValue(`items.${index}.unitPrice`, typeof product.price === 'number' ? product.price : 0);
-                                              
-                                              // Close dropdown
-                                              setProductDropdownStates(prev => ({
-                                                ...prev,
-                                                [index]: false
-                                              }));
-                                              
-                                              // Calculate total
-                                              const quantity = parseFloat(form.getValues(`items.${index}.quantity`)) || 1;
-                                              const unitPrice = typeof product.price === 'number' ? product.price : 0;
-                                              const discount = parseFloat(form.getValues(`items.${index}.discount`)) || 0;
-                                              updateItemTotal(index, quantity, unitPrice, discount);
-                                            }}
-                                          >
-                                            <div className="font-medium">{product.name}</div>
-                                            <div className="text-gray-500 text-xs">
-                                              {product.sku} • {product.unit} • ฿{(typeof product.price === 'number' ? product.price : 0).toFixed(2)}
-                                            </div>
-                                            <div className="flex items-center space-x-1 mt-1">
-                                              {product.type === 'service' && <Wrench className="h-2 w-2 text-blue-600" />}
-                                              {product.type === 'non_stock_product' && <Box className="h-2 w-2 text-purple-600" />}
-                                              {product.type === 'stock_product' && <Archive className="h-2 w-2 text-green-600" />}
-                                              <span className="text-xs text-gray-400">
-                                                {product.type === 'service' && 'บริการ'}
-                                                {product.type === 'non_stock_product' && 'ไม่นับสต็อก'}
-                                                {product.type === 'stock_product' && 'นับสต็อก'}
-                                              </span>
-                                            </div>
+                                      <div 
+                                        className="absolute top-full left-0 w-96 bg-white border border-gray-300 rounded-md shadow-lg z-[100] max-h-48 overflow-y-auto"
+                                        style={{ minWidth: '384px' }}
+                                      >
+                                        {products && products.length > 0 ? (
+                                          products
+                                            .filter((product: Product) => {
+                                              if (!productTypeFilter[index]) return true;
+                                              return product.type === productTypeFilter[index];
+                                            })
+                                            .map((product: Product) => (
+                                              <div
+                                                key={product.id}
+                                                className="p-3 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 text-xs transition-colors"
+                                                onClick={() => {
+                                                  // Update form with selected product
+                                                  form.setValue(`items.${index}.productId`, product.id);
+                                                  form.setValue(`items.${index}.productName`, product.name);
+                                                  form.setValue(`items.${index}.description`, product.description || '');
+                                                  form.setValue(`items.${index}.unit`, product.unit);
+                                                  form.setValue(`items.${index}.unitPrice`, typeof product.price === 'number' ? product.price : 0);
+                                                  
+                                                  // Close dropdown
+                                                  setProductDropdownStates(prev => ({
+                                                    ...prev,
+                                                    [index]: false
+                                                  }));
+                                                  
+                                                  // Calculate total
+                                                  const quantity = parseFloat(form.getValues(`items.${index}.quantity`)) || 1;
+                                                  const unitPrice = typeof product.price === 'number' ? product.price : 0;
+                                                  const discount = parseFloat(form.getValues(`items.${index}.discount`)) || 0;
+                                                  updateItemTotal(index, quantity, unitPrice, discount);
+                                                }}
+                                              >
+                                                <div className="flex items-start justify-between">
+                                                  <div className="flex-1">
+                                                    <div className="font-medium text-gray-900 mb-1">{product.name}</div>
+                                                    <div className="text-gray-500 text-xs mb-1">
+                                                      รหัส: {product.sku} • หน่วย: {product.unit}
+                                                    </div>
+                                                    {product.description && (
+                                                      <div className="text-gray-400 text-xs mb-1 line-clamp-2">
+                                                        {product.description}
+                                                      </div>
+                                                    )}
+                                                    <div className="flex items-center space-x-2 mt-1">
+                                                      <div className="flex items-center space-x-1">
+                                                        {product.type === 'service' && <Wrench className="h-3 w-3 text-blue-600" />}
+                                                        {product.type === 'non_stock_product' && <Box className="h-3 w-3 text-purple-600" />}
+                                                        {product.type === 'stock_product' && <Archive className="h-3 w-3 text-green-600" />}
+                                                        <span className="text-xs font-medium">
+                                                          {product.type === 'service' && 'บริการ'}
+                                                          {product.type === 'non_stock_product' && 'ไม่นับสต็อก'}
+                                                          {product.type === 'stock_product' && 'นับสต็อก'}
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  <div className="text-right ml-3">
+                                                    <div className="font-bold text-blue-600">
+                                                      ฿{(typeof product.price === 'number' ? product.price : 0).toFixed(2)}
+                                                    </div>
+                                                    {product.type === 'stock_product' && (
+                                                      <div className="text-xs text-gray-500">
+                                                        คงเหลือ: {product.currentStock || 0}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            ))
+                                        ) : (
+                                          <div className="p-3 text-gray-500 text-sm text-center">
+                                            {productTypeFilter[index] ? 
+                                              `ไม่มีสินค้าประเภท${productTypeFilter[index] === 'service' ? 'บริการ' : 
+                                              productTypeFilter[index] === 'non_stock_product' ? 'ไม่นับสต็อก' : 'นับสต็อก'}` : 
+                                              'ไม่มีสินค้าในระบบ'}
                                           </div>
-                                        )) || <div className="p-2 text-gray-500 text-xs">ไม่มีสินค้า</div>}
+                                        )}
                                       </div>
                                     )}
                                   </div>
@@ -688,18 +741,13 @@ export default function Sales() {
                                   control={form.control}
                                   name={`items.${index}.unit`}
                                   render={({ field }) => (
-                                    <div className="relative">
+                                    <div className="relative unit-dropdown">
                                       <Input
                                         {...field}
                                         placeholder="หน่วย"
                                         className="w-full text-center border-0 focus:ring-0 p-2 text-sm"
                                         onFocus={() => {
-                                          setUnitDropdownStates({...unitDropdownStates, [index]: true});
-                                        }}
-                                        onBlur={() => {
-                                          setTimeout(() => {
-                                            setUnitDropdownStates({...unitDropdownStates, [index]: false});
-                                          }, 200);
+                                          setUnitDropdownStates(prev => ({...prev, [index]: true}));
                                         }}
                                         onKeyDown={(e) => {
                                           if (e.key === 'Enter') {
@@ -713,17 +761,17 @@ export default function Sales() {
                                       />
                                       
                                       {unitDropdownStates[index] && (
-                                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-auto">
+                                        <div className="absolute z-[90] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-auto">
                                           <div className="p-2 text-xs text-gray-500 border-b">หน่วยที่แนะนำ:</div>
                                           {suggestedUnits
                                             .filter(unit => unit.toLowerCase().includes(field.value?.toLowerCase() || ''))
                                             .map((unit) => (
                                               <div
                                                 key={unit}
-                                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                                                className="px-3 py-2 hover:bg-blue-50 cursor-pointer text-sm transition-colors"
                                                 onClick={() => {
                                                   field.onChange(unit);
-                                                  setUnitDropdownStates({...unitDropdownStates, [index]: false});
+                                                  setUnitDropdownStates(prev => ({...prev, [index]: false}));
                                                 }}
                                               >
                                                 {unit}
