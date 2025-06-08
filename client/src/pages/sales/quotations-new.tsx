@@ -216,8 +216,13 @@ export default function QuotationsNew() {
         basePrice = item.unitPrice / (1 + taxPercent);
       }
       
-      // Calculate discount (always percentage)
-      const discountAmount = basePrice * (item.discount / 100);
+      // Calculate discount based on type
+      let discountAmount = 0;
+      if (item.discountType === "percent") {
+        discountAmount = basePrice * (item.discount / 100);
+      } else {
+        discountAmount = item.discount; // discount per unit in baht
+      }
       
       const priceAfterDiscount = basePrice - discountAmount;
       const itemTotal = item.quantity * priceAfterDiscount;
@@ -466,13 +471,14 @@ export default function QuotationsNew() {
                     <table className="w-full border-collapse table-fixed">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[20%]">สินค้า/บริการ</th>
-                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[20%]">รายละเอียด</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">จำนวน</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">หน่วย</th>
+                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[18%]">สินค้า/บริการ</th>
+                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[18%]">รายละเอียด</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[8%]">จำนวน</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[8%]">หน่วย</th>
                           <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[12%]">ราคา/หน่วย</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">ประเภทส่วนลด</th>
                           <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">ส่วนลด</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[12%]">รวม</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">รวม</th>
                           <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[6%]">ลบ</th>
                         </tr>
                       </thead>
@@ -608,6 +614,33 @@ export default function QuotationsNew() {
                               />
                             </td>
 
+                            {/* Discount Type */}
+                            <td className="border-b border-gray-200 p-2">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.discountType`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <Select onValueChange={(value) => {
+                                      field.onChange(value);
+                                      form.setValue(`items.${index}.discount`, 0);
+                                      calculateTotals();
+                                    }} value={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger className="w-full text-sm h-8">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="percent">%</SelectItem>
+                                        <SelectItem value="amount">฿/หน่วย</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </FormItem>
+                                )}
+                              />
+                            </td>
+
                             {/* Discount */}
                             <td className="border-b border-gray-200 p-2">
                               <FormField
@@ -616,22 +649,19 @@ export default function QuotationsNew() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <div className="relative">
-                                        <Input
-                                          type="number"
-                                          placeholder="0"
-                                          step="0.01"
-                                          min="0"
-                                          max="100"
-                                          className="w-full text-right text-sm h-8 pr-6"
-                                          {...field}
-                                          onChange={(e) => {
-                                            field.onChange(parseFloat(e.target.value) || 0);
-                                            calculateTotals();
-                                          }}
-                                        />
-                                        <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">%</span>
-                                      </div>
+                                      <Input
+                                        type="number"
+                                        placeholder="0"
+                                        step="0.01"
+                                        min="0"
+                                        max={form.watch(`items.${index}.discountType`) === "percent" ? "100" : undefined}
+                                        className="w-full text-right text-sm h-8"
+                                        {...field}
+                                        onChange={(e) => {
+                                          field.onChange(parseFloat(e.target.value) || 0);
+                                          calculateTotals();
+                                        }}
+                                      />
                                     </FormControl>
                                   </FormItem>
                                 )}
