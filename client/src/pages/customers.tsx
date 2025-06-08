@@ -35,6 +35,12 @@ export default function Customers() {
     error?: string;
   }>({ status: 'idle' });
 
+  const [postalCodeSearch, setPostalCodeSearch] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    data?: any;
+    error?: string;
+  }>({ status: 'idle' });
+
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"]
   });
@@ -122,6 +128,45 @@ export default function Customers() {
       setTaxIdVerification({ 
         status: 'error', 
         error: 'ไม่สามารถตรวจสอบเลขที่ผู้เสียภาษีได้ กรุณาลองใหม่อีกครั้ง' 
+      });
+    }
+  };
+
+  // ฟังก์ชันค้นหารหัสไปรษณีย์ตามที่อยู่
+  const searchPostalCode = async (address: string) => {
+    if (!address || address.length < 3) {
+      setPostalCodeSearch({ status: 'error', error: 'กรุณาใส่ที่อยู่อย่างน้อย 3 ตัวอักษร' });
+      return;
+    }
+
+    setPostalCodeSearch({ status: 'loading' });
+    
+    try {
+      const response = await fetch('/api/search-postal-code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ address })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setPostalCodeSearch({ 
+          status: 'success', 
+          data: data.data 
+        });
+      } else {
+        setPostalCodeSearch({ 
+          status: 'error', 
+          error: data.error || 'ไม่พบรหัสไปรษณีย์ที่ตรงกับที่อยู่' 
+        });
+      }
+    } catch (error) {
+      setPostalCodeSearch({ 
+        status: 'error', 
+        error: 'ไม่สามารถค้นหารหัสไปรษณีย์ได้ กรุณาลองใหม่อีกครั้ง' 
       });
     }
   };
@@ -407,7 +452,87 @@ export default function Customers() {
                     <FormItem>
                       <FormLabel>รหัสไปรษณีย์</FormLabel>
                       <FormControl>
-                        <Input {...field} />
+                        <div className="space-y-2">
+                          <div className="flex space-x-2">
+                            <Input 
+                              {...field} 
+                              placeholder="เช่น 10110"
+                              onChange={(e) => {
+                                field.onChange(e);
+                                setPostalCodeSearch({ status: 'idle' }); // รีเซ็ตสถานะเมื่อแก้ไข
+                              }}
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                const address = form.getValues('address');
+                                searchPostalCode(address);
+                              }}
+                              disabled={!form.getValues('address') || postalCodeSearch.status === 'loading'}
+                              className="whitespace-nowrap"
+                            >
+                              {postalCodeSearch.status === 'loading' ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MapPin className="h-4 w-4" />
+                              )}
+                              ค้นหา
+                            </Button>
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            กรอกที่อยู่ก่อน แล้วคลิก "ค้นหา" เพื่อหารหัสไปรษณีย์ หรือกรอกเองได้
+                          </div>
+                          
+                          {/* แสดงผลการค้นหารหัสไปรษณีย์ */}
+                          {postalCodeSearch.status === 'success' && postalCodeSearch.data && (
+                            <div className="space-y-2">
+                              <div className="flex items-center space-x-2 text-green-600 text-sm">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>พบรหัสไปรษณีย์</span>
+                              </div>
+                              <div 
+                                className="p-3 border border-green-200 rounded-lg bg-green-50 cursor-pointer hover:bg-green-100 transition-colors"
+                                onClick={() => {
+                                  form.setValue('postalCode', postalCodeSearch.data.postalCode);
+                                  setPostalCodeSearch({ status: 'idle' });
+                                }}
+                              >
+                                <div className="text-sm">
+                                  <div className="font-semibold text-green-800 mb-1">
+                                    รหัสไปรษณีย์: {postalCodeSearch.data.postalCode}
+                                  </div>
+                                  {postalCodeSearch.data.district && (
+                                    <div className="text-green-700 mb-1">
+                                      ตำบล/แขวง: {postalCodeSearch.data.district}
+                                    </div>
+                                  )}
+                                  {postalCodeSearch.data.amphoe && (
+                                    <div className="text-green-700 mb-1">
+                                      อำเภอ/เขต: {postalCodeSearch.data.amphoe}
+                                    </div>
+                                  )}
+                                  {postalCodeSearch.data.province && (
+                                    <div className="text-green-700 mb-1">
+                                      จังหวัด: {postalCodeSearch.data.province}
+                                    </div>
+                                  )}
+                                  <div className="text-green-600 mt-2 text-xs font-medium">
+                                    คลิกเพื่อใช้รหัสไปรษณีย์นี้ →
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {postalCodeSearch.status === 'error' && (
+                            <div className="flex items-center space-x-2 text-orange-600 text-sm">
+                              <AlertCircle className="h-4 w-4" />
+                              <span>{postalCodeSearch.error}</span>
+                            </div>
+                          )}
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>

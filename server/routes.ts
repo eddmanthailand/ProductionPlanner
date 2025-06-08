@@ -721,6 +721,90 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Postal Code Search endpoint
+  app.post("/api/search-postal-code", async (req: any, res: any) => {
+    try {
+      const { address } = req.body;
+      
+      if (!address || address.length < 3) {
+        return res.status(400).json({
+          success: false,
+          error: "กรุณาใส่ที่อยู่อย่างน้อย 3 ตัวอักษร"
+        });
+      }
+
+      // ข้อมูลรหัสไปรษณีย์ตัวอย่างสำหรับพื้นที่ที่พบบ่อย
+      const postalCodeData = [
+        // กรุงเทพมหานคร
+        { keywords: ['บางรัก', 'สีลม', 'สุรวงศ์'], postalCode: '10500', district: 'บางรัก', amphoe: 'บางรัก', province: 'กรุงเทพมหานคร' },
+        { keywords: ['วัฒนา', 'ปลื้มจิต', 'ลุมพินี'], postalCode: '10330', district: 'ลุมพินี', amphoe: 'ปทุมวัน', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ดินแดง', 'ห้วยขวาง', 'รัชดาภิเษก'], postalCode: '10400', district: 'ดินแดง', amphoe: 'ดินแดง', province: 'กรุงเทพมหานคร' },
+        { keywords: ['จตุจักร', 'ลาดยาว', 'เสนานิคม'], postalCode: '10900', district: 'จตุจักร', amphoe: 'จตุจักร', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ราชเทวี', 'ทุ่งพญาไท', 'มักกะสัน'], postalCode: '10400', district: 'ราชเทวี', amphoe: 'ราชเทวี', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ประตูน้ำ', 'บ่อบึง', 'คลองเตย'], postalCode: '10110', district: 'ประตูน้ำ', amphoe: 'ประตูน้ำ', province: 'กรุงเทพมหานคร' },
+        { keywords: ['บางซื่อ', 'วงศ์ทองหลาง', 'จามจุรี'], postalCode: '10800', district: 'บางซื่อ', amphoe: 'บางซื่อ', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ลาดกระบัง', 'คลองสามประเวศ'], postalCode: '10520', district: 'ลาดกระบัง', amphoe: 'ลาดกระบัง', province: 'กรุงเทพมหานคร' },
+        
+        // นนทบุรี
+        { keywords: ['เมืองนนทบุรี', 'บางกระสอ', 'ท่าทราย'], postalCode: '11000', district: 'เมืองนนทบุรี', amphoe: 'เมืองนนทบุรี', province: 'นนทบุรี' },
+        { keywords: ['บางใหญ่', 'บางแม่นาง', 'เสาธงหิน'], postalCode: '11140', district: 'บางใหญ่', amphoe: 'บางใหญ่', province: 'นนทบุรี' },
+        { keywords: ['ปากเกร็ด', 'คลองพระอุดม', 'บ้านใหม่'], postalCode: '11120', district: 'ปากเกร็ด', amphoe: 'ปากเกร็ด', province: 'นนทบุรี' },
+        
+        // ปทุมธานี
+        { keywords: ['รังสิต', 'ประชาธิปัตย์', 'คลองหลวง'], postalCode: '12000', district: 'รังสิต', amphoe: 'ธัญบุรี', province: 'ปทุมธานี' },
+        { keywords: ['ลำลูกกา', 'คลองสาม', 'บึงคำพร้อย'], postalCode: '12150', district: 'ลำลูกกา', amphoe: 'ลำลูกกา', province: 'ปทุมธานี' },
+        
+        // สมุทรปราการ
+        { keywords: ['บางปู', 'เมืองสมุทรปราการ', 'ปากน้ำ'], postalCode: '10280', district: 'บางปู', amphoe: 'เมืองสมุทรปราการ', province: 'สมุทรปราการ' },
+        { keywords: ['บางพลี', 'ราชาเทวะ', 'บางแก้ว'], postalCode: '10540', district: 'บางพลี', amphoe: 'บางพลี', province: 'สมุทรปราการ' },
+        
+        // ชลบุรี
+        { keywords: ['ชลบุรี', 'เมืองชลบุรี', 'นาป่า'], postalCode: '20000', district: 'เมืองชลบุรี', amphoe: 'เมืองชลบุรี', province: 'ชลบุรี' },
+        { keywords: ['ศรีราชา', 'สุรศักดิ์', 'ทุ่งสุขลา'], postalCode: '20230', district: 'ศรีราชา', amphoe: 'ศรีราชา', province: 'ชลบุรี' },
+        { keywords: ['พัทยา', 'หนองปรือ', 'นาเกลือ'], postalCode: '20150', district: 'หนองปรือ', amphoe: 'บางละมุง', province: 'ชลบุรี' },
+        
+        // เชียงใหม่
+        { keywords: ['เชียงใหม่', 'เมืองเชียงใหม่', 'ศรีภูมิ'], postalCode: '50200', district: 'ศรีภูมิ', amphoe: 'เมืองเชียงใหม่', province: 'เชียงใหม่' },
+        { keywords: ['หางดง', 'บ้านแหวน', 'สบแม่ข่า'], postalCode: '50230', district: 'หางดง', amphoe: 'หางดง', province: 'เชียงใหม่' },
+        
+        // ภูเก็ต
+        { keywords: ['ภูเก็ต', 'เมืองภูเก็ต', 'ตลาดใหญ่'], postalCode: '83000', district: 'ตลาดใหญ่', amphoe: 'เมืองภูเก็ต', province: 'ภูเก็ต' },
+        { keywords: ['กะทู้', 'ป่าตอง', 'กะมะ'], postalCode: '83150', district: 'ป่าตอง', amphoe: 'กะทู้', province: 'ภูเก็ต' }
+      ];
+
+      // ค้นหาจากคำสำคัญ
+      const searchTermLower = address.toLowerCase();
+      const matchedResult = postalCodeData.find(item => 
+        item.keywords.some(keyword => searchTermLower.includes(keyword.toLowerCase()))
+      );
+
+      if (matchedResult) {
+        return res.json({
+          success: true,
+          data: {
+            postalCode: matchedResult.postalCode,
+            district: matchedResult.district,
+            amphoe: matchedResult.amphoe,
+            province: matchedResult.province,
+            searchTerm: address
+          }
+        });
+      } else {
+        return res.json({
+          success: false,
+          error: `ไม่พบรหัสไปรษณีย์สำหรับที่อยู่ "${address}" กรุณาใส่รหัสไปรษณีย์เอง`
+        });
+      }
+
+    } catch (error) {
+      console.error('Postal code search error:', error);
+      return res.status(500).json({
+        success: false,
+        error: "เกิดข้อผิดพลาดในการค้นหารหัสไปรษณีย์"
+      });
+    }
+  });
+
   return httpServer;
 }
 
@@ -742,5 +826,4 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
   
   return checkDigit;
 }
-
 
