@@ -87,8 +87,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Tenant routes
-  app.get("/api/tenants", authenticateToken, async (req: any, res) => {
+  // Tenant routes (dev mode - bypass auth)
+  app.get("/api/tenants", async (req: any, res) => {
     try {
       const tenants = await storage.getTenants();
       res.json(tenants);
@@ -97,7 +97,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/tenants", authenticateToken, async (req: any, res) => {
+  app.post("/api/tenants", async (req: any, res) => {
     try {
       const validatedData = insertTenantSchema.parse(req.body);
       const tenant = await storage.createTenant(validatedData);
@@ -107,10 +107,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Dashboard routes
-  app.get("/api/dashboard/metrics", authenticateToken, async (req: any, res) => {
+  // Dashboard routes (dev mode - bypass auth)
+  app.get("/api/dashboard/metrics", async (req: any, res) => {
     try {
-      const metrics = await storage.getDashboardMetrics(req.user.tenantId);
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000'; // Default tenant for dev
+      const metrics = await storage.getDashboardMetrics(tenantId);
       res.json(metrics);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch dashboard metrics" });
@@ -118,20 +119,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Products routes
-  app.get("/api/products", authenticateToken, async (req: any, res) => {
+  app.get("/api/products", async (req: any, res) => {
     try {
-      const products = await storage.getProducts(req.user.tenantId);
+      const products = await storage.getProducts('550e8400-e29b-41d4-a716-446655440000');
       res.json(products);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch products" });
     }
   });
 
-  app.post("/api/products", authenticateToken, async (req: any, res) => {
+  app.post("/api/products", async (req: any, res) => {
     try {
       const validatedData = insertProductSchema.parse({
         ...req.body,
-        tenantId: req.user.tenantId
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
       const product = await storage.createProduct(validatedData);
       
@@ -139,8 +140,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         type: "product_created",
         description: `Product "${product.name}" was created`,
-        userId: req.user.userId,
-        tenantId: req.user.tenantId
+        userId: 1,
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
 
       res.status(201).json(product);
@@ -149,12 +150,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/products/:id", authenticateToken, async (req: any, res) => {
+  app.put("/api/products/:id", async (req: any, res) => {
     try {
       const productId = parseInt(req.params.id);
       const validatedData = insertProductSchema.partial().parse(req.body);
       
-      const product = await storage.updateProduct(productId, validatedData, req.user.tenantId);
+      const product = await storage.updateProduct(productId, validatedData, '550e8400-e29b-41d4-a716-446655440000');
       if (!product) {
         return res.status(404).json({ message: "Product not found" });
       }
@@ -166,20 +167,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Production Orders routes
-  app.get("/api/production-orders", authenticateToken, async (req: any, res) => {
+  app.get("/api/production-orders", async (req: any, res) => {
     try {
-      const orders = await storage.getProductionOrders(req.user.tenantId);
+      const orders = await storage.getProductionOrders('550e8400-e29b-41d4-a716-446655440000');
       res.json(orders);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch production orders" });
     }
   });
 
-  app.post("/api/production-orders", authenticateToken, async (req: any, res) => {
+  app.post("/api/production-orders", async (req: any, res) => {
     try {
       const validatedData = insertProductionOrderSchema.parse({
         ...req.body,
-        tenantId: req.user.tenantId,
+        tenantId: '550e8400-e29b-41d4-a716-446655440000',
         orderNumber: `PO-${Date.now()}`
       });
       
@@ -189,8 +190,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         type: "production_order_created",
         description: `Production order ${order.orderNumber} was created`,
-        userId: req.user.userId,
-        tenantId: req.user.tenantId
+        userId: 1,
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
 
       res.status(201).json(order);
@@ -199,12 +200,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/production-orders/:id", authenticateToken, async (req: any, res) => {
+  app.put("/api/production-orders/:id", async (req: any, res) => {
     try {
       const orderId = parseInt(req.params.id);
       const validatedData = insertProductionOrderSchema.partial().parse(req.body);
       
-      const order = await storage.updateProductionOrder(orderId, validatedData, req.user.tenantId);
+      const order = await storage.updateProductionOrder(orderId, validatedData, '550e8400-e29b-41d4-a716-446655440000');
       if (!order) {
         return res.status(404).json({ message: "Production order not found" });
       }
@@ -216,9 +217,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Inventory routes
-  app.get("/api/inventory", authenticateToken, async (req: any, res) => {
+  app.get("/api/inventory", async (req: any, res) => {
     try {
-      const inventory = await storage.getInventory(req.user.tenantId);
+      const inventory = await storage.getInventory('550e8400-e29b-41d4-a716-446655440000');
       res.json(inventory);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch inventory" });
@@ -226,20 +227,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transactions routes
-  app.get("/api/transactions", authenticateToken, async (req: any, res) => {
+  app.get("/api/transactions", async (req: any, res) => {
     try {
-      const transactions = await storage.getTransactions(req.user.tenantId);
+      const transactions = await storage.getTransactions('550e8400-e29b-41d4-a716-446655440000');
       res.json(transactions);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch transactions" });
     }
   });
 
-  app.post("/api/transactions", authenticateToken, async (req: any, res) => {
+  app.post("/api/transactions", async (req: any, res) => {
     try {
       const validatedData = insertTransactionSchema.parse({
         ...req.body,
-        tenantId: req.user.tenantId
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
       
       const transaction = await storage.createTransaction(validatedData);
@@ -248,8 +249,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createActivity({
         type: "transaction_created",
         description: `${transaction.type} transaction of ${transaction.amount} was recorded`,
-        userId: req.user.userId,
-        tenantId: req.user.tenantId
+        userId: 1,
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
 
       res.status(201).json(transaction);
@@ -259,10 +260,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Activities routes
-  app.get("/api/activities", authenticateToken, async (req: any, res) => {
+  app.get("/api/activities", async (req: any, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 50;
-      const activities = await storage.getActivities(req.user.tenantId, limit);
+      const activities = await storage.getActivities('550e8400-e29b-41d4-a716-446655440000', limit);
       res.json(activities);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch activities" });
@@ -270,9 +271,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Users routes
-  app.get("/api/users", authenticateToken, async (req: any, res) => {
+  app.get("/api/users", async (req: any, res) => {
     try {
-      const users = await storage.getUsersByTenant(req.user.tenantId);
+      const users = await storage.getUsersByTenant('550e8400-e29b-41d4-a716-446655440000');
       const usersWithoutPasswords = users.map(({ password, ...user }) => user);
       res.json(usersWithoutPasswords);
     } catch (error) {
@@ -339,20 +340,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Colors routes
-  app.get("/api/colors", authenticateToken, async (req: any, res) => {
+  app.get("/api/colors", async (req: any, res) => {
     try {
-      const colors = await storage.getColors(req.user.tenantId);
+      const colors = await storage.getColors('550e8400-e29b-41d4-a716-446655440000');
       res.json(colors);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch colors" });
     }
   });
 
-  app.post("/api/colors", authenticateToken, async (req: any, res) => {
+  app.post("/api/colors", async (req: any, res) => {
     try {
       const validatedData = insertColorSchema.parse({
         ...req.body,
-        tenantId: req.user.tenantId
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
       const color = await storage.createColor(validatedData);
       res.status(201).json(color);
@@ -361,12 +362,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/colors/:id", authenticateToken, async (req: any, res) => {
+  app.put("/api/colors/:id", async (req: any, res) => {
     try {
       const colorId = parseInt(req.params.id);
       const validatedData = insertColorSchema.partial().parse(req.body);
       
-      const color = await storage.updateColor(colorId, validatedData, req.user.tenantId);
+      const color = await storage.updateColor(colorId, validatedData, '550e8400-e29b-41d4-a716-446655440000');
       if (!color) {
         return res.status(404).json({ message: "Color not found" });
       }
@@ -377,12 +378,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/colors/:id", authenticateToken, async (req: any, res) => {
+  app.patch("/api/colors/:id", async (req: any, res) => {
     try {
       const colorId = parseInt(req.params.id);
       const updateData = req.body;
       
-      const color = await storage.updateColor(colorId, updateData, req.user.tenantId);
+      const color = await storage.updateColor(colorId, updateData, '550e8400-e29b-41d4-a716-446655440000');
       if (!color) {
         return res.status(404).json({ message: "Color not found" });
       }
@@ -393,10 +394,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/colors/:id", authenticateToken, async (req: any, res) => {
+  app.delete("/api/colors/:id", async (req: any, res) => {
     try {
       const colorId = parseInt(req.params.id);
-      const deleted = await storage.deleteColor(colorId, req.user.tenantId);
+      const deleted = await storage.deleteColor(colorId, '550e8400-e29b-41d4-a716-446655440000');
       
       if (!deleted) {
         return res.status(404).json({ message: "Color not found" });
@@ -409,20 +410,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Sizes routes
-  app.get("/api/sizes", authenticateToken, async (req: any, res) => {
+  app.get("/api/sizes", async (req: any, res) => {
     try {
-      const sizes = await storage.getSizes(req.user.tenantId);
+      const sizes = await storage.getSizes('550e8400-e29b-41d4-a716-446655440000');
       res.json(sizes);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch sizes" });
     }
   });
 
-  app.post("/api/sizes", authenticateToken, async (req: any, res) => {
+  app.post("/api/sizes", async (req: any, res) => {
     try {
       const validatedData = insertSizeSchema.parse({
         ...req.body,
-        tenantId: req.user.tenantId
+        tenantId: '550e8400-e29b-41d4-a716-446655440000'
       });
       const size = await storage.createSize(validatedData);
       res.status(201).json(size);
@@ -431,12 +432,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/sizes/:id", authenticateToken, async (req: any, res) => {
+  app.put("/api/sizes/:id", async (req: any, res) => {
     try {
       const sizeId = parseInt(req.params.id);
       const validatedData = insertSizeSchema.partial().parse(req.body);
       
-      const size = await storage.updateSize(sizeId, validatedData, req.user.tenantId);
+      const size = await storage.updateSize(sizeId, validatedData, '550e8400-e29b-41d4-a716-446655440000');
       if (!size) {
         return res.status(404).json({ message: "Size not found" });
       }
@@ -447,12 +448,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/sizes/:id", authenticateToken, async (req: any, res) => {
+  app.patch("/api/sizes/:id", async (req: any, res) => {
     try {
       const sizeId = parseInt(req.params.id);
       const updateData = req.body;
       
-      const size = await storage.updateSize(sizeId, updateData, req.user.tenantId);
+      const size = await storage.updateSize(sizeId, updateData, '550e8400-e29b-41d4-a716-446655440000');
       if (!size) {
         return res.status(404).json({ message: "Size not found" });
       }
@@ -463,10 +464,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/sizes/:id", authenticateToken, async (req: any, res) => {
+  app.delete("/api/sizes/:id", async (req: any, res) => {
     try {
       const sizeId = parseInt(req.params.id);
-      const deleted = await storage.deleteSize(sizeId, req.user.tenantId);
+      const deleted = await storage.deleteSize(sizeId, '550e8400-e29b-41d4-a716-446655440000');
       
       if (!deleted) {
         return res.status(404).json({ message: "Size not found" });
