@@ -29,6 +29,7 @@ const quotationFormSchema = z.object({
       if (typeof val === 'string' && val === '') return 1;
       return typeof val === 'string' ? parseInt(val) || 1 : val;
     }),
+    unit: z.string().default("ชิ้น"),
     unitPrice: z.union([z.string(), z.number()]).transform((val) => {
       if (typeof val === 'string' && val === '') return 0;
       return typeof val === 'string' ? parseFloat(val) || 0 : val;
@@ -48,6 +49,16 @@ const quotationFormSchema = z.object({
 });
 
 type QuotationFormData = z.infer<typeof quotationFormSchema>;
+
+// รายการหน่วยที่แนะนำ
+const suggestedUnits = [
+  "ชิ้น", "อัน", "ใบ", "แผ่น", "ชุด", "คู่", "ตัว", "หลอด", "เล่ม", "กล่อง",
+  "ลิตร", "มิลลิลิตร", "กิโลกรัม", "กรัม", "ตัน", "ปอนด์", "ออนซ์",
+  "เมตร", "เซนติเมตร", "มิลลิเมตร", "กิโลเมตร", "นิ้ว", "ฟุต", "หลา",
+  "ตารางเมตร", "ตารางนิ้ว", "ตารางฟุต", "ไร่", "งาน", "วา",
+  "ลูกบาศก์เมตร", "ลูกบาศก์ฟุต", "แกลลอน", "ขวด", "ถุง", "หีบ",
+  "ชั่วโมง", "วัน", "เดือน", "ปี", "ครั้ง", "รอบ", "บริการ", "แพ็ค"
+];
 
 const translations = {
   th: {
@@ -76,6 +87,7 @@ export default function Sales() {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customersLoading, setCustomersLoading] = useState(true);
+  const [unitDropdownStates, setUnitDropdownStates] = useState<{[key: number]: boolean}>({});
 
   // Form - use any to bypass strict typing issues
   const form = useForm<any>({
@@ -89,6 +101,7 @@ export default function Sales() {
         productName: "",
         description: "",
         quantity: "",
+        unit: "ชิ้น",
         unitPrice: "",
         discount: "",
         total: 0
@@ -182,6 +195,7 @@ export default function Sales() {
       productName: "",
       description: "",
       quantity: "",
+      unit: "ชิ้น",
       unitPrice: "",
       discount: "",
       total: 0
@@ -493,8 +507,57 @@ export default function Sales() {
                               </td>
                               
                               {/* Unit */}
-                              <td className="border border-gray-300 p-4 text-center text-sm text-gray-600">
-                                ชิ้น
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.unit`}
+                                  render={({ field }) => (
+                                    <div className="relative">
+                                      <Input
+                                        {...field}
+                                        placeholder="หน่วย"
+                                        className="w-full text-center border-0 focus:ring-0 p-2 text-sm"
+                                        onFocus={() => {
+                                          setUnitDropdownStates({...unitDropdownStates, [index]: true});
+                                        }}
+                                        onBlur={() => {
+                                          setTimeout(() => {
+                                            setUnitDropdownStates({...unitDropdownStates, [index]: false});
+                                          }, 200);
+                                        }}
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const priceInput = document.querySelector(`input[name="items.${index}.unitPrice"]`) as HTMLInputElement;
+                                            if (priceInput) {
+                                              priceInput.focus();
+                                            }
+                                          }
+                                        }}
+                                      />
+                                      
+                                      {unitDropdownStates[index] && (
+                                        <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-auto">
+                                          <div className="p-2 text-xs text-gray-500 border-b">หน่วยที่แนะนำ:</div>
+                                          {suggestedUnits
+                                            .filter(unit => unit.toLowerCase().includes(field.value?.toLowerCase() || ''))
+                                            .map((unit) => (
+                                              <div
+                                                key={unit}
+                                                className="px-3 py-2 hover:bg-gray-50 cursor-pointer text-sm"
+                                                onClick={() => {
+                                                  field.onChange(unit);
+                                                  setUnitDropdownStates({...unitDropdownStates, [index]: false});
+                                                }}
+                                              >
+                                                {unit}
+                                              </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+                                />
                               </td>
                               
                               {/* Unit Price */}
