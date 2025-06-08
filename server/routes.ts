@@ -611,65 +611,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // เรียก API ของกรมสรรพากร (ใช้ API สาธารณะสำหรับตรวจสอบ VAT)
-      const response = await fetch(`https://rdcb.rd.go.th/VAT_WEBSERVICE/api/taxpayer/detail/vatno/${taxId}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-
-      if (!response.ok) {
-        return res.status(500).json({
+      // ตรวจสอบรูปแบบและ check digit ของเลขที่ผู้เสียภาษีไทย
+      const isValidFormat = /^[0-9]{13}$/.test(taxId);
+      
+      if (!isValidFormat) {
+        return res.json({
           success: false,
-          error: "ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้"
+          error: "เลขที่ผู้เสียภาษีต้องเป็นตัวเลข 13 หลัก"
         });
       }
 
-      const data = await response.json();
+      const checkDigit = calculateTaxIdCheckDigit(taxId.substring(0, 12));
+      const isValidCheckDigit = checkDigit === parseInt(taxId.charAt(12));
       
-      // ตรวจสอบผลลัพธ์จาก API กรมสรรพากร
-      if (data && (data.name || data.companyName || data.taxpayerName)) {
-        res.json({
-          success: true,
-          data: {
-            taxId: taxId,
-            name: data.name || data.companyName || data.taxpayerName || data.businessName,
-            nameEn: data.nameEn || data.companyNameEn,
-            nameTh: data.nameTh || data.companyNameTh,
-            address: data.address || data.businessAddress,
-            status: data.status || data.vatStatus || 'active',
-            registrationDate: data.registrationDate || data.regDate
-          }
-        });
-      } else if (response.status === 404) {
-        res.json({
+      if (!isValidCheckDigit) {
+        return res.json({
           success: false,
-          error: "ไม่พบข้อมูลเลขที่ผู้เสียภาษีนี้ในระบบกรมสรรพากร"
+          error: "เลขที่ผู้เสียภาษีไม่ถูกต้อง (check digit ไม่ตรงกัน)"
         });
-      } else {
-        // ลองใช้วิธีการตรวจสอบแบบง่าย (fallback)
-        const isValidFormat = /^[0-9]{13}$/.test(taxId);
-        const checkDigit = calculateTaxIdCheckDigit(taxId.substring(0, 12));
-        const isValidCheckDigit = checkDigit === parseInt(taxId.charAt(12));
+      }
+
+      // ตรวจสอบกับข้อมูลที่มีอยู่ในระบบ
+      try {
+        const allCustomers = await storage.getCustomers("550e8400-e29b-41d4-a716-446655440000");
+        const existingCustomer = allCustomers.find(c => c.taxId === taxId);
         
-        if (isValidFormat && isValidCheckDigit) {
+        if (existingCustomer) {
           res.json({
             success: true,
             data: {
               taxId: taxId,
-              name: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง",
+              name: existingCustomer.companyName || existingCustomer.name,
+              address: existingCustomer.address,
               verified: true,
-              note: "ตรวจสอบรูปแบบเลขที่ผู้เสียภาษีแล้ว"
+              source: "existing_customer",
+              note: "พบข้อมูลในระบบลูกค้า"
             }
           });
         } else {
           res.json({
-            success: false,
-            error: "รูปแบบเลขที่ผู้เสียภาษีไม่ถูกต้อง"
+            success: true,
+            data: {
+              taxId: taxId,
+              name: "เลขที่ผู้เสียภาษีถูกต้อง",
+              verified: true,
+              source: "checksum_validation",
+              note: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง กรุณากรอกข้อมูลบริษัท"
+            }
           });
         }
+      } catch (dbError) {
+        console.error("Database lookup error:", dbError);
+        res.json({
+          success: true,
+          data: {
+            taxId: taxId,
+            name: "เลขที่ผู้เสียภาษีถูกต้อง",
+            verified: true,
+            source: "checksum_validation",
+            note: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง กรุณากรอกข้อมูลบริษัท"
+          }
+        });
       }
     } catch (error) {
       console.error("Tax ID verification error:", error);
@@ -681,4 +683,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   return httpServer;
+}
+
+// ฟังก์ชันคำนวณ check digit สำหรับเลขที่ผู้เสียภาษีไทย
+function calculateTaxIdCheckDigit(first12Digits: string): number {
+  const multipliers = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(first12Digits.charAt(i)) * multipliers[i];
+  }
+  
+  const remainder = sum % 11;
+  const checkDigit = 11 - remainder;
+  
+  if (checkDigit >= 10) {
+    return checkDigit - 10;
+  }
+  
+  return checkDigit;
 }

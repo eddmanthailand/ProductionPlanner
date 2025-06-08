@@ -86,6 +86,7 @@ export interface IStorage {
   // Customers
   getCustomers(tenantId: string): Promise<Customer[]>;
   getCustomer(id: number, tenantId: string): Promise<Customer | undefined>;
+  getCustomerByTaxId(taxId: string): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
   updateCustomer(id: number, customer: Partial<InsertCustomer>, tenantId: string): Promise<Customer | undefined>;
   deleteCustomer(id: number, tenantId: string): Promise<boolean>;
@@ -346,6 +347,11 @@ export class DatabaseStorage implements IStorage {
     const [customer] = await db.select().from(customers).where(
       and(eq(customers.id, id), eq(customers.tenantId, tenantId))
     );
+    return customer || undefined;
+  }
+
+  async getCustomerByTaxId(taxId: string): Promise<Customer | undefined> {
+    const [customer] = await db.select().from(customers).where(eq(customers.taxId, taxId));
     return customer || undefined;
   }
 
