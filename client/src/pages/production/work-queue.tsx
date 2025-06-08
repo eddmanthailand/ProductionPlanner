@@ -78,19 +78,19 @@ export default function WorkQueueManager() {
   });
 
   // Queries
-  const { data: workQueues = [], isLoading: workQueuesLoading } = useQuery({
+  const { data: workQueues = [], isLoading: workQueuesLoading } = useQuery<WorkQueue[]>({
     queryKey: ["/api/work-queues"],
   });
 
-  const { data: teams = [] } = useQuery({
+  const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
-  const { data: employees = [] } = useQuery({
+  const { data: employees = [] } = useQuery<Employee[]>({
     queryKey: ["/api/employees"],
   });
 
-  const { data: holidays = [] } = useQuery({
+  const { data: holidays = [] } = useQuery<Holiday[]>({
     queryKey: ["/api/holidays"],
   });
 
@@ -125,11 +125,12 @@ export default function WorkQueueManager() {
   });
 
   const updateWorkMutation = useMutation({
-    mutationFn: async ({ id, ...data }: any) => {
+    mutationFn: async (data: any) => {
+      const { id, ...updateData } = data;
       const response = await fetch(`/api/work-queues/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify(updateData),
       });
       if (!response.ok) throw new Error("Failed to update work queue");
       return response.json();
