@@ -66,10 +66,10 @@ export interface IStorage {
   createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
   updateProductionOrder(id: number, order: Partial<InsertProductionOrder>, tenantId: string): Promise<ProductionOrder | undefined>;
 
-  // Inventory
-  getInventory(tenantId: string): Promise<Inventory[]>;
-  getInventoryByProduct(productId: number, tenantId: string): Promise<Inventory | undefined>;
-  updateInventory(inventory: InsertInventory): Promise<Inventory>;
+  // Stock Management
+  getStockMovements(tenantId: string): Promise<StockMovement[]>;
+  createStockMovement(movement: InsertStockMovement): Promise<StockMovement>;
+  getProductStock(productId: number, tenantId: string): Promise<number>;
 
   // Transactions
   getTransactions(tenantId: string): Promise<Transaction[]>;
@@ -212,30 +212,36 @@ export class DatabaseStorage implements IStorage {
     return order || undefined;
   }
 
-  async getInventory(tenantId: string): Promise<Inventory[]> {
-    return await db.select().from(inventory)
-      .where(eq(inventory.tenantId, tenantId));
+  async getStockMovements(tenantId: string): Promise<StockMovement[]> {
+    return await db.select().from(stockMovements)
+      .where(eq(stockMovements.tenantId, tenantId))
+      .orderBy(desc(stockMovements.createdAt));
   }
 
-  async getInventoryByProduct(productId: number, tenantId: string): Promise<Inventory | undefined> {
-    const [item] = await db.select().from(inventory)
-      .where(and(eq(inventory.productId, productId), eq(inventory.tenantId, tenantId)));
-    return item || undefined;
-  }
-
-  async updateInventory(insertInventory: InsertInventory): Promise<Inventory> {
-    const existing = await this.getInventoryByProduct(insertInventory.productId!, insertInventory.tenantId!);
+  async createStockMovement(movement: InsertStockMovement): Promise<StockMovement> {
+    const [created] = await db.insert(stockMovements).values(movement).returning();
     
-    if (existing) {
-      const [updated] = await db.update(inventory)
-        .set({ ...insertInventory, updatedAt: new Date() })
-        .where(eq(inventory.id, existing.id))
-        .returning();
-      return updated;
-    } else {
-      const [created] = await db.insert(inventory).values(insertInventory).returning();
-      return created;
+    // Update product stock if it's a stock product
+    if (movement.productId && movement.tenantId) {
+      const currentStock = await this.getProductStock(movement.productId, movement.tenantId);
+      const newStock = movement.type === 'in' ? 
+        currentStock + movement.quantity : 
+        currentStock - movement.quantity;
+      
+      await db.update(products)
+        .set({ currentStock: Math.max(0, newStock) })
+        .where(and(eq(products.id, movement.productId), eq(products.tenantId, movement.tenantId)));
     }
+    
+    return created;
+  }
+
+  async getProductStock(productId: number, tenantId: string): Promise<number> {
+    const [product] = await db.select({ currentStock: products.currentStock })
+      .from(products)
+      .where(and(eq(products.id, productId), eq(products.tenantId, tenantId)));
+    
+    return product?.currentStock || 0;
   }
 
   async getTransactions(tenantId: string): Promise<Transaction[]> {
@@ -298,9 +304,10 @@ export class DatabaseStorage implements IStorage {
     const orders = await this.getProductionOrders(tenantId);
     const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'in_progress').length;
 
-    // Get inventory count
-    const inventoryItems = await this.getInventory(tenantId);
-    const lowStockItems = inventoryItems.filter(i => i.quantity <= i.minStock).length;
+    // Get products with stock tracking
+    const allProducts = await this.getProducts(tenantId);
+    const stockProducts = allProducts.filter(p => p.type === 'stock_product');
+    const lowStockItems = stockProducts.filter(p => (p.currentStock || 0) <= (p.minStock || 0)).length;
 
     // Get active users count
     const activeUsers = await this.getUsersByTenant(tenantId);

@@ -217,13 +217,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Inventory routes
+  // Products and Services routes (replacing inventory)
   app.get("/api/inventory", async (req: any, res) => {
     try {
-      const inventory = await storage.getInventory('550e8400-e29b-41d4-a716-446655440000');
-      res.json(inventory);
+      const products = await storage.getProducts('550e8400-e29b-41d4-a716-446655440000');
+      res.json(products);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch inventory" });
+      res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  // Stock movements routes
+  app.get("/api/stock-movements", async (req: any, res) => {
+    try {
+      const movements = await storage.getStockMovements('550e8400-e29b-41d4-a716-446655440000');
+      res.json(movements);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch stock movements" });
+    }
+  });
+
+  app.post("/api/stock-movements", async (req: any, res) => {
+    try {
+      const movementData = { ...req.body, tenantId: '550e8400-e29b-41d4-a716-446655440000' };
+      const movement = await storage.createStockMovement(movementData);
+      res.status(201).json(movement);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to create stock movement" });
     }
   });
 
