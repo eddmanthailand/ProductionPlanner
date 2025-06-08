@@ -97,7 +97,7 @@ export default function Sales() {
       date: new Date().toISOString().split('T')[0],
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       priceIncludesVat: false,
-      items: [{
+      items: Array.from({ length: 10 }, () => ({
         productName: "",
         description: "",
         quantity: "",
@@ -105,7 +105,7 @@ export default function Sales() {
         unitPrice: "",
         discount: "",
         total: 0
-      }],
+      })),
       subtotal: 0,
       discountAmount: 0,
       subtotalAfterDiscount: 0,
@@ -205,11 +205,41 @@ export default function Sales() {
   // Remove item
   const removeItem = (index: number) => {
     const currentItems = form.getValues('items');
-    if (currentItems.length > 1) {
-      const newItems = currentItems.filter((_: any, i: number) => i !== index);
-      form.setValue('items', newItems);
-      calculateTotals();
+    
+    // ตรวจสอบว่ามีแถวที่มีข้อมูลอยู่หรือไม่
+    const itemsWithData = currentItems.filter((item: any) => 
+      item.productName || item.description || item.quantity || item.unitPrice || item.discount
+    );
+    
+    // ถ้ามีแถวที่มีข้อมูลแค่แถวเดียว ไม่ให้ลบ
+    if (itemsWithData.length <= 1 && (
+      currentItems[index].productName || 
+      currentItems[index].description || 
+      currentItems[index].quantity || 
+      currentItems[index].unitPrice || 
+      currentItems[index].discount
+    )) {
+      return;
     }
+    
+    // ลบแถวที่เลือก
+    const newItems = currentItems.filter((_: any, i: number) => i !== index);
+    
+    // ตรวจสอบว่ายังมีแถวเหลืออยู่หรือไม่ ถ้าไม่มีให้เพิ่มแถวเปล่า
+    if (newItems.length === 0) {
+      newItems.push({
+        productName: "",
+        description: "",
+        quantity: "",
+        unit: "ชิ้น",
+        unitPrice: "",
+        discount: "",
+        total: 0
+      });
+    }
+    
+    form.setValue('items', newItems);
+    calculateTotals();
   };
 
   // Handle customer selection
@@ -664,8 +694,7 @@ export default function Sales() {
                                   size="sm"
                                   onClick={() => removeItem(index)}
                                   className="text-red-600 border-red-300 hover:text-red-700 hover:bg-red-50 hover:border-red-400"
-                                  disabled={form.watch('items').length <= 1}
-                                  title={form.watch('items').length <= 1 ? "ต้องมีสินค้าอย่างน้อย 1 รายการ" : "ลบแถวนี้"}
+                                  title="ลบแถวนี้"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
