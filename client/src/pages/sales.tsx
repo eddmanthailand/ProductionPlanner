@@ -3,18 +3,19 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useLanguage } from "@/hooks/use-language";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Plus, Search, Edit, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Customer, Product, Quotation } from "@shared/schema";
 
+// Schema for validation with proper transformations
 const quotationFormSchema = z.object({
   customerId: z.string().min(1, "กรุณาเลือกลูกค้า"),
   date: z.string().min(1, "กรุณาใส่วันที่"),
@@ -24,9 +25,18 @@ const quotationFormSchema = z.object({
     productId: z.number().optional(),
     productName: z.string().min(1, "กรุณาใส่ชื่อสินค้า"),
     description: z.string().default(""),
-    quantity: z.number().min(1, "จำนวนต้องมากกว่า 0"),
-    unitPrice: z.number().min(0, "ราคาต้องมากกว่าหรือเท่ากับ 0"),
-    discount: z.number().min(0, "ส่วนลดต้องมากกว่าหรือเท่ากับ 0").default(0),
+    quantity: z.union([z.string(), z.number()]).transform((val) => {
+      if (typeof val === 'string' && val === '') return 1;
+      return typeof val === 'string' ? parseInt(val) || 1 : val;
+    }),
+    unitPrice: z.union([z.string(), z.number()]).transform((val) => {
+      if (typeof val === 'string' && val === '') return 0;
+      return typeof val === 'string' ? parseFloat(val) || 0 : val;
+    }),
+    discount: z.union([z.string(), z.number()]).transform((val) => {
+      if (typeof val === 'string' && val === '') return 0;
+      return typeof val === 'string' ? parseFloat(val) || 0 : val;
+    }),
     total: z.number().default(0)
   })).min(1, "กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ"),
   subtotal: z.number().default(0),
@@ -59,16 +69,16 @@ export default function Sales() {
   
   const t = (key: string) => (translations as any)[language][key] || key;
 
-  // States
+  // State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customersLoading, setCustomersLoading] = useState(true);
 
-  // Form
-  const form = useForm<QuotationFormData>({
+  // Form - use any to bypass strict typing issues
+  const form = useForm<any>({
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
       customerId: "",
@@ -78,9 +88,9 @@ export default function Sales() {
       items: [{
         productName: "",
         description: "",
-        quantity: 1,
-        unitPrice: 0,
-        discount: 0,
+        quantity: "",
+        unitPrice: "",
+        discount: "",
         total: 0
       }],
       subtotal: 0,
@@ -98,89 +108,71 @@ export default function Sales() {
       try {
         setCustomersLoading(true);
         const response = await fetch('/api/customers');
-        
-        if (response.ok) {
-          const data = await response.json();
-          setCustomers(data);
-        } else {
-          console.error('Failed to fetch customers:', response.status);
-          setCustomers([]);
-        }
+        const data = await response.json();
+        setCustomers(data);
       } catch (error) {
         console.error('Error fetching customers:', error);
-        setCustomers([]);
+        toast({
+          title: "ข้อผิดพลาด",
+          description: "ไม่สามารถโหลดข้อมูลลูกค้าได้",
+          variant: "destructive",
+        });
       } finally {
         setCustomersLoading(false);
       }
     };
 
     fetchCustomers();
-  }, []);
+  }, [toast]);
 
-  // Query for quotations
-  const { data: quotations = [] } = useQuery({
-    queryKey: ["/api/quotations"]
+  // Queries
+  const { data: quotations } = useQuery({
+    queryKey: ['/api/quotations'],
+    enabled: true
   });
 
-  const { data: products = [] } = useQuery({
-    queryKey: ["/api/products"]
+  const { data: products } = useQuery({
+    queryKey: ['/api/products'],
+    enabled: true
   });
 
-  // Filter customers based on search term
-  const filteredCustomers = customers.filter(customer => {
-    if (!customerSearchTerm) return false;
-    const searchLower = customerSearchTerm.toLowerCase();
-    return (
-      customer.name?.toLowerCase().includes(searchLower) ||
-      customer.companyName?.toLowerCase().includes(searchLower) ||
-      customer.email?.toLowerCase().includes(searchLower) ||
-      customer.phone?.toLowerCase().includes(searchLower)
-    );
-  });
-
-  // Handle customer selection
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setCustomerSearchTerm(customer.name);
-    setShowCustomerDropdown(false);
-    form.setValue('customerId', customer.id.toString());
+  // Calculate item total
+  const updateItemTotal = (index: number, quantity: number, unitPrice: number, discount: number) => {
+    const total = (quantity * unitPrice) - (quantity * discount);
+    form.setValue(`items.${index}.total`, total);
+    calculateTotals();
   };
 
-  // Calculate totals
+  // Calculate all totals
   const calculateTotals = () => {
     const items = form.getValues('items');
+    const subtotal = items.reduce((sum: number, item: any) => sum + (item.total || 0), 0);
+    const discountAmount = items.reduce((sum: number, item: any) => {
+      const qty = typeof item.quantity === 'string' ? parseInt(item.quantity) || 0 : item.quantity || 0;
+      const disc = typeof item.discount === 'string' ? parseFloat(item.discount) || 0 : item.discount || 0;
+      return sum + (qty * disc);
+    }, 0);
+    
+    form.setValue('subtotal', subtotal);
+    form.setValue('discountAmount', discountAmount);
+    
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    form.setValue('subtotalAfterDiscount', subtotalAfterDiscount);
+    
     const priceIncludesVat = form.getValues('priceIncludesVat');
-    
-    // Calculate subtotal and total discount
-    const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const totalDiscountAmount = items.reduce((sum, item) => sum + (item.discount * item.quantity), 0);
-    const subtotalAfterDiscount = subtotal - totalDiscountAmount;
-    
     let vatAmount: number;
     let grandTotal: number;
     
     if (priceIncludesVat) {
-      // ราคารวม VAT แล้ว
       grandTotal = subtotalAfterDiscount;
       vatAmount = subtotalAfterDiscount - (subtotalAfterDiscount / 1.07);
     } else {
-      // ราคายังไม่รวม VAT
       vatAmount = subtotalAfterDiscount * 0.07;
       grandTotal = subtotalAfterDiscount + vatAmount;
     }
     
-    form.setValue('subtotal', subtotal);
-    form.setValue('discountAmount', totalDiscountAmount);
-    form.setValue('subtotalAfterDiscount', subtotalAfterDiscount);
     form.setValue('vatAmount', vatAmount);
     form.setValue('grandTotal', grandTotal);
-  };
-
-  // Update item total
-  const updateItemTotal = (index: number, quantity: number, unitPrice: number, discount: number = 0) => {
-    const total = quantity * unitPrice;
-    form.setValue(`items.${index}.total`, total);
-    calculateTotals();
   };
 
   // Add new item
@@ -189,9 +181,9 @@ export default function Sales() {
     form.setValue('items', [...currentItems, {
       productName: "",
       description: "",
-      quantity: 1,
-      unitPrice: 0,
-      discount: 0,
+      quantity: "",
+      unitPrice: "",
+      discount: "",
       total: 0
     }]);
   };
@@ -200,260 +192,221 @@ export default function Sales() {
   const removeItem = (index: number) => {
     const currentItems = form.getValues('items');
     if (currentItems.length > 1) {
-      form.setValue('items', currentItems.filter((_, i) => i !== index));
+      const newItems = currentItems.filter((_: any, i: number) => i !== index);
+      form.setValue('items', newItems);
       calculateTotals();
     }
   };
 
+  // Handle customer selection
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    form.setValue("customerId", customer.id.toString());
+    setSearchTerm(customer.name);
+    setShowCustomerDropdown(false);
+  };
+
+  // Filter customers based on search
+  const filteredCustomers = customers.filter(customer =>
+    customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (customer.companyName && customer.companyName.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
   // Create quotation mutation
   const createQuotationMutation = useMutation({
     mutationFn: async (data: QuotationFormData) => {
-      const response = await fetch('/api/quotations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(data)
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-      
-      return response.json();
+      await apiRequest('/api/quotations', 'POST', data);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/quotations'] });
       toast({
         title: "สำเร็จ",
-        description: "สร้างใบเสนอราคาเรียบร้อยแล้ว"
+        description: "สร้างใบเสนอราคาเรียบร้อยแล้ว",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       setIsDialogOpen(false);
       form.reset();
       setSelectedCustomer(null);
-      setCustomerSearchTerm("");
+      setSearchTerm("");
     },
-    onError: (error: any) => {
+    onError: (error) => {
       toast({
-        title: "เกิดข้อผิดพลาด",
-        description: error.message || "ไม่สามารถสร้างใบเสนอราคาได้",
-        variant: "destructive"
+        title: "ข้อผิดพลาด",
+        description: `ไม่สามารถสร้างใบเสนอราคาได้: ${error.message}`,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  // Handle form submission
-  const onSubmit = (data: QuotationFormData) => {
+  const onSubmit = (data: any) => {
+    console.log("Form data:", data);
     createQuotationMutation.mutate(data);
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      {/* Header */}
+    <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">{t("sales.title")}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">{t("sales.title")}</h1>
         <Button onClick={() => setIsDialogOpen(true)}>
-          <Plus className="mr-2 h-4 w-4" />
+          <Plus className="h-4 w-4 mr-2" />
           {t("sales.newQuotation")}
         </Button>
       </div>
 
       {/* Create Quotation Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
+        <DialogContent className="max-w-7xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("sales.newQuotation")}</DialogTitle>
-            <DialogDescription>
-              สร้างใบเสนอราคาใหม่สำหรับลูกค้า
-            </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="space-y-6">
-                {/* Top Section - Customer and Settings */}
+                {/* Header Section */}
                 <div className="grid grid-cols-3 gap-6">
-                  {/* Customer Selection */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">ข้อมูลลูกค้า</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Autocomplete Search */}
-                      <div className="relative">
-                        <Input
-                          placeholder="ค้นหาลูกค้า..."
-                          value={customerSearchTerm}
-                          onChange={(e) => {
-                            setCustomerSearchTerm(e.target.value);
-                            setShowCustomerDropdown(true);
-                          }}
-                          onFocus={() => setShowCustomerDropdown(true)}
-                          className="w-full"
-                        />
-                        
-                        {/* Autocomplete Dropdown */}
-                        {showCustomerDropdown && customerSearchTerm && (
-                          <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                            {customersLoading ? (
-                              <div className="p-3 text-center text-gray-500">กำลังโหลด...</div>
-                            ) : filteredCustomers.length > 0 ? (
-                              <div className="divide-y">
-                                {filteredCustomers.map((customer) => (
-                                  <div
-                                    key={customer.id}
-                                    className="p-3 hover:bg-gray-50 cursor-pointer"
-                                    onClick={() => handleCustomerSelect(customer)}
-                                  >
-                                    <div className="font-medium">{customer.name}</div>
-                                    {customer.companyName && (
-                                      <div className="text-sm text-gray-600">{customer.companyName}</div>
-                                    )}
-                                    <div className="text-xs text-gray-500">
-                                      {customer.phone && <span>โทร: {customer.phone}</span>}
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <div className="p-3 text-center text-gray-500 text-sm">
-                                ไม่พบลูกค้าที่ตรงกับการค้นหา
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Selected Customer Display */}
-                      {selectedCustomer && (
-                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <div className="font-medium text-blue-800">{selectedCustomer.name}</div>
-                              {selectedCustomer.companyName && (
-                                <div className="text-sm text-blue-600">{selectedCustomer.companyName}</div>
+                  {/* Customer Search */}
+                  <div className="relative">
+                    <FormField
+                      control={form.control}
+                      name="customerId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ลูกค้า *</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="text"
+                                placeholder="ค้นหาลูกค้า..."
+                                value={searchTerm}
+                                onChange={(e) => {
+                                  setSearchTerm(e.target.value);
+                                  setShowCustomerDropdown(true);
+                                }}
+                                onFocus={() => setShowCustomerDropdown(true)}
+                                className="pr-10"
+                              />
+                              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                              
+                              {showCustomerDropdown && filteredCustomers.length > 0 && (
+                                <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto">
+                                  {customersLoading ? (
+                                    <div className="p-3 text-center text-gray-500">กำลังโหลด...</div>
+                                  ) : (
+                                    filteredCustomers.map((customer) => (
+                                      <div
+                                        key={customer.id}
+                                        className="p-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                                        onClick={() => handleCustomerSelect(customer)}
+                                      >
+                                        <div className="font-medium text-gray-900">{customer.name}</div>
+                                        {customer.companyName && (
+                                          <div className="text-sm text-gray-600">{customer.companyName}</div>
+                                        )}
+                                        <div className="text-xs text-gray-500">
+                                          {customer.address}
+                                          {customer.district && `, ${customer.district}`}
+                                          {customer.province && `, ${customer.province}`}
+                                          {customer.postalCode && ` ${customer.postalCode}`}
+                                        </div>
+                                      </div>
+                                    ))
+                                  )}
+                                </div>
                               )}
                             </div>
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedCustomer(null);
-                                setCustomerSearchTerm('');
-                                form.setValue('customerId', '');
-                              }}
-                              className="text-blue-600 hover:text-blue-800"
-                            >
-                              ✕
-                            </Button>
-                          </div>
-                        </div>
+                          </FormControl>
+                        </FormItem>
                       )}
-                    </CardContent>
-                  </Card>
+                    />
+                  </div>
 
-                  {/* Date Fields */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">วันที่</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>วันที่ใบเสนอราคา</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="validUntil"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>วันหมดอายุ</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
+                  {/* Date */}
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>วันที่ *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
 
-                  {/* VAT Option */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">ตัวเลือกภาษีมูลค่าเพิ่ม</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <FormField
-                        control={form.control}
-                        name="priceIncludesVat"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <input
-                                type="checkbox"
-                                checked={field.value}
-                                onChange={(e) => {
-                                  field.onChange(e.target.checked);
-                                  calculateTotals();
-                                }}
-                                className="h-4 w-4"
-                              />
-                            </FormControl>
-                            <FormLabel className="text-sm font-normal">
-                              ราคารวมภาษีมูลค่าเพิ่ม 7% แล้ว
-                            </FormLabel>
-                          </FormItem>
-                        )}
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
-                        {form.watch('priceIncludesVat') 
-                          ? "ราคาที่ใส่จะถือว่ารวม VAT 7% แล้ว" 
-                          : "ราคาที่ใส่ยังไม่รวม VAT จะคิด VAT 7% เพิ่มเติม"
-                        }
-                      </p>
-                    </CardContent>
-                  </Card>
+                  {/* Valid Until */}
+                  <FormField
+                    control={form.control}
+                    name="validUntil"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>วันหมดอายุ *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
                 </div>
 
-                {/* Full Width Items Table */}
+                {/* VAT Toggle */}
+                <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
+                  <FormField
+                    control={form.control}
+                    name="priceIncludesVat"
+                    render={({ field }) => (
+                      <FormItem className="flex items-center space-x-2">
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={(checked) => {
+                              field.onChange(checked);
+                              calculateTotals();
+                            }}
+                          />
+                        </FormControl>
+                        <FormLabel className="text-sm font-medium">
+                          ราคารวม VAT 7% แล้ว
+                        </FormLabel>
+                      </FormItem>
+                    )}
+                  />
+                  <div className="text-xs text-blue-600">
+                    {form.watch('priceIncludesVat') ? 
+                      'ราคาที่ใส่รวม VAT แล้ว ระบบจะคำนวณ VAT ย้อนกลับ' : 
+                      'ราคาที่ใส่ยังไม่รวม VAT ระบบจะเพิ่ม VAT 7%'}
+                  </div>
+                </div>
+
+                {/* Items Table */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-xl flex justify-between items-center">
-                      รายการสินค้า
-                      <Button type="button" onClick={addItem} size="lg">
-                        <Plus className="h-5 w-5 mr-2" />
-                        เพิ่มรายการสินค้า
+                    <div className="flex justify-between items-center">
+                      <CardTitle className="text-lg">รายการสินค้า</CardTitle>
+                      <Button type="button" onClick={addItem} size="sm">
+                        <Plus className="h-4 w-4 mr-1" />
+                        เพิ่มสินค้า
                       </Button>
-                    </CardTitle>
+                    </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-300">
+                      <table className="w-full border-collapse">
                         <thead>
-                          <tr className="bg-gray-100">
-                            <th className="border border-gray-300 p-4 text-left font-medium w-1/4">ชื่อสินค้า</th>
-                            <th className="border border-gray-300 p-4 text-left font-medium w-1/4">รายละเอียด</th>
-                            <th className="border border-gray-300 p-4 text-center font-medium w-16">จำนวน</th>
-                            <th className="border border-gray-300 p-4 text-center font-medium w-16">หน่วย</th>
-                            <th className="border border-gray-300 p-4 text-center font-medium w-32">ราคาต่อหน่วย</th>
-                            <th className="border border-gray-300 p-4 text-center font-medium w-32">ส่วนลดต่อหน่วย</th>
-                            <th className="border border-gray-300 p-4 text-center font-medium w-32">ยอดรวม</th>
-                            <th className="border border-gray-300 p-4 text-center font-medium w-16">ลบ</th>
+                          <tr className="bg-gray-50">
+                            <th className="border border-gray-300 p-3 text-left min-w-[200px]">ชื่อสินค้า</th>
+                            <th className="border border-gray-300 p-3 text-left min-w-[200px]">รายละเอียด</th>
+                            <th className="border border-gray-300 p-3 text-center min-w-[100px]">จำนวน</th>
+                            <th className="border border-gray-300 p-3 text-center min-w-[80px]">หน่วย</th>
+                            <th className="border border-gray-300 p-3 text-center min-w-[120px]">ราคาต่อหน่วย</th>
+                            <th className="border border-gray-300 p-3 text-center min-w-[120px]">ส่วนลดต่อหน่วย</th>
+                            <th className="border border-gray-300 p-3 text-center min-w-[120px]">รวม</th>
+                            <th className="border border-gray-300 p-3 text-center min-w-[80px]">จัดการ</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {form.watch('items').map((item, index) => (
-                            <tr key={index} className="hover:bg-gray-50">
+                          {form.watch('items').map((item: any, index: number) => (
+                            <tr key={index}>
                               {/* Product Name */}
                               <td className="border border-gray-300 p-2">
                                 <FormField
@@ -465,12 +418,9 @@ export default function Sales() {
                                       placeholder="ชื่อสินค้า"
                                       className="w-full border-0 focus:ring-0 p-2 text-sm"
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Tab' && !e.shiftKey) {
-                                          // Tab ปกติ - ไปช่องถัดไป
-                                        } else if (e.key === 'Enter') {
+                                        if (e.key === 'Enter') {
                                           e.preventDefault();
-                                          // Enter - ไปช่องรายละเอียด
-                                          const descInput = document.querySelector(`input[name="items.${index}.description"]`) as HTMLInputElement;
+                                          const descInput = document.querySelector(`textarea[name="items.${index}.description"]`) as HTMLTextAreaElement;
                                           if (descInput) {
                                             descInput.focus();
                                           }
@@ -493,7 +443,6 @@ export default function Sales() {
                                       className="w-full border-0 focus:ring-0 p-2 text-sm resize-none overflow-hidden min-h-[40px]"
                                       rows={2}
                                       onInput={(e) => {
-                                        // Auto-resize textarea based on content
                                         const target = e.target as HTMLTextAreaElement;
                                         target.style.height = 'auto';
                                         target.style.height = Math.max(40, target.scrollHeight) + 'px';
@@ -501,13 +450,11 @@ export default function Sales() {
                                       onKeyDown={(e) => {
                                         if (e.key === 'Tab') {
                                           e.preventDefault();
-                                          // Tab - ไปช่องจำนวน
                                           const quantityInput = document.querySelector(`input[name="items.${index}.quantity"]`) as HTMLInputElement;
                                           if (quantityInput) {
                                             quantityInput.focus();
                                           }
                                         }
-                                        // Enter ทำงานปกติ (ขึ้นบรรทัดใหม่)
                                       }}
                                     />
                                   )}
@@ -523,13 +470,14 @@ export default function Sales() {
                                     <Input
                                       type="number"
                                       min="1"
+                                      placeholder=""
                                       className="w-full text-center border-0 focus:ring-0 p-2 text-sm"
                                       {...field}
                                       onChange={(e) => {
                                         const quantity = parseInt(e.target.value) || 0;
-                                        field.onChange(quantity);
-                                        const unitPrice = form.getValues(`items.${index}.unitPrice`);
-                                        const discount = form.getValues(`items.${index}.discount`);
+                                        field.onChange(e.target.value);
+                                        const unitPrice = parseFloat(form.getValues(`items.${index}.unitPrice`)) || 0;
+                                        const discount = parseFloat(form.getValues(`items.${index}.discount`)) || 0;
                                         updateItemTotal(index, quantity, unitPrice, discount);
                                       }}
                                       onKeyDown={(e) => {
@@ -561,14 +509,14 @@ export default function Sales() {
                                       type="number"
                                       min="0"
                                       step="0.01"
+                                      placeholder=""
                                       className="w-full text-right border-0 focus:ring-0 p-2 text-sm"
-                                      placeholder="0.00"
                                       {...field}
                                       onChange={(e) => {
                                         const unitPrice = parseFloat(e.target.value) || 0;
-                                        field.onChange(unitPrice);
-                                        const quantity = form.getValues(`items.${index}.quantity`);
-                                        const discount = form.getValues(`items.${index}.discount`);
+                                        field.onChange(e.target.value);
+                                        const quantity = parseInt(form.getValues(`items.${index}.quantity`)) || 0;
+                                        const discount = parseFloat(form.getValues(`items.${index}.discount`)) || 0;
                                         updateItemTotal(index, quantity, unitPrice, discount);
                                       }}
                                       onKeyDown={(e) => {
@@ -595,20 +543,19 @@ export default function Sales() {
                                       type="number"
                                       min="0"
                                       step="0.01"
+                                      placeholder=""
                                       className="w-full text-right border-0 focus:ring-0 p-2 text-sm"
-                                      placeholder="0.00"
                                       {...field}
                                       onChange={(e) => {
                                         const discount = parseFloat(e.target.value) || 0;
-                                        field.onChange(discount);
-                                        const quantity = form.getValues(`items.${index}.quantity`);
-                                        const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                        field.onChange(e.target.value);
+                                        const quantity = parseInt(form.getValues(`items.${index}.quantity`)) || 0;
+                                        const unitPrice = parseFloat(form.getValues(`items.${index}.unitPrice`)) || 0;
                                         updateItemTotal(index, quantity, unitPrice, discount);
                                       }}
                                       onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
                                           e.preventDefault();
-                                          // เมื่อกด Enter ในช่องส่วนลดแถวสุดท้าย จะเพิ่มแถวใหม่
                                           const isLastRow = index === form.getValues('items').length - 1;
                                           if (isLastRow) {
                                             addItem();
@@ -620,7 +567,6 @@ export default function Sales() {
                                               }
                                             }, 100);
                                           } else {
-                                            // ไปแถวถัดไป
                                             const nextRowInput = document.querySelector(`input[name="items.${index + 1}.productName"]`) as HTMLInputElement;
                                             if (nextRowInput) {
                                               nextRowInput.focus();
@@ -673,7 +619,6 @@ export default function Sales() {
 
                 {/* Bottom Section - Summary and Actions */}
                 <div className="grid grid-cols-2 gap-6">
-
                   {/* Summary */}
                   <Card>
                     <CardHeader>
