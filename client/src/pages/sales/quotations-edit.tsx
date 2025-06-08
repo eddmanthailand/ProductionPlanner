@@ -133,8 +133,8 @@ export default function QuotationsEdit() {
   // Load quotation data when available
   useEffect(() => {
     if (quotation && typeof quotation === 'object') {
-      const q = quotation as any;
-      console.log('Loading quotation data:', q);
+      const q = Array.isArray(quotation) ? quotation[0] : quotation as any;
+
       form.reset({
         quotationNumber: q.quotationNumber || "",
         customerId: q.customerId || 0,
@@ -174,7 +174,6 @@ export default function QuotationsEdit() {
           });
         }
         
-        console.log('Loading quotation items:', loadedItems);
         setItems(loadedItems);
       }
     }

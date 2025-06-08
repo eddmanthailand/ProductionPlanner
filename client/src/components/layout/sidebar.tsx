@@ -31,6 +31,10 @@ export default function Sidebar() {
     }
   }, [location]);
 
+  const toggleSalesMenu = () => {
+    setExpandedSales(!expandedSales);
+  };
+
   const salesSubMenu = [
     { name: "ใบเสนอราคา", href: "/sales/quotations", icon: FileText },
     { name: "ใบส่งสินค้า/ใบแจ้งหนี้", href: "/sales/invoices", icon: FileText },
@@ -92,7 +96,7 @@ export default function Sidebar() {
           {/* Sales Menu with Submenu */}
           <li>
             <button
-              onClick={() => setExpandedSales(!expandedSales)}
+              onClick={toggleSalesMenu}
               className={`flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors ${
                 location.startsWith("/sales") 
                   ? "bg-primary text-white" 
