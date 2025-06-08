@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2, UserPlus } from "lucide-react";
+import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2, UserPlus, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -664,7 +664,7 @@ export default function OrganizationChart() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">แผนกทั้งหมด</CardTitle>
@@ -687,6 +687,32 @@ export default function OrganizationChart() {
             <div className="text-2xl font-bold">{totalTeams}</div>
             <p className="text-xs text-muted-foreground">
               กระจายใน {totalDepartments} แผนก
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">พนักงานทั้งหมด</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalEmployees}</div>
+            <p className="text-xs text-muted-foreground">
+              {totalEmployees > 0 ? `กระจายอยู่ใน ${totalTeams} ทีม` : "ยังไม่มีพนักงานในระบบ"}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ต้นทุนรวม/วัน</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalDailyCost.toLocaleString()}</div>
+            <p className="text-xs text-muted-foreground">
+              บาทต่อวัน (รวมทุกค่าใช้จ่าย)
             </p>
           </CardContent>
         </Card>
