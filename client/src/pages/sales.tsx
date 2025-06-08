@@ -3,7 +3,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Calculator, User, Calendar, FileText, Package2 as Package } from "lucide-react";
+import { Plus, Edit, Trash2, Calculator, User, Calendar, FileText, Package2 as Package, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +50,9 @@ type QuotationFormData = z.infer<typeof quotationFormSchema>;
 export default function Sales() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingQuotation, setEditingQuotation] = useState<any>(null);
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
   const { user, tenant } = useAuth();
   const { t } = useLanguage();
   const { toast } = useToast();
@@ -92,6 +95,14 @@ export default function Sales() {
     enabled: !!tenant?.id,
   });
 
+  // Filter customers based on search term
+  const filteredCustomers = customers.filter((customer: Customer) =>
+    customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+    customer.phone?.toLowerCase().includes(customerSearchTerm.toLowerCase())
+  );
+
   // Fetch products
   const { data: products = [] } = useQuery({
     queryKey: ["/api/products"],
@@ -106,6 +117,14 @@ export default function Sales() {
     const day = String(today.getDate()).padStart(2, '0');
     const timestamp = Date.now().toString().slice(-6);
     return `QT${year}${month}${day}${timestamp}`;
+  };
+
+  // Handle customer selection
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    form.setValue("customerId", customer.id);
+    setCustomerSearchOpen(false);
+    setCustomerSearchTerm("");
   };
 
   // Quotation mutation
@@ -324,26 +343,71 @@ export default function Sales() {
                     <div className="bg-white border rounded-lg p-4">
                       <h3 className="text-sm font-medium text-gray-700 mb-3">ลูกค้า</h3>
                       <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="customerId"
-                          render={({ field }) => (
-                            <div>
-                              <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                                <SelectTrigger className="w-full">
-                                  <SelectValue placeholder="เลือกลูกค้า หรือสร้างลูกค้าใหม่" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {(customers as any[]).map((customer: Customer) => (
-                                    <SelectItem key={customer.id} value={customer.id.toString()}>
-                                      {customer.name} {customer.companyName && `(${customer.companyName})`}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          )}
-                        />
+                        <div className="space-y-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full justify-start"
+                            onClick={() => setCustomerSearchOpen(true)}
+                          >
+                            <Search className="mr-2 h-4 w-4" />
+                            {selectedCustomer ? 
+                              `${selectedCustomer.name} ${selectedCustomer.companyName ? `(${selectedCustomer.companyName})` : ''}` : 
+                              'ค้นหาและเลือกลูกค้า'
+                            }
+                          </Button>
+
+                          {/* Customer Search Dialog */}
+                          <Dialog open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>ค้นหาลูกค้า</DialogTitle>
+                              </DialogHeader>
+                              
+                              <div className="space-y-4">
+                                <Input
+                                  placeholder="ค้นหาด้วย ชื่อ, บริษัท, อีเมล หรือเบอร์โทร..."
+                                  value={customerSearchTerm}
+                                  onChange={(e) => setCustomerSearchTerm(e.target.value)}
+                                  className="w-full"
+                                />
+                                
+                                <div className="max-h-96 overflow-y-auto border rounded-lg">
+                                  {filteredCustomers.length > 0 ? (
+                                    <div className="divide-y">
+                                      {filteredCustomers.map((customer: Customer) => (
+                                        <div
+                                          key={customer.id}
+                                          className="p-4 hover:bg-gray-50 cursor-pointer"
+                                          onClick={() => handleCustomerSelect(customer)}
+                                        >
+                                          <div className="flex justify-between items-start">
+                                            <div>
+                                              <h4 className="font-medium">{customer.name}</h4>
+                                              {customer.companyName && (
+                                                <p className="text-sm text-gray-600">{customer.companyName}</p>
+                                              )}
+                                              <div className="text-sm text-gray-500 mt-1">
+                                                {customer.email && <span>{customer.email}</span>}
+                                                {customer.phone && (
+                                                  <span className="ml-3">{customer.phone}</span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <div className="p-8 text-center text-gray-500">
+                                      {customerSearchTerm ? 'ไม่พบลูกค้าที่ตรงกับการค้นหา' : 'กรุณาใส่คำค้นหา'}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
                         
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
