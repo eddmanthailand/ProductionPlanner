@@ -88,62 +88,12 @@ export default function Sales() {
     queryKey: ["/api/quotations"],
   });
 
-  // Customer data - using static data for reliable functionality
-  const customers: Customer[] = [
-    {
-      id: 1,
-      name: "CURVF",
-      companyName: "บริษัท เคิฟ คัลเชอร์ จำกัด",
-      email: null,
-      phone: "0611942991",
-      address: "23/132 หมู่ที่ 8 ตำบลอ้อมใหญ่ อำเภอสามพราน จ.นครปฐม",
-      taxId: "0735565007597",
-      tenantId: "550e8400-e29b-41d4-a716-446655440000"
-    },
-    {
-      id: 2,
-      name: "Unilever",
-      companyName: "Unilever Thailand",
-      email: "contact@unilever.com",
-      phone: "02-123-4567",
-      address: "Bangkok, Thailand",
-      taxId: "0123456789012",
-      tenantId: "550e8400-e29b-41d4-a716-446655440000"
-    },
-    {
-      id: 3,
-      name: "คุณสมชาย",
-      companyName: "บริษัท ABC จำกัด",
-      email: "somchai@abc.com",
-      phone: "02-123-4567",
-      address: "123 ถนนสุขุมวิท กรุงเทพฯ",
-      taxId: "0123456789012",
-      tenantId: "550e8400-e29b-41d4-a716-446655440000"
-    },
-    {
-      id: 4,
-      name: "คุณสมหญิง",
-      companyName: "บริษัท XYZ จำกัด",
-      email: "somying@xyz.com",
-      phone: "02-234-5678",
-      address: "456 ถนนพหลโยธิน กรุงเทพฯ",
-      taxId: "0234567890123",
-      tenantId: "550e8400-e29b-41d4-a716-446655440000"
-    },
-    {
-      id: 5,
-      name: "คุณวิชาญ",
-      companyName: "ร้านเสื้อผ้าวิชาญ",
-      email: "wichan@shop.com",
-      phone: "089-123-4567",
-      address: "789 ตลาดจตุจักร กรุงเทพฯ",
-      taxId: "0345678901234",
-      tenantId: "550e8400-e29b-41d4-a716-446655440000"
-    }
-  ];
-
-  const customersLoading = false;
-  const customersError = null;
+  // Fetch customers from database API
+  const { data: customers = [], isLoading: customersLoading, error: customersError } = useQuery({
+    queryKey: ["/api/customers"],
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
   // Debug customers data
   console.log('Customers data:', customers);

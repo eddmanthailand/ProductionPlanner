@@ -285,63 +285,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     try {
-      console.log('Fetching customers with simple approach...');
-      // Return static customer data for now to test the frontend
-      const staticCustomers = [
-        {
-          id: 1,
-          name: "CURVF",
-          companyName: "บริษัท เคิฟ คัลเชอร์ จำกัด",
-          email: null,
-          phone: "0611942991",
-          address: "23/132 หมู่ที่ 8 ตำบลอ้อมใหญ่ อำเภอสามพราน จ.นครปฐม",
-          taxId: "0735565007597",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 2,
-          name: "Unilever",
-          companyName: "Unilever Thailand",
-          email: "contact@unilever.com",
-          phone: "02-123-4567",
-          address: "Bangkok, Thailand",
-          taxId: "0123456789012",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 3,
-          name: "คุณสมชาย",
-          companyName: "บริษัท ABC จำกัด",
-          email: "somchai@abc.com",
-          phone: "02-123-4567",
-          address: "123 ถนนสุขุมวิท กรุงเทพฯ",
-          taxId: "0123456789012",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 4,
-          name: "คุณสมหญิง",
-          companyName: "บริษัท XYZ จำกัด",
-          email: "somying@xyz.com",
-          phone: "02-234-5678",
-          address: "456 ถนนพหลโยธิน กรุงเทพฯ",
-          taxId: "0234567890123",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 5,
-          name: "คุณวิชาญ",
-          companyName: "ร้านเสื้อผ้าวิชาญ",
-          email: "wichan@shop.com",
-          phone: "089-123-4567",
-          address: "789 ตลาดจตุจักร กรุงเทพฯ",
-          taxId: "0345678901234",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        }
-      ];
-      
-      console.log('Returning static customers:', staticCustomers.length);
-      res.json(staticCustomers);
+      console.log('Fetching customers from database...');
+      const customers = await storage.getCustomers('550e8400-e29b-41d4-a716-446655440000');
+      console.log('Found customers:', customers.length);
+      res.json(customers);
     } catch (error: any) {
       console.error('Error fetching customers:', error);
       res.status(500).json({ message: "Failed to fetch customers", error: error.message });
