@@ -92,21 +92,44 @@ export default function WorkOrderForm() {
 
   // Generate order number
   useEffect(() => {
-    const generateOrderNumber = () => {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
-      return `JB${year}${month}${sequence}`;
+    const generateOrderNumber = async () => {
+      try {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        
+        // Get current count for this month
+        const response = await fetch('/api/work-orders/count', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ year, month })
+        });
+        
+        let sequence = "001";
+        if (response.ok) {
+          const data = await response.json();
+          sequence = String(data.count + 1).padStart(3, '0');
+        }
+        
+        return `JB${year}${month}${sequence}`;
+      } catch (error) {
+        // Fallback to simple sequence if API fails
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        return `JB${year}${month}001`;
+      }
     };
 
     if (!formData.orderNumber) {
-      setFormData(prev => ({
-        ...prev,
-        orderNumber: generateOrderNumber()
-      }));
+      generateOrderNumber().then(orderNumber => {
+        setFormData(prev => ({
+          ...prev,
+          orderNumber
+        }));
+      });
     }
-  }, []);
+  }, [formData.orderNumber]);
 
   // Queries
   const { data: customers = [] } = useQuery<Customer[]>({
@@ -488,7 +511,7 @@ export default function WorkOrderForm() {
                         <div className="space-y-2">
                           <Label>ชื่อสินค้า/งาน</Label>
                           <Input
-                            value={item.productName}
+                            value={item.productName || ""}
                             onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
                             placeholder="ชื่อสินค้าหรืองาน"
                           />
@@ -527,7 +550,7 @@ export default function WorkOrderForm() {
                         <div className="md:col-span-2 space-y-2">
                           <Label>รายละเอียด</Label>
                           <Input
-                            value={item.description}
+                            value={item.description || ""}
                             onChange={(e) => handleItemChange(index, 'description', e.target.value)}
                             placeholder="รายละเอียดเพิ่มเติม"
                           />
@@ -536,7 +559,7 @@ export default function WorkOrderForm() {
                         <div className="md:col-span-2 space-y-2">
                           <Label>ข้อกำหนดพิเศษ</Label>
                           <Input
-                            value={item.specifications}
+                            value={item.specifications || ""}
                             onChange={(e) => handleItemChange(index, 'specifications', e.target.value)}
                             placeholder="ข้อกำหนดหรือคุณสมบัติพิเศษ"
                           />

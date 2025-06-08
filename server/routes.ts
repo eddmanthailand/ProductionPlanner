@@ -1662,6 +1662,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Work Orders count endpoint for generating order numbers
+  app.post("/api/work-orders/count", async (req: any, res: any) => {
+    try {
+      const { year, month } = req.body;
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
+      
+      console.log(`API: Getting work order count for ${year}-${month}`);
+      
+      // Count work orders for the specific year and month
+      const countResult = await pool.query(
+        `SELECT COUNT(*) as count FROM work_orders 
+         WHERE tenant_id = $1 
+         AND EXTRACT(YEAR FROM created_at) = $2 
+         AND EXTRACT(MONTH FROM created_at) = $3`,
+        [tenantId, year, month]
+      );
+      
+      const count = parseInt(countResult.rows[0].count) || 0;
+      console.log(`API: Found ${count} work orders for ${year}-${month}`);
+      
+      res.json({ count });
+    } catch (error) {
+      console.error("Get work order count error:", error);
+      res.status(500).json({ message: "Failed to get work order count" });
+    }
+  });
+
   return httpServer;
 }
 
