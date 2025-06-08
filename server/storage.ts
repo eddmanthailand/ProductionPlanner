@@ -18,6 +18,8 @@ import {
   productionCapacity,
   workQueue,
   holidays,
+  workOrders,
+  workOrderItems,
   type User,
   type InsertUser,
   type Tenant,
@@ -55,7 +57,11 @@ import {
   type WorkQueue,
   type InsertWorkQueue,
   type Holiday,
-  type InsertHoliday
+  type InsertHoliday,
+  type WorkOrder,
+  type InsertWorkOrder,
+  type WorkOrderItem,
+  type InsertWorkOrderItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -185,6 +191,19 @@ export interface IStorage {
   getHolidaysByDateRange(tenantId: string, startDate: Date, endDate: Date): Promise<Holiday[]>;
   createHoliday(holiday: InsertHoliday): Promise<Holiday>;
   deleteHoliday(id: string, tenantId: string): Promise<boolean>;
+
+  // Work Orders
+  getWorkOrders(tenantId: string): Promise<WorkOrder[]>;
+  getWorkOrder(id: string, tenantId: string): Promise<WorkOrder | undefined>;
+  createWorkOrder(workOrder: InsertWorkOrder): Promise<WorkOrder>;
+  updateWorkOrder(id: string, workOrder: Partial<InsertWorkOrder>, tenantId: string): Promise<WorkOrder | undefined>;
+  deleteWorkOrder(id: string, tenantId: string): Promise<boolean>;
+
+  // Work Order Items
+  getWorkOrderItems(workOrderId: string): Promise<WorkOrderItem[]>;
+  createWorkOrderItem(item: InsertWorkOrderItem): Promise<WorkOrderItem>;
+  updateWorkOrderItem(id: number, item: Partial<InsertWorkOrderItem>): Promise<WorkOrderItem | undefined>;
+  deleteWorkOrderItem(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -970,6 +989,129 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(holidays)
       .where(and(eq(holidays.id, id), eq(holidays.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Work Orders methods
+  async getWorkOrders(tenantId: string): Promise<WorkOrder[]> {
+    return await db
+      .select()
+      .from(workOrders)
+      .where(eq(workOrders.tenantId, tenantId))
+      .orderBy(desc(workOrders.createdAt));
+  }
+
+  async getWorkOrder(id: string, tenantId: string): Promise<WorkOrder | undefined> {
+    const [result] = await db
+      .select()
+      .from(workOrders)
+      .where(and(eq(workOrders.id, id), eq(workOrders.tenantId, tenantId)));
+    return result || undefined;
+  }
+
+  async createWorkOrder(insertWorkOrder: InsertWorkOrder): Promise<WorkOrder> {
+    // Generate order number
+    const orderCount = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(workOrders)
+      .where(eq(workOrders.tenantId, insertWorkOrder.tenantId));
+    
+    const orderNumber = `WO${String(orderCount[0].count + 1).padStart(6, '0')}`;
+
+    // Get customer info if customerId is provided
+    let customerData = {};
+    if (insertWorkOrder.customerId) {
+      const [customer] = await db
+        .select()
+        .from(customers)
+        .where(eq(customers.id, insertWorkOrder.customerId));
+      
+      if (customer) {
+        customerData = {
+          customerName: customer.name,
+          customerTaxId: customer.taxId,
+          customerAddress: customer.address,
+          customerPhone: customer.phone,
+          customerEmail: customer.email
+        };
+      }
+    }
+
+    // Get quotation total if quotationId is provided
+    let totalAmount = "0.00";
+    if (insertWorkOrder.quotationId) {
+      const [quotation] = await db
+        .select()
+        .from(quotations)
+        .where(eq(quotations.id, insertWorkOrder.quotationId));
+      
+      if (quotation) {
+        totalAmount = quotation.grandTotal;
+      }
+    }
+
+    const [workOrder] = await db
+      .insert(workOrders)
+      .values({
+        ...insertWorkOrder,
+        ...customerData,
+        id: nanoid(),
+        orderNumber,
+        totalAmount
+      })
+      .returning();
+    return workOrder;
+  }
+
+  async updateWorkOrder(id: string, updateData: Partial<InsertWorkOrder>, tenantId: string): Promise<WorkOrder | undefined> {
+    const [result] = await db
+      .update(workOrders)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(eq(workOrders.id, id), eq(workOrders.tenantId, tenantId)))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteWorkOrder(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(workOrders)
+      .where(and(eq(workOrders.id, id), eq(workOrders.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Work Order Items methods
+  async getWorkOrderItems(workOrderId: string): Promise<WorkOrderItem[]> {
+    return await db
+      .select()
+      .from(workOrderItems)
+      .where(eq(workOrderItems.workOrderId, workOrderId))
+      .orderBy(asc(workOrderItems.id));
+  }
+
+  async createWorkOrderItem(insertItem: InsertWorkOrderItem): Promise<WorkOrderItem> {
+    const [item] = await db
+      .insert(workOrderItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async updateWorkOrderItem(id: number, updateData: Partial<InsertWorkOrderItem>): Promise<WorkOrderItem | undefined> {
+    const [result] = await db
+      .update(workOrderItems)
+      .set(updateData)
+      .where(eq(workOrderItems.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteWorkOrderItem(id: number): Promise<boolean> {
+    const result = await db
+      .delete(workOrderItems)
+      .where(eq(workOrderItems.id, id));
     return (result.rowCount ?? 0) > 0;
   }
 }
