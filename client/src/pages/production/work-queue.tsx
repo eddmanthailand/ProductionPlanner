@@ -265,7 +265,12 @@ export default function WorkQueueManager() {
 
     updateWorkMutation.mutate({
       id: editingWork.id,
-      ...editingWork
+      orderNumber: editingWork.orderNumber,
+      productName: editingWork.productName,
+      quantity: editingWork.quantity,
+      priority: editingWork.priority,
+      status: editingWork.status,
+      notes: editingWork.notes
     });
   };
 
