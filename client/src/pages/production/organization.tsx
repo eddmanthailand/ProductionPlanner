@@ -88,10 +88,10 @@ export default function OrganizationChart() {
   };
 
   const handleAddDepartment = () => {
-    if (!newDepartment.name.trim() || !newDepartment.manager.trim() || !newDepartment.location.trim()) {
+    if (!newDepartment.name.trim() || !newDepartment.location.trim()) {
       toast({
         title: "ข้อผิดพลาด",
-        description: "กรุณากรอกข้อมูลให้ครบถ้วน",
+        description: "กรุณากรอกชื่อแผนกและสถานที่",
         variant: "destructive"
       });
       return;
