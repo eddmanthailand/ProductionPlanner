@@ -72,8 +72,8 @@ export default function WorkQueueManager() {
     const autoLogin = async () => {
       try {
         await apiRequest("/api/auth/login", "POST", {
-          username: "admin",
-          password: "secret"
+          username: "demo",
+          password: "demo"
         });
       } catch (error) {
         console.log("Auto-login failed, user may already be logged in");
