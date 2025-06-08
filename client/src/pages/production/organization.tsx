@@ -613,6 +613,15 @@ export default function OrganizationChart() {
   const totalDepartments = departments.length;
   const totalTeams = teams.length;
   const activeDepartments = departments.filter(dept => dept.status === "active").length;
+  const totalEmployees = employees.reduce((sum, emp) => sum + emp.count, 0);
+  const totalDailyCost = employees.reduce((sum, emp) => {
+    return sum + calculateDailyCost(
+      emp.count,
+      parseFloat(emp.averageWage) || 0,
+      parseFloat(emp.overheadPercentage) || 0,
+      parseFloat(emp.managementPercentage) || 0
+    );
+  }, 0);
 
   if (departmentsLoading || teamsLoading) {
     return (
@@ -655,7 +664,7 @@ export default function OrganizationChart() {
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">แผนกทั้งหมด</CardTitle>
@@ -678,19 +687,6 @@ export default function OrganizationChart() {
             <div className="text-2xl font-bold">{totalTeams}</div>
             <p className="text-xs text-muted-foreground">
               กระจายใน {totalDepartments} แผนก
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">พนักงานทั้งหมด</CardTitle>
-            <Network className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">0</div>
-            <p className="text-xs text-muted-foreground">
-              ยังไม่มีพนักงานในระบบ
             </p>
           </CardContent>
         </Card>
