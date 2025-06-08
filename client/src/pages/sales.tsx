@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Plus, Search, Edit, Trash2 } from "lucide-react";
+import { FileText, Plus, Search, Edit, Trash2, Wrench, Box, Archive, Package } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import type { Customer, Product, Quotation } from "@shared/schema";
 
@@ -89,6 +89,8 @@ export default function Sales() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [customersLoading, setCustomersLoading] = useState(true);
   const [unitDropdownStates, setUnitDropdownStates] = useState<{[key: number]: boolean}>({});
+  const [productDropdownStates, setProductDropdownStates] = useState<{[key: number]: boolean}>({});
+  const [productTypeFilter, setProductTypeFilter] = useState<{[key: number]: string}>({});
 
   // Form - use any to bypass strict typing issues
   const form = useForm<any>({
@@ -146,7 +148,7 @@ export default function Sales() {
     enabled: true
   });
 
-  const { data: products } = useQuery({
+  const { data: products } = useQuery<Product[]>({
     queryKey: ['/api/products'],
     enabled: true
   });
@@ -458,6 +460,7 @@ export default function Sales() {
                       <table className="w-full border-collapse">
                         <thead>
                           <tr className="bg-gray-50">
+                            <th className="border border-gray-300 p-3 text-center min-w-[120px]">เลือกสินค้า</th>
                             <th className="border border-gray-300 p-3 text-left min-w-[200px]">ชื่อสินค้า</th>
                             <th className="border border-gray-300 p-3 text-left min-w-[200px]">รายละเอียด</th>
                             <th className="border border-gray-300 p-3 text-center min-w-[100px]">จำนวน</th>
@@ -471,6 +474,127 @@ export default function Sales() {
                         <tbody>
                           {form.watch('items').map((item: any, index: number) => (
                             <tr key={index}>
+                              {/* Product Selection */}
+                              <td className="border border-gray-300 p-2">
+                                <div className="flex flex-col space-y-2">
+                                  {/* Product Type Filter Buttons */}
+                                  <div className="flex space-x-1">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant={productTypeFilter[index] === 'service' ? 'default' : 'outline'}
+                                      className="p-1 h-7 min-w-0"
+                                      onClick={() => {
+                                        setProductTypeFilter(prev => ({
+                                          ...prev,
+                                          [index]: prev[index] === 'service' ? '' : 'service'
+                                        }));
+                                      }}
+                                    >
+                                      <Wrench className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant={productTypeFilter[index] === 'non_stock_product' ? 'default' : 'outline'}
+                                      className="p-1 h-7 min-w-0"
+                                      onClick={() => {
+                                        setProductTypeFilter(prev => ({
+                                          ...prev,
+                                          [index]: prev[index] === 'non_stock_product' ? '' : 'non_stock_product'
+                                        }));
+                                      }}
+                                    >
+                                      <Box className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant={productTypeFilter[index] === 'stock_product' ? 'default' : 'outline'}
+                                      className="p-1 h-7 min-w-0"
+                                      onClick={() => {
+                                        setProductTypeFilter(prev => ({
+                                          ...prev,
+                                          [index]: prev[index] === 'stock_product' ? '' : 'stock_product'
+                                        }));
+                                      }}
+                                    >
+                                      <Archive className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                  
+                                  {/* Product Dropdown */}
+                                  <div className="relative">
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="outline"
+                                      className="w-full justify-between text-xs h-8"
+                                      onClick={() => {
+                                        setProductDropdownStates(prev => ({
+                                          ...prev,
+                                          [index]: !prev[index]
+                                        }));
+                                      }}
+                                    >
+                                      <span className="truncate">
+                                        {item.productName || 'เลือกสินค้า'}
+                                      </span>
+                                      <Package className="h-3 w-3" />
+                                    </Button>
+                                    
+                                    {productDropdownStates[index] && (
+                                      <div className="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                                        {products?.filter((product: Product) => {
+                                          if (!productTypeFilter[index]) return true;
+                                          return product.type === productTypeFilter[index];
+                                        }).map((product: Product) => (
+                                          <div
+                                            key={product.id}
+                                            className="p-2 hover:bg-gray-100 cursor-pointer border-b last:border-b-0 text-xs"
+                                            onClick={() => {
+                                              // Update form with selected product
+                                              form.setValue(`items.${index}.productId`, product.id);
+                                              form.setValue(`items.${index}.productName`, product.name);
+                                              form.setValue(`items.${index}.description`, product.description || '');
+                                              form.setValue(`items.${index}.unit`, product.unit);
+                                              form.setValue(`items.${index}.unitPrice`, product.price || 0);
+                                              
+                                              // Close dropdown
+                                              setProductDropdownStates(prev => ({
+                                                ...prev,
+                                                [index]: false
+                                              }));
+                                              
+                                              // Calculate total
+                                              const quantity = parseFloat(form.getValues(`items.${index}.quantity`)) || 1;
+                                              const unitPrice = product.price || 0;
+                                              const discount = parseFloat(form.getValues(`items.${index}.discount`)) || 0;
+                                              updateItemTotal(index, quantity, unitPrice, discount);
+                                            }}
+                                          >
+                                            <div className="font-medium">{product.name}</div>
+                                            <div className="text-gray-500 text-xs">
+                                              {product.sku} • {product.unit} • ฿{(typeof product.price === 'number' ? product.price : 0).toFixed(2)}
+                                            </div>
+                                            <div className="flex items-center space-x-1 mt-1">
+                                              {product.type === 'service' && <Wrench className="h-2 w-2 text-blue-600" />}
+                                              {product.type === 'non_stock_product' && <Box className="h-2 w-2 text-purple-600" />}
+                                              {product.type === 'stock_product' && <Archive className="h-2 w-2 text-green-600" />}
+                                              <span className="text-xs text-gray-400">
+                                                {product.type === 'service' && 'บริการ'}
+                                                {product.type === 'non_stock_product' && 'ไม่นับสต็อก'}
+                                                {product.type === 'stock_product' && 'นับสต็อก'}
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )) || <div className="p-2 text-gray-500 text-xs">ไม่มีสินค้า</div>}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              
                               {/* Product Name */}
                               <td className="border border-gray-300 p-2">
                                 <FormField
