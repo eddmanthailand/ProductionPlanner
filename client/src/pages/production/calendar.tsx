@@ -181,19 +181,27 @@ export default function ProductionCalendar() {
     const existingHolidays = getHolidaysByDate(dateStr);
     
     if (existingHolidays.length > 0) {
-      // If there's already a holiday, edit it
-      setEditingHoliday(existingHolidays[0]);
-      setHolidayName(existingHolidays[0].name);
-      setHolidayType(existingHolidays[0].type);
-      setSelectedDate(dateStr);
-      setIsDialogOpen(true);
+      // If there's already a holiday, remove it
+      setHolidays(prev => prev.filter(holiday => holiday.date !== dateStr));
+      toast({
+        title: "ลบวันหยุดแล้ว",
+        description: `ลบ ${existingHolidays[0].name} เรียบร้อย`
+      });
     } else {
-      // Create new holiday
-      setEditingHoliday(null);
-      setHolidayName("");
-      setHolidayType("national");
-      setSelectedDate(dateStr);
-      setIsDialogOpen(true);
+      // Create new holiday with default name
+      const defaultName = `วันหยุด ${new Date(dateStr).toLocaleDateString('th-TH', { day: 'numeric', month: 'long' })}`;
+      const newHoliday: Holiday = {
+        id: `h${Date.now()}`,
+        date: dateStr,
+        name: defaultName,
+        type: "company",
+        recurring: true
+      };
+      setHolidays(prev => [...prev, newHoliday]);
+      toast({
+        title: "เพิ่มวันหยุดแล้ว",
+        description: `เพิ่ม ${defaultName} เรียบร้อย`
+      });
     }
   };
 
@@ -269,7 +277,17 @@ export default function ProductionCalendar() {
             <CalendarIcon className="w-8 h-8 text-blue-600" />
             ปฏิทินวันหยุดประจำปี
           </h1>
-          <p className="text-gray-600 mt-1">จัดการและกำหนดวันหยุดประจำปี</p>
+          <p className="text-gray-600 mt-1">คลิกวันในปฏิทินเพื่อเพิ่ม/ลบวันหยุด</p>
+          <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
+              <span>วันหยุดที่มีอยู่</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div>
+              <span>วันนี้</span>
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
@@ -374,7 +392,7 @@ export default function ProductionCalendar() {
               <div className="grid grid-cols-7 gap-1">
                 {generateMonthCalendar(currentYear, monthIndex).map((day, dayIndex) => {
                   if (!day) {
-                    return <div key={dayIndex} className="h-8"></div>;
+                    return <div key={`empty-${monthIndex}-${dayIndex}`} className="h-8"></div>;
                   }
                   
                   const dateStr = formatDateForHoliday(currentYear, monthIndex, day);
@@ -384,14 +402,14 @@ export default function ProductionCalendar() {
                   
                   return (
                     <div
-                      key={day}
-                      className={`h-8 border rounded cursor-pointer flex items-center justify-center text-sm hover:bg-gray-50 ${
-                        isToday ? 'bg-blue-100 border-blue-300 text-blue-700' : 
-                        hasHoliday ? 'bg-red-100 border-red-300 text-red-700' : 
-                        'border-gray-200 text-gray-700'
+                      key={`${monthIndex}-${day}`}
+                      className={`h-8 border rounded cursor-pointer flex items-center justify-center text-sm transition-all duration-200 ${
+                        isToday ? 'bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200' : 
+                        hasHoliday ? 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200' : 
+                        'border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
                       }`}
                       onClick={() => handleDateClick(currentYear, monthIndex, day)}
-                      title={hasHoliday ? dayHolidays[0].name : "คลิกเพื่อเพิ่มวันหยุด"}
+                      title={hasHoliday ? `${dayHolidays[0].name} - คลิกเพื่อลบ` : "คลิกเพื่อเพิ่มวันหยุด"}
                     >
                       {day}
                     </div>
