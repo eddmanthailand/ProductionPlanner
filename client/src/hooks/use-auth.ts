@@ -7,13 +7,44 @@ export function useAuth() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (isAuthenticated()) {
-      const storedUser = getStoredUser();
-      const storedTenant = getStoredTenant();
-      setUser(storedUser);
-      setTenant(storedTenant);
-    }
-    setIsLoading(false);
+    const initAuth = async () => {
+      if (isAuthenticated()) {
+        const storedUser = getStoredUser();
+        const storedTenant = getStoredTenant();
+        setUser(storedUser);
+        setTenant(storedTenant);
+      } else {
+        // Auto-login for development
+        try {
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              username: "demo",
+              password: "demo123"
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            localStorage.setItem("token", data.token);
+            localStorage.setItem("user", JSON.stringify(data.user));
+            if (data.tenant) {
+              localStorage.setItem("tenant", JSON.stringify(data.tenant));
+            }
+            setUser(data.user);
+            setTenant(data.tenant);
+          }
+        } catch (error) {
+          console.log("Auto-login failed, proceeding without authentication");
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
   }, []);
 
   const updateTenant = (newTenant: Tenant) => {
