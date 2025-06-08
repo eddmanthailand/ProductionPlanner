@@ -303,69 +303,7 @@ export default function Customers() {
                       <FormItem>
                         <FormLabel>ชื่อบริษัท</FormLabel>
                         <FormControl>
-                          <div className="space-y-2">
-                            <div className="flex space-x-2">
-                              <Input 
-                                {...field} 
-                                onChange={(e) => {
-                                  field.onChange(e);
-                                  setCompanySearchTerm(e.target.value);
-                                  setCompanySearch({ status: 'idle' }); // รีเซ็ตสถานะเมื่อแก้ไข
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => searchCompanyByName(companySearchTerm)}
-                                disabled={!companySearchTerm || companySearchTerm.length < 2 || companySearch.status === 'loading'}
-                                className="whitespace-nowrap"
-                              >
-                                {companySearch.status === 'loading' ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Search className="h-4 w-4" />
-                                )}
-                                ค้นหา
-                              </Button>
-                            </div>
-                            
-                            {/* แสดงผลการค้นหาบริษัท */}
-                            {companySearch.status === 'success' && companySearch.data && (
-                              <div className="space-y-2">
-                                <div className="flex items-center space-x-2 text-green-600 text-sm">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>พบ {companySearch.data.length} บริษัท</span>
-                                </div>
-                                <div className="max-h-32 overflow-y-auto space-y-1">
-                                  {companySearch.data.map((company, index) => (
-                                    <div 
-                                      key={index}
-                                      className="p-2 border rounded cursor-pointer hover:bg-gray-50 text-sm"
-                                      onClick={() => {
-                                        form.setValue('companyName', company.name);
-                                        form.setValue('taxId', company.taxId || '');
-                                        form.setValue('address', company.address || '');
-                                        setCompanySearch({ status: 'idle' });
-                                      }}
-                                    >
-                                      <div className="font-medium">{company.name}</div>
-                                      {company.taxId && (
-                                        <div className="text-gray-500">เลขที่ผู้เสียภาษี: {company.taxId}</div>
-                                      )}
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                            
-                            {companySearch.status === 'error' && (
-                              <div className="flex items-center space-x-2 text-orange-600 text-sm">
-                                <AlertCircle className="h-4 w-4" />
-                                <span>{companySearch.error}</span>
-                              </div>
-                            )}
-                          </div>
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -382,149 +320,17 @@ export default function Customers() {
                         <FormControl>
                           <div className="space-y-2">
                             <div className="text-xs text-gray-600 mb-2">
-                              ตรวจสอบข้อมูลได้ที่:{" "}
-                              <a 
-                                href="https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                              >
-                                เว็บไซต์กรมสรรพากร
-                              </a>
+                              ตรวจสอบข้อมูลได้ที่: <strong>https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp</strong>
                             </div>
-                            <div className="flex space-x-2">
-                              <Input 
-                                {...field} 
-                                placeholder="เช่น 0123456789012" 
-                                maxLength={13}
-                                onChange={(e) => {
-                                  const value = e.target.value.replace(/\D/g, ''); // ให้ใส่เฉพาะตัวเลข
-                                  field.onChange(value);
-                                  setTaxIdVerification({ status: 'idle' }); // รีเซ็ตสถานะเมื่อแก้ไข
-                                }}
-                              />
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => verifyTaxId(field.value)}
-                                disabled={!field.value || field.value.length !== 13 || taxIdVerification.status === 'loading'}
-                                className="whitespace-nowrap"
-                              >
-                                {taxIdVerification.status === 'loading' ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <Search className="h-4 w-4" />
-                                )}
-                                ตรวจสอบ
-                              </Button>
-                            </div>
-                            
-                            {/* แสดงผลการตรวจสอบ */}
-                            {taxIdVerification.status === 'success' && taxIdVerification.data && (
-                              <div className="space-y-2">
-                                <div className="flex items-center space-x-2 text-green-600 text-sm">
-                                  <CheckCircle className="h-4 w-4" />
-                                  <span>
-                                    {taxIdVerification.data.source === 'existing_customer' 
-                                      ? 'พบข้อมูลในระบบลูกค้า' 
-                                      : taxIdVerification.data.source === 'government_api'
-                                      ? 'พบข้อมูลจากกรมสรรพากร'
-                                      : 'รูปแบบเลขที่ผู้เสียภาษีถูกต้อง'}
-                                  </span>
-                                </div>
-                                <div 
-                                  className="p-3 border border-green-200 rounded-lg bg-green-50 cursor-pointer hover:bg-green-100 transition-colors"
-                                  onClick={() => {
-                                    // กรอกข้อมูลลงในฟอร์ม
-                                    if (taxIdVerification.data?.companyName) {
-                                      form.setValue('companyName', taxIdVerification.data.companyName);
-                                    } else if (taxIdVerification.data?.name) {
-                                      form.setValue('companyName', taxIdVerification.data.name);
-                                    }
-                                    
-                                    if (taxIdVerification.data?.address) {
-                                      form.setValue('address', taxIdVerification.data.address);
-                                    }
-                                    
-                                    if (taxIdVerification.data?.phone) {
-                                      form.setValue('phone', taxIdVerification.data.phone);
-                                    }
-                                    
-                                    if (taxIdVerification.data?.email) {
-                                      form.setValue('email', taxIdVerification.data.email);
-                                    }
-                                    
-                                    if (taxIdVerification.data?.contactPerson) {
-                                      form.setValue('contactPerson', taxIdVerification.data.contactPerson);
-                                    }
-                                    
-                                    // รีเซ็ตสถานะการตรวจสอบหลังจากเลือกข้อมูล
-                                    setTaxIdVerification({ status: 'idle' });
-                                  }}
-                                >
-                                  <div className="text-sm">
-                                    <div className="font-semibold text-green-800 mb-2">
-                                      {taxIdVerification.data.companyName || taxIdVerification.data.name}
-                                    </div>
-                                    
-                                    {taxIdVerification.data.address && (
-                                      <div className="text-green-700 mb-1">
-                                        <strong>ที่อยู่:</strong> {taxIdVerification.data.address}
-                                      </div>
-                                    )}
-                                    
-                                    {taxIdVerification.data.phone && (
-                                      <div className="text-green-700 mb-1">
-                                        <strong>โทรศัพท์:</strong> {taxIdVerification.data.phone}
-                                      </div>
-                                    )}
-                                    
-                                    {taxIdVerification.data.email && (
-                                      <div className="text-green-700 mb-1">
-                                        <strong>อีเมล:</strong> {taxIdVerification.data.email}
-                                      </div>
-                                    )}
-                                    
-                                    {taxIdVerification.data.contactPerson && (
-                                      <div className="text-green-700 mb-1">
-                                        <strong>ผู้ติดต่อ:</strong> {taxIdVerification.data.contactPerson}
-                                      </div>
-                                    )}
-                                    
-                                    {taxIdVerification.data.source && (
-                                      <div className="text-green-600 mt-2 text-xs">
-                                        {taxIdVerification.data.source === 'existing_customer' ? 'ข้อมูลจากระบบลูกค้า' : 'ข้อมูลตัวอย่าง'}
-                                      </div>
-                                    )}
-                                    
-                                    <div className="text-green-600 mt-2 text-xs font-medium">
-                                      คลิกเพื่อกรอกข้อมูลนี้ลงในฟอร์ม →
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {taxIdVerification.status === 'error' && (
-                              <div className="space-y-2">
-                                <div className="flex items-center space-x-2 text-orange-600 text-sm">
-                                  <AlertCircle className="h-4 w-4" />
-                                  <span>{taxIdVerification.error}</span>
-                                </div>
-                                <div className="text-xs text-gray-600">
-                                  ตรวจสอบเพิ่มเติมได้ที่:{" "}
-                                  <a 
-                                    href="https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp" 
-                                    target="_blank" 
-                                    rel="noopener noreferrer"
-                                    className="text-blue-600 hover:underline"
-                                  >
-                                    เว็บไซต์กรมสรรพากร
-                                  </a>
-                                </div>
-                              </div>
-                            )}
+                            <Input 
+                              {...field} 
+                              placeholder="เช่น 0123456789012" 
+                              maxLength={13}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, ''); // ให้ใส่เฉพาะตัวเลข
+                                field.onChange(value);
+                              }}
+                            />
                           </div>
                         </FormControl>
                         <FormMessage />
