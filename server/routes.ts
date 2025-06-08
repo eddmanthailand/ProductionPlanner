@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { pool } from "./db";
 import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -285,11 +286,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customers", async (req: any, res) => {
     try {
       console.log('Fetching customers...');
-      const tenantId = '550e8400-e29b-41d4-a716-446655440000'; // Default tenant for dev
-      const customers = await storage.getCustomers(tenantId);
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      // Use timeout to prevent hanging
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Database query timeout')), 5000)
+      );
+      
+      const customersPromise = storage.getCustomers(tenantId);
+      const customers = await Promise.race([customersPromise, timeoutPromise]);
+      
       console.log('Found customers:', customers.length);
       res.json(customers);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching customers:', error);
       res.status(500).json({ message: "Failed to fetch customers", error: error.message });
     }
