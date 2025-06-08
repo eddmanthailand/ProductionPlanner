@@ -53,7 +53,6 @@ export default function OrganizationChart() {
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [newDepartment, setNewDepartment] = useState({
     name: "",
-    type: "production" as "production" | "quality" | "management" | "support",
     manager: "",
     location: "",
     status: "active" as "active" | "maintenance" | "inactive"
@@ -101,7 +100,7 @@ export default function OrganizationChart() {
     const department: Department = {
       id: `dept-${Date.now()}`,
       name: newDepartment.name,
-      type: newDepartment.type,
+      type: "production", // Default type
       manager: newDepartment.manager,
       location: newDepartment.location,
       status: newDepartment.status,
@@ -112,7 +111,6 @@ export default function OrganizationChart() {
     setDepartments(prev => [...prev, department]);
     setNewDepartment({
       name: "",
-      type: "production",
       manager: "",
       location: "",
       status: "active"
@@ -128,7 +126,6 @@ export default function OrganizationChart() {
   const handleCancelAddDepartment = () => {
     setNewDepartment({
       name: "",
-      type: "production",
       manager: "",
       location: "",
       status: "active"
@@ -395,23 +392,7 @@ export default function OrganizationChart() {
               />
             </div>
             
-            <div>
-              <label className="text-sm font-medium text-gray-700">ประเภทแผนก</label>
-              <Select 
-                value={newDepartment.type} 
-                onValueChange={(value: any) => setNewDepartment(prev => ({ ...prev, type: value }))}
-              >
-                <SelectTrigger className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="production">แผนกผลิต</SelectItem>
-                  <SelectItem value="quality">แผนกควบคุมคุณภาพ</SelectItem>
-                  <SelectItem value="management">แผนกบริหาร</SelectItem>
-                  <SelectItem value="support">แผนกสนับสนุน</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+
             
             <div>
               <label className="text-sm font-medium text-gray-700">หัวหน้าแผนก</label>
