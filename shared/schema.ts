@@ -323,11 +323,13 @@ export const teams = pgTable("teams", {
 export const employees = pgTable("employees", {
   id: text("id").primaryKey(),
   teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
-  name: text("name").notNull(),
-  position: text("position").notNull(),
-  skill: text("skill").array().notNull(),
-  status: text("status").notNull(),
-  workload: integer("workload").notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  count: integer("count").notNull(), // จำนวนพนักงาน
+  averageWage: decimal("average_wage", { precision: 10, scale: 2 }).notNull(), // ค่าแรงเฉลี่ย/คน
+  overheadPercentage: decimal("overhead_percentage", { precision: 5, scale: 2 }).notNull(), // %overhead
+  managementPercentage: decimal("management_percentage", { precision: 5, scale: 2 }).notNull(), // %management
+  description: text("description"), // คำอธิบายประเภทพนักงาน เช่น "ช่างตัด", "ช่างเย็บ"
+  status: text("status").notNull().default("active"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

@@ -752,30 +752,24 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(employees)
-      .innerJoin(teams, eq(employees.teamId, teams.id))
-      .innerJoin(departments, eq(teams.departmentId, departments.id))
-      .where(eq(departments.tenantId, tenantId))
-      .then(rows => rows.map(row => row.employees));
+      .where(eq(employees.tenantId, tenantId))
+      .orderBy(employees.createdAt);
   }
 
   async getEmployeesByTeam(teamId: string, tenantId: string): Promise<Employee[]> {
     return await db
       .select()
       .from(employees)
-      .innerJoin(teams, eq(employees.teamId, teams.id))
-      .innerJoin(departments, eq(teams.departmentId, departments.id))
-      .where(and(eq(employees.teamId, teamId), eq(departments.tenantId, tenantId)))
-      .then(rows => rows.map(row => row.employees));
+      .where(and(eq(employees.teamId, teamId), eq(employees.tenantId, tenantId)))
+      .orderBy(employees.createdAt);
   }
 
   async getEmployee(id: string, tenantId: string): Promise<Employee | undefined> {
     const [result] = await db
       .select()
       .from(employees)
-      .innerJoin(teams, eq(employees.teamId, teams.id))
-      .innerJoin(departments, eq(teams.departmentId, departments.id))
-      .where(and(eq(employees.id, id), eq(departments.tenantId, tenantId)));
-    return result?.employees || undefined;
+      .where(and(eq(employees.id, id), eq(employees.tenantId, tenantId)));
+    return result || undefined;
   }
 
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
