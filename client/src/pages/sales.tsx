@@ -260,7 +260,7 @@ export default function Sales() {
 
       {/* Create Quotation Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-[95vw] max-h-[95vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("sales.newQuotation")}</DialogTitle>
             <DialogDescription>
@@ -270,9 +270,9 @@ export default function Sales() {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid grid-cols-2 gap-8">
-                {/* Left column - Customer and Items */}
-                <div className="space-y-6">
+              <div className="space-y-6">
+                {/* Top Section - Customer and Settings */}
+                <div className="grid grid-cols-3 gap-6">
                   {/* Customer Selection */}
                   <Card>
                     <CardHeader>
@@ -282,7 +282,7 @@ export default function Sales() {
                       {/* Autocomplete Search */}
                       <div className="relative">
                         <Input
-                          placeholder="ค้นหาลูกค้า... (พิมพ์ชื่อ บริษัท อีเมล หรือเบอร์โทร)"
+                          placeholder="ค้นหาลูกค้า..."
                           value={customerSearchTerm}
                           onChange={(e) => {
                             setCustomerSearchTerm(e.target.value);
@@ -310,13 +310,7 @@ export default function Sales() {
                                       <div className="text-sm text-gray-600">{customer.companyName}</div>
                                     )}
                                     <div className="text-xs text-gray-500">
-                                      {customer.email && <span>อีเมล: {customer.email}</span>}
-                                      {customer.phone && (
-                                        <span className="ml-3">โทร: {customer.phone}</span>
-                                      )}
-                                      {customer.postalCode && (
-                                        <span className="ml-3">รหัสไปรษณีย์: {customer.postalCode}</span>
-                                      )}
+                                      {customer.phone && <span>โทร: {customer.phone}</span>}
                                     </div>
                                   </div>
                                 ))}
@@ -332,29 +326,12 @@ export default function Sales() {
                       
                       {/* Selected Customer Display */}
                       {selectedCustomer && (
-                        <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
                           <div className="flex justify-between items-start">
                             <div>
                               <div className="font-medium text-blue-800">{selectedCustomer.name}</div>
                               {selectedCustomer.companyName && (
                                 <div className="text-sm text-blue-600">{selectedCustomer.companyName}</div>
-                              )}
-                              {selectedCustomer.address && (
-                                <div className="text-xs text-gray-600 mt-1">ที่อยู่: {selectedCustomer.address}</div>
-                              )}
-                              <div className="text-xs text-gray-600 mt-1 space-x-4">
-                                {selectedCustomer.phone && (
-                                  <span>โทร: {selectedCustomer.phone}</span>
-                                )}
-                                {selectedCustomer.email && (
-                                  <span>อีเมล: {selectedCustomer.email}</span>
-                                )}
-                                {selectedCustomer.postalCode && (
-                                  <span>รหัสไปรษณีย์: {selectedCustomer.postalCode}</span>
-                                )}
-                              </div>
-                              {selectedCustomer.taxId && (
-                                <div className="text-xs text-gray-600">เลขประจำตัวผู้เสียภาษี: {selectedCustomer.taxId}</div>
                               )}
                             </div>
                             <Button
@@ -373,6 +350,40 @@ export default function Sales() {
                           </div>
                         </div>
                       )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Date Fields */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">วันที่</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FormField
+                        control={form.control}
+                        name="date"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>วันที่ใบเสนอราคา</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="validUntil"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>วันหมดอายุ</FormLabel>
+                            <FormControl>
+                              <Input type="date" {...field} />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
                     </CardContent>
                   </Card>
 
@@ -412,211 +423,185 @@ export default function Sales() {
                       </p>
                     </CardContent>
                   </Card>
-
-                  {/* Items */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg flex justify-between items-center">
-                        รายการสินค้า
-                        <Button type="button" onClick={addItem} size="sm">
-                          <Plus className="h-4 w-4 mr-1" />
-                          เพิ่มรายการ
-                        </Button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {/* Header */}
-                        <div className="grid grid-cols-12 gap-2 items-center p-2 bg-gray-50 rounded text-xs font-medium">
-                          <div className="col-span-3">สินค้า/รายละเอียด</div>
-                          <div className="col-span-1 text-center">จำนวน</div>
-                          <div className="col-span-1 text-center">หน่วย</div>
-                          <div className="col-span-2 text-center">ราคาต่อหน่วย</div>
-                          <div className="col-span-2 text-center">ส่วนลดต่อหน่วย</div>
-                          <div className="col-span-2 text-center">รวม</div>
-                          <div className="col-span-1"></div>
-                        </div>
-
-                        {form.watch('items').map((item, index) => (
-                          <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded">
-                            {/* Product */}
-                            <div className="col-span-3 space-y-2">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.productName`}
-                                render={({ field }) => (
-                                  <Input 
-                                    {...field}
-                                    placeholder="ชื่อสินค้า"
-                                    className="h-8 text-xs"
-                                  />
-                                )}
-                              />
-                              
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.description`}
-                                render={({ field }) => (
-                                  <Input 
-                                    {...field}
-                                    placeholder="รายละเอียด"
-                                    className="h-8 text-xs"
-                                  />
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Quantity */}
-                            <div className="col-span-1">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.quantity`}
-                                render={({ field }) => (
-                                  <Input
-                                    type="number"
-                                    min="1"
-                                    className="w-full h-8 text-xs text-center"
-                                    {...field}
-                                    onChange={(e) => {
-                                      const quantity = parseInt(e.target.value) || 0;
-                                      field.onChange(quantity);
-                                      const unitPrice = form.getValues(`items.${index}.unitPrice`);
-                                      const discount = form.getValues(`items.${index}.discount`);
-                                      updateItemTotal(index, quantity, unitPrice, discount);
-                                    }}
-                                  />
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Unit */}
-                            <div className="col-span-1 text-center text-xs text-gray-600">
-                              ชิ้น
-                            </div>
-                            
-                            {/* Unit Price */}
-                            <div className="col-span-2">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.unitPrice`}
-                                render={({ field }) => (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    className="w-full h-8 text-xs text-right"
-                                    placeholder="0.00"
-                                    {...field}
-                                    onChange={(e) => {
-                                      const unitPrice = parseFloat(e.target.value) || 0;
-                                      field.onChange(unitPrice);
-                                      const quantity = form.getValues(`items.${index}.quantity`);
-                                      const discount = form.getValues(`items.${index}.discount`);
-                                      updateItemTotal(index, quantity, unitPrice, discount);
-                                    }}
-                                  />
-                                )}
-                              />
-                            </div>
-
-                            {/* Discount per Unit */}
-                            <div className="col-span-2">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.discount`}
-                                render={({ field }) => (
-                                  <Input
-                                    type="number"
-                                    min="0"
-                                    step="0.01"
-                                    className="w-full h-8 text-xs text-right"
-                                    placeholder="0.00"
-                                    {...field}
-                                    onChange={(e) => {
-                                      const discount = parseFloat(e.target.value) || 0;
-                                      field.onChange(discount);
-                                      const quantity = form.getValues(`items.${index}.quantity`);
-                                      const unitPrice = form.getValues(`items.${index}.unitPrice`);
-                                      updateItemTotal(index, quantity, unitPrice, discount);
-                                    }}
-                                  />
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Total */}
-                            <div className="col-span-2">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.total`}
-                                render={({ field }) => (
-                                  <Input
-                                    type="number"
-                                    className="w-full h-8 text-xs text-right bg-gray-50"
-                                    {...field}
-                                    value={field.value?.toFixed(2) || '0.00'}
-                                    readOnly
-                                  />
-                                )}
-                              />
-                            </div>
-                            
-                            {/* Remove */}
-                            <div className="col-span-1">
-                              {form.watch('items').length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeItem(index)}
-                                  className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
 
-                {/* Right column - Summary and Details */}
-                <div className="space-y-6">
-                  {/* Date Fields */}
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg">วันที่</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <FormField
-                        control={form.control}
-                        name="date"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>วันที่ใบเสนอราคา</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                      
-                      <FormField
-                        control={form.control}
-                        name="validUntil"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>วันหมดอายุ</FormLabel>
-                            <FormControl>
-                              <Input type="date" {...field} />
-                            </FormControl>
-                          </FormItem>
-                        )}
-                      />
-                    </CardContent>
-                  </Card>
+                {/* Full Width Items Table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-xl flex justify-between items-center">
+                      รายการสินค้า
+                      <Button type="button" onClick={addItem} size="lg">
+                        <Plus className="h-5 w-5 mr-2" />
+                        เพิ่มรายการสินค้า
+                      </Button>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-300">
+                        <thead>
+                          <tr className="bg-gray-100">
+                            <th className="border border-gray-300 p-4 text-left font-medium w-1/4">ชื่อสินค้า</th>
+                            <th className="border border-gray-300 p-4 text-left font-medium w-1/4">รายละเอียด</th>
+                            <th className="border border-gray-300 p-4 text-center font-medium w-16">จำนวน</th>
+                            <th className="border border-gray-300 p-4 text-center font-medium w-16">หน่วย</th>
+                            <th className="border border-gray-300 p-4 text-center font-medium w-32">ราคาต่อหน่วย</th>
+                            <th className="border border-gray-300 p-4 text-center font-medium w-32">ส่วนลดต่อหน่วย</th>
+                            <th className="border border-gray-300 p-4 text-center font-medium w-32">ยอดรวม</th>
+                            <th className="border border-gray-300 p-4 text-center font-medium w-16">ลบ</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {form.watch('items').map((item, index) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              {/* Product Name */}
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.productName`}
+                                  render={({ field }) => (
+                                    <Input 
+                                      {...field}
+                                      placeholder="ชื่อสินค้า"
+                                      className="w-full border-0 focus:ring-0 p-2 text-sm"
+                                    />
+                                  )}
+                                />
+                              </td>
+                              
+                              {/* Description */}
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.description`}
+                                  render={({ field }) => (
+                                    <Input 
+                                      {...field}
+                                      placeholder="รายละเอียด"
+                                      className="w-full border-0 focus:ring-0 p-2 text-sm"
+                                    />
+                                  )}
+                                />
+                              </td>
+                              
+                              {/* Quantity */}
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.quantity`}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      className="w-full text-center border-0 focus:ring-0 p-2 text-sm"
+                                      {...field}
+                                      onChange={(e) => {
+                                        const quantity = parseInt(e.target.value) || 0;
+                                        field.onChange(quantity);
+                                        const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                        const discount = form.getValues(`items.${index}.discount`);
+                                        updateItemTotal(index, quantity, unitPrice, discount);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </td>
+                              
+                              {/* Unit */}
+                              <td className="border border-gray-300 p-4 text-center text-sm text-gray-600">
+                                ชิ้น
+                              </td>
+                              
+                              {/* Unit Price */}
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.unitPrice`}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="w-full text-right border-0 focus:ring-0 p-2 text-sm"
+                                      placeholder="0.00"
+                                      {...field}
+                                      onChange={(e) => {
+                                        const unitPrice = parseFloat(e.target.value) || 0;
+                                        field.onChange(unitPrice);
+                                        const quantity = form.getValues(`items.${index}.quantity`);
+                                        const discount = form.getValues(`items.${index}.discount`);
+                                        updateItemTotal(index, quantity, unitPrice, discount);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </td>
+
+                              {/* Discount per Unit */}
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.discount`}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      step="0.01"
+                                      className="w-full text-right border-0 focus:ring-0 p-2 text-sm"
+                                      placeholder="0.00"
+                                      {...field}
+                                      onChange={(e) => {
+                                        const discount = parseFloat(e.target.value) || 0;
+                                        field.onChange(discount);
+                                        const quantity = form.getValues(`items.${index}.quantity`);
+                                        const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                        updateItemTotal(index, quantity, unitPrice, discount);
+                                      }}
+                                    />
+                                  )}
+                                />
+                              </td>
+                              
+                              {/* Total */}
+                              <td className="border border-gray-300 p-2">
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.total`}
+                                  render={({ field }) => (
+                                    <Input
+                                      type="text"
+                                      className="w-full text-right bg-gray-50 border-0 focus:ring-0 p-2 text-sm font-medium"
+                                      value={`฿${field.value?.toFixed(2) || '0.00'}`}
+                                      readOnly
+                                    />
+                                  )}
+                                />
+                              </td>
+                              
+                              {/* Remove Button */}
+                              <td className="border border-gray-300 p-2 text-center">
+                                {form.watch('items').length > 1 && (
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeItem(index)}
+                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Bottom Section - Summary and Actions */}
+                <div className="grid grid-cols-2 gap-6">
 
                   {/* Summary */}
                   <Card>
