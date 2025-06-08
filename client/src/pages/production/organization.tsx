@@ -70,6 +70,14 @@ export default function OrganizationChart() {
     leader: "",
     status: "active"
   });
+  const [newEmployee, setNewEmployee] = useState({
+    count: 1,
+    averageWage: "",
+    overheadPercentage: "",
+    managementPercentage: "",
+    description: "",
+    status: "active"
+  });
 
   // Fetch departments from API
   const { data: departments = [], isLoading: departmentsLoading } = useQuery<Department[]>({
@@ -96,6 +104,21 @@ export default function OrganizationChart() {
         }
       });
       if (!response.ok) throw new Error("Failed to fetch teams");
+      return response.json();
+    },
+    refetchOnWindowFocus: false
+  });
+
+  // Fetch employees from API
+  const { data: employees = [], isLoading: employeesLoading } = useQuery<Employee[]>({
+    queryKey: ["/api/employees"],
+    queryFn: async () => {
+      const response = await fetch("/api/employees", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch employees");
       return response.json();
     },
     refetchOnWindowFocus: false
@@ -295,6 +318,105 @@ export default function OrganizationChart() {
     }
   });
 
+  // Create employee mutation
+  const createEmployeeMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/employees", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to create employee");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      setIsAddEmployeeOpen(false);
+      setNewEmployee({
+        count: 1,
+        averageWage: "",
+        overheadPercentage: "",
+        managementPercentage: "",
+        description: "",
+        status: "active"
+      });
+      toast({
+        title: "สำเร็จ",
+        description: "เพิ่มพนักงานใหม่เรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถเพิ่มพนักงานได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update employee mutation
+  const updateEmployeeMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/employees/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to update employee");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      setIsEditEmployeeOpen(false);
+      setEditingEmployee(null);
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขข้อมูลพนักงานเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถแก้ไขข้อมูลพนักงานได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete employee mutation
+  const deleteEmployeeMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/employees/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to delete employee");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/employees"] });
+      toast({
+        title: "สำเร็จ",
+        description: "ลบข้อมูลพนักงานเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถลบข้อมูลพนักงานได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const getDepartmentTypeColor = (type: string) => {
     switch (type) {
       case "production": return "bg-blue-100 text-blue-800";
@@ -419,9 +541,60 @@ export default function OrganizationChart() {
     }
   };
 
+  const handleAddEmployee = (teamId: string) => {
+    setSelectedTeamId(teamId);
+    setIsAddEmployeeOpen(true);
+  };
+
+  const handleCreateEmployee = () => {
+    if (!selectedTeamId) return;
+    
+    createEmployeeMutation.mutate({
+      teamId: selectedTeamId,
+      count: newEmployee.count,
+      averageWage: newEmployee.averageWage,
+      overheadPercentage: newEmployee.overheadPercentage,
+      managementPercentage: newEmployee.managementPercentage,
+      description: newEmployee.description,
+      status: newEmployee.status
+    });
+  };
+
+  const handleEditEmployee = (employee: Employee) => {
+    setEditingEmployee(employee);
+    setIsEditEmployeeOpen(true);
+  };
+
+  const handleUpdateEmployee = () => {
+    if (!editingEmployee) return;
+    
+    updateEmployeeMutation.mutate({
+      id: editingEmployee.id,
+      data: {
+        count: editingEmployee.count,
+        averageWage: editingEmployee.averageWage,
+        overheadPercentage: editingEmployee.overheadPercentage,
+        managementPercentage: editingEmployee.managementPercentage,
+        description: editingEmployee.description,
+        status: editingEmployee.status
+      }
+    });
+  };
+
+  const handleDeleteEmployee = (employeeId: string) => {
+    if (confirm("คุณแน่ใจหรือไม่ที่จะลบข้อมูลพนักงานนี้?")) {
+      deleteEmployeeMutation.mutate(employeeId);
+    }
+  };
+
   // Group teams by department
   const getTeamsByDepartment = (departmentId: string) => {
     return teams.filter(team => team.departmentId === departmentId);
+  };
+
+  // Get employees by team
+  const getEmployeesByTeam = (teamId: string) => {
+    return employees.filter(employee => employee.teamId === teamId);
   };
 
   const totalDepartments = departments.length;
