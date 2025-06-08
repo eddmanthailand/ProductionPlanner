@@ -322,8 +322,8 @@ export class DatabaseStorage implements IStorage {
       pendingOrders,
       activeUsers: activeUsers.filter(u => u.isActive).length,
       lowStockItems,
-      inventoryValue: inventoryItems.reduce((sum, item) => {
-        return sum + (item.quantity * 100); // Approximate value
+      inventoryValue: stockProducts.reduce((sum: number, item: any) => {
+        return sum + ((item.currentStock || 0) * (parseFloat(item.cost) || 0));
       }, 0)
     };
   }
