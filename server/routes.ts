@@ -27,6 +27,15 @@ function authenticateToken(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Test database connection
+  try {
+    await pool.query('SELECT 1');
+    console.log('Database connection established successfully');
+  } catch (error) {
+    console.error('Database connection failed:', error);
+    // Continue anyway - let individual routes handle connection errors
+  }
+
   // Authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
