@@ -12,6 +12,7 @@ import Dashboard from "@/pages/dashboard";
 import Sales from "@/pages/sales-new";
 import Quotations from "@/pages/sales/quotations";
 import QuotationsNew from "@/pages/sales/quotations-new";
+import QuotationsEdit from "@/pages/sales/quotations-edit";
 import Invoices from "@/pages/sales/invoices";
 import TaxInvoices from "@/pages/sales/tax-invoices";
 import Receipts from "@/pages/sales/receipts";
@@ -88,6 +89,12 @@ function Router() {
       <Route path="/sales/quotations/new">
         <ProtectedRoute>
           <QuotationsNew />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales/quotations/edit/:id">
+        <ProtectedRoute>
+          <QuotationsEdit />
         </ProtectedRoute>
       </Route>
 
