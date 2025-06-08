@@ -29,16 +29,22 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-// Products table
+// Products and Services table
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   sku: text("sku").notNull(),
+  type: text("type").notNull().default("service"), // "service", "non_stock_product", "stock_product"
   price: decimal("price", { precision: 10, scale: 2 }),
   cost: decimal("cost", { precision: 10, scale: 2 }),
   category: text("category"),
-  unit: text("unit").notNull().default("pcs"),
+  unit: text("unit").notNull().default("ชิ้น"),
+  // Stock management fields (only for stock_product type)
+  currentStock: integer("current_stock").default(0),
+  minStock: integer("min_stock").default(0),
+  maxStock: integer("max_stock"),
+  location: text("location"),
   tenantId: uuid("tenant_id").references(() => tenants.id),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
@@ -62,16 +68,16 @@ export const productionOrders = pgTable("production_orders", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-// Inventory table
-export const inventory = pgTable("inventory", {
+// Stock movements table - for tracking stock changes
+export const stockMovements = pgTable("stock_movements", {
   id: serial("id").primaryKey(),
-  productId: integer("product_id").references(() => products.id),
-  quantity: integer("quantity").notNull().default(0),
-  minStock: integer("min_stock").notNull().default(0),
-  maxStock: integer("max_stock"),
-  location: text("location"),
+  productId: integer("product_id").notNull().references(() => products.id),
+  type: text("type").notNull(), // "in", "out", "adjustment"
+  quantity: integer("quantity").notNull(),
+  reference: text("reference"), // Order number, adjustment reason, etc.
+  notes: text("notes"),
   tenantId: uuid("tenant_id").references(() => tenants.id),
-  updatedAt: timestamp("updated_at").defaultNow()
+  createdAt: timestamp("created_at").defaultNow()
 });
 
 // Accounting transactions table
@@ -181,7 +187,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   products: many(products),
   productionOrders: many(productionOrders),
-  inventory: many(inventory),
+  stockMovements: many(stockMovements),
   transactions: many(transactions),
   activities: many(activities),
   customers: many(customers),
@@ -204,7 +210,7 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     references: [tenants.id]
   }),
   productionOrders: many(productionOrders),
-  inventory: many(inventory)
+  stockMovements: many(stockMovements)
 }));
 
 export const productionOrdersRelations = relations(productionOrders, ({ one }) => ({
@@ -218,13 +224,13 @@ export const productionOrdersRelations = relations(productionOrders, ({ one }) =
   })
 }));
 
-export const inventoryRelations = relations(inventory, ({ one }) => ({
+export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
   tenant: one(tenants, {
-    fields: [inventory.tenantId],
+    fields: [stockMovements.tenantId],
     references: [tenants.id]
   }),
   product: one(products, {
-    fields: [inventory.productId],
+    fields: [stockMovements.productId],
     references: [products.id]
   })
 }));
@@ -316,9 +322,9 @@ export const insertProductionOrderSchema = createInsertSchema(productionOrders).
   updatedAt: true
 });
 
-export const insertInventorySchema = createInsertSchema(inventory).omit({
+export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({
   id: true,
-  updatedAt: true
+  createdAt: true
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
@@ -374,8 +380,8 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type ProductionOrder = typeof productionOrders.$inferSelect;
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
-export type Inventory = typeof inventory.$inferSelect;
-export type InsertInventory = z.infer<typeof insertInventorySchema>;
+export type StockMovement = typeof stockMovements.$inferSelect;
+export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;
 
 export type Transaction = typeof transactions.$inferSelect;
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
