@@ -7,7 +7,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Form, FormField, FormItem, FormLabel, FormControl } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -53,7 +53,7 @@ export default function Sales() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   
-  const t = (key: string) => translations[language][key] || key;
+  const t = (key: string) => (translations as any)[language][key] || key;
 
   // States
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -181,10 +181,19 @@ export default function Sales() {
   // Create quotation mutation
   const createQuotationMutation = useMutation({
     mutationFn: async (data: QuotationFormData) => {
-      return apiRequest('/api/quotations', {
+      const response = await fetch('/api/quotations', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(data)
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       toast({
@@ -227,6 +236,9 @@ export default function Sales() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("sales.newQuotation")}</DialogTitle>
+            <DialogDescription>
+              สร้างใบเสนอราคาใหม่สำหรับลูกค้า
+            </DialogDescription>
           </DialogHeader>
           
           <Form {...form}>
@@ -271,9 +283,12 @@ export default function Sales() {
                                       <div className="text-sm text-gray-600">{customer.companyName}</div>
                                     )}
                                     <div className="text-xs text-gray-500">
-                                      {customer.email && <span>{customer.email}</span>}
+                                      {customer.email && <span>อีเมล: {customer.email}</span>}
                                       {customer.phone && (
-                                        <span className="ml-3">{customer.phone}</span>
+                                        <span className="ml-3">โทร: {customer.phone}</span>
+                                      )}
+                                      {customer.postalCode && (
+                                        <span className="ml-3">รหัสไปรษณีย์: {customer.postalCode}</span>
                                       )}
                                     </div>
                                   </div>
@@ -298,8 +313,19 @@ export default function Sales() {
                                 <div className="text-sm text-blue-600">{selectedCustomer.companyName}</div>
                               )}
                               {selectedCustomer.address && (
-                                <div className="text-xs text-gray-600 mt-1">{selectedCustomer.address}</div>
+                                <div className="text-xs text-gray-600 mt-1">ที่อยู่: {selectedCustomer.address}</div>
                               )}
+                              <div className="text-xs text-gray-600 mt-1 space-x-4">
+                                {selectedCustomer.phone && (
+                                  <span>โทร: {selectedCustomer.phone}</span>
+                                )}
+                                {selectedCustomer.email && (
+                                  <span>อีเมล: {selectedCustomer.email}</span>
+                                )}
+                                {selectedCustomer.postalCode && (
+                                  <span>รหัสไปรษณีย์: {selectedCustomer.postalCode}</span>
+                                )}
+                              </div>
                               {selectedCustomer.taxId && (
                                 <div className="text-xs text-gray-600">เลขประจำตัวผู้เสียภาษี: {selectedCustomer.taxId}</div>
                               )}

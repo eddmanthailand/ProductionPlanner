@@ -294,9 +294,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 1,
           name: "CURVF",
           companyName: "บริษัท เคิฟ คัลเชอร์ จำกัด",
-          email: null,
+          email: "contact@curvf.co.th",
           phone: "0611942991",
           address: "23/132 หมู่ที่ 8 ตำบลอ้อมใหญ่ อำเภอสามพราน จ.นครปฐม",
+          postalCode: "73110",
           taxId: "0735565007597",
           tenantId: "550e8400-e29b-41d4-a716-446655440000"
         },
@@ -304,10 +305,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: 3,
           name: "Unilever",
           companyName: "Unilever Thailand",
-          email: null,
-          phone: null,
-          address: null,
-          taxId: null,
+          email: "info@unilever.co.th",
+          phone: "02-670-8000",
+          address: "29th Floor, Sino-Thai Tower, 32/59-60 Wireless Road, Lumpini, Pathumwan, Bangkok",
+          postalCode: "10330",
+          taxId: "0107537000054",
           tenantId: "550e8400-e29b-41d4-a716-446655440000"
         }
       ];
