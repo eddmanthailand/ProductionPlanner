@@ -50,6 +50,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   // Users
@@ -590,7 +591,10 @@ export class DatabaseStorage implements IStorage {
   async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
     const [department] = await db
       .insert(departments)
-      .values(insertDepartment)
+      .values({
+        ...insertDepartment,
+        id: nanoid()
+      })
       .returning();
     return department;
   }
@@ -642,7 +646,10 @@ export class DatabaseStorage implements IStorage {
   async createTeam(insertTeam: InsertTeam): Promise<Team> {
     const [team] = await db
       .insert(teams)
-      .values(insertTeam)
+      .values({
+        ...insertTeam,
+        id: nanoid()
+      })
       .returning();
     return team;
   }

@@ -300,7 +300,7 @@ export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
 // Organization tables
 export const departments = pgTable("departments", {
   id: text("id").primaryKey(),
-  tenantId: text("tenant_id").references(() => tenants.id).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   name: text("name").notNull(),
   type: text("type").notNull(),
   manager: text("manager"),
