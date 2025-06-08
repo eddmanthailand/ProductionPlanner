@@ -776,6 +776,59 @@ export default function OrganizationChart() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Employee Section */}
+                        <div className="ml-4 mt-3 space-y-2">
+                          {getEmployeesByTeam(team.id).map((employee) => (
+                            <div key={employee.id} className="border-l-2 border-gray-200 pl-4 bg-gray-25 rounded p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <div className="text-sm font-medium text-gray-700">
+                                    จำนวน: {employee.count} คน
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    ค่าแรงเฉลี่ย: {employee.averageWage} บาท/คน
+                                  </div>
+                                  <div className="text-xs text-gray-600">
+                                    Overhead: {employee.overheadPercentage}% | Management: {employee.managementPercentage}%
+                                  </div>
+                                  {employee.description && (
+                                    <div className="text-xs text-gray-500">{employee.description}</div>
+                                  )}
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditEmployee(employee)}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleDeleteEmployee(employee.id)}
+                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Add Employee Button */}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleAddEmployee(team.id)}
+                            className="text-blue-600 hover:text-blue-700 h-8"
+                          >
+                            <UserPlus className="h-4 w-4 mr-2" />
+                            เพิ่มพนักงาน
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1064,6 +1117,184 @@ export default function OrganizationChart() {
               onClick={() => {
                 setIsEditTeamOpen(false);
                 setEditingTeam(null);
+              }} 
+              className="flex-1"
+            >
+              ยกเลิก
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Employee Dialog */}
+      <Dialog open={isAddEmployeeOpen} onOpenChange={setIsAddEmployeeOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>เพิ่มพนักงาน</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="employee-count">จำนวนพนักงาน *</label>
+              <Input
+                id="employee-count"
+                type="number"
+                min="1"
+                value={newEmployee.count}
+                onChange={(e) => setNewEmployee(prev => ({ ...prev, count: parseInt(e.target.value) || 1 }))}
+                placeholder="เช่น 5"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="employee-wage">ค่าแรงเฉลี่ย/คน (บาท) *</label>
+              <Input
+                id="employee-wage"
+                type="number"
+                min="0"
+                value={newEmployee.averageWage}
+                onChange={(e) => setNewEmployee(prev => ({ ...prev, averageWage: e.target.value }))}
+                placeholder="เช่น 400"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="employee-overhead">%Overhead *</label>
+              <Input
+                id="employee-overhead"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={newEmployee.overheadPercentage}
+                onChange={(e) => setNewEmployee(prev => ({ ...prev, overheadPercentage: e.target.value }))}
+                placeholder="เช่น 15.5"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="employee-management">%Management *</label>
+              <Input
+                id="employee-management"
+                type="number"
+                min="0"
+                max="100"
+                step="0.01"
+                value={newEmployee.managementPercentage}
+                onChange={(e) => setNewEmployee(prev => ({ ...prev, managementPercentage: e.target.value }))}
+                placeholder="เช่น 10.5"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="employee-description">คำอธิบาย</label>
+              <Input
+                id="employee-description"
+                value={newEmployee.description}
+                onChange={(e) => setNewEmployee(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="เช่น ช่างตัด, ช่างเย็บ"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={handleCreateEmployee}
+              disabled={createEmployeeMutation.isPending}
+              className="flex-1"
+            >
+              {createEmployeeMutation.isPending ? "กำลังเพิ่ม..." : "เพิ่มพนักงาน"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsAddEmployeeOpen(false);
+                setNewEmployee({
+                  count: 1,
+                  averageWage: "",
+                  overheadPercentage: "",
+                  managementPercentage: "",
+                  description: "",
+                  status: "active"
+                });
+              }} 
+              className="flex-1"
+            >
+              ยกเลิก
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Employee Dialog */}
+      <Dialog open={isEditEmployeeOpen} onOpenChange={setIsEditEmployeeOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลพนักงาน</DialogTitle>
+          </DialogHeader>
+          {editingEmployee && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="edit-employee-count">จำนวนพนักงาน *</label>
+                <Input
+                  id="edit-employee-count"
+                  type="number"
+                  min="1"
+                  value={editingEmployee.count}
+                  onChange={(e) => setEditingEmployee(prev => prev ? { ...prev, count: parseInt(e.target.value) || 1 } : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-employee-wage">ค่าแรงเฉลี่ย/คน (บาท) *</label>
+                <Input
+                  id="edit-employee-wage"
+                  type="number"
+                  min="0"
+                  value={editingEmployee.averageWage}
+                  onChange={(e) => setEditingEmployee(prev => prev ? { ...prev, averageWage: e.target.value } : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-employee-overhead">%Overhead *</label>
+                <Input
+                  id="edit-employee-overhead"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={editingEmployee.overheadPercentage}
+                  onChange={(e) => setEditingEmployee(prev => prev ? { ...prev, overheadPercentage: e.target.value } : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-employee-management">%Management *</label>
+                <Input
+                  id="edit-employee-management"
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={editingEmployee.managementPercentage}
+                  onChange={(e) => setEditingEmployee(prev => prev ? { ...prev, managementPercentage: e.target.value } : null)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-employee-description">คำอธิบาย</label>
+                <Input
+                  id="edit-employee-description"
+                  value={editingEmployee.description || ""}
+                  onChange={(e) => setEditingEmployee(prev => prev ? { ...prev, description: e.target.value } : null)}
+                />
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={handleUpdateEmployee}
+              disabled={updateEmployeeMutation.isPending}
+              className="flex-1"
+            >
+              {updateEmployeeMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsEditEmployeeOpen(false);
+                setEditingEmployee(null);
               }} 
               className="flex-1"
             >
