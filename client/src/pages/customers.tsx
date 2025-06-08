@@ -194,6 +194,15 @@ export default function Customers() {
       queryClient.invalidateQueries({ queryKey: ["/api/customers"] });
       setIsDialogOpen(false);
       form.reset();
+    },
+    onError: (error: any) => {
+      console.error('Create customer error:', error);
+      // แสดงข้อผิดพลาดถ้าข้อมูลซ้ำ
+      if (error.message.includes('ซ้ำ') || error.message.includes('มีอยู่ในระบบแล้ว')) {
+        alert(error.message);
+      } else {
+        alert('ไม่สามารถเพิ่มลูกค้าได้: ' + (error.message || 'เกิดข้อผิดพลาด'));
+      }
     }
   });
 

@@ -306,33 +306,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');
     try {
-      console.log('API: Returning database customers...');
-      
-      // Return only the customers that exist in database
-      const customers = [
-        {
-          id: 1,
-          name: "CURVF",
-          companyName: "บริษัท เคิฟ คัลเชอร์ จำกัด",
-          email: "contact@curvf.co.th",
-          phone: "0611942991",
-          address: "23/132 หมู่ที่ 8 ตำบลอ้อมใหญ่ อำเภอสามพราน จ.นครปฐม",
-          postalCode: "73110",
-          taxId: "0735565007597",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 3,
-          name: "Unilever",
-          companyName: "Unilever Thailand",
-          email: "info@unilever.co.th",
-          phone: "02-670-8000",
-          address: "29th Floor, Sino-Thai Tower, 32/59-60 Wireless Road, Lumpini, Pathumwan, Bangkok",
-          postalCode: "10330",
-          taxId: "0107537000054",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        }
-      ];
+      console.log('API: Fetching customers from database...');
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const customers = await storage.getCustomers(tenantId);
       
       console.log('API: Sending response with', customers.length, 'customers');
       res.json(customers);
@@ -349,9 +325,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ...req.body,
         tenantId: tenantId
       });
+
+      // ตรวจสอบข้อมูลซ้ำก่อนสร้างลูกค้าใหม่
+      const existingCustomers = await storage.getCustomers(tenantId);
+      
+      // ตรวจสอบชื่อลูกค้าซ้ำ
+      if (validatedData.name && existingCustomers.some(c => 
+        c.name.toLowerCase().trim() === validatedData.name.toLowerCase().trim()
+      )) {
+        return res.status(400).json({ 
+          message: `ชื่อลูกค้า "${validatedData.name}" มีอยู่ในระบบแล้ว` 
+        });
+      }
+
+      // ตรวจสอบชื่อบริษัทซ้ำ (ถ้ามี)
+      if (validatedData.companyName && validatedData.companyName.trim() !== '') {
+        const isDuplicateCompany = existingCustomers.some(c => 
+          c.companyName && c.companyName.toLowerCase().trim() === validatedData.companyName!.toLowerCase().trim()
+        );
+        if (isDuplicateCompany) {
+          return res.status(400).json({ 
+            message: `ชื่อบริษัท "${validatedData.companyName}" มีอยู่ในระบบแล้ว` 
+          });
+        }
+      }
+
+      // ตรวจสอบเลขที่ผู้เสียภาษีซ้ำ (ถ้ามี)
+      if (validatedData.taxId && existingCustomers.some(c => 
+        c.taxId && c.taxId === validatedData.taxId
+      )) {
+        return res.status(400).json({ 
+          message: `เลขที่ผู้เสียภาษี "${validatedData.taxId}" มีอยู่ในระบบแล้ว` 
+        });
+      }
+
+      // สร้างลูกค้าใหม่ถ้าไม่มีข้อมูลซ้ำ
       const customer = await storage.createCustomer(validatedData);
       res.status(201).json(customer);
     } catch (error) {
+      console.error('Create customer error:', error);
       res.status(400).json({ message: "Failed to create customer", error });
     }
   });
