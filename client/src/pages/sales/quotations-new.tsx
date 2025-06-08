@@ -158,6 +158,30 @@ export default function QuotationsNew() {
     name: "items"
   });
 
+  // Handle click outside to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      let clickedInsideAnyDropdown = false;
+      
+      Object.keys(productDropdownRefs.current).forEach(key => {
+        const ref = productDropdownRefs.current[parseInt(key)];
+        if (ref && ref.contains(target)) {
+          clickedInsideAnyDropdown = true;
+        }
+      });
+      
+      if (!clickedInsideAnyDropdown) {
+        setShowProductDropdowns({});
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Product filtering and selection
   const getFilteredProducts = (searchTerm: string) => {
     const productList = Array.isArray(products) ? products : [];
@@ -498,6 +522,11 @@ export default function QuotationsNew() {
                                     setShowProductDropdowns(prev => ({ ...prev, [index]: true }));
                                   }}
                                   onFocus={() => setShowProductDropdowns(prev => ({ ...prev, [index]: true }))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Escape') {
+                                      setShowProductDropdowns(prev => ({ ...prev, [index]: false }));
+                                    }
+                                  }}
                                   className="w-full text-sm h-8"
                                 />
                                 
