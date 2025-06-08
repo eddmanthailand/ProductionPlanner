@@ -478,7 +478,7 @@ export default function QuotationsEdit() {
                               value={item.productId?.toString() || ""}
                               onValueChange={(value) => {
                                 if (value) {
-                                  const product = products?.find((p: any) => p.id === parseInt(value));
+                                  const product = Array.isArray(products) ? products.find((p: any) => p.id === parseInt(value)) : null;
                                   if (product) {
                                     const updatedItems = [...items];
                                     updatedItems[index] = {
@@ -497,7 +497,7 @@ export default function QuotationsEdit() {
                                 <SelectValue placeholder="เลือกสินค้า" />
                               </SelectTrigger>
                               <SelectContent>
-                                {products?.map((product: any) => (
+                                {Array.isArray(products) && products.map((product: any) => (
                                   <SelectItem key={product.id} value={product.id.toString()}>
                                     {product.name}
                                   </SelectItem>
