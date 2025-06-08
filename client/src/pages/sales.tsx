@@ -97,20 +97,35 @@ export default function Sales() {
     const fetchCustomers = async () => {
       try {
         console.log('Direct fetch: Getting customers...');
-        const response = await fetch('/api/customers');
+        
+        // Add a small delay to ensure server is ready
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        const response = await fetch('/api/customers', {
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+          }
+        });
+        
         console.log('Direct fetch: Response status:', response.status);
+        console.log('Direct fetch: Response ok:', response.ok);
         
         if (!response.ok) {
-          throw new Error(`HTTP ${response.status}`);
+          const text = await response.text();
+          console.log('Direct fetch: Error response:', text);
+          throw new Error(`HTTP ${response.status}: ${text}`);
         }
         
         const data = await response.json();
-        console.log('Direct fetch: Received data:', data.length, 'customers');
+        console.log('Direct fetch: Received data:', data);
         setCustomers(data);
         setCustomersError(null);
       } catch (error) {
         console.error('Direct fetch: Error:', error);
         setCustomersError(error);
+        
+        // Don't use fallback data - only use real database data
         setCustomers([]);
       } finally {
         setCustomersLoading(false);
