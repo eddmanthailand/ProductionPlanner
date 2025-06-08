@@ -325,7 +325,8 @@ export class DatabaseStorage implements IStorage {
   async getCustomers(tenantId: string): Promise<Customer[]> {
     console.log('Storage: Getting customers for tenant:', tenantId);
     try {
-      const result = await db.select().from(customers).where(eq(customers.tenantId, tenantId)).orderBy(customers.name);
+      // Use simple select without orderBy to avoid potential issues
+      const result = await db.select().from(customers).where(eq(customers.tenantId, tenantId));
       console.log('Storage: Found customers:', result.length);
       return result;
     } catch (error) {

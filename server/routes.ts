@@ -284,13 +284,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
+    console.log('API: Customers endpoint called');
     try {
-      console.log('Fetching customers from database...');
-      const customers = await storage.getCustomers('550e8400-e29b-41d4-a716-446655440000');
-      console.log('Found customers:', customers.length);
+      console.log('API: Using direct pool query...');
+      
+      // Use timeout for the query
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Query timeout')), 5000); // 5 second timeout
+      });
+      
+      const queryPromise = pool.query('SELECT * FROM customers WHERE tenant_id = $1', ['550e8400-e29b-41d4-a716-446655440000']);
+      
+      const rawResult = await Promise.race([queryPromise, timeoutPromise]) as any;
+      console.log('API: Query completed, found', rawResult.rows.length, 'rows');
+      
+      // Map the raw results to match expected format
+      const customers = rawResult.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        companyName: row.company_name,
+        email: row.email,
+        phone: row.phone,
+        address: row.address,
+        taxId: row.tax_id,
+        tenantId: row.tenant_id
+      }));
+      
+      console.log('API: Sending response with', customers.length, 'customers');
       res.json(customers);
     } catch (error: any) {
-      console.error('Error fetching customers:', error);
+      console.error('API: Error fetching customers:', error);
       res.status(500).json({ message: "Failed to fetch customers", error: error.message });
     }
   });
