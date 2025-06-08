@@ -397,7 +397,10 @@ export default function ProductionCalendar() {
                   
                   const dateStr = formatDateForHoliday(currentYear, monthIndex, day);
                   const dayHolidays = getHolidaysByDate(dateStr);
-                  const isToday = dateStr === new Date().toISOString().split('T')[0];
+                  const today = new Date();
+                  const isToday = currentYear === today.getFullYear() && 
+                                 monthIndex === today.getMonth() && 
+                                 day === today.getDate();
                   const hasHoliday = dayHolidays.length > 0;
                   
                   return (
