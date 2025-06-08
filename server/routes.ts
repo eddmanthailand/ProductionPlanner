@@ -624,10 +624,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const tenantId = '550e8400-e29b-41d4-a716-446655440000'; // Default tenant for dev
+      console.log(`API: Fetching quotation ${id} for tenant ${tenantId}`);
       const quotation = await storage.getQuotation(id, tenantId);
       if (!quotation) {
         return res.status(404).json({ error: "Quotation not found" });
       }
+      console.log(`API: Found quotation with ${quotation.items?.length || 0} items`);
       res.json(quotation);
     } catch (error) {
       console.error("Error fetching quotation:", error);
