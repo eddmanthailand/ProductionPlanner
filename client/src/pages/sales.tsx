@@ -362,6 +362,9 @@ export default function Sales() {
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
                                 <DialogTitle>ค้นหาลูกค้า</DialogTitle>
+                                <DialogDescription>
+                                  ค้นหาและเลือกลูกค้าจากรายการที่มีอยู่ในระบบ
+                                </DialogDescription>
                               </DialogHeader>
                               
                               <div className="space-y-4">
