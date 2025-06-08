@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -98,16 +98,16 @@ export default function Sales() {
   console.log('Customers loading:', customersLoading);
   console.log('Customers error:', customersError);
 
-  // Filter customers based on search term
-  const filteredCustomers = useMemo(() => {
-    if (!customers || (customers as any[]).length === 0) return [];
+  // Filter customers based on search term  
+  const filteredCustomers = (() => {
+    if (!customers || !Array.isArray(customers) || customers.length === 0) return [];
     return (customers as Customer[]).filter((customer: Customer) =>
       customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
       customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
       customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
       customer.phone?.toLowerCase().includes(customerSearchTerm.toLowerCase())
     );
-  }, [customers, customerSearchTerm]);
+  })();
 
   console.log('Filtered customers:', filteredCustomers);
 
