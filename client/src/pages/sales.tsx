@@ -93,7 +93,7 @@ export default function Sales() {
     queryKey: ["/api/customers"],
     queryFn: async () => {
       console.log('Direct fetch for customers...');
-      const response = await fetch('http://localhost:5000/api/customers');
+      const response = await fetch('/api/customers');
       console.log('Response status:', response.status);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
