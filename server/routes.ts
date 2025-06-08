@@ -629,7 +629,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (!quotation) {
         return res.status(404).json({ error: "Quotation not found" });
       }
-      console.log(`API: Found quotation with ${quotation.items?.length || 0} items`);
+      console.log(`API: Found quotation ${quotation.id}`);
       res.json(quotation);
     } catch (error) {
       console.error("Error fetching quotation:", error);
