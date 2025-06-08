@@ -389,6 +389,49 @@ export const holidays = pgTable("holidays", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Work Orders table
+export const workOrders = pgTable("work_orders", {
+  id: text("id").primaryKey(),
+  orderNumber: text("order_number").notNull().unique(),
+  quotationId: integer("quotation_id").references(() => quotations.id), // optional reference to quotation
+  customerId: integer("customer_id").references(() => customers.id).notNull(),
+  customerName: text("customer_name").notNull(),
+  customerTaxId: text("customer_tax_id"),
+  customerAddress: text("customer_address"),
+  customerPhone: text("customer_phone"),
+  customerEmail: text("customer_email"),
+  title: text("title").notNull(),
+  description: text("description"),
+  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
+  status: text("status").notNull().default("draft"), // draft, approved, in_progress, completed, cancelled
+  priority: integer("priority").notNull().default(3), // 1=highest, 5=lowest
+  startDate: date("start_date"),
+  dueDate: date("due_date"),
+  completedDate: date("completed_date"),
+  assignedTeamId: text("assigned_team_id").references(() => teams.id),
+  notes: text("notes"),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Work Order Items table
+export const workOrderItems = pgTable("work_order_items", {
+  id: serial("id").primaryKey(),
+  workOrderId: text("work_order_id").references(() => workOrders.id, { onDelete: "cascade" }).notNull(),
+  productId: integer("product_id").references(() => products.id),
+  productName: text("product_name").notNull(),
+  description: text("description"),
+  quantity: integer("quantity").notNull(),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull(),
+  totalPrice: decimal("total_price", { precision: 15, scale: 2 }).notNull(),
+  colorId: integer("color_id").references(() => colors.id),
+  sizeId: integer("size_id").references(() => sizes.id),
+  specifications: text("specifications"),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
@@ -507,6 +550,41 @@ export const workQueueRelations = relations(workQueue, ({ one }) => ({
   })
 }));
 
+export const workOrdersRelations = relations(workOrders, ({ one, many }) => ({
+  customer: one(customers, {
+    fields: [workOrders.customerId],
+    references: [customers.id]
+  }),
+  quotation: one(quotations, {
+    fields: [workOrders.quotationId],
+    references: [quotations.id]
+  }),
+  assignedTeam: one(teams, {
+    fields: [workOrders.assignedTeamId],
+    references: [teams.id]
+  }),
+  items: many(workOrderItems)
+}));
+
+export const workOrderItemsRelations = relations(workOrderItems, ({ one }) => ({
+  workOrder: one(workOrders, {
+    fields: [workOrderItems.workOrderId],
+    references: [workOrders.id]
+  }),
+  product: one(products, {
+    fields: [workOrderItems.productId],
+    references: [products.id]
+  }),
+  color: one(colors, {
+    fields: [workOrderItems.colorId],
+    references: [colors.id]
+  }),
+  size: one(sizes, {
+    fields: [workOrderItems.sizeId],
+    references: [sizes.id]
+  })
+}));
+
 // Organization insert schemas
 export const insertDepartmentSchema = createInsertSchema(departments).omit({
   id: true,
@@ -545,6 +623,17 @@ export const insertWorkQueueSchema = createInsertSchema(workQueue).omit({
 });
 
 export const insertHolidaySchema = createInsertSchema(holidays).omit({
+  id: true,
+  createdAt: true
+});
+
+export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit({
   id: true,
   createdAt: true
 });
@@ -607,3 +696,9 @@ export type InsertWorkQueue = z.infer<typeof insertWorkQueueSchema>;
 
 export type Holiday = typeof holidays.$inferSelect;
 export type InsertHoliday = z.infer<typeof insertHolidaySchema>;
+
+export type WorkOrder = typeof workOrders.$inferSelect;
+export type InsertWorkOrder = z.infer<typeof insertWorkOrderSchema>;
+
+export type WorkOrderItem = typeof workOrderItems.$inferSelect;
+export type InsertWorkOrderItem = z.infer<typeof insertWorkOrderItemSchema>;

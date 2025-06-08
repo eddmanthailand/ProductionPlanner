@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -1447,6 +1447,95 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete holiday error:", error);
       res.status(500).json({ message: "Failed to delete holiday" });
+    }
+  });
+
+  // Work Orders routes
+  app.get("/api/work-orders", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const workOrders = await storage.getWorkOrders(tenantId);
+      res.json(workOrders);
+    } catch (error) {
+      console.error("Get work orders error:", error);
+      res.status(500).json({ message: "Failed to fetch work orders" });
+    }
+  });
+
+  app.get("/api/work-orders/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const workOrder = await storage.getWorkOrder(id, tenantId);
+      if (!workOrder) {
+        return res.status(404).json({ message: "Work order not found" });
+      }
+      
+      res.json(workOrder);
+    } catch (error) {
+      console.error("Get work order error:", error);
+      res.status(500).json({ message: "Failed to fetch work order" });
+    }
+  });
+
+  app.post("/api/work-orders", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const validatedData = insertWorkOrderSchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const workOrder = await storage.createWorkOrder(validatedData);
+      res.status(201).json(workOrder);
+    } catch (error) {
+      console.error("Create work order error:", error);
+      res.status(500).json({ message: "Failed to create work order" });
+    }
+  });
+
+  app.put("/api/work-orders/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const validatedData = insertWorkOrderSchema.partial().parse(req.body);
+      
+      const workOrder = await storage.updateWorkOrder(id, validatedData, tenantId);
+      if (!workOrder) {
+        return res.status(404).json({ message: "Work order not found" });
+      }
+      
+      res.json(workOrder);
+    } catch (error) {
+      console.error("Update work order error:", error);
+      res.status(500).json({ message: "Failed to update work order" });
+    }
+  });
+
+  app.delete("/api/work-orders/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteWorkOrder(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Work order not found" });
+      }
+      
+      res.json({ message: "Work order deleted successfully" });
+    } catch (error) {
+      console.error("Delete work order error:", error);
+      res.status(500).json({ message: "Failed to delete work order" });
     }
   });
 

@@ -1,389 +1,783 @@
-import { useState } from "react";
-import { ClipboardList, Plus, Edit2, Eye, Clock, CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { ClipboardList, Plus, Edit2, Trash2, FileText, Users, Calendar, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface WorkOrder {
   id: string;
   orderNumber: string;
-  productName: string;
-  quantity: number;
-  unit: string;
-  priority: "low" | "medium" | "high" | "urgent";
-  status: "pending" | "in-progress" | "completed" | "cancelled";
-  assignedTo: string;
-  startDate: string;
-  dueDate: string;
-  progress: number;
-  notes: string;
-  materials: Material[];
+  quotationId: number | null;
+  customerId: number;
+  customerName: string;
+  customerTaxId: string | null;
+  customerAddress: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  title: string;
+  description: string | null;
+  totalAmount: string;
+  status: string;
+  priority: number;
+  startDate: string | null;
+  dueDate: string | null;
+  completedDate: string | null;
+  assignedTeamId: string | null;
+  notes: string | null;
+  tenantId: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-interface Material {
+interface Quotation {
+  id: number;
+  quotationNumber: string;
+  customerId: number;
+  customerName: string;
+  title: string;
+  description: string | null;
+  totalAmount: string;
+  status: string;
+  validUntil: string;
+  createdAt: string;
+}
+
+interface Customer {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  taxId: string;
+  address: string;
+  type: string;
+  status: string;
+  createdAt: string;
+}
+
+interface Team {
   id: string;
   name: string;
-  required: number;
-  unit: string;
-  available: number;
-  status: "sufficient" | "shortage" | "ordered";
+  leader: string;
+  status: string;
 }
 
 export default function WorkOrders() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
+  const [editingWorkOrder, setEditingWorkOrder] = useState<WorkOrder | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [priorityFilter, setPriorityFilter] = useState("all");
+  const [newWorkOrder, setNewWorkOrder] = useState({
+    title: "",
+    description: "",
+    customerId: "",
+    quotationId: "",
+    priority: 3,
+    startDate: "",
+    dueDate: "",
+    assignedTeamId: "",
+    notes: ""
+  });
 
-  const [workOrders] = useState<WorkOrder[]>([
-    {
-      id: "WO001",
-      orderNumber: "WO2025-001",
-      productName: "ชุดบอดี้สูทผ้าลูกไม้",
-      quantity: 208,
-      unit: "ตัว",
-      priority: "high",
-      status: "in-progress",
-      assignedTo: "ทีมผลิต A",
-      startDate: "2025-06-08",
-      dueDate: "2025-06-15",
-      progress: 65,
-      notes: "ลูกค้า CURVF - ต้องการคุณภาพดี ส่งภายในกำหนด",
-      materials: [
-        { id: "M001", name: "ผ้าลูกไม้", required: 250, unit: "หลา", available: 200, status: "shortage" },
-        { id: "M002", name: "ซิป", required: 208, unit: "เส้น", available: 300, status: "sufficient" },
-        { id: "M003", name: "เข็มขัด", required: 208, unit: "เส้น", available: 150, status: "shortage" }
-      ]
-    },
-    {
-      id: "WO002",
-      orderNumber: "WO2025-002",
-      productName: "เสื้อยืดพิมพ์ลาย",
-      quantity: 100,
-      unit: "ตัว",
-      priority: "medium",
-      status: "pending",
-      assignedTo: "ทีมผลิต B",
-      startDate: "2025-06-10",
-      dueDate: "2025-06-17",
-      progress: 0,
-      notes: "รอวัตถุดิบเข้า",
-      materials: [
-        { id: "M004", name: "ผ้าเสื้อยืด", required: 120, unit: "หลา", available: 80, status: "ordered" },
-        { id: "M005", name: "หมึกพิมพ์", required: 5, unit: "กิโลกรัม", available: 10, status: "sufficient" }
-      ]
-    },
-    {
-      id: "WO003",
-      orderNumber: "WO2025-003",
-      productName: "กางเกงยีนส์",
-      quantity: 50,
-      unit: "ตัว",
-      priority: "low",
-      status: "completed",
-      assignedTo: "ทีมผลิต A",
-      startDate: "2025-06-01",
-      dueDate: "2025-06-07",
-      progress: 100,
-      notes: "เสร็จสิ้นตามกำหนดเวลา",
-      materials: [
-        { id: "M006", name: "ผ้ายีนส์", required: 75, unit: "หลา", available: 100, status: "sufficient" },
-        { id: "M007", name: "กระดุม", required: 300, unit: "ชิ้น", available: 500, status: "sufficient" }
-      ]
-    }
-  ]);
+  // Auto-login for development
+  useEffect(() => {
+    const autoLogin = async () => {
+      try {
+        await apiRequest("/api/auth/login", "POST", {
+          username: "demo",
+          password: "demo"
+        });
+      } catch (error) {
+        console.log("Auto-login failed, user may already be logged in");
+      }
+    };
+    autoLogin();
+  }, []);
 
-  const getStatusColor = (status: string) => {
+  // Queries
+  const { data: workOrders = [], isLoading: workOrdersLoading } = useQuery<WorkOrder[]>({
+    queryKey: ["/api/work-orders"],
+  });
+
+  const { data: quotations = [] } = useQuery<Quotation[]>({
+    queryKey: ["/api/quotations"],
+  });
+
+  const { data: customers = [] } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
+  });
+
+  const { data: teams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  // Mutations
+  const createWorkOrderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("/api/work-orders", "POST", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      setIsCreateOpen(false);
+      resetForm();
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างใบสั่งงานแล้ว",
+      });
+    },
+  });
+
+  const updateWorkOrderMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const { id, ...updateData } = data;
+      return await apiRequest(`/api/work-orders/${id}`, "PUT", updateData);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      setIsEditOpen(false);
+      setEditingWorkOrder(null);
+      toast({
+        title: "สำเร็จ",
+        description: "อัปเดตใบสั่งงานแล้ว",
+      });
+    },
+  });
+
+  const deleteWorkOrderMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await apiRequest(`/api/work-orders/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      toast({
+        title: "สำเร็จ",
+        description: "ลบใบสั่งงานแล้ว",
+      });
+    },
+  });
+
+  // Helper functions
+  const resetForm = () => {
+    setNewWorkOrder({
+      title: "",
+      description: "",
+      customerId: "",
+      quotationId: "",
+      priority: 3,
+      startDate: "",
+      dueDate: "",
+      assignedTeamId: "",
+      notes: ""
+    });
+    setSelectedQuotation(null);
+  };
+
+  const getStatusColor = (status: string): string => {
     switch (status) {
-      case "pending": return "bg-yellow-100 text-yellow-800";
-      case "in-progress": return "bg-blue-100 text-blue-800";
+      case "draft": return "bg-gray-100 text-gray-800";
+      case "approved": return "bg-blue-100 text-blue-800";
+      case "in_progress": return "bg-yellow-100 text-yellow-800";
       case "completed": return "bg-green-100 text-green-800";
       case "cancelled": return "bg-red-100 text-red-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority: number): string => {
     switch (priority) {
-      case "urgent": return "bg-red-100 text-red-800 border-red-200";
-      case "high": return "bg-orange-100 text-orange-800 border-orange-200";
-      case "medium": return "bg-yellow-100 text-yellow-800 border-yellow-200";
-      case "low": return "bg-green-100 text-green-800 border-green-200";
-      default: return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "pending": return <Clock className="w-4 h-4" />;
-      case "in-progress": return <AlertCircle className="w-4 h-4" />;
-      case "completed": return <CheckCircle className="w-4 h-4" />;
-      case "cancelled": return <XCircle className="w-4 h-4" />;
-      default: return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const getMaterialStatusColor = (status: string) => {
-    switch (status) {
-      case "sufficient": return "bg-green-100 text-green-800";
-      case "shortage": return "bg-red-100 text-red-800";
-      case "ordered": return "bg-blue-100 text-blue-800";
+      case 1: return "bg-red-100 text-red-800";
+      case 2: return "bg-orange-100 text-orange-800";
+      case 3: return "bg-yellow-100 text-yellow-800";
+      case 4: return "bg-blue-100 text-blue-800";
+      case 5: return "bg-gray-100 text-gray-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const filteredOrders = workOrders.filter(order => {
-    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.productName.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
-    const matchesPriority = priorityFilter === "all" || order.priority === priorityFilter;
-    
-    return matchesSearch && matchesStatus && matchesPriority;
-  });
-
-  const getProgressColor = (progress: number) => {
-    if (progress >= 80) return "bg-green-500";
-    if (progress >= 50) return "bg-yellow-500";
-    return "bg-blue-500";
+  const getCustomerName = (customerId: number): string => {
+    const customer = customers.find(c => c.id === customerId);
+    return customer ? customer.name : "ไม่ระบุลูกค้า";
   };
 
+  const getTeamName = (teamId: string | null): string => {
+    if (!teamId) return "ยังไม่กำหนดทีม";
+    const team = teams.find(t => t.id === teamId);
+    return team ? team.name : "ไม่ระบุทีม";
+  };
+
+  const handleQuotationSelect = (quotationId: string) => {
+    if (!quotationId) {
+      setSelectedQuotation(null);
+      setNewWorkOrder(prev => ({
+        ...prev,
+        quotationId: "",
+        title: "",
+        description: "",
+        customerId: ""
+      }));
+      return;
+    }
+
+    const quotation = quotations.find(q => q.id === parseInt(quotationId));
+    if (quotation) {
+      setSelectedQuotation(quotation);
+      setNewWorkOrder(prev => ({
+        ...prev,
+        quotationId: quotationId,
+        title: quotation.title,
+        description: quotation.description || "",
+        customerId: quotation.customerId.toString()
+      }));
+    }
+  };
+
+  const handleCreateWorkOrder = () => {
+    if (!newWorkOrder.title || !newWorkOrder.customerId) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "กรุณากรอกข้อมูลที่จำเป็น",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const orderData = {
+      ...newWorkOrder,
+      customerId: parseInt(newWorkOrder.customerId),
+      quotationId: newWorkOrder.quotationId ? parseInt(newWorkOrder.quotationId) : null,
+    };
+
+    createWorkOrderMutation.mutate(orderData);
+  };
+
+  const handleEditWorkOrder = (workOrder: WorkOrder) => {
+    setEditingWorkOrder(workOrder);
+    setIsEditOpen(true);
+  };
+
+  const handleUpdateWorkOrder = () => {
+    if (!editingWorkOrder) return;
+
+    updateWorkOrderMutation.mutate({
+      id: editingWorkOrder.id,
+      title: editingWorkOrder.title,
+      description: editingWorkOrder.description,
+      status: editingWorkOrder.status,
+      priority: editingWorkOrder.priority,
+      startDate: editingWorkOrder.startDate,
+      dueDate: editingWorkOrder.dueDate,
+      assignedTeamId: editingWorkOrder.assignedTeamId,
+      notes: editingWorkOrder.notes
+    });
+  };
+
+  const handleDeleteWorkOrder = (id: string) => {
+    if (confirm("คุณแน่ใจหรือไม่ว่าต้องการลบใบสั่งงานนี้?")) {
+      deleteWorkOrderMutation.mutate(id);
+    }
+  };
+
+  // Filter work orders
+  const filteredWorkOrders = workOrders.filter(order => {
+    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === "all" || order.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const totalOrders = workOrders.length;
+  const draftOrders = workOrders.filter(o => o.status === "draft").length;
+  const approvedOrders = workOrders.filter(o => o.status === "approved").length;
+  const inProgressOrders = workOrders.filter(o => o.status === "in_progress").length;
+  const completedOrders = workOrders.filter(o => o.status === "completed").length;
+
+  if (workOrdersLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-lg text-gray-500">กำลังโหลดข้อมูล...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <ClipboardList className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <ClipboardList className="h-8 w-8 text-blue-600" />
             ใบสั่งงาน
           </h1>
-          <p className="text-gray-600 mt-1">จัดการและติดตามใบสั่งผลิต</p>
+          <p className="text-gray-600 mt-2">จัดการใบสั่งงานการผลิต สร้างจากใบเสนอราคาหรือสร้างใหม่</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          สร้างใบสั่งงานใหม่
+        <Button
+          onClick={() => setIsCreateOpen(true)}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          สร้างใบสั่งงาน
         </Button>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* Statistics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">รอดำเนินการ</p>
-                <p className="text-2xl font-bold text-yellow-600">
-                  {workOrders.filter(wo => wo.status === 'pending').length}
-                </p>
-              </div>
-              <Clock className="w-8 h-8 text-yellow-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ทั้งหมด</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalOrders}</div>
+            <p className="text-xs text-muted-foreground">ใบสั่งงานทั้งหมด</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">กำลังผลิต</p>
-                <p className="text-2xl font-bold text-blue-600">
-                  {workOrders.filter(wo => wo.status === 'in-progress').length}
-                </p>
-              </div>
-              <AlertCircle className="w-8 h-8 text-blue-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ร่าง</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{draftOrders}</div>
+            <p className="text-xs text-muted-foreground">รอการอนุมัติ</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">เสร็จสิ้น</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {workOrders.filter(wo => wo.status === 'completed').length}
-                </p>
-              </div>
-              <CheckCircle className="w-8 h-8 text-green-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">อนุมัติแล้ว</CardTitle>
+            <FileText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{approvedOrders}</div>
+            <p className="text-xs text-muted-foreground">พร้อมเริ่มงาน</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-gray-600">ความคืบหน้าเฉลี่ย</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {Math.round(workOrders.reduce((sum, wo) => sum + wo.progress, 0) / workOrders.length)}%
-                </p>
-              </div>
-              <ClipboardList className="w-8 h-8 text-purple-600" />
-            </div>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">กำลังดำเนินการ</CardTitle>
+            <Users className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{inProgressOrders}</div>
+            <p className="text-xs text-muted-foreground">งานที่กำลังทำ</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">เสร็จแล้ว</CardTitle>
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{completedOrders}</div>
+            <p className="text-xs text-muted-foreground">งานที่เสร็จสิ้น</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1 min-w-64">
-              <Input
-                placeholder="ค้นหาใบสั่งงาน..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="สถานะ" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทุกสถานะ</SelectItem>
-                <SelectItem value="pending">รอดำเนินการ</SelectItem>
-                <SelectItem value="in-progress">กำลังผลิต</SelectItem>
-                <SelectItem value="completed">เสร็จสิ้น</SelectItem>
-                <SelectItem value="cancelled">ยกเลิก</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="ความสำคัญ" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">ทุกระดับ</SelectItem>
-                <SelectItem value="urgent">เร่งด่วน</SelectItem>
-                <SelectItem value="high">สูง</SelectItem>
-                <SelectItem value="medium">ปานกลาง</SelectItem>
-                <SelectItem value="low">ต่ำ</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="ค้นหาเลขที่ใบสั่งงาน, ชื่องาน, หรือลูกค้า..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-full sm:w-48">
+            <Filter className="h-4 w-4 mr-2" />
+            <SelectValue placeholder="กรองตามสถานะ" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">ทุกสถานะ</SelectItem>
+            <SelectItem value="draft">ร่าง</SelectItem>
+            <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
+            <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+            <SelectItem value="completed">เสร็จแล้ว</SelectItem>
+            <SelectItem value="cancelled">ยกเลิก</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
       {/* Work Orders List */}
       <div className="space-y-4">
-        {filteredOrders.map(order => (
-          <Card key={order.id} className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Order Info */}
-                <div className="lg:col-span-2">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                        {order.orderNumber}
-                      </h3>
-                      <p className="text-gray-600 mb-2">{order.productName}</p>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
-                        <span>จำนวน: {order.quantity.toLocaleString()} {order.unit}</span>
-                        <span>มอบหมาย: {order.assignedTo}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge className={getPriorityColor(order.priority)}>
-                        {order.priority}
-                      </Badge>
-                      <Badge className={getStatusColor(order.status)}>
-                        {getStatusIcon(order.status)}
-                        <span className="ml-1">{order.status}</span>
-                      </Badge>
-                    </div>
+        {filteredWorkOrders.length > 0 ? (
+          filteredWorkOrders.map((order) => (
+            <Card key={order.id} className="p-4">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-lg font-semibold">{order.orderNumber}</h3>
+                    <Badge className={getStatusColor(order.status)}>
+                      {order.status === "draft" && "ร่าง"}
+                      {order.status === "approved" && "อนุมัติแล้ว"}
+                      {order.status === "in_progress" && "กำลังดำเนินการ"}
+                      {order.status === "completed" && "เสร็จแล้ว"}
+                      {order.status === "cancelled" && "ยกเลิก"}
+                    </Badge>
+                    <Badge className={getPriorityColor(order.priority)}>
+                      ลำดับ {order.priority}
+                    </Badge>
                   </div>
-
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-700">ความคืบหน้า</span>
-                      <span className="text-sm font-medium text-gray-900">{order.progress}%</span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(order.progress)}`}
-                        style={{ width: `${order.progress}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Dates */}
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <h4 className="text-md font-medium text-gray-900 mb-2">{order.title}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
                     <div>
-                      <span className="font-medium text-gray-700">วันที่เริ่ม:</span>
-                      <span className="ml-2 text-gray-600">
-                        {new Date(order.startDate).toLocaleDateString('th-TH')}
-                      </span>
+                      <span className="font-medium">ลูกค้า:</span> {order.customerName}
                     </div>
                     <div>
-                      <span className="font-medium text-gray-700">กำหนดส่งมอบ:</span>
-                      <span className="ml-2 text-gray-600">
-                        {new Date(order.dueDate).toLocaleDateString('th-TH')}
-                      </span>
+                      <span className="font-medium">ทีมที่รับผิดชอบ:</span> {getTeamName(order.assignedTeamId)}
+                    </div>
+                    <div>
+                      <span className="font-medium">วันที่เริ่ม:</span> {order.startDate || "ยังไม่กำหนด"}
+                    </div>
+                    <div>
+                      <span className="font-medium">วันที่กำหนดเสร็จ:</span> {order.dueDate || "ยังไม่กำหนด"}
+                    </div>
+                    <div>
+                      <span className="font-medium">จำนวนเงิน:</span> {parseFloat(order.totalAmount).toLocaleString()} บาท
+                    </div>
+                    <div>
+                      <span className="font-medium">สร้างเมื่อ:</span> {new Date(order.createdAt).toLocaleDateString('th-TH')}
                     </div>
                   </div>
-
-                  {/* Notes */}
+                  {order.description && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <span className="font-medium">รายละเอียด:</span> {order.description}
+                    </div>
+                  )}
                   {order.notes && (
-                    <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                      <span className="text-sm font-medium text-gray-700">หมายเหตุ:</span>
-                      <p className="text-sm text-gray-600 mt-1">{order.notes}</p>
+                    <div className="mt-2 text-sm text-gray-600">
+                      <span className="font-medium">หมายเหตุ:</span> {order.notes}
                     </div>
                   )}
                 </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEditWorkOrder(order)}
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDeleteWorkOrder(order.id)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </Card>
+          ))
+        ) : (
+          <Card className="p-8 text-center">
+            <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">ยังไม่มีใบสั่งงาน</h3>
+            <p className="text-gray-600 mb-4">เริ่มต้นด้วยการสร้างใบสั่งงานใหม่</p>
+            <Button onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              สร้างใบสั่งงานแรก
+            </Button>
+          </Card>
+        )}
+      </div>
 
-                {/* Materials */}
-                <div>
-                  <h4 className="font-medium text-gray-900 mb-3">วัตถุดิบที่ต้องการ</h4>
-                  <div className="space-y-2">
-                    {order.materials.map(material => (
-                      <div key={material.id} className="p-3 border rounded-lg">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-900">{material.name}</span>
-                          <Badge className={getMaterialStatusColor(material.status)}>
-                            {material.status}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-gray-600">
-                          <div>ต้องการ: {material.required.toLocaleString()} {material.unit}</div>
-                          <div>มีในสต็อก: {material.available.toLocaleString()} {material.unit}</div>
-                        </div>
-                        {material.status === 'shortage' && (
-                          <div className="mt-2 text-xs text-red-600">
-                            ขาด: {(material.required - material.available).toLocaleString()} {material.unit}
-                          </div>
-                        )}
-                      </div>
+      {/* Create Work Order Dialog */}
+      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>สร้างใบสั่งงานใหม่</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 max-h-96 overflow-y-auto">
+            <div>
+              <label className="text-sm font-medium">อ้างอิงใบเสนอราคา (ไม่บังคับ)</label>
+              <Select value={newWorkOrder.quotationId} onValueChange={handleQuotationSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกใบเสนอราคา" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">สร้างใหม่ (ไม่อ้างอิง)</SelectItem>
+                  {quotations.filter(q => q.status === "approved").map((quotation) => (
+                    <SelectItem key={quotation.id} value={quotation.id.toString()}>
+                      {quotation.quotationNumber} - {quotation.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">ชื่องาน</label>
+              <Input
+                value={newWorkOrder.title}
+                onChange={(e) => setNewWorkOrder({...newWorkOrder, title: e.target.value})}
+                placeholder="ระบุชื่องาน"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">รายละเอียด</label>
+              <Input
+                value={newWorkOrder.description}
+                onChange={(e) => setNewWorkOrder({...newWorkOrder, description: e.target.value})}
+                placeholder="รายละเอียดงาน"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">ลูกค้า</label>
+              <Select 
+                value={newWorkOrder.customerId} 
+                onValueChange={(value) => setNewWorkOrder({...newWorkOrder, customerId: value})}
+                disabled={!!selectedQuotation}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกลูกค้า" />
+                </SelectTrigger>
+                <SelectContent>
+                  {customers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.id.toString()}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">ลำดับความสำคัญ</label>
+                <Select 
+                  value={newWorkOrder.priority.toString()} 
+                  onValueChange={(value) => setNewWorkOrder({...newWorkOrder, priority: parseInt(value)})}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 - สูงสุด</SelectItem>
+                    <SelectItem value="2">2 - สูง</SelectItem>
+                    <SelectItem value="3">3 - ปานกลาง</SelectItem>
+                    <SelectItem value="4">4 - ต่ำ</SelectItem>
+                    <SelectItem value="5">5 - ต่ำสุด</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">ทีมที่รับผิดชอบ</label>
+                <Select 
+                  value={newWorkOrder.assignedTeamId} 
+                  onValueChange={(value) => setNewWorkOrder({...newWorkOrder, assignedTeamId: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกทีม" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
                     ))}
-                  </div>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">วันที่เริ่ม</label>
+                <Input
+                  type="date"
+                  value={newWorkOrder.startDate}
+                  onChange={(e) => setNewWorkOrder({...newWorkOrder, startDate: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">วันที่กำหนดเสร็จ</label>
+                <Input
+                  type="date"
+                  value={newWorkOrder.dueDate}
+                  onChange={(e) => setNewWorkOrder({...newWorkOrder, dueDate: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">หมายเหตุ</label>
+              <Input
+                value={newWorkOrder.notes}
+                onChange={(e) => setNewWorkOrder({...newWorkOrder, notes: e.target.value})}
+                placeholder="หมายเหตุเพิ่มเติม"
+              />
+            </div>
+
+            {selectedQuotation && (
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-2">ข้อมูลจากใบเสนอราคา</h4>
+                <div className="text-sm text-blue-800">
+                  <p><span className="font-medium">เลขที่:</span> {selectedQuotation.quotationNumber}</p>
+                  <p><span className="font-medium">ลูกค้า:</span> {selectedQuotation.customerName}</p>
+                  <p><span className="font-medium">จำนวนเงิน:</span> {parseFloat(selectedQuotation.totalAmount).toLocaleString()} บาท</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setIsCreateOpen(false)}>
+                ยกเลิก
+              </Button>
+              <Button onClick={handleCreateWorkOrder} disabled={createWorkOrderMutation.isPending}>
+                {createWorkOrderMutation.isPending ? "กำลังสร้าง..." : "สร้างใบสั่งงาน"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Work Order Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>แก้ไขใบสั่งงาน</DialogTitle>
+          </DialogHeader>
+          {editingWorkOrder && (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              <div>
+                <label className="text-sm font-medium">ชื่องาน</label>
+                <Input
+                  value={editingWorkOrder.title}
+                  onChange={(e) => setEditingWorkOrder({...editingWorkOrder, title: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">รายละเอียด</label>
+                <Input
+                  value={editingWorkOrder.description || ""}
+                  onChange={(e) => setEditingWorkOrder({...editingWorkOrder, description: e.target.value})}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">สถานะ</label>
+                  <Select 
+                    value={editingWorkOrder.status} 
+                    onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="draft">ร่าง</SelectItem>
+                      <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
+                      <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                      <SelectItem value="completed">เสร็จแล้ว</SelectItem>
+                      <SelectItem value="cancelled">ยกเลิก</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">ลำดับความสำคัญ</label>
+                  <Select 
+                    value={editingWorkOrder.priority.toString()} 
+                    onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, priority: parseInt(value)})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 - สูงสุด</SelectItem>
+                      <SelectItem value="2">2 - สูง</SelectItem>
+                      <SelectItem value="3">3 - ปานกลาง</SelectItem>
+                      <SelectItem value="4">4 - ต่ำ</SelectItem>
+                      <SelectItem value="5">5 - ต่ำสุด</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
-              {/* Actions */}
-              <div className="flex justify-end gap-2 mt-6 pt-4 border-t">
-                <Button variant="outline" size="sm">
-                  <Eye className="w-4 h-4 mr-2" />
-                  ดูรายละเอียด
+              <div>
+                <label className="text-sm font-medium">ทีมที่รับผิดชอบ</label>
+                <Select 
+                  value={editingWorkOrder.assignedTeamId || ""} 
+                  onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, assignedTeamId: value})}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกทีม" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {teams.map((team) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">วันที่เริ่ม</label>
+                  <Input
+                    type="date"
+                    value={editingWorkOrder.startDate || ""}
+                    onChange={(e) => setEditingWorkOrder({...editingWorkOrder, startDate: e.target.value})}
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm font-medium">วันที่กำหนดเสร็จ</label>
+                  <Input
+                    type="date"
+                    value={editingWorkOrder.dueDate || ""}
+                    onChange={(e) => setEditingWorkOrder({...editingWorkOrder, dueDate: e.target.value})}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium">หมายเหตุ</label>
+                <Input
+                  value={editingWorkOrder.notes || ""}
+                  onChange={(e) => setEditingWorkOrder({...editingWorkOrder, notes: e.target.value})}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                  ยกเลิก
                 </Button>
-                <Button variant="outline" size="sm">
-                  <Edit2 className="w-4 h-4 mr-2" />
-                  แก้ไข
+                <Button onClick={handleUpdateWorkOrder} disabled={updateWorkOrderMutation.isPending}>
+                  {updateWorkOrderMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredOrders.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <ClipboardList className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">ไม่พบใบสั่งงาน</h3>
-            <p className="text-gray-500">ลองเปลี่ยนเงื่อนไขการค้นหาหรือสร้างใบสั่งงานใหม่</p>
-          </CardContent>
-        </Card>
-      )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
