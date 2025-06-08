@@ -89,9 +89,14 @@ export default function Sales() {
   });
 
   // Fetch customers
-  const { data: customers = [] } = useQuery({
+  const { data: customers = [], isLoading: customersLoading, error: customersError } = useQuery({
     queryKey: ["/api/customers"],
   });
+
+  // Debug customers data
+  console.log('Customers data:', customers);
+  console.log('Customers loading:', customersLoading);
+  console.log('Customers error:', customersError);
 
   // Filter customers based on search term
   const filteredCustomers = (customers as Customer[]).filter((customer: Customer) =>

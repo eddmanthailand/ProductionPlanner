@@ -284,11 +284,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     try {
+      console.log('Fetching customers...');
       const tenantId = '550e8400-e29b-41d4-a716-446655440000'; // Default tenant for dev
       const customers = await storage.getCustomers(tenantId);
+      console.log('Found customers:', customers.length);
       res.json(customers);
     } catch (error) {
-      res.status(500).json({ message: "Failed to fetch customers" });
+      console.error('Error fetching customers:', error);
+      res.status(500).json({ message: "Failed to fetch customers", error: error.message });
     }
   });
 
