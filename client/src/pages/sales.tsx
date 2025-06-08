@@ -114,9 +114,26 @@ export default function Sales() {
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    const timestamp = Date.now().toString().slice(-6);
-    return `QT${year}${month}${day}${timestamp}`;
+    const prefix = `QT${year}${month}`;
+    
+    // Find the highest sequence number for this month
+    const currentMonthQuotations = (quotations as any[]).filter((q: any) => 
+      q.quotationNumber && q.quotationNumber.startsWith(prefix)
+    );
+    
+    let maxSequence = 0;
+    currentMonthQuotations.forEach((q: any) => {
+      const match = q.quotationNumber.match(/(\d{3})$/);
+      if (match) {
+        const sequence = parseInt(match[1]);
+        if (sequence > maxSequence) {
+          maxSequence = sequence;
+        }
+      }
+    });
+    
+    const nextSequence = String(maxSequence + 1).padStart(3, '0');
+    return `${prefix}${nextSequence}`;
   };
 
   // Handle customer selection
