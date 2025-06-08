@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Clock, Users, Plus, Edit2, Trash2, AlertCircle, CheckCircle2, Play, Pause } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +66,21 @@ export default function WorkQueueManager() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddWorkOpen, setIsAddWorkOpen] = useState(false);
+
+  // Auto-login for development
+  useEffect(() => {
+    const autoLogin = async () => {
+      try {
+        await apiRequest("/api/auth/login", "POST", {
+          username: "admin",
+          password: "secret"
+        });
+      } catch (error) {
+        console.log("Auto-login failed, user may already be logged in");
+      }
+    };
+    autoLogin();
+  }, []);
   const [isEditWorkOpen, setIsEditWorkOpen] = useState(false);
   const [editingWork, setEditingWork] = useState<WorkQueue | null>(null);
   const [newWork, setNewWork] = useState({
@@ -137,11 +152,7 @@ export default function WorkQueueManager() {
 
   const deleteWorkMutation = useMutation({
     mutationFn: async (id: string) => {
-      const response = await fetch(`/api/work-queues/${id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Failed to delete work queue");
-      return response.json();
+      return await apiRequest(`/api/work-queues/${id}`, "DELETE");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues"] });
