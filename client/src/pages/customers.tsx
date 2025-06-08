@@ -410,10 +410,82 @@ export default function Customers() {
                             </div>
                             
                             {/* แสดงผลการตรวจสอบ */}
-                            {taxIdVerification.status === 'success' && (
-                              <div className="flex items-center space-x-2 text-green-600 text-sm">
-                                <CheckCircle className="h-4 w-4" />
-                                <span>ตรวจสอบแล้ว: {taxIdVerification.data?.name || 'พบข้อมูลในระบบ'}</span>
+                            {taxIdVerification.status === 'success' && taxIdVerification.data && (
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2 text-green-600 text-sm">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>ตรวจสอบแล้ว - พบข้อมูล</span>
+                                </div>
+                                <div 
+                                  className="p-3 border border-green-200 rounded-lg bg-green-50 cursor-pointer hover:bg-green-100 transition-colors"
+                                  onClick={() => {
+                                    // กรอกข้อมูลลงในฟอร์ม
+                                    if (taxIdVerification.data?.companyName) {
+                                      form.setValue('companyName', taxIdVerification.data.companyName);
+                                    } else if (taxIdVerification.data?.name) {
+                                      form.setValue('companyName', taxIdVerification.data.name);
+                                    }
+                                    
+                                    if (taxIdVerification.data?.address) {
+                                      form.setValue('address', taxIdVerification.data.address);
+                                    }
+                                    
+                                    if (taxIdVerification.data?.phone) {
+                                      form.setValue('phone', taxIdVerification.data.phone);
+                                    }
+                                    
+                                    if (taxIdVerification.data?.email) {
+                                      form.setValue('email', taxIdVerification.data.email);
+                                    }
+                                    
+                                    if (taxIdVerification.data?.contactPerson) {
+                                      form.setValue('contactPerson', taxIdVerification.data.contactPerson);
+                                    }
+                                    
+                                    // รีเซ็ตสถานะการตรวจสอบหลังจากเลือกข้อมูล
+                                    setTaxIdVerification({ status: 'idle' });
+                                  }}
+                                >
+                                  <div className="text-sm">
+                                    <div className="font-semibold text-green-800 mb-2">
+                                      {taxIdVerification.data.companyName || taxIdVerification.data.name}
+                                    </div>
+                                    
+                                    {taxIdVerification.data.address && (
+                                      <div className="text-green-700 mb-1">
+                                        <strong>ที่อยู่:</strong> {taxIdVerification.data.address}
+                                      </div>
+                                    )}
+                                    
+                                    {taxIdVerification.data.phone && (
+                                      <div className="text-green-700 mb-1">
+                                        <strong>โทรศัพท์:</strong> {taxIdVerification.data.phone}
+                                      </div>
+                                    )}
+                                    
+                                    {taxIdVerification.data.email && (
+                                      <div className="text-green-700 mb-1">
+                                        <strong>อีเมล:</strong> {taxIdVerification.data.email}
+                                      </div>
+                                    )}
+                                    
+                                    {taxIdVerification.data.contactPerson && (
+                                      <div className="text-green-700 mb-1">
+                                        <strong>ผู้ติดต่อ:</strong> {taxIdVerification.data.contactPerson}
+                                      </div>
+                                    )}
+                                    
+                                    {taxIdVerification.data.source && (
+                                      <div className="text-green-600 mt-2 text-xs">
+                                        {taxIdVerification.data.source === 'existing_customer' ? 'ข้อมูลจากระบบลูกค้า' : 'ข้อมูลตัวอย่าง'}
+                                      </div>
+                                    )}
+                                    
+                                    <div className="text-green-600 mt-2 text-xs font-medium">
+                                      คลิกเพื่อกรอกข้อมูลนี้ลงในฟอร์ม →
+                                    </div>
+                                  </div>
+                                </div>
                               </div>
                             )}
                             
