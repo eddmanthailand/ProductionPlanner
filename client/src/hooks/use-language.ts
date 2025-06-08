@@ -8,7 +8,7 @@ const translations = {
     "nav.sales": "ขาย",
     "nav.production": "วางแผนการผลิต",
     "nav.accounting": "ระบบบัญชี",
-    "nav.inventory": "สินค้าคงคลัง",
+    "nav.inventory": "สินค้าและบริการ",
     "nav.customers": "ลูกค้า",
     "nav.master_data": "ข้อมูลหลัก",
     "nav.reports": "รายงาน",
