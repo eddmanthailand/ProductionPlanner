@@ -17,6 +17,11 @@ import Invoices from "@/pages/sales/invoices";
 import TaxInvoices from "@/pages/sales/tax-invoices";
 import Receipts from "@/pages/sales/receipts";
 import Production from "@/pages/production";
+import ProductionCalendar from "@/pages/production/calendar";
+import OrganizationChart from "@/pages/production/organization";
+import WorkOrders from "@/pages/production/work-orders";
+import ProductionPlanning from "@/pages/production/planning";
+import ProductionReports from "@/pages/production/reports";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import Customers from "@/pages/customers";
@@ -119,6 +124,36 @@ function Router() {
       <Route path="/production">
         <ProtectedRoute>
           <Production />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/calendar">
+        <ProtectedRoute>
+          <ProductionCalendar />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/organization">
+        <ProtectedRoute>
+          <OrganizationChart />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/work-orders">
+        <ProtectedRoute>
+          <WorkOrders />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/planning">
+        <ProtectedRoute>
+          <ProductionPlanning />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/reports">
+        <ProtectedRoute>
+          <ProductionReports />
         </ProtectedRoute>
       </Route>
 
