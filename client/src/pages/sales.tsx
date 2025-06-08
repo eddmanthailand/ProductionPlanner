@@ -149,7 +149,7 @@ export default function Sales() {
     mutationFn: async (data: QuotationFormData) => {
       const url = editingQuotation ? `/api/quotations/${editingQuotation.id}` : "/api/quotations";
       const method = editingQuotation ? "PATCH" : "POST";
-      return apiRequest(url, { method, body: data });
+      return apiRequest(url, method, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
@@ -230,6 +230,7 @@ export default function Sales() {
   // Handle add new
   const handleAddNew = () => {
     setEditingQuotation(null);
+    setSelectedCustomer(null);
     const quotationNumber = generateQuotationNumber();
     form.reset({
       quotationNumber,
@@ -254,6 +255,11 @@ export default function Sales() {
   // Handle edit
   const handleEdit = (quotation: any) => {
     setEditingQuotation(quotation);
+    
+    // Find and set the selected customer
+    const customer = (customers as Customer[]).find(c => c.id === quotation.customerId);
+    setSelectedCustomer(customer || null);
+    
     form.reset({
       quotationNumber: quotation.quotationNumber,
       customerId: quotation.customerId,
@@ -935,7 +941,7 @@ export default function Sales() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {quotations?.length === 0 ? (
+          {!quotations || quotations.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               ไม่มีใบเสนอราคา
             </div>
@@ -944,21 +950,23 @@ export default function Sales() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-3">{t("sales.quotation_number")}</th>
-                    <th className="text-left p-3">{t("sales.customer")}</th>
-                    <th className="text-left p-3">{t("sales.date")}</th>
-                    <th className="text-left p-3">{t("sales.grand_total")}</th>
-                    <th className="text-left p-3">{t("common.status")}</th>
-                    <th className="text-left p-3">{t("common.actions")}</th>
+                    <th className="text-left p-3">เลขที่ใบเสนอราคา</th>
+                    <th className="text-left p-3">ลูกค้า</th>
+                    <th className="text-left p-3">วันที่</th>
+                    <th className="text-left p-3">ยอดรวม</th>
+                    <th className="text-left p-3">สถานะ</th>
+                    <th className="text-left p-3">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {quotations?.map((quotation: any) => {
-                    const customer = customers?.find(c => c.id === quotation.customerId);
+                  {quotations.map((quotation: any) => {
+                    const customer = customers && Array.isArray(customers) 
+                      ? customers.find((c: Customer) => c.id === quotation.customerId)
+                      : null;
                     return (
                       <tr key={quotation.id} className="border-b hover:bg-gray-50">
                         <td className="p-3">{quotation.quotationNumber}</td>
-                        <td className="p-3">{customer?.name}</td>
+                        <td className="p-3">{customer?.name || 'ไม่พบข้อมูลลูกค้า'}</td>
                         <td className="p-3">{quotation.date}</td>
                         <td className="p-3">฿{parseFloat(quotation.grandTotal || 0).toFixed(2)}</td>
                         <td className="p-3">
