@@ -529,7 +529,7 @@ export default function Sales() {
                                 
                                 {showProductDropdowns[index] && (
                                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                    {getFilteredProducts(productSearchTerms[index] || "").map((product) => (
+                                    {getFilteredProducts(productSearchTerms[index] || "").map((product: any) => (
                                       <div
                                         key={product.id}
                                         className="px-3 py-2 hover:bg-gray-100 cursor-pointer"
