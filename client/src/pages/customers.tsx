@@ -496,9 +496,22 @@ export default function Customers() {
                             )}
                             
                             {taxIdVerification.status === 'error' && (
-                              <div className="flex items-center space-x-2 text-orange-600 text-sm">
-                                <AlertCircle className="h-4 w-4" />
-                                <span>{taxIdVerification.error}</span>
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2 text-orange-600 text-sm">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <span>{taxIdVerification.error}</span>
+                                </div>
+                                <div className="text-xs text-gray-600">
+                                  ตรวจสอบเพิ่มเติมได้ที่:{" "}
+                                  <a 
+                                    href="https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp" 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-blue-600 hover:underline"
+                                  >
+                                    เว็บไซต์กรมสรรพากร
+                                  </a>
+                                </div>
                               </div>
                             )}
                           </div>

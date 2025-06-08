@@ -705,80 +705,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Database lookup error:", dbError);
       }
 
-      // ลองเชื่อมต่อกับ API กรมสรรพากรจริง
-      try {
-        console.log("Attempting to verify tax ID with government API:", taxId);
-        
-        // ใช้ API endpoint จริงของกรมสรรพากร
-        const apiUrls = [
-          `https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp`,
-          `https://rdcb.rd.go.th/api/taxpayer/search`,
-          `https://vsreg.rd.go.th/api/vat/search`
-        ];
-
-        // ลองเชื่อมต่อกับเว็บไซต์กรมสรรพากรด้วย POST request
-        try {
-          const formData = new URLSearchParams();
-          formData.append('txtSearch', taxId);
-          formData.append('optSearch', '1'); // ค้นหาตามเลขประจำตัวผู้เสียภาษี
-          
-          const response = await fetch('https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-              'Referer': 'https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp',
-              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-            },
-            body: formData
-          });
-
-          if (response.ok) {
-            const htmlText = await response.text();
-            console.log("Government website response received");
-            
-            // ตรวจสอบว่าพบข้อมูลหรือไม่จาก HTML response
-            if (htmlText.includes('ข้อมูลผู้เสียภาษี') || htmlText.includes('ชื่อ') || htmlText.includes('ที่อยู่')) {
-              // แยกข้อมูลจาก HTML (simplified parsing)
-              const nameMatch = htmlText.match(/ชื่อ[^<]*?([^<]+)/);
-              const addressMatch = htmlText.match(/ที่อยู่[^<]*?([^<]+)/);
-              
-              if (nameMatch || addressMatch) {
-                return res.json({
-                  success: true,
-                  data: {
-                    taxId: taxId,
-                    name: nameMatch ? nameMatch[1].trim() : undefined,
-                    companyName: nameMatch ? nameMatch[1].trim() : undefined,
-                    address: addressMatch ? addressMatch[1].trim() : undefined,
-                    verified: true,
-                    source: "government_api",
-                    note: "ข้อมูลจากกรมสรรพากร"
-                  }
-                });
-              }
-            }
-          }
-        } catch (apiError: any) {
-          console.log("Government website API failed:", apiError?.message || apiError);
-        }
-
-        // หากไม่สามารถเชื่อมต่อ API ได้
-        res.json({
-          success: false,
-          error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้ กรุณากรอกข้อมูลด้วยตนเอง",
-          validFormat: true
-        });
-
-      } catch (error) {
-        console.error("Government API verification failed:", error);
-        
-        res.json({
-          success: false,
-          error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้ กรุณากรอกข้อมูลด้วยตนเอง",
-          validFormat: true
-        });
-      }
+      // ไม่สามารถเชื่อมต่อกับ API กรมสรรพากรได้เนื่องจากข้อจำกัด CORS
+      // ให้แสดงข้อความว่ารูปแบบถูกต้องและให้กรอกข้อมูลด้วยตนเอง
+      res.json({
+        success: false,
+        error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้ กรุณากรอกข้อมูลด้วยตนเอง",
+        validFormat: true,
+        note: "สามารถตรวจสอบเพิ่มเติมได้ที่ https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp"
+      });
     } catch (error) {
       console.error("Tax ID verification error:", error);
       res.status(500).json({
