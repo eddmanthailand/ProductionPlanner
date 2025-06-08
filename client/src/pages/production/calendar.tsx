@@ -1,84 +1,147 @@
-import { useState, useEffect } from "react";
-import { Calendar as CalendarIcon, Plus, Clock, Users, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { Calendar as CalendarIcon, Plus, Edit2, Trash2, Save, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "@/hooks/use-language";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
-interface WorkEvent {
-  id: number;
-  title: string;
+interface Holiday {
+  id: string;
   date: string;
-  time: string;
-  type: "production" | "maintenance" | "meeting" | "deadline";
-  priority: "low" | "medium" | "high";
-  assignedTo: string;
-  status: "pending" | "in-progress" | "completed";
+  name: string;
+  type: "national" | "company" | "religious";
+  recurring: boolean;
 }
 
 export default function ProductionCalendar() {
-  const { t } = useLanguage();
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState<WorkEvent[]>([
+  const { toast } = useToast();
+  const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [holidayName, setHolidayName] = useState("");
+  const [holidayType, setHolidayType] = useState<"national" | "company" | "religious">("national");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingHoliday, setEditingHoliday] = useState<Holiday | null>(null);
+  
+  const [holidays, setHolidays] = useState<Holiday[]>([
     {
-      id: 1,
-      title: "ผลิตชุดบอดี้สูท 208 ตัว",
-      date: "2025-06-08",
-      time: "08:00",
-      type: "production",
-      priority: "high",
-      assignedTo: "ทีมผลิต A",
-      status: "in-progress"
+      id: "h1",
+      date: "2025-01-01",
+      name: "วันปีใหม่",
+      type: "national",
+      recurring: true
     },
     {
-      id: 2,
-      title: "ตรวจสอบเครื่องจักร",
-      date: "2025-06-09",
-      time: "14:00",
-      type: "maintenance",
-      priority: "medium",
-      assignedTo: "ช่างเทคนิค",
-      status: "pending"
+      id: "h2",
+      date: "2025-02-12",
+      name: "วันมาฆบูชา",
+      type: "religious",
+      recurring: true
     },
     {
-      id: 3,
-      title: "ประชุมวางแผนสัปดาห์ถัดไป",
-      date: "2025-06-10",
-      time: "10:00",
-      type: "meeting",
-      priority: "medium",
-      assignedTo: "ทีมบริหาร",
-      status: "pending"
+      id: "h3",
+      date: "2025-04-06",
+      name: "วันจักรี",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h4",
+      date: "2025-04-13",
+      name: "วันสงกรานต์",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h5",
+      date: "2025-05-01",
+      name: "วันแรงงานแห่งชาติ",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h6",
+      date: "2025-05-05",
+      name: "วันฉัตรมงคล",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h7",
+      date: "2025-07-28",
+      name: "วันเฉลิมพระชนมพรรษา",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h8",
+      date: "2025-08-12",
+      name: "วันแม่แห่งชาติ",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h9",
+      date: "2025-10-13",
+      name: "วันคล้ายวันสวรรคต",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h10",
+      date: "2025-10-23",
+      name: "วันปิยมหาราช",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h11",
+      date: "2025-12-05",
+      name: "วันพ่อแห่งชาติ",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h12",
+      date: "2025-12-10",
+      name: "วันรัฐธรรมนูญ",
+      type: "national",
+      recurring: true
+    },
+    {
+      id: "h13",
+      date: "2025-12-31",
+      name: "วันสิ้นปี",
+      type: "national",
+      recurring: true
     }
   ]);
 
-  const getEventsByDate = (date: string) => {
-    return events.filter(event => event.date === date);
+  const getHolidaysByDate = (date: string) => {
+    return holidays.filter(holiday => holiday.date === date);
   };
 
-  const getEventTypeColor = (type: string) => {
+  const getHolidayTypeColor = (type: string) => {
     switch (type) {
-      case "production": return "bg-blue-100 text-blue-800";
-      case "maintenance": return "bg-orange-100 text-orange-800";
-      case "meeting": return "bg-purple-100 text-purple-800";
-      case "deadline": return "bg-red-100 text-red-800";
+      case "national": return "bg-red-100 text-red-800";
+      case "company": return "bg-blue-100 text-blue-800";
+      case "religious": return "bg-purple-100 text-purple-800";
       default: return "bg-gray-100 text-gray-800";
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high": return "border-l-red-500";
-      case "medium": return "border-l-yellow-500";
-      case "low": return "border-l-green-500";
-      default: return "border-l-gray-500";
+  const getHolidayTypeName = (type: string) => {
+    switch (type) {
+      case "national": return "วันหยุดราชการ";
+      case "company": return "วันหยุดบริษัท";
+      case "religious": return "วันสำคัญทางศาสนา";
+      default: return "อื่นๆ";
     }
   };
 
-  const generateCalendarDays = () => {
-    const year = currentDate.getFullYear();
-    const month = currentDate.getMonth();
+  const generateMonthCalendar = (year: number, month: number) => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
@@ -99,24 +162,103 @@ export default function ProductionCalendar() {
     return days;
   };
 
-  const formatDateForEvents = (day: number) => {
-    const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const formatDateForHoliday = (year: number, month: number, day: number) => {
+    const monthStr = String(month + 1).padStart(2, '0');
     const dayStr = String(day).padStart(2, '0');
-    return `${year}-${month}-${dayStr}`;
+    return `${year}-${monthStr}-${dayStr}`;
   };
 
-  const navigateMonth = (direction: 'prev' | 'next') => {
-    setCurrentDate(prev => {
-      const newDate = new Date(prev);
-      if (direction === 'prev') {
-        newDate.setMonth(prev.getMonth() - 1);
-      } else {
-        newDate.setMonth(prev.getMonth() + 1);
-      }
-      return newDate;
-    });
+  const navigateYear = (direction: 'prev' | 'next') => {
+    if (direction === 'prev') {
+      setCurrentYear(prev => prev - 1);
+    } else {
+      setCurrentYear(prev => prev + 1);
+    }
   };
+
+  const handleDateClick = (year: number, month: number, day: number) => {
+    const dateStr = formatDateForHoliday(year, month, day);
+    const existingHolidays = getHolidaysByDate(dateStr);
+    
+    if (existingHolidays.length > 0) {
+      // If there's already a holiday, edit it
+      setEditingHoliday(existingHolidays[0]);
+      setHolidayName(existingHolidays[0].name);
+      setHolidayType(existingHolidays[0].type);
+      setSelectedDate(dateStr);
+      setIsDialogOpen(true);
+    } else {
+      // Create new holiday
+      setEditingHoliday(null);
+      setHolidayName("");
+      setHolidayType("national");
+      setSelectedDate(dateStr);
+      setIsDialogOpen(true);
+    }
+  };
+
+  const saveHoliday = () => {
+    if (!selectedDate || !holidayName.trim()) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "กรุณากรอกชื่อวันหยุด",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (editingHoliday) {
+      // Update existing holiday
+      setHolidays(prev => prev.map(holiday => 
+        holiday.id === editingHoliday.id 
+          ? { ...holiday, name: holidayName, type: holidayType }
+          : holiday
+      ));
+      toast({
+        title: "อัปเดตสำเร็จ",
+        description: "วันหยุดได้รับการอัปเดตแล้ว"
+      });
+    } else {
+      // Create new holiday
+      const newHoliday: Holiday = {
+        id: `h${Date.now()}`,
+        date: selectedDate,
+        name: holidayName,
+        type: holidayType,
+        recurring: true
+      };
+      setHolidays(prev => [...prev, newHoliday]);
+      toast({
+        title: "บันทึกสำเร็จ",
+        description: "วันหยุดใหม่ได้รับการบันทึกแล้ว"
+      });
+    }
+
+    closeDialog();
+  };
+
+  const deleteHoliday = (holidayId: string) => {
+    setHolidays(prev => prev.filter(holiday => holiday.id !== holidayId));
+    toast({
+      title: "ลบสำเร็จ",
+      description: "วันหยุดได้รับการลบแล้ว"
+    });
+    closeDialog();
+  };
+
+  const closeDialog = () => {
+    setIsDialogOpen(false);
+    setSelectedDate(null);
+    setHolidayName("");
+    setEditingHoliday(null);
+  };
+
+  const monthNames = [
+    "มกราคม", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน",
+    "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"
+  ];
+
+  const dayNames = ['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'];
 
   return (
     <div className="space-y-6">
@@ -125,51 +267,104 @@ export default function ProductionCalendar() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <CalendarIcon className="w-8 h-8 text-blue-600" />
-            ปฏิทินการทำงาน
+            ปฏิทินวันหยุดประจำปี
           </h1>
-          <p className="text-gray-600 mt-1">จัดการและติดตามกำหนดการผลิต</p>
+          <p className="text-gray-600 mt-1">จัดการและกำหนดวันหยุดประจำปี</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          เพิ่มกิจกรรม
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateYear('prev')}
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <span className="text-xl font-semibold min-w-20 text-center">
+              {currentYear}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateYear('next')}
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>
-                  {currentDate.toLocaleDateString('th-TH', { 
-                    year: 'numeric', 
-                    month: 'long' 
-                  })}
-                </CardTitle>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigateMonth('prev')}
-                  >
-                    ←
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => navigateMonth('next')}
-                  >
-                    →
-                  </Button>
-                </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">วันหยุดทั้งหมด</p>
+                <p className="text-2xl font-bold text-gray-900">{holidays.length}</p>
               </div>
+              <CalendarIcon className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">วันหยุดราชการ</p>
+                <p className="text-2xl font-bold text-red-600">
+                  {holidays.filter(h => h.type === 'national').length}
+                </p>
+              </div>
+              <CalendarIcon className="w-8 h-8 text-red-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">วันหยุดบริษัท</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {holidays.filter(h => h.type === 'company').length}
+                </p>
+              </div>
+              <CalendarIcon className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">วันสำคัญทางศาสนา</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {holidays.filter(h => h.type === 'religious').length}
+                </p>
+              </div>
+              <CalendarIcon className="w-8 h-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 12 Month Calendar Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {Array.from({ length: 12 }, (_, monthIndex) => (
+          <Card key={monthIndex} className="overflow-hidden">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-center">
+                {monthNames[monthIndex]} {currentYear}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
               {/* Days of week header */}
               <div className="grid grid-cols-7 gap-1 mb-2">
-                {['อา', 'จ', 'อ', 'พ', 'พฤ', 'ศ', 'ส'].map(day => (
-                  <div key={day} className="text-center text-sm font-medium text-gray-500 py-2">
+                {dayNames.map(day => (
+                  <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
                     {day}
                   </div>
                 ))}
@@ -177,116 +372,164 @@ export default function ProductionCalendar() {
               
               {/* Calendar grid */}
               <div className="grid grid-cols-7 gap-1">
-                {generateCalendarDays().map((day, index) => {
+                {generateMonthCalendar(currentYear, monthIndex).map((day, dayIndex) => {
                   if (!day) {
-                    return <div key={index} className="h-20"></div>;
+                    return <div key={dayIndex} className="h-8"></div>;
                   }
                   
-                  const dateStr = formatDateForEvents(day);
-                  const dayEvents = getEventsByDate(dateStr);
+                  const dateStr = formatDateForHoliday(currentYear, monthIndex, day);
+                  const dayHolidays = getHolidaysByDate(dateStr);
                   const isToday = dateStr === new Date().toISOString().split('T')[0];
+                  const hasHoliday = dayHolidays.length > 0;
                   
                   return (
                     <div
                       key={day}
-                      className={`h-20 border rounded-lg p-1 cursor-pointer hover:bg-gray-50 ${
-                        isToday ? 'bg-blue-50 border-blue-200' : 'border-gray-200'
+                      className={`h-8 border rounded cursor-pointer flex items-center justify-center text-sm hover:bg-gray-50 ${
+                        isToday ? 'bg-blue-100 border-blue-300 text-blue-700' : 
+                        hasHoliday ? 'bg-red-100 border-red-300 text-red-700' : 
+                        'border-gray-200 text-gray-700'
                       }`}
-                      onClick={() => setSelectedDate(new Date(dateStr))}
+                      onClick={() => handleDateClick(currentYear, monthIndex, day)}
+                      title={hasHoliday ? dayHolidays[0].name : "คลิกเพื่อเพิ่มวันหยุด"}
                     >
-                      <div className={`text-sm font-medium ${isToday ? 'text-blue-600' : 'text-gray-900'}`}>
-                        {day}
-                      </div>
-                      <div className="space-y-1 mt-1">
-                        {dayEvents.slice(0, 2).map(event => (
-                          <div
-                            key={event.id}
-                            className={`text-xs px-1 py-0.5 rounded truncate ${getEventTypeColor(event.type)}`}
-                          >
-                            {event.time} {event.title}
-                          </div>
-                        ))}
-                        {dayEvents.length > 2 && (
-                          <div className="text-xs text-gray-500">
-                            +{dayEvents.length - 2} เพิ่มเติม
-                          </div>
-                        )}
-                      </div>
+                      {day}
                     </div>
                   );
                 })}
               </div>
             </CardContent>
           </Card>
-        </div>
+        ))}
+      </div>
 
-        {/* Events List */}
-        <div className="space-y-4">
-          {/* Today's Events */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">กิจกรรมวันนี้</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {getEventsByDate(new Date().toISOString().split('T')[0]).map(event => (
+      {/* Holiday List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>รายการวันหยุดประจำปี {currentYear}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-3">
+            {holidays
+              .filter(holiday => holiday.date.startsWith(currentYear.toString()))
+              .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+              .map(holiday => (
                 <div
-                  key={event.id}
-                  className={`p-3 border-l-4 rounded-lg bg-white shadow-sm ${getPriorityColor(event.priority)}`}
+                  key={holiday.id}
+                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{event.title}</h4>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                        <Clock className="w-3 h-3" />
-                        {event.time}
-                        <Users className="w-3 h-3 ml-2" />
-                        {event.assignedTo}
-                      </div>
+                  <div className="flex items-center gap-3">
+                    <div className="text-sm font-medium text-gray-900">
+                      {new Date(holiday.date).toLocaleDateString('th-TH', {
+                        weekday: 'short',
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
                     </div>
-                    <Badge className={getEventTypeColor(event.type)}>
-                      {event.type}
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">{holiday.name}</h4>
+                    </div>
+                    <Badge className={getHolidayTypeColor(holiday.type)}>
+                      {getHolidayTypeName(holiday.type)}
                     </Badge>
                   </div>
-                </div>
-              ))}
-              
-              {getEventsByDate(new Date().toISOString().split('T')[0]).length === 0 && (
-                <p className="text-gray-500 text-center py-4">ไม่มีกิจกรรมวันนี้</p>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Upcoming Tasks */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">งานที่กำลังจะมาถึง</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {events.filter(event => event.status === 'pending').slice(0, 3).map(event => (
-                <div
-                  key={event.id}
-                  className="p-3 border rounded-lg bg-gray-50"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{event.title}</h4>
-                      <div className="flex items-center gap-2 mt-1 text-sm text-gray-600">
-                        <CalendarIcon className="w-3 h-3" />
-                        {new Date(event.date).toLocaleDateString('th-TH')}
-                        <Clock className="w-3 h-3 ml-2" />
-                        {event.time}
-                      </div>
-                    </div>
-                    {event.priority === 'high' && (
-                      <AlertCircle className="w-4 h-4 text-red-500" />
-                    )}
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setEditingHoliday(holiday);
+                        setHolidayName(holiday.name);
+                        setHolidayType(holiday.type);
+                        setSelectedDate(holiday.date);
+                        setIsDialogOpen(true);
+                      }}
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => deleteHoliday(holiday.id)}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+            
+            {holidays.filter(holiday => holiday.date.startsWith(currentYear.toString())).length === 0 && (
+              <p className="text-gray-500 text-center py-8">ไม่มีวันหยุดในปี {currentYear}</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Holiday Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingHoliday ? 'แก้ไขวันหยุด' : 'เพิ่มวันหยุดใหม่'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">วันที่</label>
+              <Input
+                value={selectedDate ? new Date(selectedDate).toLocaleDateString('th-TH') : ''}
+                disabled
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">ชื่อวันหยุด</label>
+              <Input
+                value={holidayName}
+                onChange={(e) => setHolidayName(e.target.value)}
+                placeholder="กรอกชื่อวันหยุด"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">ประเภทวันหยุด</label>
+              <Select value={holidayType} onValueChange={(value: any) => setHolidayType(value)}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="national">วันหยุดราชการ</SelectItem>
+                  <SelectItem value="company">วันหยุดบริษัท</SelectItem>
+                  <SelectItem value="religious">วันสำคัญทางศาสนา</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={closeDialog}>
+                <X className="w-4 h-4 mr-2" />
+                ยกเลิก
+              </Button>
+              {editingHoliday && (
+                <Button 
+                  variant="destructive" 
+                  onClick={() => deleteHoliday(editingHoliday.id)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  ลบ
+                </Button>
+              )}
+              <Button onClick={saveHoliday}>
+                <Save className="w-4 h-4 mr-2" />
+                บันทึก
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
