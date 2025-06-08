@@ -15,7 +15,12 @@ import {
   ChevronDown,
   ChevronRight,
   Menu,
-  X
+  X,
+  Calendar,
+  Network,
+  ClipboardList,
+  GanttChart,
+  BarChart3
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -25,12 +30,16 @@ export default function Sidebar() {
   const { user, tenant } = useAuth();
   const { t } = useLanguage();
   const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
+  const [expandedProduction, setExpandedProduction] = useState(location.startsWith("/production"));
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  // Auto-expand sales menu when user navigates to sales pages
+  // Auto-expand menus when user navigates to respective pages
   useEffect(() => {
     if (location.startsWith("/sales")) {
       setExpandedSales(true);
+    }
+    if (location.startsWith("/production")) {
+      setExpandedProduction(true);
     }
   }, [location]);
 
@@ -40,10 +49,17 @@ export default function Sidebar() {
     }
   };
 
+  const toggleProductionMenu = () => {
+    if (!isCollapsed) {
+      setExpandedProduction(!expandedProduction);
+    }
+  };
+
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
     if (!isCollapsed) {
-      setExpandedSales(false); // Close sales menu when collapsing
+      setExpandedSales(false); // Close menus when collapsing
+      setExpandedProduction(false);
     }
   };
 
@@ -54,9 +70,16 @@ export default function Sidebar() {
     { name: "ใบเสร็จรับเงิน", href: "/sales/receipts", icon: FileText },
   ];
 
+  const productionSubMenu = [
+    { name: "ปฏิทินการทำงาน", href: "/production/calendar", icon: Calendar },
+    { name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network },
+    { name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList },
+    { name: "จัดแผนและคิวงาน", href: "/production/planning", icon: GanttChart },
+    { name: "รายงานแผนผลิต", href: "/production/reports", icon: BarChart3 },
+  ];
+
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: ChartLine },
-    { name: t("nav.production"), href: "/production", icon: Settings2 },
     { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
     { name: t("nav.inventory"), href: "/inventory", icon: Package },
     { name: t("nav.customers"), href: "/customers", icon: Users },
@@ -148,6 +171,51 @@ export default function Sidebar() {
                       <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
                         isSubActive 
                           ? "bg-blue-100 text-blue-700" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}>
+                        <SubIcon className="w-4 h-4" />
+                        <span className="font-medium">{subItem.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </li>
+
+          {/* Production Planning Menu with Submenu */}
+          <li>
+            <button
+              onClick={toggleProductionMenu}
+              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
+                location.startsWith("/production") 
+                  ? "bg-primary text-white" 
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+              title={isCollapsed ? "วางแผนการผลิต" : undefined}
+            >
+              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
+                <Settings2 className="w-5 h-5" />
+                {!isCollapsed && <span className="font-medium">วางแผนการผลิต</span>}
+              </div>
+              {!isCollapsed && (expandedProduction ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              ))}
+            </button>
+            
+            {expandedProduction && !isCollapsed && (
+              <ul className="mt-2 ml-8 space-y-1">
+                {productionSubMenu.map((subItem) => {
+                  const isSubActive = location === subItem.href;
+                  const SubIcon = subItem.icon;
+                  
+                  return (
+                    <li key={subItem.name}>
+                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        isSubActive 
+                          ? "bg-green-100 text-green-700" 
                           : "text-gray-600 hover:bg-gray-100"
                       }`}>
                         <SubIcon className="w-4 h-4" />
