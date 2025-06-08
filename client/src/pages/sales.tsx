@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -74,14 +74,32 @@ export default function Sales() {
   const [showProductDropdowns, setShowProductDropdowns] = useState<{[key: number]: boolean}>({});
   const productDropdownRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
 
-  // Generate quotation number in format QT+YYYY+MM+sequence
-  const generateQuotationNumber = () => {
+  // Generate quotation number in format QT+YYYY+MM+sequence  
+  const generateQuotationNumber = useCallback(() => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
-    const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
-    return `QT${year}${month}${sequence}`;
-  };
+    
+    // Find the highest sequence number for current year/month
+    const currentQuotations = quotations || [];
+    const currentPrefix = `QT${year}${month}`;
+    
+    let maxSequence = 0;
+    if (Array.isArray(currentQuotations)) {
+      currentQuotations.forEach((q: any) => {
+        if (q.quotationNumber && q.quotationNumber.startsWith(currentPrefix)) {
+          const sequenceStr = q.quotationNumber.substring(currentPrefix.length);
+          const sequence = parseInt(sequenceStr);
+          if (!isNaN(sequence) && sequence > maxSequence) {
+            maxSequence = sequence;
+          }
+        }
+      });
+    }
+    
+    const nextSequence = String(maxSequence + 1).padStart(3, '0');
+    return `${currentPrefix}${nextSequence}`;
+  }, [quotations]);
 
   const getDefaultDates = () => {
     const today = new Date();
