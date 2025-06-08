@@ -251,7 +251,18 @@ export default function Customers() {
   };
 
   const handleDelete = (id: number) => {
-    deleteMutation.mutate(id);
+    // หาข้อมูลลูกค้าที่จะลบ
+    const customerToDelete = customers?.find(c => c.id === id);
+    const customerName = customerToDelete?.name || customerToDelete?.companyName || 'ลูกค้า';
+    
+    // แสดงข้อความยืนยันการลบ
+    const confirmDelete = window.confirm(
+      `คุณต้องการลบข้อมูลลูกค้า "${customerName}" หรือไม่?\n\nการลบนี้ไม่สามารถย้อนกลับได้`
+    );
+    
+    if (confirmDelete) {
+      deleteMutation.mutate(id);
+    }
   };
 
   const handleSearch = (term: string) => {
