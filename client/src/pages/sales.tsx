@@ -96,7 +96,7 @@ export default function Sales() {
   });
 
   // Filter customers based on search term
-  const filteredCustomers = customers.filter((customer: Customer) =>
+  const filteredCustomers = (customers as Customer[]).filter((customer: Customer) =>
     customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
     customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
     customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
@@ -416,6 +416,7 @@ export default function Sales() {
                               type="text" 
                               className="w-full mt-1 p-2 border rounded bg-gray-50" 
                               placeholder="ชื่อบริษัท/ลูกค้า"
+                              value={selectedCustomer?.name || ""}
                               readOnly 
                             />
                           </div>
@@ -425,6 +426,7 @@ export default function Sales() {
                               type="text" 
                               className="w-full mt-1 p-2 border rounded bg-gray-50" 
                               placeholder="เลขประจำตัวผู้เสียภาษี"
+                              value={selectedCustomer?.taxId || ""}
                               readOnly 
                             />
                           </div>
@@ -434,6 +436,7 @@ export default function Sales() {
                               className="w-full mt-1 p-2 border rounded bg-gray-50" 
                               rows={2}
                               placeholder="ที่อยู่ลูกค้า"
+                              value={selectedCustomer?.address || ""}
                               readOnly
                             />
                           </div>
