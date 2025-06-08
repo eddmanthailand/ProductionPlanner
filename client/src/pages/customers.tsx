@@ -12,7 +12,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertCustomerSchema, type Customer } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Phone, Mail, MapPin, Search } from "lucide-react";
+import { Plus, Edit, Trash2, Phone, Mail, MapPin, Search, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 export default function Customers() {
   const { t } = useLanguage();
@@ -22,10 +22,63 @@ export default function Customers() {
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Customer[]>([]);
+  const [taxIdVerification, setTaxIdVerification] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    data?: any;
+    error?: string;
+  }>({ status: 'idle' });
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"]
   });
+
+  // ฟังก์ชันตรวจสอบเลขที่ผู้เสียภาษีจากกรมสรรพากร
+  const verifyTaxId = async (taxId: string) => {
+    if (!taxId || taxId.length !== 13) {
+      setTaxIdVerification({ status: 'error', error: 'เลขที่ผู้เสียภาษีต้องมี 13 หลัก' });
+      return;
+    }
+
+    setTaxIdVerification({ status: 'loading' });
+    
+    try {
+      // เรียก API ของกรมสรรพากรผ่าน backend
+      const response = await fetch('/api/verify-tax-id', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ taxId })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setTaxIdVerification({ 
+          status: 'success', 
+          data: data.data 
+        });
+        
+        // อัพเดทข้อมูลในฟอร์มหากพบข้อมูล
+        if (data.data.name) {
+          form.setValue('companyName', data.data.name);
+        }
+        if (data.data.address) {
+          form.setValue('address', data.data.address);
+        }
+      } else {
+        setTaxIdVerification({ 
+          status: 'error', 
+          error: data.error || 'ไม่พบข้อมูลเลขที่ผู้เสียภาษีนี้' 
+        });
+      }
+    } catch (error) {
+      setTaxIdVerification({ 
+        status: 'error', 
+        error: 'ไม่สามารถตรวจสอบเลขที่ผู้เสียภาษีได้ กรุณาลองใหม่อีกครั้ง' 
+      });
+    }
+  };
 
   const form = useForm({
     resolver: zodResolver(insertCustomerSchema.omit({ tenantId: true })),
@@ -219,7 +272,50 @@ export default function Customers() {
                       <FormItem>
                         <FormLabel>เลขที่ผู้เสียภาษี</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="เช่น 0123456789012" />
+                          <div className="space-y-2">
+                            <div className="flex space-x-2">
+                              <Input 
+                                {...field} 
+                                placeholder="เช่น 0123456789012" 
+                                maxLength={13}
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, ''); // ให้ใส่เฉพาะตัวเลข
+                                  field.onChange(value);
+                                  setTaxIdVerification({ status: 'idle' }); // รีเซ็ตสถานะเมื่อแก้ไข
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => verifyTaxId(field.value)}
+                                disabled={!field.value || field.value.length !== 13 || taxIdVerification.status === 'loading'}
+                                className="whitespace-nowrap"
+                              >
+                                {taxIdVerification.status === 'loading' ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Search className="h-4 w-4" />
+                                )}
+                                ตรวจสอบ
+                              </Button>
+                            </div>
+                            
+                            {/* แสดงผลการตรวจสอบ */}
+                            {taxIdVerification.status === 'success' && (
+                              <div className="flex items-center space-x-2 text-green-600 text-sm">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>ตรวจสอบแล้ว: {taxIdVerification.data?.name || 'พบข้อมูลในระบบ'}</span>
+                              </div>
+                            )}
+                            
+                            {taxIdVerification.status === 'error' && (
+                              <div className="flex items-center space-x-2 text-red-600 text-sm">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>{taxIdVerification.error}</span>
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
