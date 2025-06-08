@@ -364,6 +364,26 @@ export default function Sales() {
                     />
                   </div>
 
+                  {/* Project Name */}
+                  <div>
+                    <FormField
+                      control={form.control}
+                      name="projectName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ชื่องาน/โปรเจค</FormLabel>
+                          <FormControl>
+                            <Input 
+                              {...field}
+                              placeholder="ระบุชื่องานหรือโปรเจค (ไม่บังคับ)"
+                              className="w-full"
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
                   {/* Date */}
                   <FormField
                     control={form.control}
@@ -831,6 +851,7 @@ export default function Sales() {
                   <tr className="border-b">
                     <th className="text-left p-3">เลขที่ใบเสนอราคา</th>
                     <th className="text-left p-3">ลูกค้า</th>
+                    <th className="text-left p-3">ชื่องาน/โปรเจค</th>
                     <th className="text-left p-3">วันที่</th>
                     <th className="text-left p-3">ยอดรวม</th>
                     <th className="text-left p-3">สถานะ</th>
@@ -844,6 +865,7 @@ export default function Sales() {
                       <tr key={quotation.id} className="border-b hover:bg-gray-50">
                         <td className="p-3">{quotation.quotationNumber}</td>
                         <td className="p-3">{customer?.name || 'ไม่พบข้อมูลลูกค้า'}</td>
+                        <td className="p-3">{quotation.projectName || '-'}</td>
                         <td className="p-3">{quotation.date}</td>
                         <td className="p-3">฿{parseFloat(quotation.grandTotal || 0).toFixed(2)}</td>
                         <td className="p-3">
