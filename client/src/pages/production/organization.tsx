@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Network, Users, Settings, Plus, Edit2, Save, X } from "lucide-react";
+import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +36,11 @@ export default function OrganizationChart() {
   const queryClient = useQueryClient();
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
+  const [isEditDepartmentOpen, setIsEditDepartmentOpen] = useState(false);
+  const [isEditTeamOpen, setIsEditTeamOpen] = useState(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
+  const [editingTeam, setEditingTeam] = useState<Team | null>(null);
   const [newDepartment, setNewDepartment] = useState({
     name: "",
     manager: "",
@@ -152,6 +156,127 @@ export default function OrganizationChart() {
     }
   });
 
+  // Update department mutation
+  const updateDepartmentMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/departments/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to update department");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      setIsEditDepartmentOpen(false);
+      setEditingDepartment(null);
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขแผนกเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถแก้ไขแผนกได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete department mutation
+  const deleteDepartmentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/departments/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to delete department");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      toast({
+        title: "สำเร็จ",
+        description: "ลบแผนกเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถลบแผนกได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update team mutation
+  const updateTeamMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/teams/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to update team");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      setIsEditTeamOpen(false);
+      setEditingTeam(null);
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขทีมเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถแก้ไขทีมได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete team mutation
+  const deleteTeamMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/teams/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to delete team");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      toast({
+        title: "สำเร็จ",
+        description: "ลบทีมเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถลบทีมได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const getDepartmentTypeColor = (type: string) => {
     switch (type) {
       case "production": return "bg-blue-100 text-blue-800";
@@ -225,6 +350,55 @@ export default function OrganizationChart() {
       status: "active"
     });
     setIsAddTeamOpen(false);
+  };
+
+  const handleEditDepartment = (department: Department) => {
+    setEditingDepartment(department);
+    setIsEditDepartmentOpen(true);
+  };
+
+  const handleUpdateDepartment = () => {
+    if (!editingDepartment) return;
+    
+    updateDepartmentMutation.mutate({
+      id: editingDepartment.id,
+      data: {
+        name: editingDepartment.name,
+        manager: editingDepartment.manager || null,
+        location: editingDepartment.location,
+        status: editingDepartment.status
+      }
+    });
+  };
+
+  const handleDeleteDepartment = (departmentId: string) => {
+    if (confirm("คุณแน่ใจหรือไม่ที่จะลบแผนกนี้? ทีมทั้งหมดในแผนกจะถูกลบด้วย")) {
+      deleteDepartmentMutation.mutate(departmentId);
+    }
+  };
+
+  const handleEditTeam = (team: Team) => {
+    setEditingTeam(team);
+    setIsEditTeamOpen(true);
+  };
+
+  const handleUpdateTeam = () => {
+    if (!editingTeam) return;
+    
+    updateTeamMutation.mutate({
+      id: editingTeam.id,
+      data: {
+        name: editingTeam.name,
+        leader: editingTeam.leader || null,
+        status: editingTeam.status
+      }
+    });
+  };
+
+  const handleDeleteTeam = (teamId: string) => {
+    if (confirm("คุณแน่ใจหรือไม่ที่จะลบทีมนี้?")) {
+      deleteTeamMutation.mutate(teamId);
+    }
   };
 
   // Group teams by department
@@ -342,10 +516,30 @@ export default function OrganizationChart() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm text-gray-600">หัวหน้าแผนก</div>
-                  <div className="font-medium">{department.manager || "ไม่ระบุ"}</div>
-                  <div className="text-sm text-gray-500">{department.location}</div>
+                <div className="flex items-center gap-2">
+                  <div className="text-right mr-4">
+                    <div className="text-sm text-gray-600">หัวหน้าแผนก</div>
+                    <div className="font-medium">{department.manager || "ไม่ระบุ"}</div>
+                    <div className="text-sm text-gray-500">{department.location}</div>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleEditDepartment(department)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit2 className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDeleteDepartment(department.id)}
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
@@ -367,9 +561,29 @@ export default function OrganizationChart() {
                               หัวหน้าทีม: {team.leader || "ไม่ระบุ"}
                             </div>
                           </div>
-                          <Badge className={getStatusColor(team.status)}>
-                            {team.status}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className={getStatusColor(team.status)}>
+                              {team.status}
+                            </Badge>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditTeam(team)}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDeleteTeam(team.id)}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -522,6 +736,146 @@ export default function OrganizationChart() {
               {createTeamMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
             </Button>
             <Button variant="outline" onClick={handleCancelAddTeam} className="flex-1">
+              ยกเลิก
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={isEditDepartmentOpen} onOpenChange={setIsEditDepartmentOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>แก้ไขแผนก</DialogTitle>
+          </DialogHeader>
+          {editingDepartment && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="edit-dept-name">ชื่อแผนก *</label>
+                <Input
+                  id="edit-dept-name"
+                  value={editingDepartment.name}
+                  onChange={(e) => setEditingDepartment(prev => prev ? { ...prev, name: e.target.value } : null)}
+                  placeholder="เช่น แผนกผลิต"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-dept-manager">หัวหน้าแผนก</label>
+                <Input
+                  id="edit-dept-manager"
+                  value={editingDepartment.manager || ""}
+                  onChange={(e) => setEditingDepartment(prev => prev ? { ...prev, manager: e.target.value } : null)}
+                  placeholder="ไม่บังคับ"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-dept-location">สถานที่ *</label>
+                <Input
+                  id="edit-dept-location"
+                  value={editingDepartment.location}
+                  onChange={(e) => setEditingDepartment(prev => prev ? { ...prev, location: e.target.value } : null)}
+                  placeholder="เช่น อาคาร A ชั้น 2"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-dept-status">สถานะ</label>
+                <Select 
+                  value={editingDepartment.status} 
+                  onValueChange={(value) => setEditingDepartment(prev => prev ? { ...prev, status: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">ใช้งาน</SelectItem>
+                    <SelectItem value="maintenance">บำรุงรักษา</SelectItem>
+                    <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={handleUpdateDepartment}
+              disabled={updateDepartmentMutation.isPending}
+              className="flex-1"
+            >
+              {updateDepartmentMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsEditDepartmentOpen(false);
+                setEditingDepartment(null);
+              }} 
+              className="flex-1"
+            >
+              ยกเลิก
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Team Dialog */}
+      <Dialog open={isEditTeamOpen} onOpenChange={setIsEditTeamOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>แก้ไขทีม</DialogTitle>
+          </DialogHeader>
+          {editingTeam && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <label htmlFor="edit-team-name">ชื่อทีม *</label>
+                <Input
+                  id="edit-team-name"
+                  value={editingTeam.name}
+                  onChange={(e) => setEditingTeam(prev => prev ? { ...prev, name: e.target.value } : null)}
+                  placeholder="เช่น ทีมผลิตเสื้อผ้า"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-team-leader">หัวหน้าทีม</label>
+                <Input
+                  id="edit-team-leader"
+                  value={editingTeam.leader || ""}
+                  onChange={(e) => setEditingTeam(prev => prev ? { ...prev, leader: e.target.value } : null)}
+                  placeholder="ไม่บังคับ"
+                />
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="edit-team-status">สถานะ</label>
+                <Select 
+                  value={editingTeam.status} 
+                  onValueChange={(value) => setEditingTeam(prev => prev ? { ...prev, status: value } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">ใช้งาน</SelectItem>
+                    <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={handleUpdateTeam}
+              disabled={updateTeamMutation.isPending}
+              className="flex-1"
+            >
+              {updateTeamMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setIsEditTeamOpen(false);
+                setEditingTeam(null);
+              }} 
+              className="flex-1"
+            >
               ยกเลิก
             </Button>
           </div>
