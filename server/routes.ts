@@ -709,37 +709,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         console.log("Attempting to verify tax ID with government API:", taxId);
         
-        // ลอง API หลายตัว
+        // ใช้ API endpoint จริงของกรมสรรพากร
         const apiUrls = [
-          `https://rdcb.rd.go.th/VAT_WEBSERVICE/api/taxpayer/detail/vatno/${taxId}`,
-          `https://rdcb.rd.go.th/api/taxpayer/${taxId}`,
-          `https://rdcb.rd.go.th/etaxinvoice/taxpayer/check/${taxId}`
+          `https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp`,
+          `https://rdcb.rd.go.th/api/taxpayer/search`,
+          `https://vsreg.rd.go.th/api/vat/search`
         ];
 
-        for (const apiUrl of apiUrls) {
-          try {
-            const response = await fetch(apiUrl, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Referer': 'https://rdcb.rd.go.th/'
-              }
-            });
+        // ลองเชื่อมต่อกับเว็บไซต์กรมสรรพากรด้วย POST request
+        try {
+          const formData = new URLSearchParams();
+          formData.append('txtSearch', taxId);
+          formData.append('optSearch', '1'); // ค้นหาตามเลขประจำตัวผู้เสียภาษี
+          
+          const response = await fetch('https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+              'Referer': 'https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            },
+            body: formData
+          });
 
-            if (response.ok) {
-              const data = await response.json();
-              console.log("Government API response:", data);
+          if (response.ok) {
+            const htmlText = await response.text();
+            console.log("Government website response received");
+            
+            // ตรวจสอบว่าพบข้อมูลหรือไม่จาก HTML response
+            if (htmlText.includes('ข้อมูลผู้เสียภาษี') || htmlText.includes('ชื่อ') || htmlText.includes('ที่อยู่')) {
+              // แยกข้อมูลจาก HTML (simplified parsing)
+              const nameMatch = htmlText.match(/ชื่อ[^<]*?([^<]+)/);
+              const addressMatch = htmlText.match(/ที่อยู่[^<]*?([^<]+)/);
               
-              // ตรวจสอบว่ามีข้อมูลจริงหรือไม่
-              if (data && (data.name || data.companyName || data.taxpayerName || data.businessName)) {
+              if (nameMatch || addressMatch) {
                 return res.json({
                   success: true,
                   data: {
                     taxId: taxId,
-                    name: data.name || data.companyName || data.taxpayerName || data.businessName,
-                    companyName: data.companyName || data.name,
-                    address: data.address || data.businessAddress,
+                    name: nameMatch ? nameMatch[1].trim() : undefined,
+                    companyName: nameMatch ? nameMatch[1].trim() : undefined,
+                    address: addressMatch ? addressMatch[1].trim() : undefined,
                     verified: true,
                     source: "government_api",
                     note: "ข้อมูลจากกรมสรรพากร"
@@ -747,10 +758,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 });
               }
             }
-          } catch (apiError: any) {
-            console.log(`API ${apiUrl} failed:`, apiError?.message || apiError);
-            continue;
           }
+        } catch (apiError: any) {
+          console.log("Government website API failed:", apiError?.message || apiError);
         }
 
         // หากไม่สามารถเชื่อมต่อ API ได้
