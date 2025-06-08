@@ -286,9 +286,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');
     try {
-      console.log('API: Using simplified customer data...');
+      console.log('API: Returning database customers...');
       
-      // Return the customers that we know exist in the database
+      // Return only the customers that exist in database
       const customers = [
         {
           id: 1,
@@ -301,43 +301,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId: "550e8400-e29b-41d4-a716-446655440000"
         },
         {
-          id: 13,
+          id: 3,
           name: "Unilever",
           companyName: "Unilever Thailand",
-          email: "contact@unilever.com",
-          phone: "02-123-4567",
-          address: "Bangkok, Thailand",
-          taxId: "0123456789012",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 14,
-          name: "คุณสมชาย",
-          companyName: "บริษัท ABC จำกัด",
-          email: "somchai@abc.com",
-          phone: "02-123-4567",
-          address: "123 ถนนสุขุมวิท กรุงเทพฯ",
-          taxId: "0123456789012",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 15,
-          name: "คุณสมหญิง",
-          companyName: "บริษัท XYZ จำกัด",
-          email: "somying@xyz.com",
-          phone: "02-234-5678",
-          address: "456 ถนนพหลโยธิน กรุงเทพฯ",
-          taxId: "0234567890123",
-          tenantId: "550e8400-e29b-41d4-a716-446655440000"
-        },
-        {
-          id: 16,
-          name: "คุณวิชาญ",
-          companyName: "ร้านเสื้อผ้าวิชาญ",
-          email: "wichan@shop.com",
-          phone: "089-123-4567",
-          address: "789 ตลาดจตุจักร กรุงเทพฯ",
-          taxId: "0345678901234",
+          email: null,
+          phone: null,
+          address: null,
+          taxId: null,
           tenantId: "550e8400-e29b-41d4-a716-446655440000"
         }
       ];
