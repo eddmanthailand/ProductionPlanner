@@ -46,9 +46,21 @@ interface QuotationFormData {
   items: QuotationItem[];
 }
 
-const quotationFormSchema = insertQuotationSchema.extend({
+const quotationFormSchema = z.object({
+  quotationNumber: z.string().min(1, "เลขที่ใบเสนอราคาจำเป็น"),
+  customerId: z.number().min(1, "กรุณาเลือกลูกค้า"),
   projectName: z.string().optional(),
+  date: z.string().min(1, "วันที่จำเป็น"),
+  validUntil: z.string().min(1, "วันที่สิ้นสุดจำเป็น"),
   priceIncludesVat: z.boolean(),
+  subtotal: z.number().min(0),
+  discountPercent: z.number().min(0).max(100),
+  discountAmount: z.number().min(0),
+  taxPercent: z.number().min(0).max(100),
+  taxAmount: z.number().min(0),
+  grandTotal: z.number().min(0),
+  status: z.string().default("draft"),
+  notes: z.string().optional(),
   items: z.array(z.object({
     productId: z.number().optional(),
     productName: z.string().optional(),
@@ -57,7 +69,7 @@ const quotationFormSchema = insertQuotationSchema.extend({
     unit: z.string().optional(),
     unitPrice: z.number().min(0),
     discountType: z.enum(["percent", "amount"]),
-    discount: z.number().min(0).max(100),
+    discount: z.number().min(0),
     total: z.number().min(0)
   })).optional()
 });
@@ -290,8 +302,43 @@ export default function QuotationsNew() {
   });
 
   const onSubmit = (data: QuotationFormData) => {
+    console.log("Form submit attempted with data:", data);
+    console.log("Form errors:", form.formState.errors);
+    
+    // Filter out empty items
+    const validItems = data.items.filter(item => 
+      item.productName && item.productName.trim() !== "" && 
+      item.quantity > 0 && 
+      item.unitPrice > 0
+    );
+    
+    if (validItems.length === 0) {
+      toast({
+        title: "ข้อมูลไม่ครบถ้วน",
+        description: "กรุณากรอกรายการสินค้า/บริการอย่างน้อย 1 รายการ",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!data.customerId || data.customerId === 0) {
+      toast({
+        title: "ข้อมูลไม่ครบถ้วน",
+        description: "กรุณาเลือกลูกค้า",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     calculateTotals();
-    quotationMutation.mutate(data);
+    
+    const submitData = {
+      ...data,
+      items: validItems
+    };
+    
+    console.log("Submitting data:", submitData);
+    quotationMutation.mutate(submitData);
   };
 
   const addItem = () => {
