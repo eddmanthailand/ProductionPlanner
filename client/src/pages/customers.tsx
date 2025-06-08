@@ -21,16 +21,62 @@ export default function Customers() {
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchResults, setSearchResults] = useState<Customer[]>([]);
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [companySearchResults, setCompanySearchResults] = useState<any[]>([]);
+  const [companySearchTerm, setCompanySearchTerm] = useState("");
   const [taxIdVerification, setTaxIdVerification] = useState<{
     status: 'idle' | 'loading' | 'success' | 'error';
     data?: any;
+    error?: string;
+  }>({ status: 'idle' });
+  const [companySearch, setCompanySearch] = useState<{
+    status: 'idle' | 'loading' | 'success' | 'error';
+    data?: any[];
     error?: string;
   }>({ status: 'idle' });
 
   const { data: customers, isLoading } = useQuery<Customer[]>({
     queryKey: ["/api/customers"]
   });
+
+  // ฟังก์ชันค้นหาบริษัทจากชื่อ
+  const searchCompanyByName = async (companyName: string) => {
+    if (!companyName || companyName.length < 2) {
+      setCompanySearch({ status: 'error', error: 'ชื่อบริษัทต้องมีอย่างน้อย 2 ตัวอักษร' });
+      return;
+    }
+
+    setCompanySearch({ status: 'loading' });
+    
+    try {
+      const response = await fetch('/api/search-company', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ companyName })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        setCompanySearch({ 
+          status: 'success', 
+          data: data.data 
+        });
+      } else {
+        setCompanySearch({ 
+          status: 'error', 
+          error: data.error || 'ไม่พบบริษัทที่ตรงกับคำค้นหา' 
+        });
+      }
+    } catch (error) {
+      setCompanySearch({ 
+        status: 'error', 
+        error: 'ไม่สามารถค้นหาข้อมูลบริษัทได้ กรุณาลองใหม่อีกครั้ง' 
+      });
+    }
+  };
 
   // ฟังก์ชันตรวจสอบเลขที่ผู้เสียภาษีจากกรมสรรพากร
   const verifyTaxId = async (taxId: string) => {
@@ -257,7 +303,69 @@ export default function Customers() {
                       <FormItem>
                         <FormLabel>ชื่อบริษัท</FormLabel>
                         <FormControl>
-                          <Input {...field} />
+                          <div className="space-y-2">
+                            <div className="flex space-x-2">
+                              <Input 
+                                {...field} 
+                                onChange={(e) => {
+                                  field.onChange(e);
+                                  setCompanySearchTerm(e.target.value);
+                                  setCompanySearch({ status: 'idle' }); // รีเซ็ตสถานะเมื่อแก้ไข
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => searchCompanyByName(companySearchTerm)}
+                                disabled={!companySearchTerm || companySearchTerm.length < 2 || companySearch.status === 'loading'}
+                                className="whitespace-nowrap"
+                              >
+                                {companySearch.status === 'loading' ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <Search className="h-4 w-4" />
+                                )}
+                                ค้นหา
+                              </Button>
+                            </div>
+                            
+                            {/* แสดงผลการค้นหาบริษัท */}
+                            {companySearch.status === 'success' && companySearch.data && (
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2 text-green-600 text-sm">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>พบ {companySearch.data.length} บริษัท</span>
+                                </div>
+                                <div className="max-h-32 overflow-y-auto space-y-1">
+                                  {companySearch.data.map((company, index) => (
+                                    <div 
+                                      key={index}
+                                      className="p-2 border rounded cursor-pointer hover:bg-gray-50 text-sm"
+                                      onClick={() => {
+                                        form.setValue('companyName', company.name);
+                                        form.setValue('taxId', company.taxId || '');
+                                        form.setValue('address', company.address || '');
+                                        setCompanySearch({ status: 'idle' });
+                                      }}
+                                    >
+                                      <div className="font-medium">{company.name}</div>
+                                      {company.taxId && (
+                                        <div className="text-gray-500">เลขที่ผู้เสียภาษี: {company.taxId}</div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {companySearch.status === 'error' && (
+                              <div className="flex items-center space-x-2 text-orange-600 text-sm">
+                                <AlertCircle className="h-4 w-4" />
+                                <span>{companySearch.error}</span>
+                              </div>
+                            )}
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>

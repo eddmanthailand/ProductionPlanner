@@ -599,6 +599,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // Company Name Search endpoint
+  app.post("/api/search-company", async (req: any, res: any) => {
+    try {
+      const { companyName } = req.body;
+      
+      if (!companyName || companyName.length < 2) {
+        return res.status(400).json({
+          success: false,
+          error: "ชื่อบริษัทต้องมีอย่างน้อย 2 ตัวอักษร"
+        });
+      }
+
+      // ค้นหาจากข้อมูลในระบบ
+      const allCustomers = await storage.getCustomers("550e8400-e29b-41d4-a716-446655440000");
+      const matchingCustomers = allCustomers.filter(c => 
+        (c.companyName && c.companyName.toLowerCase().includes(companyName.toLowerCase())) ||
+        (c.name && c.name.toLowerCase().includes(companyName.toLowerCase()))
+      );
+
+      if (matchingCustomers.length > 0) {
+        const results = matchingCustomers.map(customer => ({
+          id: customer.id,
+          name: customer.companyName || customer.name,
+          taxId: customer.taxId,
+          address: customer.address,
+          source: "existing_customer"
+        }));
+
+        res.json({
+          success: true,
+          data: results,
+          note: `พบ ${results.length} บริษัทที่ตรงกับคำค้นหา`
+        });
+      } else {
+        res.json({
+          success: false,
+          error: "ไม่พบบริษัทที่ตรงกับคำค้นหาในระบบ"
+        });
+      }
+    } catch (error) {
+      console.error("Company search error:", error);
+      res.status(500).json({
+        success: false,
+        error: "เกิดข้อผิดพลาดในการค้นหาข้อมูลบริษัท"
+      });
+    }
+  });
+
   // Tax ID Verification endpoint
   app.post("/api/verify-tax-id", async (req: any, res: any) => {
     try {
