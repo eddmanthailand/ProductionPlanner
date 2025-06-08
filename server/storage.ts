@@ -786,17 +786,11 @@ export class DatabaseStorage implements IStorage {
   async updateEmployee(id: string, updateData: Partial<InsertEmployee>, tenantId: string): Promise<Employee | undefined> {
     const [result] = await db
       .update(employees)
-      .set(updateData)
-      .where(
-        and(
-          eq(employees.id, id),
-          sql`${employees.teamId} IN (
-            SELECT t.id FROM ${teams} t 
-            INNER JOIN ${departments} d ON t.department_id = d.id 
-            WHERE d.tenant_id = ${tenantId}
-          )`
-        )
-      )
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(and(eq(employees.id, id), eq(employees.tenantId, tenantId)))
       .returning();
     return result || undefined;
   }
@@ -804,16 +798,7 @@ export class DatabaseStorage implements IStorage {
   async deleteEmployee(id: string, tenantId: string): Promise<boolean> {
     const result = await db
       .delete(employees)
-      .where(
-        and(
-          eq(employees.id, id),
-          sql`${employees.teamId} IN (
-            SELECT t.id FROM ${teams} t 
-            INNER JOIN ${departments} d ON t.department_id = d.id 
-            WHERE d.tenant_id = ${tenantId}
-          )`
-        )
-      );
+      .where(and(eq(employees.id, id), eq(employees.tenantId, tenantId)));
     return (result.rowCount ?? 0) > 0;
   }
 }

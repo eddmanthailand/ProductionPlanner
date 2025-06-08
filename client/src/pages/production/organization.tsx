@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2 } from "lucide-react";
+import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +31,20 @@ interface Team {
   updatedAt: string;
 }
 
+interface Employee {
+  id: string;
+  teamId: string;
+  tenantId: string;
+  count: number;
+  averageWage: string;
+  overheadPercentage: string;
+  managementPercentage: string;
+  description?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function OrganizationChart() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -38,9 +52,13 @@ export default function OrganizationChart() {
   const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
   const [isEditDepartmentOpen, setIsEditDepartmentOpen] = useState(false);
   const [isEditTeamOpen, setIsEditTeamOpen] = useState(false);
+  const [isAddEmployeeOpen, setIsAddEmployeeOpen] = useState(false);
+  const [isEditEmployeeOpen, setIsEditEmployeeOpen] = useState(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
+  const [selectedTeamId, setSelectedTeamId] = useState<string>("");
   const [editingDepartment, setEditingDepartment] = useState<Department | null>(null);
   const [editingTeam, setEditingTeam] = useState<Team | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [newDepartment, setNewDepartment] = useState({
     name: "",
     manager: "",

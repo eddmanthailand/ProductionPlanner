@@ -1178,6 +1178,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Employees
+  app.get("/api/employees", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+      
+      const employees = await storage.getEmployees(tenantId);
+      res.json(employees);
+    } catch (error) {
+      console.error("Get employees error:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.get("/api/teams/:teamId/employees", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { teamId } = req.params;
+      
+      const employees = await storage.getEmployeesByTeam(teamId, tenantId);
+      res.json(employees);
+    } catch (error) {
+      console.error("Get employees by team error:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
+  app.post("/api/employees", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const validatedData = insertEmployeeSchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const employee = await storage.createEmployee(validatedData);
+      res.status(201).json(employee);
+    } catch (error) {
+      console.error("Create employee error:", error);
+      res.status(500).json({ message: "Failed to create employee" });
+    }
+  });
+
+  app.put("/api/employees/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const validatedData = insertEmployeeSchema.partial().parse(req.body);
+      
+      const employee = await storage.updateEmployee(id, validatedData, tenantId);
+      if (!employee) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+      
+      res.json(employee);
+    } catch (error) {
+      console.error("Update employee error:", error);
+      res.status(500).json({ message: "Failed to update employee" });
+    }
+  });
+
+  app.delete("/api/employees/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteEmployee(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Employee not found" });
+      }
+      
+      res.json({ message: "Employee deleted successfully" });
+    } catch (error) {
+      console.error("Delete employee error:", error);
+      res.status(500).json({ message: "Failed to delete employee" });
+    }
+  });
+
   return httpServer;
 }
 
