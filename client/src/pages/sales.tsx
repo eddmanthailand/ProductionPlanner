@@ -487,23 +487,27 @@ export default function Sales() {
                                   control={form.control}
                                   name={`items.${index}.description`}
                                   render={({ field }) => (
-                                    <Input 
+                                    <textarea
                                       {...field}
-                                      placeholder="รายละเอียด (กด Enter เพื่อเพิ่มแถวใหม่)"
-                                      className="w-full border-0 focus:ring-0 p-2 text-sm"
+                                      placeholder="รายละเอียด (กด Enter เพื่อขึ้นบรรทัดใหม่)"
+                                      className="w-full border-0 focus:ring-0 p-2 text-sm resize-none overflow-hidden min-h-[40px]"
+                                      rows={2}
+                                      onInput={(e) => {
+                                        // Auto-resize textarea based on content
+                                        const target = e.target as HTMLTextAreaElement;
+                                        target.style.height = 'auto';
+                                        target.style.height = Math.max(40, target.scrollHeight) + 'px';
+                                      }}
                                       onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
+                                        if (e.key === 'Tab') {
                                           e.preventDefault();
-                                          addItem();
-                                          // Focus ใส่ชื่อสินค้าของแถวใหม่
-                                          setTimeout(() => {
-                                            const newRowIndex = form.getValues('items').length - 1;
-                                            const newInput = document.querySelector(`input[name="items.${newRowIndex}.productName"]`) as HTMLInputElement;
-                                            if (newInput) {
-                                              newInput.focus();
-                                            }
-                                          }, 100);
+                                          // Tab - ไปช่องจำนวน
+                                          const quantityInput = document.querySelector(`input[name="items.${index}.quantity"]`) as HTMLInputElement;
+                                          if (quantityInput) {
+                                            quantityInput.focus();
+                                          }
                                         }
+                                        // Enter ทำงานปกติ (ขึ้นบรรทัดใหม่)
                                       }}
                                     />
                                   )}
