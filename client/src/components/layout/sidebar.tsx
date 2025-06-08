@@ -11,18 +11,28 @@ import {
   Users, 
   Settings,
   LogOut,
-  ShoppingCart
+  ShoppingCart,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { logout } from "@/lib/auth";
+import { useState } from "react";
 
 export default function Sidebar() {
   const [location] = useLocation();
   const { user, tenant } = useAuth();
   const { t } = useLanguage();
+  const [expandedSales, setExpandedSales] = useState(false);
+
+  const salesSubMenu = [
+    { name: "ใบเสนอราคา", href: "/sales/quotations", icon: FileText },
+    { name: "ใบส่งสินค้า/ใบแจ้งหนี้", href: "/sales/invoices", icon: FileText },
+    { name: "ใบกำกับภาษี", href: "/sales/tax-invoices", icon: FileText },
+    { name: "ใบเสร็จรับเงิน", href: "/sales/receipts", icon: FileText },
+  ];
 
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: ChartLine },
-    { name: t("nav.sales"), href: "/sales", icon: ShoppingCart },
     { name: t("nav.production"), href: "/production", icon: Settings2 },
     { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
     { name: t("nav.inventory"), href: "/inventory", icon: Package },
@@ -71,6 +81,50 @@ export default function Sidebar() {
               </li>
             );
           })}
+          
+          {/* Sales Menu with Submenu */}
+          <li>
+            <button
+              onClick={() => setExpandedSales(!expandedSales)}
+              className={`flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors ${
+                location.startsWith("/sales") 
+                  ? "bg-primary text-white" 
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <ShoppingCart className="w-5 h-5" />
+                <span className="font-medium">{t("nav.sales")}</span>
+              </div>
+              {expandedSales ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              )}
+            </button>
+            
+            {expandedSales && (
+              <ul className="mt-2 ml-8 space-y-1">
+                {salesSubMenu.map((subItem) => {
+                  const isSubActive = location === subItem.href;
+                  const SubIcon = subItem.icon;
+                  
+                  return (
+                    <li key={subItem.name}>
+                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        isSubActive 
+                          ? "bg-blue-100 text-blue-700" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}>
+                        <SubIcon className="w-4 h-4" />
+                        <span className="font-medium">{subItem.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </li>
         </ul>
       </nav>
 

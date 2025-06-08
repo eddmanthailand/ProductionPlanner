@@ -10,6 +10,8 @@ import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import Sales from "@/pages/sales-new";
+import Quotations from "@/pages/sales/quotations";
+import QuotationsNew from "@/pages/sales/quotations-new";
 import Production from "@/pages/production";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
