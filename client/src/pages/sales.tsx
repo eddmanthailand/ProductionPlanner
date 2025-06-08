@@ -86,13 +86,11 @@ export default function Sales() {
   // Fetch quotations
   const { data: quotations = [] } = useQuery({
     queryKey: ["/api/quotations"],
-    enabled: !!tenant?.id,
   });
 
   // Fetch customers
   const { data: customers = [] } = useQuery({
     queryKey: ["/api/customers"],
-    enabled: !!tenant?.id,
   });
 
   // Filter customers based on search term
@@ -106,7 +104,6 @@ export default function Sales() {
   // Fetch products
   const { data: products = [] } = useQuery({
     queryKey: ["/api/products"],
-    enabled: !!tenant?.id,
   });
 
   // Generate quotation number
