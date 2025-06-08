@@ -36,30 +36,19 @@ export async function apiRequest(
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
+// Simple query function without authentication for dev mode
+const simpleQueryFn: QueryFunction = async ({ queryKey }) => {
+  const res = await fetch(queryKey[0] as string, {
+    credentials: "include",
+  });
+
+  await throwIfResNotOk(res);
+  return await res.json();
+};
+
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
-  async ({ queryKey }) => {
-    const token = getToken();
-    const headers: Record<string, string> = {};
-    
-    if (token) {
-      headers["Authorization"] = `Bearer ${token}`;
-    }
-    
-    const res = await fetch(queryKey[0] as string, {
-      headers,
-      credentials: "include",
-    });
-
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
-    }
-
-    await throwIfResNotOk(res);
-    return await res.json();
-  };
+}) => QueryFunction<T> = () => simpleQueryFn;
 
 export const queryClient = new QueryClient({
   defaultOptions: {

@@ -99,12 +99,17 @@ export default function Sales() {
   console.log('Customers error:', customersError);
 
   // Filter customers based on search term
-  const filteredCustomers = (customers as Customer[]).filter((customer: Customer) =>
-    customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-    customer.phone?.toLowerCase().includes(customerSearchTerm.toLowerCase())
-  );
+  const filteredCustomers = useMemo(() => {
+    if (!customers || (customers as any[]).length === 0) return [];
+    return (customers as Customer[]).filter((customer: Customer) =>
+      customer.name?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      customer.companyName?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      customer.email?.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
+      customer.phone?.toLowerCase().includes(customerSearchTerm.toLowerCase())
+    );
+  }, [customers, customerSearchTerm]);
+
+  console.log('Filtered customers:', filteredCustomers);
 
   // Fetch products
   const { data: products = [] } = useQuery({
