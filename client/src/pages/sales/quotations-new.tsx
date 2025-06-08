@@ -51,15 +51,15 @@ const quotationFormSchema = insertQuotationSchema.extend({
   priceIncludesVat: z.boolean(),
   items: z.array(z.object({
     productId: z.number().optional(),
-    productName: z.string().min(1, "ต้องระบุชื่อสินค้า"),
+    productName: z.string().optional(),
     description: z.string().optional(),
-    quantity: z.number().min(1),
-    unit: z.string().min(1),
+    quantity: z.number().min(0),
+    unit: z.string().optional(),
     unitPrice: z.number().min(0),
     discountType: z.enum(["percent", "amount"]),
-    discount: z.number().min(0),
+    discount: z.number().min(0).max(100),
     total: z.number().min(0)
-  })).min(1, "ต้องมีรายการสินค้าอย่างน้อย 1 รายการ")
+  })).optional()
 });
 
 export default function QuotationsNew() {
@@ -216,13 +216,8 @@ export default function QuotationsNew() {
         basePrice = item.unitPrice / (1 + taxPercent);
       }
       
-      // Calculate discount
-      let discountAmount = 0;
-      if (item.discountType === "percent") {
-        discountAmount = basePrice * (item.discount / 100);
-      } else {
-        discountAmount = item.discount;
-      }
+      // Calculate discount (always percentage)
+      const discountAmount = basePrice * (item.discount / 100);
       
       const priceAfterDiscount = basePrice - discountAmount;
       const itemTotal = item.quantity * priceAfterDiscount;
@@ -488,7 +483,7 @@ export default function QuotationsNew() {
                             <td className="border-b border-gray-200 p-2">
                               <div className="relative" ref={el => productDropdownRefs.current[index] = el}>
                                 <Input
-                                  placeholder="ค้นหาสินค้า..."
+                                  placeholder="ชื่อสินค้า/บริการ"
                                   value={productSearchTerms[index] || form.watch(`items.${index}.productName`)}
                                   onChange={(e) => {
                                     const value = e.target.value;
@@ -557,11 +552,12 @@ export default function QuotationsNew() {
                                     <FormControl>
                                       <Input
                                         type="number"
-                                        min="1"
+                                        min="0"
+                                        placeholder="0"
                                         className="w-full text-center text-sm h-8"
                                         {...field}
                                         onChange={(e) => {
-                                          field.onChange(parseInt(e.target.value) || 1);
+                                          field.onChange(parseInt(e.target.value) || 0);
                                           calculateTotals();
                                         }}
                                       />
@@ -579,7 +575,7 @@ export default function QuotationsNew() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <Input {...field} className="w-full text-center text-sm h-8" />
+                                      <Input {...field} placeholder="หน่วย" className="w-full text-center text-sm h-8" />
                                     </FormControl>
                                   </FormItem>
                                 )}
@@ -598,6 +594,7 @@ export default function QuotationsNew() {
                                         type="number"
                                         step="0.01"
                                         min="0"
+                                        placeholder="0.00"
                                         className="w-full text-right text-sm h-8"
                                         {...field}
                                         onChange={(e) => {
@@ -619,18 +616,22 @@ export default function QuotationsNew() {
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <Input
-                                        type="number"
-                                        placeholder="0"
-                                        step="0.01"
-                                        min="0"
-                                        className="w-full text-right text-sm h-8"
-                                        {...field}
-                                        onChange={(e) => {
-                                          field.onChange(parseFloat(e.target.value) || 0);
-                                          calculateTotals();
-                                        }}
-                                      />
+                                      <div className="relative">
+                                        <Input
+                                          type="number"
+                                          placeholder="0"
+                                          step="0.01"
+                                          min="0"
+                                          max="100"
+                                          className="w-full text-right text-sm h-8 pr-6"
+                                          {...field}
+                                          onChange={(e) => {
+                                            field.onChange(parseFloat(e.target.value) || 0);
+                                            calculateTotals();
+                                          }}
+                                        />
+                                        <span className="absolute right-2 top-1/2 transform -translate-y-1/2 text-xs text-gray-500">%</span>
+                                      </div>
                                     </FormControl>
                                   </FormItem>
                                 )}
@@ -644,20 +645,19 @@ export default function QuotationsNew() {
 
                             {/* Delete */}
                             <td className="border-b border-gray-200 p-2 text-center">
-                              {fields.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    remove(index);
-                                    calculateTotals();
-                                  }}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              )}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  remove(index);
+                                  calculateTotals();
+                                }}
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                                disabled={fields.length <= 1}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
                             </td>
                           </tr>
                         ))}
