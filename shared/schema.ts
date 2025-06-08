@@ -297,6 +297,53 @@ export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
   })
 }));
 
+// Organization tables
+export const departments = pgTable("departments", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").references(() => tenants.id).notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull(),
+  manager: text("manager"),
+  location: text("location").notNull(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const teams = pgTable("teams", {
+  id: text("id").primaryKey(),
+  departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  leader: text("leader"),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const employees = pgTable("employees", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  position: text("position").notNull(),
+  skill: text("skill").array().notNull(),
+  status: text("status").notNull(),
+  workload: integer("workload").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const workSteps = pgTable("work_steps", {
+  id: text("id").primaryKey(),
+  departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
+  name: text("name").notNull(),
+  description: text("description").notNull(),
+  duration: integer("duration").notNull(),
+  requiredSkills: text("required_skills").array().notNull(),
+  order: integer("order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
@@ -367,6 +414,63 @@ export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit
   createdAt: true
 });
 
+// Organization relations
+export const departmentsRelations = relations(departments, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [departments.tenantId],
+    references: [tenants.id]
+  }),
+  teams: many(teams),
+  workSteps: many(workSteps)
+}));
+
+export const teamsRelations = relations(teams, ({ one, many }) => ({
+  department: one(departments, {
+    fields: [teams.departmentId],
+    references: [departments.id]
+  }),
+  employees: many(employees)
+}));
+
+export const employeesRelations = relations(employees, ({ one }) => ({
+  team: one(teams, {
+    fields: [employees.teamId],
+    references: [teams.id]
+  })
+}));
+
+export const workStepsRelations = relations(workSteps, ({ one }) => ({
+  department: one(departments, {
+    fields: [workSteps.departmentId],
+    references: [departments.id]
+  })
+}));
+
+// Organization insert schemas
+export const insertDepartmentSchema = createInsertSchema(departments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertTeamSchema = createInsertSchema(teams).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertEmployeeSchema = createInsertSchema(employees).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertWorkStepSchema = createInsertSchema(workSteps).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Types
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -403,3 +507,16 @@ export type InsertQuotation = z.infer<typeof insertQuotationSchema>;
 
 export type QuotationItem = typeof quotationItems.$inferSelect;
 export type InsertQuotationItem = z.infer<typeof insertQuotationItemSchema>;
+
+// Organization types
+export type Department = typeof departments.$inferSelect;
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+
+export type Team = typeof teams.$inferSelect;
+export type InsertTeam = z.infer<typeof insertTeamSchema>;
+
+export type Employee = typeof employees.$inferSelect;
+export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
+
+export type WorkStep = typeof workSteps.$inferSelect;
+export type InsertWorkStep = z.infer<typeof insertWorkStepSchema>;

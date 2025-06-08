@@ -11,6 +11,10 @@ import {
   sizes,
   quotations,
   quotationItems,
+  departments,
+  teams,
+  employees,
+  workSteps,
   type User,
   type InsertUser,
   type Tenant,
@@ -34,7 +38,15 @@ import {
   type Quotation,
   type InsertQuotation,
   type QuotationItem,
-  type InsertQuotationItem
+  type InsertQuotationItem,
+  type Department,
+  type InsertDepartment,
+  type Team,
+  type InsertTeam,
+  type Employee,
+  type InsertEmployee,
+  type WorkStep,
+  type InsertWorkStep
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -111,6 +123,37 @@ export interface IStorage {
   createQuotation(quotation: InsertQuotation): Promise<Quotation>;
   updateQuotation(id: number, quotation: Partial<InsertQuotation>, tenantId: string): Promise<Quotation | undefined>;
   deleteQuotation(id: number, tenantId: string): Promise<boolean>;
+
+  // Departments
+  getDepartments(tenantId: string): Promise<Department[]>;
+  getDepartment(id: string, tenantId: string): Promise<Department | undefined>;
+  createDepartment(department: InsertDepartment): Promise<Department>;
+  updateDepartment(id: string, department: Partial<InsertDepartment>, tenantId: string): Promise<Department | undefined>;
+  deleteDepartment(id: string, tenantId: string): Promise<boolean>;
+
+  // Teams
+  getTeams(tenantId: string): Promise<Team[]>;
+  getTeamsByDepartment(departmentId: string, tenantId: string): Promise<Team[]>;
+  getTeam(id: string, tenantId: string): Promise<Team | undefined>;
+  createTeam(team: InsertTeam): Promise<Team>;
+  updateTeam(id: string, team: Partial<InsertTeam>, tenantId: string): Promise<Team | undefined>;
+  deleteTeam(id: string, tenantId: string): Promise<boolean>;
+
+  // Work Steps
+  getWorkSteps(tenantId: string): Promise<WorkStep[]>;
+  getWorkStepsByDepartment(departmentId: string, tenantId: string): Promise<WorkStep[]>;
+  getWorkStep(id: string, tenantId: string): Promise<WorkStep | undefined>;
+  createWorkStep(workStep: InsertWorkStep): Promise<WorkStep>;
+  updateWorkStep(id: string, workStep: Partial<InsertWorkStep>, tenantId: string): Promise<WorkStep | undefined>;
+  deleteWorkStep(id: string, tenantId: string): Promise<boolean>;
+
+  // Employees
+  getEmployees(tenantId: string): Promise<Employee[]>;
+  getEmployeesByTeam(teamId: string, tenantId: string): Promise<Employee[]>;
+  getEmployee(id: string, tenantId: string): Promise<Employee | undefined>;
+  createEmployee(employee: InsertEmployee): Promise<Employee>;
+  updateEmployee(id: string, employee: Partial<InsertEmployee>, tenantId: string): Promise<Employee | undefined>;
+  deleteEmployee(id: string, tenantId: string): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -529,6 +572,241 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(quotations).where(
       and(eq(quotations.id, id), eq(quotations.tenantId, tenantId))
     );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Department methods
+  async getDepartments(tenantId: string): Promise<Department[]> {
+    return await db.select().from(departments).where(eq(departments.tenantId, tenantId));
+  }
+
+  async getDepartment(id: string, tenantId: string): Promise<Department | undefined> {
+    const [department] = await db.select().from(departments).where(
+      and(eq(departments.id, id), eq(departments.tenantId, tenantId))
+    );
+    return department || undefined;
+  }
+
+  async createDepartment(insertDepartment: InsertDepartment): Promise<Department> {
+    const [department] = await db
+      .insert(departments)
+      .values(insertDepartment)
+      .returning();
+    return department;
+  }
+
+  async updateDepartment(id: string, updateData: Partial<InsertDepartment>, tenantId: string): Promise<Department | undefined> {
+    const [department] = await db
+      .update(departments)
+      .set(updateData)
+      .where(and(eq(departments.id, id), eq(departments.tenantId, tenantId)))
+      .returning();
+    return department || undefined;
+  }
+
+  async deleteDepartment(id: string, tenantId: string): Promise<boolean> {
+    const result = await db.delete(departments).where(
+      and(eq(departments.id, id), eq(departments.tenantId, tenantId))
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Team methods
+  async getTeams(tenantId: string): Promise<Team[]> {
+    return await db
+      .select()
+      .from(teams)
+      .innerJoin(departments, eq(teams.departmentId, departments.id))
+      .where(eq(departments.tenantId, tenantId))
+      .then(rows => rows.map(row => row.teams));
+  }
+
+  async getTeamsByDepartment(departmentId: string, tenantId: string): Promise<Team[]> {
+    return await db
+      .select()
+      .from(teams)
+      .innerJoin(departments, eq(teams.departmentId, departments.id))
+      .where(and(eq(teams.departmentId, departmentId), eq(departments.tenantId, tenantId)))
+      .then(rows => rows.map(row => row.teams));
+  }
+
+  async getTeam(id: string, tenantId: string): Promise<Team | undefined> {
+    const [result] = await db
+      .select()
+      .from(teams)
+      .innerJoin(departments, eq(teams.departmentId, departments.id))
+      .where(and(eq(teams.id, id), eq(departments.tenantId, tenantId)));
+    return result?.teams || undefined;
+  }
+
+  async createTeam(insertTeam: InsertTeam): Promise<Team> {
+    const [team] = await db
+      .insert(teams)
+      .values(insertTeam)
+      .returning();
+    return team;
+  }
+
+  async updateTeam(id: string, updateData: Partial<InsertTeam>, tenantId: string): Promise<Team | undefined> {
+    const [result] = await db
+      .update(teams)
+      .set(updateData)
+      .where(
+        and(
+          eq(teams.id, id),
+          sql`${teams.departmentId} IN (SELECT id FROM ${departments} WHERE tenant_id = ${tenantId})`
+        )
+      )
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteTeam(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(teams)
+      .where(
+        and(
+          eq(teams.id, id),
+          sql`${teams.departmentId} IN (SELECT id FROM ${departments} WHERE tenant_id = ${tenantId})`
+        )
+      );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Work Steps methods
+  async getWorkSteps(tenantId: string): Promise<WorkStep[]> {
+    return await db
+      .select()
+      .from(workSteps)
+      .innerJoin(departments, eq(workSteps.departmentId, departments.id))
+      .where(eq(departments.tenantId, tenantId))
+      .orderBy(asc(workSteps.order))
+      .then(rows => rows.map(row => row.work_steps));
+  }
+
+  async getWorkStepsByDepartment(departmentId: string, tenantId: string): Promise<WorkStep[]> {
+    return await db
+      .select()
+      .from(workSteps)
+      .innerJoin(departments, eq(workSteps.departmentId, departments.id))
+      .where(and(eq(workSteps.departmentId, departmentId), eq(departments.tenantId, tenantId)))
+      .orderBy(asc(workSteps.order))
+      .then(rows => rows.map(row => row.work_steps));
+  }
+
+  async getWorkStep(id: string, tenantId: string): Promise<WorkStep | undefined> {
+    const [result] = await db
+      .select()
+      .from(workSteps)
+      .innerJoin(departments, eq(workSteps.departmentId, departments.id))
+      .where(and(eq(workSteps.id, id), eq(departments.tenantId, tenantId)));
+    return result?.work_steps || undefined;
+  }
+
+  async createWorkStep(insertWorkStep: InsertWorkStep): Promise<WorkStep> {
+    const [workStep] = await db
+      .insert(workSteps)
+      .values(insertWorkStep)
+      .returning();
+    return workStep;
+  }
+
+  async updateWorkStep(id: string, updateData: Partial<InsertWorkStep>, tenantId: string): Promise<WorkStep | undefined> {
+    const [result] = await db
+      .update(workSteps)
+      .set(updateData)
+      .where(
+        and(
+          eq(workSteps.id, id),
+          sql`${workSteps.departmentId} IN (SELECT id FROM ${departments} WHERE tenant_id = ${tenantId})`
+        )
+      )
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteWorkStep(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(workSteps)
+      .where(
+        and(
+          eq(workSteps.id, id),
+          sql`${workSteps.departmentId} IN (SELECT id FROM ${departments} WHERE tenant_id = ${tenantId})`
+        )
+      );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Employee methods
+  async getEmployees(tenantId: string): Promise<Employee[]> {
+    return await db
+      .select()
+      .from(employees)
+      .innerJoin(teams, eq(employees.teamId, teams.id))
+      .innerJoin(departments, eq(teams.departmentId, departments.id))
+      .where(eq(departments.tenantId, tenantId))
+      .then(rows => rows.map(row => row.employees));
+  }
+
+  async getEmployeesByTeam(teamId: string, tenantId: string): Promise<Employee[]> {
+    return await db
+      .select()
+      .from(employees)
+      .innerJoin(teams, eq(employees.teamId, teams.id))
+      .innerJoin(departments, eq(teams.departmentId, departments.id))
+      .where(and(eq(employees.teamId, teamId), eq(departments.tenantId, tenantId)))
+      .then(rows => rows.map(row => row.employees));
+  }
+
+  async getEmployee(id: string, tenantId: string): Promise<Employee | undefined> {
+    const [result] = await db
+      .select()
+      .from(employees)
+      .innerJoin(teams, eq(employees.teamId, teams.id))
+      .innerJoin(departments, eq(teams.departmentId, departments.id))
+      .where(and(eq(employees.id, id), eq(departments.tenantId, tenantId)));
+    return result?.employees || undefined;
+  }
+
+  async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
+    const [employee] = await db
+      .insert(employees)
+      .values(insertEmployee)
+      .returning();
+    return employee;
+  }
+
+  async updateEmployee(id: string, updateData: Partial<InsertEmployee>, tenantId: string): Promise<Employee | undefined> {
+    const [result] = await db
+      .update(employees)
+      .set(updateData)
+      .where(
+        and(
+          eq(employees.id, id),
+          sql`${employees.teamId} IN (
+            SELECT t.id FROM ${teams} t 
+            INNER JOIN ${departments} d ON t.department_id = d.id 
+            WHERE d.tenant_id = ${tenantId}
+          )`
+        )
+      )
+      .returning();
+    return result || undefined;
+  }
+
+  async deleteEmployee(id: string, tenantId: string): Promise<boolean> {
+    const result = await db
+      .delete(employees)
+      .where(
+        and(
+          eq(employees.id, id),
+          sql`${employees.teamId} IN (
+            SELECT t.id FROM ${teams} t 
+            INNER JOIN ${departments} d ON t.department_id = d.id 
+            WHERE d.tenant_id = ${tenantId}
+          )`
+        )
+      );
     return (result.rowCount ?? 0) > 0;
   }
 }
