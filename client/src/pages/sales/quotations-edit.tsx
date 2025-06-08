@@ -462,11 +462,11 @@ export default function QuotationsEdit() {
                       <tr className="border-b bg-gray-50">
                         <th className="text-left py-3 px-2 w-[15%]">สินค้า/บริการ</th>
                         <th className="text-left py-3 px-2 w-[20%]">รายละเอียด</th>
-                        <th className="text-center py-3 px-2 w-[8%]">จำนวน</th>
+                        <th className="text-center py-3 px-2 w-[12%]">จำนวน</th>
                         <th className="text-center py-3 px-2 w-[8%]">หน่วย</th>
-                        <th className="text-right py-3 px-2 w-[10%]">ราคาต่อหน่วย</th>
+                        <th className="text-right py-3 px-2 w-[12%]">ราคาต่อหน่วย</th>
                         <th className="text-center py-3 px-2 w-[8%]">ส่วนลด</th>
-                        <th className="text-center py-3 px-2 w-[8%]">จำนวน</th>
+                        <th className="text-center py-3 px-2 w-[6%]">จำนวน</th>
                         <th className="text-right py-3 px-2 w-[10%]">รวม</th>
                         <th className="text-center py-3 px-2 w-[5%]"></th>
                       </tr>
@@ -540,7 +540,8 @@ export default function QuotationsEdit() {
                                 setItems(updatedItems);
                                 updateItemTotal(index);
                               }}
-                              className="h-8 text-center"
+                              className="h-8 text-center text-lg font-semibold"
+                              style={{ fontSize: '16px', minWidth: '100px' }}
                             />
                           </td>
                           <td className="py-2 px-2">

@@ -544,7 +544,7 @@ export default function QuotationsNew() {
                         <tr>
                           <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[18%]">สินค้า/บริการ</th>
                           <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[18%]">รายละเอียด</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[8%]">จำนวน</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[12%]">จำนวน</th>
                           <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[8%]">หน่วย</th>
                           <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[12%]">ราคา/หน่วย</th>
                           <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">ประเภทส่วนลด</th>
@@ -636,7 +636,8 @@ export default function QuotationsNew() {
                                         type="number"
                                         min="0"
                                         placeholder="0"
-                                        className="w-full text-center text-sm h-8"
+                                        className="w-full text-center text-lg font-semibold h-8"
+                                        style={{ fontSize: '16px', minWidth: '100px' }}
                                         {...field}
                                         onChange={(e) => {
                                           field.onChange(parseInt(e.target.value) || 0);
