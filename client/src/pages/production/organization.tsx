@@ -52,12 +52,30 @@ export default function OrganizationChart() {
   // Fetch departments from API
   const { data: departments = [], isLoading: departmentsLoading } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
+    queryFn: async () => {
+      const response = await fetch("/api/departments", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch departments");
+      return response.json();
+    },
     refetchOnWindowFocus: false
   });
 
   // Fetch teams from API
   const { data: teams = [], isLoading: teamsLoading } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
+    queryFn: async () => {
+      const response = await fetch("/api/teams", {
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to fetch teams");
+      return response.json();
+    },
     refetchOnWindowFocus: false
   });
 
