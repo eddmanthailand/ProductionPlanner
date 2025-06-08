@@ -283,10 +283,6 @@ export default function ProductionCalendar() {
               <div className="w-3 h-3 bg-red-100 border border-red-300 rounded"></div>
               <span>วันหยุดที่มีอยู่</span>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="w-3 h-3 bg-blue-100 border border-blue-300 rounded"></div>
-              <span>วันนี้</span>
-            </div>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -397,17 +393,12 @@ export default function ProductionCalendar() {
                   
                   const dateStr = formatDateForHoliday(currentYear, monthIndex, day);
                   const dayHolidays = getHolidaysByDate(dateStr);
-                  const today = new Date();
-                  const isToday = currentYear === today.getFullYear() && 
-                                 monthIndex === today.getMonth() && 
-                                 day === today.getDate();
                   const hasHoliday = dayHolidays.length > 0;
                   
                   return (
                     <div
                       key={`${monthIndex}-${day}`}
                       className={`h-8 border rounded cursor-pointer flex items-center justify-center text-sm transition-all duration-200 ${
-                        isToday ? 'bg-blue-100 border-blue-300 text-blue-700 hover:bg-blue-200' : 
                         hasHoliday ? 'bg-red-100 border-red-300 text-red-700 hover:bg-red-200' : 
                         'border-gray-200 text-gray-700 hover:bg-gray-100 hover:border-gray-300'
                       }`}
