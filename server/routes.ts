@@ -679,13 +679,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // ตรวจสอบกับข้อมูลที่มีอยู่ในระบบ
+      // ตรวจสอบกับข้อมูลที่มีอยู่ในระบบก่อน
       try {
         const allCustomers = await storage.getCustomers("550e8400-e29b-41d4-a716-446655440000");
         const existingCustomer = allCustomers.find(c => c.taxId === taxId);
         
         if (existingCustomer) {
-          res.json({
+          return res.json({
             success: true,
             data: {
               taxId: taxId,
@@ -700,34 +700,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
               note: "พบข้อมูลในระบบลูกค้า"
             }
           });
-        } else {
-          // สร้างข้อมูลตัวอย่างจากเลขที่ผู้เสียภาษีที่ถูกต้อง
-          const sampleCompanyData = generateSampleCompanyData(taxId);
-          
-          res.json({
-            success: true,
-            data: {
-              taxId: taxId,
-              name: sampleCompanyData.name,
-              companyName: sampleCompanyData.name,
-              address: sampleCompanyData.address,
-              verified: true,
-              source: "checksum_validation",
-              note: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง - ข้อมูลตัวอย่าง"
-            }
-          });
         }
       } catch (dbError) {
         console.error("Database lookup error:", dbError);
-        res.json({
-          success: true,
-          data: {
-            taxId: taxId,
-            name: "เลขที่ผู้เสียภาษีถูกต้อง",
-            verified: true,
-            source: "checksum_validation",
-            note: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง กรุณากรอกข้อมูลบริษัท"
+      }
+
+      // ลองเชื่อมต่อกับ API กรมสรรพากรจริง
+      try {
+        console.log("Attempting to verify tax ID with government API:", taxId);
+        
+        // ลอง API หลายตัว
+        const apiUrls = [
+          `https://rdcb.rd.go.th/VAT_WEBSERVICE/api/taxpayer/detail/vatno/${taxId}`,
+          `https://rdcb.rd.go.th/api/taxpayer/${taxId}`,
+          `https://rdcb.rd.go.th/etaxinvoice/taxpayer/check/${taxId}`
+        ];
+
+        for (const apiUrl of apiUrls) {
+          try {
+            const response = await fetch(apiUrl, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                'Referer': 'https://rdcb.rd.go.th/'
+              }
+            });
+
+            if (response.ok) {
+              const data = await response.json();
+              console.log("Government API response:", data);
+              
+              // ตรวจสอบว่ามีข้อมูลจริงหรือไม่
+              if (data && (data.name || data.companyName || data.taxpayerName || data.businessName)) {
+                return res.json({
+                  success: true,
+                  data: {
+                    taxId: taxId,
+                    name: data.name || data.companyName || data.taxpayerName || data.businessName,
+                    companyName: data.companyName || data.name,
+                    address: data.address || data.businessAddress,
+                    verified: true,
+                    source: "government_api",
+                    note: "ข้อมูลจากกรมสรรพากร"
+                  }
+                });
+              }
+            }
+          } catch (apiError: any) {
+            console.log(`API ${apiUrl} failed:`, apiError?.message || apiError);
+            continue;
           }
+        }
+
+        // หากไม่สามารถเชื่อมต่อ API ได้
+        res.json({
+          success: false,
+          error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้ กรุณากรอกข้อมูลด้วยตนเอง",
+          validFormat: true
+        });
+
+      } catch (error) {
+        console.error("Government API verification failed:", error);
+        
+        res.json({
+          success: false,
+          error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้ กรุณากรอกข้อมูลด้วยตนเอง",
+          validFormat: true
         });
       }
     } catch (error) {
@@ -761,34 +800,4 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
   return checkDigit;
 }
 
-// ฟังก์ชันสร้างข้อมูลตัวอย่างจากเลขที่ผู้เสียภาษี
-function generateSampleCompanyData(taxId: string) {
-  // รายการชื่อบริษัทตัวอย่าง
-  const companyNames = [
-    "บริษัท เทคโนโลยี จำกัด",
-    "บริษัท การค้า จำกัด", 
-    "บริษัท อุตสาหกรรม จำกัด",
-    "บริษัท บริการ จำกัด",
-    "บริษัท ก่อสร้าง จำกัด",
-    "บริษัท ขนส่ง จำกัด",
-    "บริษัท อาหาร จำกัด",
-    "บริษัท สิ่งทอ จำกัด"
-  ];
-  
-  const addresses = [
-    "123 ถนนสุขุมวิท แขวงคลองตัน เขตวัฒนา กรุงเทพมหานคร 10110",
-    "456 ถนนพระราม 4 แขวงคลองตัน เขตคลองเตย กรุงเทพมหานคร 10110", 
-    "789 ถนนรัชดาภิเษก แขวงจันทรเกษม เขตจตุจักร กรุงเทพมหานคร 10900",
-    "321 ถนนเพชรบุรี แขวงมักกะสัน เขตราชเทวี กรุงเทพมหานคร 10400",
-    "654 ถนนสีลม แขวงสีลม เขตบางรัก กรุงเทพมหานคร 10500"
-  ];
-  
-  // ใช้เลขผู้เสียภาษีเพื่อเลือกข้อมูลตัวอย่าง
-  const nameIndex = parseInt(taxId.substring(0, 2)) % companyNames.length;
-  const addressIndex = parseInt(taxId.substring(2, 4)) % addresses.length;
-  
-  return {
-    name: companyNames[nameIndex],
-    address: addresses[addressIndex]
-  };
-}
+

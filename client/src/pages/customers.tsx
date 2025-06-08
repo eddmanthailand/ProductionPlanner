@@ -414,7 +414,13 @@ export default function Customers() {
                               <div className="space-y-2">
                                 <div className="flex items-center space-x-2 text-green-600 text-sm">
                                   <CheckCircle className="h-4 w-4" />
-                                  <span>ตรวจสอบแล้ว - พบข้อมูล</span>
+                                  <span>
+                                    {taxIdVerification.data.source === 'existing_customer' 
+                                      ? 'พบข้อมูลในระบบลูกค้า' 
+                                      : taxIdVerification.data.source === 'government_api'
+                                      ? 'พบข้อมูลจากกรมสรรพากร'
+                                      : 'รูปแบบเลขที่ผู้เสียภาษีถูกต้อง'}
+                                  </span>
                                 </div>
                                 <div 
                                   className="p-3 border border-green-200 rounded-lg bg-green-50 cursor-pointer hover:bg-green-100 transition-colors"
@@ -490,7 +496,7 @@ export default function Customers() {
                             )}
                             
                             {taxIdVerification.status === 'error' && (
-                              <div className="flex items-center space-x-2 text-red-600 text-sm">
+                              <div className="flex items-center space-x-2 text-orange-600 text-sm">
                                 <AlertCircle className="h-4 w-4" />
                                 <span>{taxIdVerification.error}</span>
                               </div>
