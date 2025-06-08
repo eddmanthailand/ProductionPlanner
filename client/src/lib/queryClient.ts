@@ -37,23 +37,17 @@ export async function apiRequest(
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 
-// Simple query function for dev mode with timeout and better error handling
+// Simple query function for dev mode
 const devQueryFn: QueryFunction = async ({ queryKey }) => {
   console.log('Query function called for:', queryKey[0]);
   try {
-    // Add timeout to prevent hanging requests
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
-    
     const res = await fetch(queryKey[0] as string, { 
-      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
     });
     
-    clearTimeout(timeoutId);
     console.log('Response status:', res.status);
     
     if (!res.ok) {
@@ -64,10 +58,6 @@ const devQueryFn: QueryFunction = async ({ queryKey }) => {
     console.log('Response received:', Array.isArray(data) ? `${data.length} items` : 'object');
     return data;
   } catch (error) {
-    if (error instanceof Error && error.name === 'AbortError') {
-      console.error('Request timeout for:', queryKey[0]);
-      throw new Error('Request timeout - please try again');
-    }
     console.error('Query error:', error);
     throw error;
   }
