@@ -37,11 +37,23 @@ export async function apiRequest(
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 
-// Simple query function for dev mode
+// Simple query function for dev mode with timeout and better error handling
 const devQueryFn: QueryFunction = async ({ queryKey }) => {
   console.log('Query function called for:', queryKey[0]);
   try {
-    const res = await fetch(queryKey[0] as string);
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    const res = await fetch(queryKey[0] as string, { 
+      signal: controller.signal,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    clearTimeout(timeoutId);
     console.log('Response status:', res.status);
     
     if (!res.ok) {
@@ -49,17 +61,21 @@ const devQueryFn: QueryFunction = async ({ queryKey }) => {
     }
     
     const data = await res.json();
-    console.log('Response data:', data);
+    console.log('Response received:', Array.isArray(data) ? `${data.length} items` : 'object');
     return data;
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.error('Request timeout for:', queryKey[0]);
+      throw new Error('Request timeout - please try again');
+    }
     console.error('Query error:', error);
     throw error;
   }
 };
 
-export const getQueryFn: <T>(options: {
+export const getQueryFn = (options: {
   on401: UnauthorizedBehavior;
-}) => QueryFunction<T> = () => devQueryFn as QueryFunction<T>;
+}) => devQueryFn;
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -67,8 +83,9 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+      retryDelay: 1000,
     },
     mutations: {
       retry: false,
