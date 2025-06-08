@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface Department {
   id: string;
@@ -49,7 +51,7 @@ interface WorkStep {
 
 export default function OrganizationChart() {
   const { toast } = useToast();
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const queryClient = useQueryClient();
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
@@ -63,6 +65,79 @@ export default function OrganizationChart() {
     name: "",
     leader: "",
     status: "active" as "active" | "inactive"
+  });
+
+  // Fetch departments from API
+  const { data: departments = [], isLoading } = useQuery({
+    queryKey: ["/api/departments"],
+    refetchOnWindowFocus: false
+  });
+
+  // Fetch teams from API
+  const { data: teams = [] } = useQuery({
+    queryKey: ["/api/teams"],
+    refetchOnWindowFocus: false
+  });
+
+  // Create department mutation
+  const createDepartmentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return await apiRequest("/api/departments", {
+        method: "POST",
+        body: JSON.stringify(data),
+        headers: { "Content-Type": "application/json" }
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/departments"] });
+      setIsAddDepartmentOpen(false);
+      setNewDepartment({
+        name: "",
+        manager: "",
+        location: "",
+        status: "active"
+      });
+      toast({
+        title: "สำเร็จ",
+        description: "เพิ่มแผนกใหม่เรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถเพิ่มแผนกได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Create team mutation
+  const createTeamMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/teams", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: { "Content-Type": "application/json" }
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      setIsAddTeamOpen(false);
+      setNewTeam({
+        name: "",
+        leader: "",
+        status: "active"
+      });
+      toast({
+        title: "สำเร็จ",
+        description: "เพิ่มทีมใหม่เรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถเพิ่มทีมได้",
+        variant: "destructive"
+      });
+    }
   });
 
   const getDepartmentTypeColor = (type: string) => {
@@ -104,29 +179,12 @@ export default function OrganizationChart() {
       return;
     }
 
-    const department: Department = {
-      id: `dept-${Date.now()}`,
+    createDepartmentMutation.mutate({
       name: newDepartment.name,
       type: "production", // Default type
-      manager: newDepartment.manager,
+      manager: newDepartment.manager || null,
       location: newDepartment.location,
-      status: newDepartment.status,
-      teams: [],
-      workSteps: []
-    };
-
-    setDepartments(prev => [...prev, department]);
-    setNewDepartment({
-      name: "",
-      manager: "",
-      location: "",
-      status: "active"
-    });
-    setIsAddDepartmentOpen(false);
-
-    toast({
-      title: "สำเร็จ",
-      description: "เพิ่มแผนกใหม่เรียบร้อยแล้ว"
+      status: newDepartment.status
     });
   };
 

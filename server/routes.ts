@@ -952,6 +952,232 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Organization Management Routes
+  
+  // Departments
+  app.get("/api/departments", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+      
+      const departments = await storage.getDepartments(tenantId);
+      res.json(departments);
+    } catch (error) {
+      console.error("Get departments error:", error);
+      res.status(500).json({ message: "Failed to fetch departments" });
+    }
+  });
+
+  app.post("/api/departments", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const validatedData = insertDepartmentSchema.parse({
+        ...req.body,
+        tenantId
+      });
+
+      const department = await storage.createDepartment(validatedData);
+      res.status(201).json(department);
+    } catch (error) {
+      console.error("Create department error:", error);
+      res.status(500).json({ message: "Failed to create department" });
+    }
+  });
+
+  app.put("/api/departments/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const validatedData = insertDepartmentSchema.partial().parse(req.body);
+      
+      const department = await storage.updateDepartment(id, validatedData, tenantId);
+      if (!department) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      
+      res.json(department);
+    } catch (error) {
+      console.error("Update department error:", error);
+      res.status(500).json({ message: "Failed to update department" });
+    }
+  });
+
+  app.delete("/api/departments/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteDepartment(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Department not found" });
+      }
+      
+      res.json({ message: "Department deleted successfully" });
+    } catch (error) {
+      console.error("Delete department error:", error);
+      res.status(500).json({ message: "Failed to delete department" });
+    }
+  });
+
+  // Teams
+  app.get("/api/teams", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+      
+      const teams = await storage.getTeams(tenantId);
+      res.json(teams);
+    } catch (error) {
+      console.error("Get teams error:", error);
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
+  app.get("/api/departments/:departmentId/teams", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { departmentId } = req.params;
+      
+      const teams = await storage.getTeamsByDepartment(departmentId, tenantId);
+      res.json(teams);
+    } catch (error) {
+      console.error("Get teams by department error:", error);
+      res.status(500).json({ message: "Failed to fetch teams" });
+    }
+  });
+
+  app.post("/api/teams", authenticateToken, async (req: any, res: any) => {
+    try {
+      const validatedData = insertTeamSchema.parse(req.body);
+      const team = await storage.createTeam(validatedData);
+      res.status(201).json(team);
+    } catch (error) {
+      console.error("Create team error:", error);
+      res.status(500).json({ message: "Failed to create team" });
+    }
+  });
+
+  app.put("/api/teams/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const validatedData = insertTeamSchema.partial().parse(req.body);
+      
+      const team = await storage.updateTeam(id, validatedData, tenantId);
+      if (!team) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      res.json(team);
+    } catch (error) {
+      console.error("Update team error:", error);
+      res.status(500).json({ message: "Failed to update team" });
+    }
+  });
+
+  app.delete("/api/teams/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteTeam(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Team not found" });
+      }
+      
+      res.json({ message: "Team deleted successfully" });
+    } catch (error) {
+      console.error("Delete team error:", error);
+      res.status(500).json({ message: "Failed to delete team" });
+    }
+  });
+
+  // Work Steps
+  app.get("/api/work-steps", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+      
+      const workSteps = await storage.getWorkSteps(tenantId);
+      res.json(workSteps);
+    } catch (error) {
+      console.error("Get work steps error:", error);
+      res.status(500).json({ message: "Failed to fetch work steps" });
+    }
+  });
+
+  app.get("/api/departments/:departmentId/work-steps", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { departmentId } = req.params;
+      
+      const workSteps = await storage.getWorkStepsByDepartment(departmentId, tenantId);
+      res.json(workSteps);
+    } catch (error) {
+      console.error("Get work steps by department error:", error);
+      res.status(500).json({ message: "Failed to fetch work steps" });
+    }
+  });
+
+  app.post("/api/work-steps", authenticateToken, async (req: any, res: any) => {
+    try {
+      const validatedData = insertWorkStepSchema.parse(req.body);
+      const workStep = await storage.createWorkStep(validatedData);
+      res.status(201).json(workStep);
+    } catch (error) {
+      console.error("Create work step error:", error);
+      res.status(500).json({ message: "Failed to create work step" });
+    }
+  });
+
+  app.put("/api/work-steps/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const validatedData = insertWorkStepSchema.partial().parse(req.body);
+      
+      const workStep = await storage.updateWorkStep(id, validatedData, tenantId);
+      if (!workStep) {
+        return res.status(404).json({ message: "Work step not found" });
+      }
+      
+      res.json(workStep);
+    } catch (error) {
+      console.error("Update work step error:", error);
+      res.status(500).json({ message: "Failed to update work step" });
+    }
+  });
+
+  app.delete("/api/work-steps/:id", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteWorkStep(id, tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Work step not found" });
+      }
+      
+      res.json({ message: "Work step deleted successfully" });
+    } catch (error) {
+      console.error("Delete work step error:", error);
+      res.status(500).json({ message: "Failed to delete work step" });
+    }
+  });
+
   return httpServer;
 }
 

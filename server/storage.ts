@@ -713,7 +713,10 @@ export class DatabaseStorage implements IStorage {
   async createWorkStep(insertWorkStep: InsertWorkStep): Promise<WorkStep> {
     const [workStep] = await db
       .insert(workSteps)
-      .values(insertWorkStep)
+      .values({
+        ...insertWorkStep,
+        id: nanoid()
+      })
       .returning();
     return workStep;
   }
@@ -778,7 +781,10 @@ export class DatabaseStorage implements IStorage {
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
     const [employee] = await db
       .insert(employees)
-      .values(insertEmployee)
+      .values({
+        ...insertEmployee,
+        id: nanoid()
+      })
       .returning();
     return employee;
   }
