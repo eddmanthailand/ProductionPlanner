@@ -1,8 +1,12 @@
 import { useState } from "react";
-import { Network, Users, Settings, Plus, Edit2 } from "lucide-react";
+import { Network, Users, Settings, Plus, Edit2, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useToast } from "@/hooks/use-toast";
 
 interface Department {
   id: string;
@@ -44,7 +48,16 @@ interface WorkStep {
 }
 
 export default function OrganizationChart() {
-  const [departments] = useState<Department[]>([]);
+  const { toast } = useToast();
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
+  const [newDepartment, setNewDepartment] = useState({
+    name: "",
+    type: "production" as "production" | "quality" | "management" | "support",
+    manager: "",
+    location: "",
+    status: "active" as "active" | "maintenance" | "inactive"
+  });
 
   const getDepartmentTypeColor = (type: string) => {
     switch (type) {
@@ -75,6 +88,54 @@ export default function OrganizationChart() {
     return "bg-green-500";
   };
 
+  const handleAddDepartment = () => {
+    if (!newDepartment.name.trim() || !newDepartment.manager.trim() || !newDepartment.location.trim()) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "กรุณากรอกข้อมูลให้ครบถ้วน",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const department: Department = {
+      id: `dept-${Date.now()}`,
+      name: newDepartment.name,
+      type: newDepartment.type,
+      manager: newDepartment.manager,
+      location: newDepartment.location,
+      status: newDepartment.status,
+      teams: [],
+      workSteps: []
+    };
+
+    setDepartments(prev => [...prev, department]);
+    setNewDepartment({
+      name: "",
+      type: "production",
+      manager: "",
+      location: "",
+      status: "active"
+    });
+    setIsAddDepartmentOpen(false);
+
+    toast({
+      title: "สำเร็จ",
+      description: "เพิ่มแผนกใหม่เรียบร้อยแล้ว"
+    });
+  };
+
+  const handleCancelAddDepartment = () => {
+    setNewDepartment({
+      name: "",
+      type: "production",
+      manager: "",
+      location: "",
+      status: "active"
+    });
+    setIsAddDepartmentOpen(false);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -86,7 +147,10 @@ export default function OrganizationChart() {
           </h1>
           <p className="text-gray-600 mt-1">จัดการโครงสร้างองค์กรและทรัพยากรบุคคล</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button 
+          className="bg-blue-600 hover:bg-blue-700"
+          onClick={() => setIsAddDepartmentOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           เพิ่มแผนก
         </Button>
@@ -313,6 +377,92 @@ export default function OrganizationChart() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Department Dialog */}
+      <Dialog open={isAddDepartmentOpen} onOpenChange={setIsAddDepartmentOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>เพิ่มแผนกใหม่</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">ชื่อแผนก</label>
+              <Input
+                value={newDepartment.name}
+                onChange={(e) => setNewDepartment(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="กรอกชื่อแผนก"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">ประเภทแผนก</label>
+              <Select 
+                value={newDepartment.type} 
+                onValueChange={(value: any) => setNewDepartment(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">แผนกผลิต</SelectItem>
+                  <SelectItem value="quality">แผนกควบคุมคุณภาพ</SelectItem>
+                  <SelectItem value="management">แผนกบริหาร</SelectItem>
+                  <SelectItem value="support">แผนกสนับสนุน</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">หัวหน้าแผนก</label>
+              <Input
+                value={newDepartment.manager}
+                onChange={(e) => setNewDepartment(prev => ({ ...prev, manager: e.target.value }))}
+                placeholder="กรอกชื่อหัวหน้าแผนก"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">สถานที่</label>
+              <Input
+                value={newDepartment.location}
+                onChange={(e) => setNewDepartment(prev => ({ ...prev, location: e.target.value }))}
+                placeholder="กรอกสถานที่ตั้งแผนก"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">สถานะ</label>
+              <Select 
+                value={newDepartment.status} 
+                onValueChange={(value: any) => setNewDepartment(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">ใช้งาน</SelectItem>
+                  <SelectItem value="maintenance">บำรุงรักษา</SelectItem>
+                  <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={handleCancelAddDepartment}>
+                <X className="w-4 h-4 mr-2" />
+                ยกเลิก
+              </Button>
+              <Button onClick={handleAddDepartment}>
+                <Save className="w-4 h-4 mr-2" />
+                บันทึก
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
