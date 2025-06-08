@@ -32,6 +32,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Skip authentication check in development mode
+  if (import.meta.env.DEV) {
+    return <MainLayout>{children}</MainLayout>;
+  }
+
   if (!isAuthenticated) {
     return <Login />;
   }
