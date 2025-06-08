@@ -891,7 +891,7 @@ export default function Sales() {
                         {customers.find(c => c.id === quotation.customerId)?.name || '-'}
                       </td>
                       <td className="p-3">{new Date(quotation.date).toLocaleDateString('th-TH')}</td>
-                      <td className="p-3">฿{quotation.grandTotal.toFixed(2)}</td>
+                      <td className="p-3">฿{(typeof quotation.grandTotal === 'string' ? parseFloat(quotation.grandTotal) : quotation.grandTotal).toFixed(2)}</td>
                       <td className="p-3">
                         <Badge variant={quotation.status === 'approved' ? 'default' : 'secondary'}>
                           {quotation.status === 'draft' && 'ร่าง'}
