@@ -346,6 +346,49 @@ export const workSteps = pgTable("work_steps", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Production Capacity table
+export const productionCapacity = pgTable("production_capacity", {
+  id: text("id").primaryKey(),
+  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  capacityPerDay: integer("capacity_per_day").notNull(), // pieces per day
+  workingHoursPerDay: decimal("working_hours_per_day", { precision: 4, scale: 2 }).notNull().default("8.00"),
+  efficiency: decimal("efficiency", { precision: 5, scale: 2 }).notNull().default("100.00"), // percentage
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Work Queue table
+export const workQueue = pgTable("work_queue", {
+  id: text("id").primaryKey(),
+  orderNumber: text("order_number").notNull(),
+  productName: text("product_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  priority: integer("priority").notNull().default(1), // 1=highest, 5=lowest
+  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  estimatedDays: decimal("estimated_days", { precision: 5, scale: 2 }),
+  startDate: date("start_date"),
+  expectedEndDate: date("expected_end_date"),
+  actualEndDate: date("actual_end_date"),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed, cancelled
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+// Holidays table
+export const holidays = pgTable("holidays", {
+  id: text("id").primaryKey(),
+  date: date("date").notNull(),
+  name: text("name").notNull(),
+  type: text("type").notNull().default("national"), // national, company, custom
+  isRecurring: boolean("is_recurring").notNull().default(false),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
@@ -431,7 +474,9 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
     fields: [teams.departmentId],
     references: [departments.id]
   }),
-  employees: many(employees)
+  employees: many(employees),
+  productionCapacity: many(productionCapacity),
+  workQueue: many(workQueue)
 }));
 
 export const employeesRelations = relations(employees, ({ one }) => ({
@@ -445,6 +490,20 @@ export const workStepsRelations = relations(workSteps, ({ one }) => ({
   department: one(departments, {
     fields: [workSteps.departmentId],
     references: [departments.id]
+  })
+}));
+
+export const productionCapacityRelations = relations(productionCapacity, ({ one }) => ({
+  team: one(teams, {
+    fields: [productionCapacity.teamId],
+    references: [teams.id]
+  })
+}));
+
+export const workQueueRelations = relations(workQueue, ({ one }) => ({
+  team: one(teams, {
+    fields: [workQueue.teamId],
+    references: [teams.id]
   })
 }));
 
@@ -471,6 +530,23 @@ export const insertWorkStepSchema = createInsertSchema(workSteps).omit({
   id: true,
   createdAt: true,
   updatedAt: true
+});
+
+export const insertProductionCapacitySchema = createInsertSchema(productionCapacity).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertWorkQueueSchema = createInsertSchema(workQueue).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertHolidaySchema = createInsertSchema(holidays).omit({
+  id: true,
+  createdAt: true
 });
 
 // Types
@@ -522,3 +598,12 @@ export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
 export type WorkStep = typeof workSteps.$inferSelect;
 export type InsertWorkStep = z.infer<typeof insertWorkStepSchema>;
+
+export type ProductionCapacity = typeof productionCapacity.$inferSelect;
+export type InsertProductionCapacity = z.infer<typeof insertProductionCapacitySchema>;
+
+export type WorkQueue = typeof workQueue.$inferSelect;
+export type InsertWorkQueue = z.infer<typeof insertWorkQueueSchema>;
+
+export type Holiday = typeof holidays.$inferSelect;
+export type InsertHoliday = z.infer<typeof insertHolidaySchema>;
