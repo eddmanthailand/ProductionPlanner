@@ -503,6 +503,11 @@ export default function Customers() {
                                   <div className="font-semibold text-green-800 mb-1">
                                     รหัสไปรษณีย์: {postalCodeSearch.data.postalCode}
                                   </div>
+                                  {postalCodeSearch.data.note && (
+                                    <div className="text-orange-700 mb-2 text-xs italic">
+                                      {postalCodeSearch.data.note}
+                                    </div>
+                                  )}
                                   {postalCodeSearch.data.district && (
                                     <div className="text-green-700 mb-1">
                                       ตำบล/แขวง: {postalCodeSearch.data.district}
