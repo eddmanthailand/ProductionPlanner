@@ -12,6 +12,9 @@ import Dashboard from "@/pages/dashboard";
 import Sales from "@/pages/sales-new";
 import Quotations from "@/pages/sales/quotations";
 import QuotationsNew from "@/pages/sales/quotations-new";
+import Invoices from "@/pages/sales/invoices";
+import TaxInvoices from "@/pages/sales/tax-invoices";
+import Receipts from "@/pages/sales/receipts";
 import Production from "@/pages/production";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
@@ -73,6 +76,36 @@ function Router() {
       <Route path="/sales">
         <ProtectedRoute>
           <Sales />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales/quotations">
+        <ProtectedRoute>
+          <Quotations />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales/quotations/new">
+        <ProtectedRoute>
+          <QuotationsNew />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales/invoices">
+        <ProtectedRoute>
+          <Invoices />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales/tax-invoices">
+        <ProtectedRoute>
+          <TaxInvoices />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/sales/receipts">
+        <ProtectedRoute>
+          <Receipts />
         </ProtectedRoute>
       </Route>
 

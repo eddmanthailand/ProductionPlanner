@@ -16,13 +16,20 @@ import {
   ChevronRight
 } from "lucide-react";
 import { logout } from "@/lib/auth";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Sidebar() {
   const [location] = useLocation();
   const { user, tenant } = useAuth();
   const { t } = useLanguage();
-  const [expandedSales, setExpandedSales] = useState(false);
+  const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
+
+  // Auto-expand sales menu when user navigates to sales pages
+  useEffect(() => {
+    if (location.startsWith("/sales")) {
+      setExpandedSales(true);
+    }
+  }, [location]);
 
   const salesSubMenu = [
     { name: "ใบเสนอราคา", href: "/sales/quotations", icon: FileText },
