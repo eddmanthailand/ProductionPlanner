@@ -13,7 +13,9 @@ import {
   LogOut,
   ShoppingCart,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -23,6 +25,7 @@ export default function Sidebar() {
   const { user, tenant } = useAuth();
   const { t } = useLanguage();
   const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Auto-expand sales menu when user navigates to sales pages
   useEffect(() => {
@@ -32,7 +35,16 @@ export default function Sidebar() {
   }, [location]);
 
   const toggleSalesMenu = () => {
-    setExpandedSales(!expandedSales);
+    if (!isCollapsed) {
+      setExpandedSales(!expandedSales);
+    }
+  };
+
+  const toggleSidebar = () => {
+    setIsCollapsed(!isCollapsed);
+    if (!isCollapsed) {
+      setExpandedSales(false); // Close sales menu when collapsing
+    }
   };
 
   const salesSubMenu = [
@@ -59,17 +71,27 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="w-64 bg-white shadow-lg border-r border-gray-200 flex flex-col">
+    <aside className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg border-r border-gray-200 flex flex-col transition-all duration-300`}>
       {/* Brand and Tenant Selector */}
       <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Settings2 className="w-4 h-4 text-white" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <Settings2 className="w-4 h-4 text-white" />
+            </div>
+            {!isCollapsed && (
+              <span className="font-inter font-semibold text-lg text-gray-900">ProductionPro</span>
+            )}
           </div>
-          <span className="font-inter font-semibold text-lg text-gray-900">ProductionPro</span>
+          <button
+            onClick={toggleSidebar}
+            className="p-1 rounded-md hover:bg-gray-100 transition-colors"
+          >
+            {isCollapsed ? <Menu className="w-4 h-4" /> : <X className="w-4 h-4" />}
+          </button>
         </div>
         
-        <TenantSelector />
+        {!isCollapsed && <TenantSelector />}
       </div>
 
       {/* Navigation */}
@@ -81,13 +103,13 @@ export default function Sidebar() {
             
             return (
               <li key={item.name}>
-                <Link href={item.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                <Link href={item.href} className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg transition-colors ${
                   isActive 
                     ? "bg-primary text-white" 
                     : "text-gray-600 hover:bg-gray-100"
-                }`}>
+                }`} title={isCollapsed ? item.name : undefined}>
                   <Icon className="w-5 h-5" />
-                  <span className="font-medium">{item.name}</span>
+                  {!isCollapsed && <span className="font-medium">{item.name}</span>}
                 </Link>
               </li>
             );
@@ -97,24 +119,25 @@ export default function Sidebar() {
           <li>
             <button
               onClick={toggleSalesMenu}
-              className={`flex items-center justify-between w-full px-3 py-2 rounded-lg transition-colors ${
+              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
                 location.startsWith("/sales") 
                   ? "bg-primary text-white" 
                   : "text-gray-600 hover:bg-gray-100"
               }`}
+              title={isCollapsed ? t("nav.sales") : undefined}
             >
-              <div className="flex items-center space-x-3">
+              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
                 <ShoppingCart className="w-5 h-5" />
-                <span className="font-medium">{t("nav.sales")}</span>
+                {!isCollapsed && <span className="font-medium">{t("nav.sales")}</span>}
               </div>
-              {expandedSales ? (
+              {!isCollapsed && (expandedSales ? (
                 <ChevronDown className="w-4 h-4" />
               ) : (
                 <ChevronRight className="w-4 h-4" />
-              )}
+              ))}
             </button>
             
-            {expandedSales && (
+            {expandedSales && !isCollapsed && (
               <ul className="mt-2 ml-8 space-y-1">
                 {salesSubMenu.map((subItem) => {
                   const isSubActive = location === subItem.href;
@@ -141,26 +164,38 @@ export default function Sidebar() {
 
       {/* User Profile */}
       <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center space-x-3 mb-3">
-          <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <span className="text-gray-600 text-sm font-medium">
-              {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-            </span>
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-medium text-sm text-gray-900 truncate">
-              {user?.firstName} {user?.lastName}
-            </p>
-            <p className="text-xs text-gray-500 truncate">{user?.role}</p>
-          </div>
-        </div>
-        <button 
-          onClick={handleLogout}
-          className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <LogOut className="w-4 h-4" />
-          <span>{t("nav.logout")}</span>
-        </button>
+        {!isCollapsed ? (
+          <>
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+                <span className="text-gray-600 text-sm font-medium">
+                  {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                </span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm text-gray-900 truncate">
+                  {user?.firstName} {user?.lastName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">{user?.role}</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleLogout}
+              className="flex items-center space-x-2 w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span>{t("nav.logout")}</span>
+            </button>
+          </>
+        ) : (
+          <button 
+            onClick={handleLogout}
+            className="flex items-center justify-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title={t("nav.logout")}
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
+        )}
       </div>
     </aside>
   );
