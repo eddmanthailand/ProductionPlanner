@@ -705,13 +705,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.error("Database lookup error:", dbError);
       }
 
-      // ไม่สามารถเชื่อมต่อกับ API กรมสรรพากรได้เนื่องจากข้อจำกัด CORS
-      // ให้แสดงข้อความว่ารูปแบบถูกต้องและให้กรอกข้อมูลด้วยตนเอง
+      // รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่พบในระบบ
       res.json({
         success: false,
-        error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง แต่ไม่สามารถเชื่อมต่อกับระบบกรมสรรพากรได้ กรุณากรอกข้อมูลด้วยตนเอง",
+        error: "รูปแบบเลขที่ผู้เสียภาษีถูกต้อง กรุณากรอกข้อมูลด้วยตนเอง",
         validFormat: true,
-        note: "สามารถตรวจสอบเพิ่มเติมได้ที่ https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp"
+        note: "สามารถตรวจสอบเพิ่มเติมได้ที่เว็บไซต์กรมสรรพากร"
       });
     } catch (error) {
       console.error("Tax ID verification error:", error);
