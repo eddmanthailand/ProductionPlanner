@@ -134,6 +134,7 @@ export default function QuotationsEdit() {
   useEffect(() => {
     if (quotation && typeof quotation === 'object') {
       const q = quotation as any;
+      console.log('Loading quotation data:', q);
       form.reset({
         quotationNumber: q.quotationNumber || "",
         customerId: q.customerId || 0,
@@ -141,12 +142,12 @@ export default function QuotationsEdit() {
         date: q.date || new Date().toISOString().split('T')[0],
         validUntil: q.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
         priceIncludesVat: q.priceIncludesVat || false,
-        subtotal: q.subtotal || 0,
-        discountPercent: q.discountPercent || 0,
-        discountAmount: q.discountAmount || 0,
-        taxPercent: q.taxPercent || 7,
-        taxAmount: q.taxAmount || 0,
-        grandTotal: q.grandTotal || 0,
+        subtotal: parseFloat(q.subtotal) || 0,
+        discountPercent: parseFloat(q.discountPercent) || 0,
+        discountAmount: parseFloat(q.discountAmount) || 0,
+        taxPercent: parseFloat(q.taxPercent) || 7,
+        taxAmount: parseFloat(q.taxAmount) || 0,
+        grandTotal: parseFloat(q.grandTotal) || 0,
         status: q.status || "draft",
         notes: q.notes || ""
       });
@@ -156,14 +157,14 @@ export default function QuotationsEdit() {
         const loadedItems = q.items.map((item: any) => ({
           id: item.id,
           productId: item.productId,
-          productName: item.productName || "",
-          description: item.description || "",
+          productName: item.product?.name || "",
+          description: item.product?.description || "",
           quantity: item.quantity || 0,
-          unit: item.unit || "",
-          unitPrice: item.unitPrice || 0,
+          unit: item.product?.unit || "",
+          unitPrice: parseFloat(item.unitPrice) || 0,
           discountType: item.discountType || "percent",
           discount: item.discount || 0,
-          total: item.total || 0
+          total: parseFloat(item.total) || 0
         }));
         
         // Ensure we have at least 5 rows
@@ -173,6 +174,7 @@ export default function QuotationsEdit() {
           });
         }
         
+        console.log('Loading quotation items:', loadedItems);
         setItems(loadedItems);
       }
     }
