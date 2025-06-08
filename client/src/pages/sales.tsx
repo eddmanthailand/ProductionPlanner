@@ -304,8 +304,6 @@ export default function Sales() {
                                         )}
                                         <div className="text-xs text-gray-500">
                                           {customer.address}
-                                          {customer.district && `, ${customer.district}`}
-                                          {customer.province && `, ${customer.province}`}
                                           {customer.postalCode && ` ${customer.postalCode}`}
                                         </div>
                                       </div>
@@ -597,17 +595,17 @@ export default function Sales() {
                               
                               {/* Remove Button */}
                               <td className="border border-gray-300 p-2 text-center">
-                                {form.watch('items').length > 1 && (
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeItem(index)}
-                                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => removeItem(index)}
+                                  className="text-red-600 border-red-300 hover:text-red-700 hover:bg-red-50 hover:border-red-400"
+                                  disabled={form.watch('items').length <= 1}
+                                  title={form.watch('items').length <= 1 ? "ต้องมีสินค้าอย่างน้อย 1 รายการ" : "ลบแถวนี้"}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </td>
                             </tr>
                           ))}
