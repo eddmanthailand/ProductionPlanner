@@ -19,15 +19,19 @@ const quotationFormSchema = z.object({
   customerId: z.string().min(1, "กรุณาเลือกลูกค้า"),
   date: z.string().min(1, "กรุณาใส่วันที่"),
   validUntil: z.string().min(1, "กรุณาใส่วันหมดอายุ"),
+  priceIncludesVat: z.boolean().default(false),
   items: z.array(z.object({
     productId: z.number().optional(),
     productName: z.string().min(1, "กรุณาใส่ชื่อสินค้า"),
     description: z.string().default(""),
     quantity: z.number().min(1, "จำนวนต้องมากกว่า 0"),
     unitPrice: z.number().min(0, "ราคาต้องมากกว่าหรือเท่ากับ 0"),
+    discount: z.number().min(0, "ส่วนลดต้องมากกว่าหรือเท่ากับ 0").default(0),
     total: z.number().default(0)
   })).min(1, "กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ"),
   subtotal: z.number().default(0),
+  discountAmount: z.number().default(0),
+  subtotalAfterDiscount: z.number().default(0),
   vatAmount: z.number().default(0),
   grandTotal: z.number().default(0),
   notes: z.string().default("")
@@ -70,14 +74,18 @@ export default function Sales() {
       customerId: "",
       date: new Date().toISOString().split('T')[0],
       validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      priceIncludesVat: false,
       items: [{
         productName: "",
         description: "",
         quantity: 1,
         unitPrice: 0,
+        discount: 0,
         total: 0
       }],
       subtotal: 0,
+      discountAmount: 0,
+      subtotalAfterDiscount: 0,
       vatAmount: 0,
       grandTotal: 0,
       notes: ""
@@ -141,17 +149,35 @@ export default function Sales() {
   // Calculate totals
   const calculateTotals = () => {
     const items = form.getValues('items');
+    const priceIncludesVat = form.getValues('priceIncludesVat');
+    
+    // Calculate subtotal and total discount
     const subtotal = items.reduce((sum, item) => sum + item.total, 0);
-    const vatAmount = subtotal * 0.07;
-    const grandTotal = subtotal + vatAmount;
+    const totalDiscountAmount = items.reduce((sum, item) => sum + (item.discount * item.quantity), 0);
+    const subtotalAfterDiscount = subtotal - totalDiscountAmount;
+    
+    let vatAmount: number;
+    let grandTotal: number;
+    
+    if (priceIncludesVat) {
+      // ราคารวม VAT แล้ว
+      grandTotal = subtotalAfterDiscount;
+      vatAmount = subtotalAfterDiscount - (subtotalAfterDiscount / 1.07);
+    } else {
+      // ราคายังไม่รวม VAT
+      vatAmount = subtotalAfterDiscount * 0.07;
+      grandTotal = subtotalAfterDiscount + vatAmount;
+    }
     
     form.setValue('subtotal', subtotal);
+    form.setValue('discountAmount', totalDiscountAmount);
+    form.setValue('subtotalAfterDiscount', subtotalAfterDiscount);
     form.setValue('vatAmount', vatAmount);
     form.setValue('grandTotal', grandTotal);
   };
 
   // Update item total
-  const updateItemTotal = (index: number, quantity: number, unitPrice: number) => {
+  const updateItemTotal = (index: number, quantity: number, unitPrice: number, discount: number = 0) => {
     const total = quantity * unitPrice;
     form.setValue(`items.${index}.total`, total);
     calculateTotals();
@@ -165,6 +191,7 @@ export default function Sales() {
       description: "",
       quantity: 1,
       unitPrice: 0,
+      discount: 0,
       total: 0
     }]);
   };
@@ -349,6 +376,43 @@ export default function Sales() {
                     </CardContent>
                   </Card>
 
+                  {/* VAT Option */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">ตัวเลือกภาษีมูลค่าเพิ่ม</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <FormField
+                        control={form.control}
+                        name="priceIncludesVat"
+                        render={({ field }) => (
+                          <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <input
+                                type="checkbox"
+                                checked={field.value}
+                                onChange={(e) => {
+                                  field.onChange(e.target.checked);
+                                  calculateTotals();
+                                }}
+                                className="h-4 w-4"
+                              />
+                            </FormControl>
+                            <FormLabel className="text-sm font-normal">
+                              ราคารวมภาษีมูลค่าเพิ่ม 7% แล้ว
+                            </FormLabel>
+                          </FormItem>
+                        )}
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        {form.watch('priceIncludesVat') 
+                          ? "ราคาที่ใส่จะถือว่ารวม VAT 7% แล้ว" 
+                          : "ราคาที่ใส่ยังไม่รวม VAT จะคิด VAT 7% เพิ่มเติม"
+                        }
+                      </p>
+                    </CardContent>
+                  </Card>
+
                   {/* Items */}
                   <Card>
                     <CardHeader>
@@ -362,10 +426,21 @@ export default function Sales() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-4">
+                        {/* Header */}
+                        <div className="grid grid-cols-12 gap-2 items-center p-2 bg-gray-50 rounded text-xs font-medium">
+                          <div className="col-span-3">สินค้า/รายละเอียด</div>
+                          <div className="col-span-1 text-center">จำนวน</div>
+                          <div className="col-span-1 text-center">หน่วย</div>
+                          <div className="col-span-2 text-center">ราคาต่อหน่วย</div>
+                          <div className="col-span-2 text-center">ส่วนลดต่อหน่วย</div>
+                          <div className="col-span-2 text-center">รวม</div>
+                          <div className="col-span-1"></div>
+                        </div>
+
                         {form.watch('items').map((item, index) => (
                           <div key={index} className="grid grid-cols-12 gap-2 items-end p-3 border rounded">
                             {/* Product */}
-                            <div className="col-span-4 space-y-2">
+                            <div className="col-span-3 space-y-2">
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.productName`}
@@ -392,7 +467,7 @@ export default function Sales() {
                             </div>
                             
                             {/* Quantity */}
-                            <div className="col-span-2">
+                            <div className="col-span-1">
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.quantity`}
@@ -406,7 +481,8 @@ export default function Sales() {
                                       const quantity = parseInt(e.target.value) || 0;
                                       field.onChange(quantity);
                                       const unitPrice = form.getValues(`items.${index}.unitPrice`);
-                                      updateItemTotal(index, quantity, unitPrice);
+                                      const discount = form.getValues(`items.${index}.discount`);
+                                      updateItemTotal(index, quantity, unitPrice, discount);
                                     }}
                                   />
                                 )}
@@ -429,12 +505,39 @@ export default function Sales() {
                                     min="0"
                                     step="0.01"
                                     className="w-full h-8 text-xs text-right"
+                                    placeholder="0.00"
                                     {...field}
                                     onChange={(e) => {
                                       const unitPrice = parseFloat(e.target.value) || 0;
                                       field.onChange(unitPrice);
                                       const quantity = form.getValues(`items.${index}.quantity`);
-                                      updateItemTotal(index, quantity, unitPrice);
+                                      const discount = form.getValues(`items.${index}.discount`);
+                                      updateItemTotal(index, quantity, unitPrice, discount);
+                                    }}
+                                  />
+                                )}
+                              />
+                            </div>
+
+                            {/* Discount per Unit */}
+                            <div className="col-span-2">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.discount`}
+                                render={({ field }) => (
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    className="w-full h-8 text-xs text-right"
+                                    placeholder="0.00"
+                                    {...field}
+                                    onChange={(e) => {
+                                      const discount = parseFloat(e.target.value) || 0;
+                                      field.onChange(discount);
+                                      const quantity = form.getValues(`items.${index}.quantity`);
+                                      const unitPrice = form.getValues(`items.${index}.unitPrice`);
+                                      updateItemTotal(index, quantity, unitPrice, discount);
                                     }}
                                   />
                                 )}
@@ -451,6 +554,7 @@ export default function Sales() {
                                     type="number"
                                     className="w-full h-8 text-xs text-right bg-gray-50"
                                     {...field}
+                                    value={field.value?.toFixed(2) || '0.00'}
                                     readOnly
                                   />
                                 )}
@@ -522,16 +626,45 @@ export default function Sales() {
                     <CardContent className="space-y-4">
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>ยอดรวม:</span>
+                          <span>ยอดรวมก่อนส่วนลด:</span>
                           <span>฿{form.watch('subtotal')?.toFixed(2) || '0.00'}</span>
                         </div>
+                        
+                        {form.watch('discountAmount') > 0 && (
+                          <div className="flex justify-between text-red-600">
+                            <span>ส่วนลดรวม:</span>
+                            <span>-฿{form.watch('discountAmount')?.toFixed(2) || '0.00'}</span>
+                          </div>
+                        )}
+                        
                         <div className="flex justify-between">
-                          <span>ภาษีมูลค่าเพิ่ม 7%:</span>
+                          <span>ยอดหลังหักส่วนลด:</span>
+                          <span>฿{form.watch('subtotalAfterDiscount')?.toFixed(2) || '0.00'}</span>
+                        </div>
+                        
+                        <div className="flex justify-between">
+                          <span>
+                            ภาษีมูลค่าเพิ่ม 7%
+                            {form.watch('priceIncludesVat') && <span className="text-xs text-gray-500"> (รวมอยู่แล้ว)</span>}
+                          </span>
                           <span>฿{form.watch('vatAmount')?.toFixed(2) || '0.00'}</span>
                         </div>
-                        <div className="flex justify-between font-bold text-lg border-t pt-2">
-                          <span>ยอดรวมทั้งสิ้น:</span>
-                          <span className="text-blue-600">฿{form.watch('grandTotal')?.toFixed(2) || '0.00'}</span>
+                        
+                        <div className="border-t pt-2">
+                          <div className="flex justify-between font-bold text-lg">
+                            <span>ยอดรวมทั้งสิ้น:</span>
+                            <span className="text-blue-600">฿{form.watch('grandTotal')?.toFixed(2) || '0.00'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="text-xs text-gray-500 mt-2 p-2 bg-gray-50 rounded">
+                          <div>วิธีการคำนวณ:</div>
+                          {form.watch('priceIncludesVat') ? (
+                            <div>• ราคารวม VAT แล้ว: VAT = ยอดสุทธิ - (ยอดสุทธิ ÷ 1.07)</div>
+                          ) : (
+                            <div>• ราคายังไม่รวม VAT: VAT = ยอดสุทธิ × 7%</div>
+                          )}
+                          <div>• ส่วนลด = ส่วนลดต่อหน่วย × จำนวน</div>
                         </div>
                       </div>
                     </CardContent>
