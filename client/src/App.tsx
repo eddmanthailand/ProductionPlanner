@@ -21,6 +21,7 @@ import ProductionCalendar from "@/pages/production/calendar";
 import OrganizationChart from "@/pages/production/organization";
 import WorkQueue from "@/pages/production/work-queue";
 import WorkOrders from "@/pages/production/work-orders";
+import WorkOrderForm from "@/pages/production/work-order-form";
 import ProductionReports from "@/pages/production/reports";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
@@ -148,6 +149,12 @@ function Router() {
       <Route path="/production/work-orders">
         <ProtectedRoute>
           <WorkOrders />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/work-orders/new">
+        <ProtectedRoute>
+          <WorkOrderForm />
         </ProtectedRoute>
       </Route>
 

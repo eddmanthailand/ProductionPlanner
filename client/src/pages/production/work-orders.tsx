@@ -327,7 +327,7 @@ export default function WorkOrders() {
           <p className="text-gray-600 mt-2">จัดการใบสั่งงานการผลิต สร้างจากใบเสนอราคาหรือสร้างใหม่</p>
         </div>
         <Button
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => window.location.href = "/production/work-orders/new"}
           className="flex items-center gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -497,7 +497,7 @@ export default function WorkOrders() {
             <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">ยังไม่มีใบสั่งงาน</h3>
             <p className="text-gray-600 mb-4">เริ่มต้นด้วยการสร้างใบสั่งงานใหม่</p>
-            <Button onClick={() => setIsCreateOpen(true)}>
+            <Button onClick={() => window.location.href = "/production/work-orders/new"}>
               <Plus className="h-4 w-4 mr-2" />
               สร้างใบสั่งงานแรก
             </Button>
