@@ -587,6 +587,19 @@ export default function OrganizationChart() {
     }
   };
 
+  // Calculate daily cost function
+  const calculateDailyCost = (count: number, wage: number, overhead: number, management: number) => {
+    if (!count || !wage || overhead === undefined || management === undefined) return 0;
+    
+    const baseCost = count * wage;
+    const overheadCost = baseCost * (overhead / 100);
+    const totalWithOverhead = baseCost + overheadCost;
+    const managementCost = totalWithOverhead * (management / 100);
+    const totalCost = totalWithOverhead + managementCost;
+    
+    return totalCost;
+  };
+
   // Group teams by department
   const getTeamsByDepartment = (departmentId: string) => {
     return teams.filter(team => team.departmentId === departmentId);
@@ -809,6 +822,14 @@ export default function OrganizationChart() {
                                       </div>
                                       <div className="text-xs text-gray-600">
                                         Overhead: {employee.overheadPercentage}% | Management: {employee.managementPercentage}%
+                                      </div>
+                                      <div className="text-sm font-medium text-green-600 mt-1">
+                                        ต้นทุนต่อวัน: {calculateDailyCost(
+                                          employee.count,
+                                          parseFloat(employee.averageWage) || 0,
+                                          parseFloat(employee.overheadPercentage) || 0,
+                                          parseFloat(employee.managementPercentage) || 0
+                                        ).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
                                       </div>
                                       {employee.description && (
                                         <div className="text-xs text-gray-500 mt-1 italic">{employee.description}</div>
@@ -1205,6 +1226,22 @@ export default function OrganizationChart() {
                 placeholder="เช่น ช่างตัด, ช่างเย็บ"
               />
             </div>
+            
+            {/* Daily Cost Calculation */}
+            <div className="grid gap-2 bg-blue-50 p-3 rounded-lg">
+              <label className="font-medium text-gray-700">ต้นทุนต่อวัน</label>
+              <div className="text-lg font-bold text-blue-600">
+                {calculateDailyCost(
+                  newEmployee.count,
+                  parseFloat(newEmployee.averageWage) || 0,
+                  parseFloat(newEmployee.overheadPercentage) || 0,
+                  parseFloat(newEmployee.managementPercentage) || 0
+                ).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+              </div>
+              <div className="text-xs text-gray-600">
+                สูตร: (((จำนวนพนักงาน × ค่าแรงเฉลี่ย) + (จำนวนพนักงาน × ค่าแรงเฉลี่ย × %Overhead)) × %Management) + (จำนวนพนักงาน × ค่าแรงเฉลี่ย)
+              </div>
+            </div>
           </div>
           <div className="flex gap-2 pt-4">
             <Button 
@@ -1294,6 +1331,22 @@ export default function OrganizationChart() {
                   value={editingEmployee.description || ""}
                   onChange={(e) => setEditingEmployee(prev => prev ? { ...prev, description: e.target.value } : null)}
                 />
+              </div>
+              
+              {/* Daily Cost Calculation */}
+              <div className="grid gap-2 bg-blue-50 p-3 rounded-lg">
+                <label className="font-medium text-gray-700">ต้นทุนต่อวัน</label>
+                <div className="text-lg font-bold text-blue-600">
+                  {calculateDailyCost(
+                    editingEmployee.count,
+                    parseFloat(editingEmployee.averageWage) || 0,
+                    parseFloat(editingEmployee.overheadPercentage) || 0,
+                    parseFloat(editingEmployee.managementPercentage) || 0
+                  ).toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท
+                </div>
+                <div className="text-xs text-gray-600">
+                  สูตร: (((จำนวนพนักงาน × ค่าแรงเฉลี่ย) + (จำนวนพนักงาน × ค่าแรงเฉลี่ย × %Overhead)) × %Management) + (จำนวนพนักงาน × ค่าแรงเฉลี่ย)
+                </div>
               </div>
             </div>
           )}
