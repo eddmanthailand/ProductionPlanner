@@ -51,11 +51,18 @@ export default function OrganizationChart() {
   const { toast } = useToast();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
+  const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
   const [newDepartment, setNewDepartment] = useState({
     name: "",
     manager: "",
     location: "",
     status: "active" as "active" | "maintenance" | "inactive"
+  });
+  const [newTeam, setNewTeam] = useState({
+    name: "",
+    leader: "",
+    status: "active" as "active" | "inactive"
   });
 
   const getDepartmentTypeColor = (type: string) => {
@@ -131,6 +138,60 @@ export default function OrganizationChart() {
       status: "active"
     });
     setIsAddDepartmentOpen(false);
+  };
+
+  const handleAddTeam = () => {
+    if (!newTeam.name.trim() || !selectedDepartmentId) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "กรุณากรอกชื่อทีมและเลือกแผนก",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const team: Team = {
+      id: `team-${Date.now()}`,
+      name: newTeam.name,
+      departmentId: selectedDepartmentId,
+      leader: newTeam.leader,
+      status: newTeam.status,
+      employees: []
+    };
+
+    setDepartments(prev => prev.map(dept => 
+      dept.id === selectedDepartmentId 
+        ? { ...dept, teams: [...dept.teams, team] }
+        : dept
+    ));
+
+    setNewTeam({
+      name: "",
+      leader: "",
+      status: "active"
+    });
+    setSelectedDepartmentId("");
+    setIsAddTeamOpen(false);
+
+    toast({
+      title: "สำเร็จ",
+      description: "เพิ่มทีมใหม่เรียบร้อยแล้ว"
+    });
+  };
+
+  const handleCancelAddTeam = () => {
+    setNewTeam({
+      name: "",
+      leader: "",
+      status: "active"
+    });
+    setSelectedDepartmentId("");
+    setIsAddTeamOpen(false);
+  };
+
+  const openAddTeamDialog = (departmentId: string) => {
+    setSelectedDepartmentId(departmentId);
+    setIsAddTeamOpen(true);
   };
 
   return (
@@ -320,7 +381,7 @@ export default function OrganizationChart() {
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-6 pt-4 border-t">
-                <Button variant="outline" className="w-full">
+                <Button variant="outline" className="w-full" onClick={() => openAddTeamDialog(department.id)}>
                   <Plus className="w-4 h-4 mr-2" />
                   เพิ่มทีม
                 </Button>
@@ -437,6 +498,72 @@ export default function OrganizationChart() {
                 ยกเลิก
               </Button>
               <Button onClick={handleAddDepartment}>
+                <Save className="w-4 h-4 mr-2" />
+                บันทึก
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Team Dialog */}
+      <Dialog open={isAddTeamOpen} onOpenChange={setIsAddTeamOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>เพิ่มทีมใหม่</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700">แผนก</label>
+              <Input
+                value={departments.find(d => d.id === selectedDepartmentId)?.name || ""}
+                disabled
+                className="mt-1 bg-gray-50"
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">ชื่อทีม</label>
+              <Input
+                value={newTeam.name}
+                onChange={(e) => setNewTeam(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="กรอกชื่อทีม"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">หัวหน้าทีม</label>
+              <Input
+                value={newTeam.leader}
+                onChange={(e) => setNewTeam(prev => ({ ...prev, leader: e.target.value }))}
+                placeholder="กรอกชื่อหัวหน้าทีม (ไม่จำเป็น)"
+                className="mt-1"
+              />
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700">สถานะ</label>
+              <Select 
+                value={newTeam.status} 
+                onValueChange={(value: any) => setNewTeam(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">ใช้งาน</SelectItem>
+                  <SelectItem value="inactive">ไม่ใช้งาน</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={handleCancelAddTeam}>
+                <X className="w-4 h-4 mr-2" />
+                ยกเลิก
+              </Button>
+              <Button onClick={handleAddTeam}>
                 <Save className="w-4 h-4 mr-2" />
                 บันทึก
               </Button>
