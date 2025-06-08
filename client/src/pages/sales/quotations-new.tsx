@@ -140,16 +140,16 @@ export default function QuotationsNew() {
       grandTotal: 0,
       status: "draft",
       notes: "",
-      items: [{
+      items: Array(5).fill(null).map(() => ({
         productName: "",
         description: "",
-        quantity: 1,
-        unit: "ชิ้น",
+        quantity: 0,
+        unit: "",
         unitPrice: 0,
         discountType: "percent" as const,
         discount: 0,
         total: 0
-      }]
+      }))
     }
   });
 
@@ -274,8 +274,8 @@ export default function QuotationsNew() {
     append({
       productName: "",
       description: "",
-      quantity: 1,
-      unit: "ชิ้น",
+      quantity: 0,
+      unit: "",
       unitPrice: 0,
       discountType: "percent" as const,
       discount: 0,
@@ -467,19 +467,18 @@ export default function QuotationsNew() {
                   </div>
 
                   {/* Table Format */}
-                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                    <table className="w-full border-collapse">
+                  <div className="border border-gray-200 rounded-lg">
+                    <table className="w-full border-collapse table-fixed">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 min-w-[200px]">สินค้า/บริการ</th>
-                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 min-w-[150px]">รายละเอียด</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-20">จำนวน</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-16">หน่วย</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-24">ราคา/หน่วย</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-20">ประเภทส่วนลด</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-20">ส่วนลด</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-24">รวม</th>
-                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-16">ลบ</th>
+                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[20%]">สินค้า/บริการ</th>
+                          <th className="border-b border-gray-200 p-3 text-left text-sm font-medium text-gray-700 w-[20%]">รายละเอียด</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">จำนวน</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">หน่วย</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[12%]">ราคา/หน่วย</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[10%]">ส่วนลด</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[12%]">รวม</th>
+                          <th className="border-b border-gray-200 p-3 text-center text-sm font-medium text-gray-700 w-[6%]">ลบ</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -612,33 +611,6 @@ export default function QuotationsNew() {
                               />
                             </td>
 
-                            {/* Discount Type */}
-                            <td className="border-b border-gray-200 p-2">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.discountType`}
-                                render={({ field }) => (
-                                  <FormItem>
-                                    <Select onValueChange={(value) => {
-                                      field.onChange(value);
-                                      form.setValue(`items.${index}.discount`, 0);
-                                      calculateTotals();
-                                    }} value={field.value}>
-                                      <FormControl>
-                                        <SelectTrigger className="w-full text-sm h-8">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                      </FormControl>
-                                      <SelectContent>
-                                        <SelectItem value="percent">%</SelectItem>
-                                        <SelectItem value="amount">฿</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </FormItem>
-                                )}
-                              />
-                            </td>
-
                             {/* Discount */}
                             <td className="border-b border-gray-200 p-2">
                               <FormField
@@ -649,9 +621,9 @@ export default function QuotationsNew() {
                                     <FormControl>
                                       <Input
                                         type="number"
+                                        placeholder="0"
                                         step="0.01"
                                         min="0"
-                                        max={form.watch(`items.${index}.discountType`) === "percent" ? "100" : undefined}
                                         className="w-full text-right text-sm h-8"
                                         {...field}
                                         onChange={(e) => {
