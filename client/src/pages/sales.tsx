@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { useLanguage } from "@/hooks/use-language";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, Plus, Search, Edit, Trash2, Wrench, Box, Archive, Package } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { apiRequest } from "@/lib/queryClient";
 import type { Customer, Product, Quotation } from "@shared/schema";
 
@@ -495,68 +496,46 @@ export default function Sales() {
                             <tr key={index}>
                               {/* Product Type Selection */}
                               <td className="border border-gray-300 p-2">
-                                <div className="flex justify-center space-x-1">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={productTypeFilter[index] === 'service' ? 'default' : 'outline'}
-                                    className="p-2 h-8 min-w-0 flex items-center space-x-1"
-                                    onClick={() => {
-                                      const currentType = productTypeFilter[index];
-                                      const newType = currentType === 'service' ? '' : 'service';
-                                      setProductTypeFilter(prevState => ({
-                                        ...prevState,
-                                        [index]: newType
-                                      }));
-                                      // Update form type field
-                                      form.setValue(`items.${index}.type`, newType);
-                                    }}
-                                    title="บริการ"
-                                  >
-                                    <Wrench className="h-3 w-3 text-blue-600" />
-                                    <span className="text-xs">บริการ</span>
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={productTypeFilter[index] === 'non_stock_product' ? 'default' : 'outline'}
-                                    className="p-2 h-8 min-w-0 flex items-center space-x-1"
-                                    onClick={() => {
-                                      const currentType = productTypeFilter[index];
-                                      const newType = currentType === 'non_stock_product' ? '' : 'non_stock_product';
-                                      setProductTypeFilter(prevState => ({
-                                        ...prevState,
-                                        [index]: newType
-                                      }));
-                                      // Update form type field
-                                      form.setValue(`items.${index}.type`, newType);
-                                    }}
-                                    title="สินค้าไม่นับสต็อก"
-                                  >
-                                    <Box className="h-3 w-3 text-purple-600" />
-                                    <span className="text-xs">ไม่นับสต็อก</span>
-                                  </Button>
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    variant={productTypeFilter[index] === 'stock_product' ? 'default' : 'outline'}
-                                    className="p-2 h-8 min-w-0 flex items-center space-x-1"
-                                    onClick={() => {
-                                      const currentType = productTypeFilter[index];
-                                      const newType = currentType === 'stock_product' ? '' : 'stock_product';
-                                      setProductTypeFilter(prevState => ({
-                                        ...prevState,
-                                        [index]: newType
-                                      }));
-                                      // Update form type field
-                                      form.setValue(`items.${index}.type`, newType);
-                                    }}
-                                    title="สินค้านับสต็อก"
-                                  >
-                                    <Archive className="h-3 w-3 text-green-600" />
-                                    <span className="text-xs">นับสต็อก</span>
-                                  </Button>
-                                </div>
+                                <FormField
+                                  control={form.control}
+                                  name={`items.${index}.type`}
+                                  render={({ field }) => (
+                                    <Select 
+                                      value={field.value || ''} 
+                                      onValueChange={(value) => {
+                                        field.onChange(value);
+                                        setProductTypeFilter(prevState => ({
+                                          ...prevState,
+                                          [index]: value
+                                        }));
+                                      }}
+                                    >
+                                      <SelectTrigger className="w-full h-8 text-xs border-0 focus:ring-0">
+                                        <SelectValue placeholder="เลือกประเภท" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="service">
+                                          <div className="flex items-center space-x-2">
+                                            <Wrench className="h-3 w-3 text-blue-600" />
+                                            <span>บริการ</span>
+                                          </div>
+                                        </SelectItem>
+                                        <SelectItem value="non_stock_product">
+                                          <div className="flex items-center space-x-2">
+                                            <Box className="h-3 w-3 text-purple-600" />
+                                            <span>สินค้าไม่นับสต็อก</span>
+                                          </div>
+                                        </SelectItem>
+                                        <SelectItem value="stock_product">
+                                          <div className="flex items-center space-x-2">
+                                            <Archive className="h-3 w-3 text-green-600" />
+                                            <span>สินค้านับสต็อก</span>
+                                          </div>
+                                        </SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  )}
+                                />
                               </td>
                               
                               {/* Product Name */}
