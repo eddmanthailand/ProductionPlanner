@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Plus, Edit, Trash2, Calculator, User, Calendar, FileText, Package2 as Package, X, ChevronDown, Wrench, Box, Archive } from "lucide-react";
+import { Plus, Edit, Trash2, Calculator, User, Calendar, FileText, Package2 as Package, X, Wrench, Box, Archive } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,111 +13,95 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/hooks/use-language";
+import { useAuth } from "@/hooks/use-auth";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { insertQuotationSchema, type Quotation, type Customer, type Product } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
-// Schema for validation
-const quotationFormSchema = z.object({
-  customerId: z.string().min(1, "กรุณาเลือกลูกค้า"),
-  projectName: z.string().default(""),
-  date: z.string().min(1, "กรุณาใส่วันที่"),
-  validUntil: z.string().min(1, "กรุณาใส่วันหมดอายุ"),
-  priceIncludesVat: z.boolean().default(false),
+interface QuotationItem {
+  productId?: number;
+  productName: string;
+  description: string;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  discount: number;
+  total: number;
+}
+
+interface QuotationFormData {
+  quotationNumber: string;
+  customerId: number;
+  date: string;
+  validUntil: string;
+  subtotal: number;
+  discountPercent: number;
+  discountAmount: number;
+  taxPercent: number;
+  taxAmount: number;
+  grandTotal: number;
+  status: string;
+  notes?: string;
+  items: QuotationItem[];
+}
+
+const quotationFormSchema = insertQuotationSchema.extend({
   items: z.array(z.object({
     productId: z.number().optional(),
-    productName: z.string().min(1, "กรุณาใส่ชื่อสินค้า"),
-    description: z.string().default(""),
-    type: z.enum(['service', 'non_stock_product', 'stock_product']).optional(),
-    quantity: z.union([z.string(), z.number()]).transform((val) => {
-      if (typeof val === 'string' && val === '') return 1;
-      return typeof val === 'string' ? parseInt(val) || 1 : val;
-    }),
-    unit: z.string().default("ชิ้น"),
-    unitPrice: z.union([z.string(), z.number()]).transform((val) => {
-      if (typeof val === 'string' && val === '') return 0;
-      return typeof val === 'string' ? parseFloat(val) || 0 : val;
-    }),
-    discount: z.union([z.string(), z.number()]).transform((val) => {
-      if (typeof val === 'string' && val === '') return 0;
-      return typeof val === 'string' ? parseFloat(val) || 0 : val;
-    }),
-    total: z.number().default(0)
-  })).min(1, "กรุณาเพิ่มสินค้าอย่างน้อย 1 รายการ"),
-  subtotal: z.number().default(0),
-  discountAmount: z.number().default(0),
-  subtotalAfterDiscount: z.number().default(0),
-  vatAmount: z.number().default(0),
-  grandTotal: z.number().default(0),
-  notes: z.string().default("")
+    productName: z.string().min(1, "ต้องระบุชื่อสินค้า"),
+    description: z.string().optional(),
+    quantity: z.number().min(1),
+    unit: z.string().min(1),
+    unitPrice: z.number().min(0),
+    discount: z.number().min(0).max(100),
+    total: z.number().min(0)
+  })).min(1, "ต้องมีรายการสินค้าอย่างน้อย 1 รายการ")
 });
 
-type QuotationFormData = z.infer<typeof quotationFormSchema>;
-
-// รายการหน่วยที่แนะนำ
-const suggestedUnits = [
-  "ชิ้น", "อัน", "ใบ", "แผ่น", "ชุด", "คู่", "ตัว", "หลอด", "เล่ม", "กล่อง",
-  "ลิตร", "มิลลิลิตร", "กิโลกรัม", "กรัม", "ตัน", "ปอนด์", "ออนซ์",
-  "เมตร", "เซนติเมตร", "มิลลิเมตร", "กิโลเมตร", "นิ้ว", "ฟุต", "หลา",
-  "ตารางเมตร", "ตารางนิ้ว", "ตารางฟุต", "ไร่", "งาน", "วา",
-  "ลูกบาศก์เมตร", "ลูกบาศก์ฟุต", "แกลลอน", "ขวด", "ถุง", "หีบ",
-  "ชั่วโมง", "วัน", "เดือน", "ปี", "ครั้ง", "รอบ", "บริการ", "แพ็ค"
-];
-
-const translations = {
-  th: {
-    "sales.title": "การขาย",
-    "sales.quotations": "ใบเสนอราคา",
-    "sales.newQuotation": "สร้างใบเสนอราคาใหม่"
-  },
-  en: {
-    "sales.title": "Sales", 
-    "sales.quotations": "Quotations",
-    "sales.newQuotation": "Create New Quotation"
-  }
-};
-
 export default function Sales() {
-  const { language } = useLanguage();
+  const { t } = useLanguage();
+  const { tenant } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
-  const t = (key: string) => (translations as any)[language][key] || key;
-
-  // State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
-  const [customerSearchTerm, setCustomerSearchTerm] = useState("");
-  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [editingQuotation, setEditingQuotation] = useState<Quotation | null>(null);
   const [productSearchTerms, setProductSearchTerms] = useState<{[key: number]: string}>({});
-  const [showProductDropdown, setShowProductDropdown] = useState<{[key: number]: boolean}>({});
-
-  // Refs for outside click detection
-  const customerDropdownRef = useRef<HTMLDivElement>(null);
+  const [showProductDropdowns, setShowProductDropdowns] = useState<{[key: number]: boolean}>({});
   const productDropdownRefs = useRef<{[key: number]: HTMLDivElement | null}>({});
 
-  // Data fetching
-  const { data: customers = [], isLoading: customersLoading } = useQuery<Customer[]>({
-    queryKey: ["/api/customers"]
-  });
+  // Generate quotation number in format QT+YYYY+MM+sequence
+  const generateQuotationNumber = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+    return `QT${year}${month}${sequence}`;
+  };
 
-  const { data: products = [], isLoading: productsLoading } = useQuery<Product[]>({
-    queryKey: ["/api/inventory"]
-  });
+  const getDefaultDates = () => {
+    const today = new Date();
+    const validUntil = new Date();
+    validUntil.setDate(today.getDate() + 30);
+    
+    return {
+      date: today.toISOString().split('T')[0],
+      validUntil: validUntil.toISOString().split('T')[0]
+    };
+  };
 
-  const { data: quotations = [], isLoading: quotationsLoading } = useQuery<Quotation[]>({
-    queryKey: ["/api/quotations"]
-  });
-
-  // Form setup
   const form = useForm<QuotationFormData>({
     resolver: zodResolver(quotationFormSchema),
     defaultValues: {
-      customerId: "",
-      projectName: "",
-      date: new Date().toISOString().split('T')[0],
-      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-      priceIncludesVat: false,
+      quotationNumber: generateQuotationNumber(),
+      customerId: 0,
+      ...getDefaultDates(),
+      subtotal: 0,
+      discountPercent: 0,
+      discountAmount: 0,
+      taxPercent: 7,
+      taxAmount: 0,
+      grandTotal: 0,
+      status: "draft",
+      notes: "",
       items: [{
         productName: "",
         description: "",
@@ -126,13 +110,7 @@ export default function Sales() {
         unitPrice: 0,
         discount: 0,
         total: 0
-      }],
-      subtotal: 0,
-      discountAmount: 0,
-      subtotalAfterDiscount: 0,
-      vatAmount: 0,
-      grandTotal: 0,
-      notes: ""
+      }]
     }
   });
 
@@ -141,47 +119,39 @@ export default function Sales() {
     name: "items"
   });
 
+  // Data queries
+  const { data: customers = [] } = useQuery<Customer[]>({
+    queryKey: ["/api/customers"],
+    enabled: !!tenant
+  });
+
+  const { data: products = [] } = useQuery<Product[]>({
+    queryKey: ["/api/inventory"],
+    enabled: !!tenant
+  });
+
+  const { data: quotations = [] } = useQuery<Quotation[]>({
+    queryKey: ["/api/quotations"],
+    enabled: !!tenant
+  });
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Element;
       
-      // Close customer dropdown
-      if (customerDropdownRef.current && !customerDropdownRef.current.contains(target)) {
-        setShowCustomerDropdown(false);
-      }
-      
-      // Close product dropdowns
-      Object.keys(showProductDropdown).forEach(key => {
+      Object.keys(showProductDropdowns).forEach(key => {
         const index = parseInt(key);
         const ref = productDropdownRefs.current[index];
         if (ref && !ref.contains(target)) {
-          setShowProductDropdown(prev => ({ ...prev, [index]: false }));
+          setShowProductDropdowns(prev => ({ ...prev, [index]: false }));
         }
       });
     };
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showProductDropdown]);
-
-  // Filter functions
-  const getFilteredCustomers = () => {
-    if (!customerSearchTerm) return customers;
-    return customers.filter(customer => 
-      customer.name.toLowerCase().includes(customerSearchTerm.toLowerCase()) ||
-      (customer.companyName && customer.companyName.toLowerCase().includes(customerSearchTerm.toLowerCase()))
-    );
-  };
-
-  const getFilteredProducts = (searchTerm: string) => {
-    if (!searchTerm) return products;
-    return products.filter(product => 
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
-  };
+  }, [showProductDropdowns]);
 
   // Helper functions
   const getTypeIcon = (type: string) => {
@@ -202,25 +172,14 @@ export default function Sales() {
     }
   };
 
-  // Calculate totals
-  const calculateItemTotal = (quantity: number, unitPrice: number, discount: number) => {
-    const subtotal = quantity * unitPrice;
-    const discountAmount = (subtotal * discount) / 100;
-    return subtotal - discountAmount;
-  };
-
-  const calculateTotals = () => {
-    const items = form.getValues("items");
-    const subtotal = items.reduce((sum, item) => sum + calculateItemTotal(item.quantity, item.unitPrice, item.discount), 0);
-    const discountAmount = form.getValues("discountAmount");
-    const subtotalAfterDiscount = subtotal - discountAmount;
-    const vatAmount = form.getValues("priceIncludesVat") ? 0 : (subtotalAfterDiscount * 7) / 100;
-    const grandTotal = subtotalAfterDiscount + vatAmount;
-
-    form.setValue("subtotal", subtotal);
-    form.setValue("subtotalAfterDiscount", subtotalAfterDiscount);
-    form.setValue("vatAmount", vatAmount);
-    form.setValue("grandTotal", grandTotal);
+  // Filter products based on search term
+  const getFilteredProducts = (searchTerm: string) => {
+    if (!searchTerm) return products.slice(0, 10); // Show first 10 products if no search term
+    return products.filter(product => 
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (product.description && product.description.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
   };
 
   // Handle product selection
@@ -228,157 +187,204 @@ export default function Sales() {
     form.setValue(`items.${index}.productId`, product.id);
     form.setValue(`items.${index}.productName`, product.name);
     form.setValue(`items.${index}.description`, product.description || "");
-    form.setValue(`items.${index}.type`, product.type);
     form.setValue(`items.${index}.unit`, product.unit);
     form.setValue(`items.${index}.unitPrice`, parseFloat(product.price?.toString() || "0"));
     
     setProductSearchTerms(prev => ({ ...prev, [index]: product.name }));
-    setShowProductDropdown(prev => ({ ...prev, [index]: false }));
+    setShowProductDropdowns(prev => ({ ...prev, [index]: false }));
     
     calculateTotals();
   };
 
-  // Handle customer selection
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    form.setValue("customerId", customer.id.toString());
-    setCustomerSearchTerm(customer.name);
-    setShowCustomerDropdown(false);
+  // Calculate totals
+  const calculateTotals = () => {
+    const items = form.getValues("items");
+    const subtotal = items.reduce((sum, item) => {
+      const itemTotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
+      return sum + itemTotal;
+    }, 0);
+    
+    const discountAmount = subtotal * (form.getValues("discountPercent") / 100);
+    const subtotalAfterDiscount = subtotal - discountAmount;
+    const taxAmount = subtotalAfterDiscount * (form.getValues("taxPercent") / 100);
+    const grandTotal = subtotalAfterDiscount + taxAmount;
+
+    form.setValue("subtotal", subtotal);
+    form.setValue("discountAmount", discountAmount);
+    form.setValue("taxAmount", taxAmount);
+    form.setValue("grandTotal", grandTotal);
+
+    // Update individual item totals
+    items.forEach((item, index) => {
+      const itemTotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
+      form.setValue(`items.${index}.total`, itemTotal);
+    });
   };
 
   // Mutations
-  const createMutation = useMutation({
+  const quotationMutation = useMutation({
     mutationFn: async (data: QuotationFormData) => {
-      await apiRequest("/api/quotations", "POST", data);
+      const url = editingQuotation ? `/api/quotations/${editingQuotation.id}` : "/api/quotations";
+      const method = editingQuotation ? "PATCH" : "POST";
+      
+      return apiRequest(url, method, { ...data, tenantId: tenant?.id });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/quotations"] });
       setIsDialogOpen(false);
       form.reset();
+      setEditingQuotation(null);
       toast({
-        title: "สำเร็จ",
-        description: "สร้างใบเสนอราคาเรียบร้อยแล้ว",
+        title: editingQuotation ? "แก้ไขใบเสนอราคาสำเร็จ" : "สร้างใบเสนอราคาสำเร็จ",
+        description: editingQuotation ? "บันทึกการแก้ไขเรียบร้อยแล้ว" : "ใบเสนอราคาใหม่ถูกสร้างแล้ว"
       });
     },
     onError: (error: any) => {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: error.message || "ไม่สามารถสร้างใบเสนอราคาได้",
-        variant: "destructive",
+        description: error.message || "ไม่สามารถบันทึกใบเสนอราคาได้",
+        variant: "destructive"
       });
-    },
+    }
   });
 
   const handleSubmit = (data: QuotationFormData) => {
     calculateTotals();
-    createMutation.mutate(data);
+    quotationMutation.mutate(data);
   };
 
-  // Generate quotation number
-  const generateQuotationNumber = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const existingCount = quotations.filter(q => 
-      q.quotationNumber?.startsWith(`QT${year}${month}`)
-    ).length;
-    const nextNumber = String(existingCount + 1).padStart(3, '0');
-    return `QT${year}${month}${nextNumber}`;
+  const addItem = () => {
+    append({
+      productName: "",
+      description: "",
+      quantity: 1,
+      unit: "ชิ้น",
+      unitPrice: 0,
+      discount: 0,
+      total: 0
+    });
   };
 
-  if (quotationsLoading || customersLoading || productsLoading) {
-    return (
-      <div className="space-y-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">{t("sales.title")}</h1>
-        </div>
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">กำลังโหลดข้อมูล...</p>
-        </div>
-      </div>
-    );
-  }
+  const resetForm = () => {
+    setEditingQuotation(null);
+    setProductSearchTerms({});
+    setShowProductDropdowns({});
+    form.reset({
+      quotationNumber: generateQuotationNumber(),
+      customerId: 0,
+      ...getDefaultDates(),
+      subtotal: 0,
+      discountPercent: 0,
+      discountAmount: 0,
+      taxPercent: 7,
+      taxAmount: 0,
+      grandTotal: 0,
+      status: "draft",
+      notes: "",
+      items: [{
+        productName: "",
+        description: "",
+        quantity: 1,
+        unit: "ชิ้น",
+        unitPrice: 0,
+        discount: 0,
+        total: 0
+      }]
+    });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">{t("sales.title")}</h1>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <h1 className="text-2xl font-bold text-gray-900">การขาย</h1>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
           <Button onClick={() => setIsDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            {t("sales.newQuotation")}
+            สร้างใบเสนอราคาใหม่
           </Button>
           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>สร้างใบเสนอราคาใหม่</DialogTitle>
+              <DialogTitle>
+                {editingQuotation ? "แก้ไขใบเสนอราคา" : "สร้างใบเสนอราคาใหม่"}
+              </DialogTitle>
+              <DialogDescription>
+                กรุณากรอกข้อมูลใบเสนอราคา
+              </DialogDescription>
             </DialogHeader>
             
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
                 {/* Header Information */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2">
-                    <FormField
-                      control={form.control}
-                      name="customerId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>ลูกค้า *</FormLabel>
-                          <div className="relative" ref={customerDropdownRef}>
-                            <FormControl>
-                              <Input
-                                placeholder="ค้นหาลูกค้า..."
-                                value={customerSearchTerm}
-                                onChange={(e) => {
-                                  setCustomerSearchTerm(e.target.value);
-                                  setShowCustomerDropdown(true);
-                                }}
-                                onFocus={() => setShowCustomerDropdown(true)}
-                              />
-                            </FormControl>
-                            {showCustomerDropdown && (
-                              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
-                                {getFilteredCustomers().map((customer) => (
-                                  <div
-                                    key={customer.id}
-                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-                                    onClick={() => handleCustomerSelect(customer)}
-                                  >
-                                    <div className="font-medium">{customer.name}</div>
-                                    {customer.companyName && (
-                                      <div className="text-sm text-gray-500">{customer.companyName}</div>
-                                    )}
-                                  </div>
-                                ))}
-                                {getFilteredCustomers().length === 0 && (
-                                  <div className="px-4 py-2 text-gray-500">ไม่พบลูกค้า</div>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="quotationNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>เลขที่ใบเสนอราคา</FormLabel>
+                        <FormControl>
+                          <Input {...field} readOnly className="bg-gray-50" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   
                   <FormField
                     control={form.control}
-                    name="projectName"
+                    name="customerId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>ชื่อโครงการ</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ชื่อโครงการ (ถ้ามี)" {...field} />
-                        </FormControl>
+                        <FormLabel>ลูกค้า *</FormLabel>
+                        <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกลูกค้า" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {customers.map((customer) => (
+                              <SelectItem key={customer.id} value={customer.id.toString()}>
+                                {customer.name}
+                                {customer.companyName && ` (${customer.companyName})`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>สถานะ</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="draft">ร่าง</SelectItem>
+                            <SelectItem value="sent">ส่งแล้ว</SelectItem>
+                            <SelectItem value="approved">อนุมัติ</SelectItem>
+                            <SelectItem value="rejected">ปฏิเสธ</SelectItem>
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="date"
@@ -406,89 +412,42 @@ export default function Sales() {
                       </FormItem>
                     )}
                   />
-                  
-                  <FormField
-                    control={form.control}
-                    name="priceIncludesVat"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-base">ราคารวม VAT</FormLabel>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
                 </div>
 
                 {/* Items Section */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-medium">รายการสินค้า/บริการ</h3>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => append({
-                        productName: "",
-                        description: "",
-                        quantity: 1,
-                        unit: "ชิ้น",
-                        unitPrice: 0,
-                        discount: 0,
-                        total: 0
-                      })}
-                    >
+                    <h3 className="text-lg font-semibold">รายการสินค้า/บริการ</h3>
+                    <Button type="button" onClick={addItem} size="sm">
                       <Plus className="h-4 w-4 mr-2" />
                       เพิ่มรายการ
                     </Button>
                   </div>
 
-                  <div className="overflow-x-auto">
-                    <table className="w-full border-collapse border border-gray-200">
-                      <thead>
-                        <tr className="bg-gray-50">
-                          <th className="border border-gray-200 p-2 text-left">สินค้า/บริการ</th>
-                          <th className="border border-gray-200 p-2 text-left">รายละเอียด</th>
-                          <th className="border border-gray-200 p-2 text-left">จำนวน</th>
-                          <th className="border border-gray-200 p-2 text-left">หน่วย</th>
-                          <th className="border border-gray-200 p-2 text-left">ราคาต่อหน่วย</th>
-                          <th className="border border-gray-200 p-2 text-left">ส่วนลด (%)</th>
-                          <th className="border border-gray-200 p-2 text-left">รวม</th>
-                          <th className="border border-gray-200 p-2 text-center">จัดการ</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {fields.map((field, index) => (
-                          <tr key={field.id}>
-                            <td className="border border-gray-200 p-2">
+                  <div className="space-y-4">
+                    {fields.map((field, index) => (
+                      <div key={field.id} className="bg-white border rounded-lg p-4 shadow-sm">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {/* Product Selection */}
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                                สินค้า/บริการ
+                              </label>
                               <div className="relative" ref={el => productDropdownRefs.current[index] = el}>
-                                <FormField
-                                  control={form.control}
-                                  name={`items.${index}.productName`}
-                                  render={({ field: productField }) => (
-                                    <FormItem>
-                                      <FormControl>
-                                        <Input
-                                          placeholder="ค้นหาสินค้า..."
-                                          value={productSearchTerms[index] || productField.value}
-                                          onChange={(e) => {
-                                            const value = e.target.value;
-                                            setProductSearchTerms(prev => ({ ...prev, [index]: value }));
-                                            productField.onChange(value);
-                                            setShowProductDropdown(prev => ({ ...prev, [index]: true }));
-                                          }}
-                                          onFocus={() => setShowProductDropdown(prev => ({ ...prev, [index]: true }))}
-                                        />
-                                      </FormControl>
-                                    </FormItem>
-                                  )}
+                                <Input
+                                  placeholder="ค้นหาสินค้า..."
+                                  value={productSearchTerms[index] || form.watch(`items.${index}.productName`)}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setProductSearchTerms(prev => ({ ...prev, [index]: value }));
+                                    form.setValue(`items.${index}.productName`, value);
+                                    setShowProductDropdowns(prev => ({ ...prev, [index]: true }));
+                                  }}
+                                  onFocus={() => setShowProductDropdowns(prev => ({ ...prev, [index]: true }))}
                                 />
-                                {showProductDropdown[index] && (
+                                
+                                {showProductDropdowns[index] && (
                                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-y-auto">
                                     {getFilteredProducts(productSearchTerms[index] || "").map((product) => (
                                       <div
@@ -514,108 +473,124 @@ export default function Sales() {
                                   </div>
                                 )}
                               </div>
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2">
-                              <FormField
-                                control={form.control}
-                                name={`items.${index}.description`}
-                                render={({ field }) => (
+                            </div>
+
+                            <FormField
+                              control={form.control}
+                              name={`items.${index}.description`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>รายละเอียด</FormLabel>
                                   <FormControl>
                                     <Textarea 
                                       placeholder="รายละเอียดเพิ่มเติม"
-                                      className="min-h-[60px]"
+                                      className="min-h-[80px]"
                                       {...field}
                                     />
                                   </FormControl>
-                                )}
-                              />
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2">
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          {/* Quantity and Price */}
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-2 gap-3">
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.quantity`}
                                 render={({ field }) => (
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        field.onChange(parseInt(e.target.value) || 1);
-                                        calculateTotals();
-                                      }}
-                                    />
-                                  </FormControl>
+                                  <FormItem>
+                                    <FormLabel>จำนวน</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        min="1"
+                                        {...field}
+                                        onChange={(e) => {
+                                          field.onChange(parseInt(e.target.value) || 1);
+                                          calculateTotals();
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
                                 )}
                               />
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2">
+
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.unit`}
                                 render={({ field }) => (
-                                  <FormControl>
-                                    <Input value={field.value} onChange={field.onChange} />
-                                  </FormControl>
+                                  <FormItem>
+                                    <FormLabel>หน่วย</FormLabel>
+                                    <FormControl>
+                                      <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
                                 )}
                               />
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2">
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.unitPrice`}
                                 render={({ field }) => (
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        field.onChange(parseFloat(e.target.value) || 0);
-                                        calculateTotals();
-                                      }}
-                                    />
-                                  </FormControl>
+                                  <FormItem>
+                                    <FormLabel>ราคาต่อหน่วย</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        {...field}
+                                        onChange={(e) => {
+                                          field.onChange(parseFloat(e.target.value) || 0);
+                                          calculateTotals();
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
                                 )}
                               />
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2">
+
                               <FormField
                                 control={form.control}
                                 name={`items.${index}.discount`}
                                 render={({ field }) => (
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      step="0.01"
-                                      min="0"
-                                      max="100"
-                                      value={field.value}
-                                      onChange={(e) => {
-                                        field.onChange(parseFloat(e.target.value) || 0);
-                                        calculateTotals();
-                                      }}
-                                    />
-                                  </FormControl>
+                                  <FormItem>
+                                    <FormLabel>ส่วนลด (%)</FormLabel>
+                                    <FormControl>
+                                      <Input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        max="100"
+                                        {...field}
+                                        onChange={(e) => {
+                                          field.onChange(parseFloat(e.target.value) || 0);
+                                          calculateTotals();
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormMessage />
+                                  </FormItem>
                                 )}
                               />
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2 text-right">
-                              {calculateItemTotal(
-                                form.watch(`items.${index}.quantity`),
-                                form.watch(`items.${index}.unitPrice`),
-                                form.watch(`items.${index}.discount`)
-                              ).toFixed(2)}
-                            </td>
-                            
-                            <td className="border border-gray-200 p-2 text-center">
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2">
+                              <div className="text-right">
+                                <span className="text-sm text-gray-500">รวม: </span>
+                                <span className="font-medium">
+                                  ฿{form.watch(`items.${index}.total`)?.toFixed(2) || "0.00"}
+                                </span>
+                              </div>
+                              
                               {fields.length > 1 && (
                                 <Button
                                   type="button"
@@ -629,11 +604,11 @@ export default function Sales() {
                                   <X className="h-4 w-4" />
                                 </Button>
                               )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -660,46 +635,72 @@ export default function Sales() {
                       />
                     </div>
                     
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex justify-between">
                         <span>ยอดรวม:</span>
-                        <span>฿{form.watch("subtotal").toFixed(2)}</span>
+                        <span>฿{form.watch("subtotal")?.toFixed(2) || "0.00"}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span>ส่วนลดเพิ่มเติม (%):</span>
+                        <div className="w-32">
+                          <FormField
+                            control={form.control}
+                            name="discountPercent"
+                            render={({ field }) => (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                max="100"
+                                className="text-right"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(parseFloat(e.target.value) || 0);
+                                  calculateTotals();
+                                }}
+                              />
+                            )}
+                          />
+                        </div>
                       </div>
                       
                       <div className="flex justify-between">
-                        <span>ส่วนลดเพิ่มเติม:</span>
-                        <FormField
-                          control={form.control}
-                          name="discountAmount"
-                          render={({ field }) => (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              className="w-32 text-right"
-                              value={field.value}
-                              onChange={(e) => {
-                                field.onChange(parseFloat(e.target.value) || 0);
-                                calculateTotals();
-                              }}
-                            />
-                          )}
-                        />
+                        <span>ส่วนลด:</span>
+                        <span>฿{form.watch("discountAmount")?.toFixed(2) || "0.00"}</span>
+                      </div>
+                      
+                      <div className="flex justify-between items-center">
+                        <span>VAT (%):</span>
+                        <div className="w-32">
+                          <FormField
+                            control={form.control}
+                            name="taxPercent"
+                            render={({ field }) => (
+                              <Input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                className="text-right"
+                                {...field}
+                                onChange={(e) => {
+                                  field.onChange(parseFloat(e.target.value) || 0);
+                                  calculateTotals();
+                                }}
+                              />
+                            )}
+                          />
+                        </div>
                       </div>
                       
                       <div className="flex justify-between">
-                        <span>ยอดหลังหักส่วนลด:</span>
-                        <span>฿{form.watch("subtotalAfterDiscount").toFixed(2)}</span>
-                      </div>
-                      
-                      <div className="flex justify-between">
-                        <span>VAT 7%:</span>
-                        <span>฿{form.watch("vatAmount").toFixed(2)}</span>
+                        <span>VAT:</span>
+                        <span>฿{form.watch("taxAmount")?.toFixed(2) || "0.00"}</span>
                       </div>
                       
                       <div className="flex justify-between font-bold text-lg border-t pt-2">
                         <span>ยอดรวมสุทธิ:</span>
-                        <span>฿{form.watch("grandTotal").toFixed(2)}</span>
+                        <span>฿{form.watch("grandTotal")?.toFixed(2) || "0.00"}</span>
                       </div>
                     </div>
                   </div>
@@ -715,9 +716,10 @@ export default function Sales() {
                   </Button>
                   <Button 
                     type="submit" 
-                    disabled={createMutation.isPending}
+                    disabled={quotationMutation.isPending}
                   >
-                    {createMutation.isPending ? "กำลังบันทึก..." : "บันทึกใบเสนอราคา"}
+                    {quotationMutation.isPending ? "กำลังบันทึก..." : 
+                     editingQuotation ? "อัพเดท" : "บันทึก"}
                   </Button>
                 </div>
               </form>
@@ -731,7 +733,7 @@ export default function Sales() {
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
             <FileText className="h-5 w-5" />
-            <span>{t("sales.quotations")}</span>
+            <span>ใบเสนอราคา</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -746,7 +748,6 @@ export default function Sales() {
                   <tr className="border-b">
                     <th className="text-left p-3">เลขที่</th>
                     <th className="text-left p-3">ลูกค้า</th>
-                    <th className="text-left p-3">โครงการ</th>
                     <th className="text-left p-3">วันที่</th>
                     <th className="text-left p-3">ยอดรวม</th>
                     <th className="text-left p-3">สถานะ</th>
@@ -758,15 +759,17 @@ export default function Sales() {
                     <tr key={quotation.id} className="border-b hover:bg-gray-50">
                       <td className="p-3">{quotation.quotationNumber}</td>
                       <td className="p-3">
-                        {customers.find(c => c.id.toString() === quotation.customerId)?.name || '-'}
+                        {customers.find(c => c.id === quotation.customerId)?.name || '-'}
                       </td>
-                      <td className="p-3">{quotation.projectName || '-'}</td>
                       <td className="p-3">{new Date(quotation.date).toLocaleDateString('th-TH')}</td>
                       <td className="p-3">฿{quotation.grandTotal.toFixed(2)}</td>
                       <td className="p-3">
-                        <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">
-                          รอดำเนินการ
-                        </span>
+                        <Badge variant={quotation.status === 'approved' ? 'default' : 'secondary'}>
+                          {quotation.status === 'draft' && 'ร่าง'}
+                          {quotation.status === 'sent' && 'ส่งแล้ว'}
+                          {quotation.status === 'approved' && 'อนุมัติ'}
+                          {quotation.status === 'rejected' && 'ปฏิเสธ'}
+                        </Badge>
                       </td>
                       <td className="p-3">
                         <div className="flex space-x-2">
