@@ -320,7 +320,15 @@ export default function Customers() {
                         <FormControl>
                           <div className="space-y-2">
                             <div className="text-xs text-gray-600 mb-2">
-                              ตรวจสอบข้อมูลได้ที่: <strong>https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp</strong>
+                              ตรวจสอบข้อมูลได้ที่:{" "}
+                              <a 
+                                href="https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline font-medium"
+                              >
+                                https://vsreg.rd.go.th/VATINFOWSWeb/jsp/V001.jsp
+                              </a>
                             </div>
                             <Input 
                               {...field} 
