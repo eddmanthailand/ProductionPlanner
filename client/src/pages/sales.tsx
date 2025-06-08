@@ -504,8 +504,8 @@ export default function Sales() {
                                     onClick={() => {
                                       const currentType = productTypeFilter[index];
                                       const newType = currentType === 'service' ? '' : 'service';
-                                      setProductTypeFilter(prev => ({
-                                        ...prev,
+                                      setProductTypeFilter(prevState => ({
+                                        ...prevState,
                                         [index]: newType
                                       }));
                                       // Update form type field
@@ -524,8 +524,8 @@ export default function Sales() {
                                     onClick={() => {
                                       const currentType = productTypeFilter[index];
                                       const newType = currentType === 'non_stock_product' ? '' : 'non_stock_product';
-                                      setProductTypeFilter(prev => ({
-                                        ...prev,
+                                      setProductTypeFilter(prevState => ({
+                                        ...prevState,
                                         [index]: newType
                                       }));
                                       // Update form type field
@@ -544,8 +544,8 @@ export default function Sales() {
                                     onClick={() => {
                                       const currentType = productTypeFilter[index];
                                       const newType = currentType === 'stock_product' ? '' : 'stock_product';
-                                      setProductTypeFilter(prev => ({
-                                        ...prev,
+                                      setProductTypeFilter(prevState => ({
+                                        ...prevState,
                                         [index]: newType
                                       }));
                                       // Update form type field
