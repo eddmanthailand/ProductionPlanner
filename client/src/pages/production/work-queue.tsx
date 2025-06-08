@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 
 interface WorkQueue {
   id: string;
@@ -97,13 +98,7 @@ export default function WorkQueueManager() {
   // Mutations
   const createWorkMutation = useMutation({
     mutationFn: async (workData: any) => {
-      const response = await fetch("/api/work-queues", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(workData),
-      });
-      if (!response.ok) throw new Error("Failed to create work queue");
-      return response.json();
+      return await apiRequest("/api/work-queues", "POST", workData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues"] });
@@ -127,13 +122,7 @@ export default function WorkQueueManager() {
   const updateWorkMutation = useMutation({
     mutationFn: async (data: any) => {
       const { id, ...updateData } = data;
-      const response = await fetch(`/api/work-queues/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updateData),
-      });
-      if (!response.ok) throw new Error("Failed to update work queue");
-      return response.json();
+      return await apiRequest(`/api/work-queues/${id}`, "PUT", updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues"] });
@@ -302,9 +291,9 @@ export default function WorkQueueManager() {
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
             <Calendar className="h-8 w-8 text-blue-600" />
-            คิวงานและกำลังการผลิต
+            วางแผนและคิวงาน
           </h1>
-          <p className="text-gray-600 mt-2">จัดการคิวงาน คำนวณวันที่เสร็จ และกำหนดลำดับความสำคัญ</p>
+          <p className="text-gray-600 mt-2">จัดการคิวงาน คำนวณวันที่เสร็จ และวางแผนการผลิต</p>
         </div>
         <Button
           onClick={() => setIsAddWorkOpen(true)}
