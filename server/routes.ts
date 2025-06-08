@@ -748,7 +748,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { keywords: ['ยานนาวา', 'บางโพ', 'บางนา'], postalCode: '10120', district: 'ยานนาวา', amphoe: 'ยานนาวา', province: 'กรุงเทพมหานคร' },
         { keywords: ['ธนบุรี', 'บางกอกใหญ่', 'วัดอรุณ'], postalCode: '10600', district: 'บางกอกใหญ่', amphoe: 'ธนบุรี', province: 'กรุงเทพมหานคร' },
         { keywords: ['บางแค', 'หนองแขม', 'พุทธมณฑล'], postalCode: '10160', district: 'บางแค', amphoe: 'บางแค', province: 'กรุงเทพมหานคร' },
-        { keywords: ['บางบอน', 'เขต', 'บางบอน'], postalCode: '10150', district: 'บางบอน', amphoe: 'บางบอน', province: 'กรุงเทพมหานคร' },
+        { keywords: ['บางบอน'], postalCode: '10150', district: 'บางบอน', amphoe: 'บางบอน', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ราษฎร์บูรณะ', 'ประชาอุทิศ'], postalCode: '10140', district: 'ราษฎร์บูรณะ', amphoe: 'ราษฎร์บูรณะ', province: 'กรุงเทพมหานคร' },
+        { keywords: ['สาทร', 'ยานนาวา', 'สาทร'], postalCode: '10120', district: 'ยานนาวา', amphoe: 'สาทร', province: 'กรุงเทพมหานคร' },
+        { keywords: ['บางกะปิ', 'ห้วยขวาง', 'สะพานพุทธ'], postalCode: '10310', district: 'บางกะปิ', amphoe: 'บางกะปิ', province: 'กรุงเทพมหานคร' },
+        { keywords: ['มีนบุรี', 'สุวินทวงศ์'], postalCode: '10510', district: 'มีนบุรี', amphoe: 'มีนบุรี', province: 'กรุงเทพมหานคร' },
+        { keywords: ['คันนายาว', 'รามอินทรา'], postalCode: '10230', district: 'คันนายาว', amphoe: 'คันนายาว', province: 'กรุงเทพมหานคร' },
+        { keywords: ['สะพานสูง', 'วังทองหลาง'], postalCode: '10240', district: 'สะพานสูง', amphoe: 'วังทองหลาง', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ดอนเมือง', 'สนามบิน'], postalCode: '10210', district: 'ดอนเมือง', amphoe: 'ดอนเมือง', province: 'กรุงเทพมหานคร' },
+        { keywords: ['ลาดพร้าว', 'ลาดพร้าว'], postalCode: '10230', district: 'ลาดพร้าว', amphoe: 'ลาดพร้าว', province: 'กรุงเทพมหานคร' },
         
         // นนทบุรี - รหัส 11xxx
         { keywords: ['เมืองนนทบุรี', 'บางกระสอ', 'ท่าทราย', 'นนทบุรี'], postalCode: '11000', district: 'เมืองนนทบุรี', amphoe: 'เมืองนนทบุรี', province: 'นนทบุรี' },
@@ -788,17 +796,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('Postal code search for:', searchTermLower);
       
-      // ค้นหาจากคำสำคัญ - ตรวจสอบการจับคู่แบบบางส่วน
-      const matchedResult = postalCodeData.find(item => 
-        item.keywords.some(keyword => {
+      // ค้นหาจากคำสำคัญ - จัดลำดับความสำคัญ
+      let bestMatch = null;
+      let highestScore = 0;
+      
+      for (const item of postalCodeData) {
+        for (const keyword of item.keywords) {
           const keywordLower = keyword.toLowerCase();
-          const isMatch = searchTermLower.includes(keywordLower) || keywordLower.includes(searchTermLower);
-          if (isMatch) {
-            console.log(`Matched keyword: ${keyword} with search: ${searchTermLower}`);
+          let score = 0;
+          
+          // คะแนนสูงสุดถ้าตรงทั้งคำ
+          if (searchTermLower.includes(keywordLower)) {
+            score = keywordLower.length * 2;
           }
-          return isMatch;
-        })
-      );
+          // คะแนนต่ำกว่าถ้าคำสำคัญอยู่ในข้อความค้นหา
+          else if (keywordLower.includes(searchTermLower)) {
+            score = searchTermLower.length;
+          }
+          
+          if (score > highestScore) {
+            highestScore = score;
+            bestMatch = item;
+            console.log(`Better match found: ${keyword} (score: ${score}) for search: ${searchTermLower}`);
+          }
+        }
+      }
+      
+      const matchedResult = bestMatch;
 
       if (matchedResult) {
         console.log('Found postal code:', matchedResult.postalCode);
