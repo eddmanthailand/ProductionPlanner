@@ -7,11 +7,7 @@ interface MainLayoutProps {
 }
 
 export default function MainLayout({ children }: MainLayoutProps) {
-  const { isAuthenticated } = useAuth();
-
-  if (!isAuthenticated) {
-    return null;
-  }
+  // Always show layout for development mode
 
   return (
     <div className="min-h-screen flex bg-gray-50">
