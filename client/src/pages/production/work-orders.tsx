@@ -215,7 +215,7 @@ export default function WorkOrders() {
   };
 
   const handleQuotationSelect = (quotationId: string) => {
-    if (!quotationId) {
+    if (!quotationId || quotationId === "none") {
       setSelectedQuotation(null);
       setNewWorkOrder(prev => ({
         ...prev,
@@ -519,7 +519,7 @@ export default function WorkOrders() {
                   <SelectValue placeholder="เลือกใบเสนอราคา" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">สร้างใหม่ (ไม่อ้างอิง)</SelectItem>
+                  <SelectItem value="none">สร้างใหม่ (ไม่อ้างอิง)</SelectItem>
                   {quotations.filter(q => q.status === "approved").map((quotation) => (
                     <SelectItem key={quotation.id} value={quotation.id.toString()}>
                       {quotation.quotationNumber} - {quotation.title}

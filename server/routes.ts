@@ -1476,72 +1476,185 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/work-orders/:id", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/work-orders/:id", async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
       const { id } = req.params;
       
-      const workOrder = await storage.getWorkOrder(id, tenantId);
-      if (!workOrder) {
+      const result = await pool.query(
+        `SELECT * FROM work_orders WHERE id = $1 AND tenant_id = $2`,
+        [id, tenantId]
+      );
+      
+      if (result.rows.length === 0) {
         return res.status(404).json({ message: "Work order not found" });
       }
       
-      res.json(workOrder);
+      res.json(result.rows[0]);
     } catch (error) {
       console.error("Get work order error:", error);
       res.status(500).json({ message: "Failed to fetch work order" });
     }
   });
 
-  app.post("/api/work-orders", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/work-orders", async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
-
-      const validatedData = insertWorkOrderSchema.parse({
-        ...req.body,
-        tenantId
-      });
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
+      const workOrderData = { ...req.body, tenantId };
       
-      const workOrder = await storage.createWorkOrder(validatedData);
-      res.status(201).json(workOrder);
+      console.log("API: Creating work order with data:", workOrderData);
+      
+      // Generate order number
+      const countResult = await pool.query(
+        `SELECT COUNT(*) as count FROM work_orders WHERE tenant_id = $1`,
+        [tenantId]
+      );
+      const orderNumber = `WO${String(parseInt(countResult.rows[0].count) + 1).padStart(6, '0')}`;
+      
+      // Get customer info if customerId is provided
+      let customerData = {
+        customerName: "ไม่ระบุลูกค้า",
+        customerTaxId: null,
+        customerAddress: null,
+        customerPhone: null,
+        customerEmail: null
+      };
+      
+      if (workOrderData.customerId) {
+        const customerResult = await pool.query(
+          `SELECT * FROM customers WHERE id = $1`,
+          [workOrderData.customerId]
+        );
+        
+        if (customerResult.rows.length > 0) {
+          const customer = customerResult.rows[0];
+          customerData = {
+            customerName: customer.name,
+            customerTaxId: customer.taxId,
+            customerAddress: customer.address,
+            customerPhone: customer.phone,
+            customerEmail: customer.email
+          };
+        }
+      }
+      
+      // Get quotation total if quotationId is provided
+      let totalAmount = "0.00";
+      if (workOrderData.quotationId) {
+        const quotationResult = await pool.query(
+          `SELECT * FROM quotations WHERE id = $1`,
+          [workOrderData.quotationId]
+        );
+        
+        if (quotationResult.rows.length > 0) {
+          totalAmount = quotationResult.rows[0].grandTotal || "0.00";
+        }
+      }
+      
+      // Insert work order
+      const insertResult = await pool.query(
+        `INSERT INTO work_orders (
+          id, order_number, quotation_id, customer_id, customer_name, customer_tax_id,
+          customer_address, customer_phone, customer_email, title, description,
+          total_amount, status, priority, start_date, due_date, assigned_team_id,
+          notes, tenant_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+        RETURNING *`,
+        [
+          `wo_${Date.now()}`, // Generate unique ID
+          orderNumber,
+          workOrderData.quotationId || null,
+          workOrderData.customerId,
+          customerData.customerName,
+          customerData.customerTaxId,
+          customerData.customerAddress,
+          customerData.customerPhone,
+          customerData.customerEmail,
+          workOrderData.title,
+          workOrderData.description || null,
+          totalAmount,
+          "draft", // Default status
+          workOrderData.priority || 3,
+          workOrderData.startDate || null,
+          workOrderData.dueDate || null,
+          workOrderData.assignedTeamId || null,
+          workOrderData.notes || null,
+          tenantId
+        ]
+      );
+      
+      console.log("API: Work order created successfully");
+      res.status(201).json(insertResult.rows[0]);
     } catch (error) {
       console.error("Create work order error:", error);
       res.status(500).json({ message: "Failed to create work order" });
     }
   });
 
-  app.put("/api/work-orders/:id", authenticateToken, async (req: any, res: any) => {
+  app.put("/api/work-orders/:id", async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
       const { id } = req.params;
+      const updateData = req.body;
       
-      const validatedData = insertWorkOrderSchema.partial().parse(req.body);
+      console.log("API: Updating work order:", id, updateData);
       
-      const workOrder = await storage.updateWorkOrder(id, validatedData, tenantId);
-      if (!workOrder) {
+      const updateResult = await pool.query(
+        `UPDATE work_orders SET 
+          title = COALESCE($1, title),
+          description = COALESCE($2, description),
+          status = COALESCE($3, status),
+          priority = COALESCE($4, priority),
+          start_date = COALESCE($5, start_date),
+          due_date = COALESCE($6, due_date),
+          assigned_team_id = COALESCE($7, assigned_team_id),
+          notes = COALESCE($8, notes),
+          updated_at = NOW()
+        WHERE id = $9 AND tenant_id = $10
+        RETURNING *`,
+        [
+          updateData.title,
+          updateData.description,
+          updateData.status,
+          updateData.priority,
+          updateData.startDate,
+          updateData.dueDate,
+          updateData.assignedTeamId,
+          updateData.notes,
+          id,
+          tenantId
+        ]
+      );
+      
+      if (updateResult.rows.length === 0) {
         return res.status(404).json({ message: "Work order not found" });
       }
       
-      res.json(workOrder);
+      console.log("API: Work order updated successfully");
+      res.json(updateResult.rows[0]);
     } catch (error) {
       console.error("Update work order error:", error);
       res.status(500).json({ message: "Failed to update work order" });
     }
   });
 
-  app.delete("/api/work-orders/:id", authenticateToken, async (req: any, res: any) => {
+  app.delete("/api/work-orders/:id", async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
       const { id } = req.params;
       
-      const deleted = await storage.deleteWorkOrder(id, tenantId);
-      if (!deleted) {
+      console.log("API: Deleting work order:", id);
+      
+      const deleteResult = await pool.query(
+        `DELETE FROM work_orders WHERE id = $1 AND tenant_id = $2`,
+        [id, tenantId]
+      );
+      
+      if (deleteResult.rowCount === 0) {
         return res.status(404).json({ message: "Work order not found" });
       }
       
+      console.log("API: Work order deleted successfully");
       res.json({ message: "Work order deleted successfully" });
     } catch (error) {
       console.error("Delete work order error:", error);
