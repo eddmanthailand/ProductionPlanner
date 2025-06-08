@@ -25,6 +25,8 @@ interface QuotationItem {
   quantity: number;
   unit: string;
   unitPrice: number;
+  priceIncludesVat: boolean;
+  discountType: "percent" | "amount";
   discount: number;
   total: number;
 }
@@ -32,6 +34,7 @@ interface QuotationItem {
 interface QuotationFormData {
   quotationNumber: string;
   customerId: number;
+  projectName: string;
   date: string;
   validUntil: string;
   subtotal: number;
@@ -46,6 +49,7 @@ interface QuotationFormData {
 }
 
 const quotationFormSchema = insertQuotationSchema.extend({
+  projectName: z.string().optional(),
   items: z.array(z.object({
     productId: z.number().optional(),
     productName: z.string().min(1, "ต้องระบุชื่อสินค้า"),
@@ -53,7 +57,9 @@ const quotationFormSchema = insertQuotationSchema.extend({
     quantity: z.number().min(1),
     unit: z.string().min(1),
     unitPrice: z.number().min(0),
-    discount: z.number().min(0).max(100),
+    priceIncludesVat: z.boolean(),
+    discountType: z.enum(["percent", "amount"]),
+    discount: z.number().min(0),
     total: z.number().min(0)
   })).min(1, "ต้องมีรายการสินค้าอย่างน้อย 1 รายการ")
 });
@@ -93,6 +99,7 @@ export default function Sales() {
     defaultValues: {
       quotationNumber: generateQuotationNumber(),
       customerId: 0,
+      projectName: "",
       ...getDefaultDates(),
       subtotal: 0,
       discountPercent: 0,
@@ -108,6 +115,8 @@ export default function Sales() {
         quantity: 1,
         unit: "ชิ้น",
         unitPrice: 0,
+        priceIncludesVat: false,
+        discountType: "percent" as const,
         discount: 0,
         total: 0
       }]
@@ -199,26 +208,43 @@ export default function Sales() {
   // Calculate totals
   const calculateTotals = () => {
     const items = form.getValues("items");
-    const subtotal = items.reduce((sum, item) => {
-      const itemTotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
-      return sum + itemTotal;
-    }, 0);
+    const taxPercent = form.getValues("taxPercent") / 100;
+    
+    let subtotal = 0;
+    
+    // Calculate individual item totals
+    items.forEach((item, index) => {
+      let basePrice = item.unitPrice;
+      
+      // If price includes VAT, calculate the price without VAT
+      if (item.priceIncludesVat) {
+        basePrice = item.unitPrice / (1 + taxPercent);
+      }
+      
+      // Calculate discount
+      let discountAmount = 0;
+      if (item.discountType === "percent") {
+        discountAmount = basePrice * (item.discount / 100);
+      } else {
+        discountAmount = item.discount;
+      }
+      
+      const priceAfterDiscount = basePrice - discountAmount;
+      const itemTotal = item.quantity * priceAfterDiscount;
+      
+      form.setValue(`items.${index}.total`, itemTotal);
+      subtotal += itemTotal;
+    });
     
     const discountAmount = subtotal * (form.getValues("discountPercent") / 100);
     const subtotalAfterDiscount = subtotal - discountAmount;
-    const taxAmount = subtotalAfterDiscount * (form.getValues("taxPercent") / 100);
+    const taxAmount = subtotalAfterDiscount * taxPercent;
     const grandTotal = subtotalAfterDiscount + taxAmount;
 
     form.setValue("subtotal", subtotal);
     form.setValue("discountAmount", discountAmount);
     form.setValue("taxAmount", taxAmount);
     form.setValue("grandTotal", grandTotal);
-
-    // Update individual item totals
-    items.forEach((item, index) => {
-      const itemTotal = item.quantity * item.unitPrice * (1 - item.discount / 100);
-      form.setValue(`items.${index}.total`, itemTotal);
-    });
   };
 
   // Mutations
@@ -260,6 +286,8 @@ export default function Sales() {
       quantity: 1,
       unit: "ชิ้น",
       unitPrice: 0,
+      priceIncludesVat: false,
+      discountType: "percent" as const,
       discount: 0,
       total: 0
     });
@@ -287,6 +315,8 @@ export default function Sales() {
         quantity: 1,
         unit: "ชิ้น",
         unitPrice: 0,
+        priceIncludesVat: false,
+        discountType: "percent" as const,
         discount: 0,
         total: 0
       }]
@@ -378,6 +408,50 @@ export default function Sales() {
                             <SelectItem value="rejected">ปฏิเสธ</SelectItem>
                           </SelectContent>
                         </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="projectName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ชื่อโปรเจค</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ระบุชื่อโปรเจค" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="date"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>วันที่ *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={form.control}
+                    name="validUntil"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>วันหมดอายุ *</FormLabel>
+                        <FormControl>
+                          <Input type="date" {...field} />
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -560,16 +634,69 @@ export default function Sales() {
 
                               <FormField
                                 control={form.control}
+                                name={`items.${index}.priceIncludesVat`}
+                                render={({ field }) => (
+                                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                                    <div className="space-y-0.5">
+                                      <FormLabel className="text-sm">ราคารวม VAT</FormLabel>
+                                    </div>
+                                    <FormControl>
+                                      <input
+                                        type="checkbox"
+                                        checked={field.value}
+                                        onChange={(e) => {
+                                          field.onChange(e.target.checked);
+                                          calculateTotals();
+                                        }}
+                                        className="h-4 w-4"
+                                      />
+                                    </FormControl>
+                                  </FormItem>
+                                )}
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-3">
+                              <FormField
+                                control={form.control}
+                                name={`items.${index}.discountType`}
+                                render={({ field }) => (
+                                  <FormItem>
+                                    <FormLabel>ประเภทส่วนลด</FormLabel>
+                                    <Select onValueChange={(value) => {
+                                      field.onChange(value);
+                                      form.setValue(`items.${index}.discount`, 0);
+                                      calculateTotals();
+                                    }} value={field.value}>
+                                      <FormControl>
+                                        <SelectTrigger>
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                      </FormControl>
+                                      <SelectContent>
+                                        <SelectItem value="percent">เปอร์เซ็นต์ (%)</SelectItem>
+                                        <SelectItem value="amount">จำนวนเงิน (฿)</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                  </FormItem>
+                                )}
+                              />
+
+                              <FormField
+                                control={form.control}
                                 name={`items.${index}.discount`}
                                 render={({ field }) => (
                                   <FormItem>
-                                    <FormLabel>ส่วนลด (%)</FormLabel>
+                                    <FormLabel>
+                                      ส่วนลด {form.watch(`items.${index}.discountType`) === "percent" ? "(%)" : "(฿)"}
+                                    </FormLabel>
                                     <FormControl>
                                       <Input
                                         type="number"
                                         step="0.01"
                                         min="0"
-                                        max="100"
+                                        max={form.watch(`items.${index}.discountType`) === "percent" ? "100" : undefined}
                                         {...field}
                                         onChange={(e) => {
                                           field.onChange(parseFloat(e.target.value) || 0);
@@ -581,16 +708,18 @@ export default function Sales() {
                                   </FormItem>
                                 )}
                               />
+
+                              <div className="flex items-end">
+                                <div className="text-right w-full">
+                                  <span className="text-sm text-gray-500">รวม: </span>
+                                  <span className="font-medium">
+                                    ฿{(form.watch(`items.${index}.total`) || 0).toFixed(2)}
+                                  </span>
+                                </div>
+                              </div>
                             </div>
 
-                            <div className="flex justify-between items-center pt-2">
-                              <div className="text-right">
-                                <span className="text-sm text-gray-500">รวม: </span>
-                                <span className="font-medium">
-                                  ฿{form.watch(`items.${index}.total`)?.toFixed(2) || "0.00"}
-                                </span>
-                              </div>
-                              
+                            <div className="flex justify-end items-center pt-2">
                               {fields.length > 1 && (
                                 <Button
                                   type="button"
