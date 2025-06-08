@@ -1,32 +1,142 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Package, AlertTriangle, CheckCircle, Wrench, Box, Archive } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Plus, Package, AlertTriangle, CheckCircle, Wrench, Box, Archive, Edit, Trash2 } from "lucide-react";
+import { insertProductSchema, type Product } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
 
-interface Product {
-  id: number;
-  name: string;
-  description?: string;
-  sku: string;
-  type: "service" | "non_stock_product" | "stock_product";
-  price?: number;
-  cost?: number;
-  category?: string;
-  unit: string;
-  currentStock?: number;
-  minStock?: number;
-  maxStock?: number;
-  location?: string;
-  isActive: boolean;
-}
+// Remove duplicate interface, using the one from schema instead
 
 export default function Inventory() {
   const { t } = useLanguage();
+  const queryClient = useQueryClient();
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  
   const { data: products, isLoading } = useQuery<Product[]>({
     queryKey: ["/api/inventory"]
   });
+
+  const form = useForm({
+    resolver: zodResolver(insertProductSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      sku: "",
+      type: "service",
+      price: "0",
+      cost: "0",
+      category: "",
+      unit: "ชิ้น",
+      currentStock: 0,
+      minStock: 0,
+      maxStock: 0,
+      location: "",
+      isActive: true,
+    },
+  });
+
+  const createMutation = useMutation({
+    mutationFn: async (data: any) => {
+      await apiRequest("/api/inventory", "POST", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setIsDialogOpen(false);
+      form.reset();
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: any }) => {
+      await apiRequest(`/api/inventory/${id}`, "PATCH", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+      setIsDialogOpen(false);
+      setEditingProduct(null);
+      form.reset();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: number) => {
+      await apiRequest(`/api/inventory/${id}`, "DELETE");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inventory"] });
+    },
+  });
+
+  const handleSubmit = (data: any) => {
+    if (editingProduct) {
+      updateMutation.mutate({ id: editingProduct.id, data });
+    } else {
+      createMutation.mutate(data);
+    }
+  };
+
+  const handleEdit = (product: Product) => {
+    setEditingProduct(product);
+    form.reset({
+      name: product.name,
+      description: product.description || "",
+      sku: product.sku,
+      type: product.type,
+      price: typeof product.price === 'string' ? product.price : product.price?.toString() || "0",
+      cost: typeof product.cost === 'string' ? product.cost : product.cost?.toString() || "0",
+      category: product.category || "",
+      unit: product.unit,
+      currentStock: product.currentStock || 0,
+      minStock: product.minStock || 0,
+      maxStock: product.maxStock || 0,
+      location: product.location || "",
+      isActive: product.isActive,
+    });
+    setIsDialogOpen(true);
+  };
+
+  const handleDelete = (id: number) => {
+    const productToDelete = products?.find(p => p.id === id);
+    const productName = productToDelete?.name || 'สินค้า/บริการ';
+    
+    const confirmDelete = window.confirm(
+      `คุณต้องการลบ "${productName}" หรือไม่?\n\nการลบนี้ไม่สามารถย้อนกลับได้`
+    );
+    
+    if (confirmDelete) {
+      deleteMutation.mutate(id);
+    }
+  };
+
+  const resetForm = () => {
+    setEditingProduct(null);
+    form.reset({
+      name: "",
+      description: "",
+      sku: "",
+      type: "service" as const,
+      price: 0,
+      cost: 0,
+      category: "",
+      unit: "ชิ้น",
+      currentStock: 0,
+      minStock: 0,
+      maxStock: 0,
+      location: "",
+      isActive: true,
+    });
+  };
 
   const getStockStatus = (product: Product) => {
     if (product.type !== "stock_product") return "not_tracked";
@@ -126,10 +236,268 @@ export default function Inventory() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">{t("nav.inventory")}</h1>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          เพิ่มสินค้า/บริการใหม่
-        </Button>
+        <Dialog open={isDialogOpen} onOpenChange={(open) => {
+          setIsDialogOpen(open);
+          if (!open) resetForm();
+        }}>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              เพิ่มสินค้า/บริการใหม่
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {editingProduct ? "แก้ไขสินค้า/บริการ" : "เพิ่มสินค้า/บริการใหม่"}
+              </DialogTitle>
+              <DialogDescription>
+                กรุณากรอกข้อมูลสินค้าหรือบริการ
+              </DialogDescription>
+            </DialogHeader>
+            
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ชื่อสินค้า/บริการ *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="กรอกชื่อสินค้าหรือบริการ" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="sku"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>รหัสสินค้า (SKU) *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="เช่น PRD001" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>รายละเอียด</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="รายละเอียดของสินค้าหรือบริการ" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ประเภท *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกประเภท" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="service">บริการ</SelectItem>
+                            <SelectItem value="non_stock_product">สินค้าไม่นับสต็อก</SelectItem>
+                            <SelectItem value="stock_product">สินค้านับสต็อก</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>หน่วย *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="เช่น ชิ้น, กิโลกรัม, ชั่วโมง" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ราคาขาย (บาท)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="cost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ต้นทุน (บาท)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            placeholder="0.00"
+                            {...field}
+                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>หมวดหมู่</FormLabel>
+                      <FormControl>
+                        <Input placeholder="เช่น อิเล็กทรอนิกส์, เสื้อผ้า, บริการทำความสะอาด" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Stock fields only for stock products */}
+                {form.watch("type") === "stock_product" && (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="currentStock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>สต็อกปัจจุบัน</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="minStock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>สต็อกขั้นต่ำ</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="maxStock"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>สต็อกสูงสุด</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                placeholder="0"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+
+                    <FormField
+                      control={form.control}
+                      name="location"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ตำแหน่งจัดเก็บ</FormLabel>
+                          <FormControl>
+                            <Input placeholder="เช่น คลังสินค้า A ชั้น 2" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </>
+                )}
+
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsDialogOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    ยกเลิก
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={createMutation.isPending || updateMutation.isPending}
+                  >
+                    {createMutation.isPending || updateMutation.isPending ? "กำลังบันทึก..." : 
+                     editingProduct ? "อัพเดท" : "บันทึก"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Summary Cards */}
