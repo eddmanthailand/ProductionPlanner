@@ -778,56 +778,71 @@ export default function OrganizationChart() {
                         </div>
 
                         {/* Employee Section */}
-                        <div className="ml-4 mt-3 space-y-2">
-                          {getEmployeesByTeam(team.id).map((employee) => (
-                            <div key={employee.id} className="border-l-2 border-gray-200 pl-4 bg-gray-25 rounded p-3">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <div className="text-sm font-medium text-gray-700">
-                                    จำนวน: {employee.count} คน
-                                  </div>
-                                  <div className="text-xs text-gray-600">
-                                    ค่าแรงเฉลี่ย: {employee.averageWage} บาท/คน
-                                  </div>
-                                  <div className="text-xs text-gray-600">
-                                    Overhead: {employee.overheadPercentage}% | Management: {employee.managementPercentage}%
-                                  </div>
-                                  {employee.description && (
-                                    <div className="text-xs text-gray-500">{employee.description}</div>
-                                  )}
-                                </div>
-                                <div className="flex gap-1">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEditEmployee(employee)}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <Edit2 className="h-3 w-3" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDeleteEmployee(employee.id)}
-                                    className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
+                        <div className="mt-3 border-t pt-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <h5 className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                              <Users className="h-4 w-4" />
+                              พนักงานในทีม ({getEmployeesByTeam(team.id).length})
+                            </h5>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleAddEmployee(team.id)}
+                              className="border-blue-300 text-blue-600 hover:bg-blue-50 hover:text-blue-700 h-7 px-3"
+                            >
+                              <UserPlus className="h-3 w-3 mr-1" />
+                              เพิ่มพนักงาน
+                            </Button>
+                          </div>
                           
-                          {/* Add Employee Button */}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleAddEmployee(team.id)}
-                            className="text-blue-600 hover:text-blue-700 h-8"
-                          >
-                            <UserPlus className="h-4 w-4 mr-2" />
-                            เพิ่มพนักงาน
-                          </Button>
+                          <div className="space-y-2">
+                            {getEmployeesByTeam(team.id).length > 0 ? (
+                              getEmployeesByTeam(team.id).map((employee) => (
+                                <div key={employee.id} className="border rounded p-3 bg-blue-50/30">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="text-sm font-medium text-gray-800">
+                                        จำนวน: {employee.count} คน
+                                      </div>
+                                      <div className="text-xs text-gray-600 mt-1">
+                                        ค่าแรงเฉลี่ย: {employee.averageWage} บาท/คน
+                                      </div>
+                                      <div className="text-xs text-gray-600">
+                                        Overhead: {employee.overheadPercentage}% | Management: {employee.managementPercentage}%
+                                      </div>
+                                      {employee.description && (
+                                        <div className="text-xs text-gray-500 mt-1 italic">{employee.description}</div>
+                                      )}
+                                    </div>
+                                    <div className="flex gap-1 ml-3">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleEditEmployee(employee)}
+                                        className="h-6 w-6 p-0 hover:bg-blue-100"
+                                      >
+                                        <Edit2 className="h-3 w-3" />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => handleDeleteEmployee(employee.id)}
+                                        className="h-6 w-6 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                      >
+                                        <Trash2 className="h-3 w-3" />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="text-center py-4 text-gray-500 text-sm border border-dashed rounded">
+                                ยังไม่มีข้อมูลพนักงานในทีมนี้
+                                <br />
+                                คลิกปุ่ม "เพิ่มพนักงาน" เพื่อเริ่มต้น
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
