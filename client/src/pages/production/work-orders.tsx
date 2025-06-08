@@ -288,9 +288,13 @@ export default function WorkOrders() {
 
   // Filter work orders
   const filteredWorkOrders = workOrders.filter(order => {
-    const matchesSearch = order.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.customerName.toLowerCase().includes(searchTerm.toLowerCase());
+    const orderNumber = order.orderNumber || "";
+    const title = order.title || "";
+    const customerName = order.customerName || "";
+    
+    const matchesSearch = orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customerName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
