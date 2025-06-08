@@ -220,10 +220,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Products and Services routes (replacing inventory)
   app.get("/api/inventory", async (req: any, res) => {
     try {
+      console.log("API: Inventory endpoint called");
+      console.log("API: Fetching products from database...");
       const products = await storage.getProducts('550e8400-e29b-41d4-a716-446655440000');
+      console.log("API: Sending response with", products.length, "products");
       res.json(products);
     } catch (error) {
+      console.error("API: Error fetching products:", error);
       res.status(500).json({ message: "Failed to fetch products" });
+    }
+  });
+
+  app.post("/api/inventory", async (req: any, res) => {
+    try {
+      console.log("API: Creating new product...");
+      const validatedData = insertProductSchema.parse(req.body);
+      const productData = { 
+        ...validatedData, 
+        tenantId: '550e8400-e29b-41d4-a716-446655440000',
+        price: validatedData.price ? validatedData.price.toString() : null,
+        cost: validatedData.cost ? validatedData.cost.toString() : null
+      };
+      
+      const product = await storage.createProduct(productData);
+      console.log("API: Product created successfully:", product.id);
+      res.status(201).json(product);
+    } catch (error) {
+      console.error("API: Error creating product:", error);
+      res.status(400).json({ message: "Failed to create product", error });
+    }
+  });
+
+  app.patch("/api/inventory/:id", async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      console.log("API: Updating product:", productId);
+      
+      const validatedData = insertProductSchema.partial().parse(req.body);
+      const updateData = {
+        ...validatedData,
+        price: validatedData.price ? validatedData.price.toString() : undefined,
+        cost: validatedData.cost ? validatedData.cost.toString() : undefined
+      };
+      
+      const product = await storage.updateProduct(productId, updateData, '550e8400-e29b-41d4-a716-446655440000');
+      if (!product) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      console.log("API: Product updated successfully");
+      res.json(product);
+    } catch (error) {
+      console.error("API: Error updating product:", error);
+      res.status(400).json({ message: "Failed to update product", error });
+    }
+  });
+
+  app.delete("/api/inventory/:id", async (req: any, res) => {
+    try {
+      const productId = parseInt(req.params.id);
+      console.log("API: Deleting product:", productId);
+      
+      const success = await storage.deleteProduct(productId, '550e8400-e29b-41d4-a716-446655440000');
+      if (!success) {
+        return res.status(404).json({ message: "Product not found" });
+      }
+      
+      console.log("API: Product deleted successfully");
+      res.status(204).send();
+    } catch (error) {
+      console.error("API: Error deleting product:", error);
+      res.status(500).json({ message: "Failed to delete product" });
     }
   });
 

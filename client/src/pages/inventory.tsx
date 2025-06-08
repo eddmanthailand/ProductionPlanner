@@ -93,8 +93,8 @@ export default function Inventory() {
       description: product.description || "",
       sku: product.sku,
       type: product.type,
-      price: typeof product.price === 'string' ? product.price : product.price?.toString() || "0",
-      cost: typeof product.cost === 'string' ? product.cost : product.cost?.toString() || "0",
+      price: String(product.price || 0),
+      cost: String(product.cost || 0),
       category: product.category || "",
       unit: product.unit,
       currentStock: product.currentStock || 0,
@@ -125,9 +125,9 @@ export default function Inventory() {
       name: "",
       description: "",
       sku: "",
-      type: "service" as const,
-      price: 0,
-      cost: 0,
+      type: "service",
+      price: "0",
+      cost: "0",
       category: "",
       unit: "ชิ้น",
       currentStock: 0,
@@ -354,7 +354,7 @@ export default function Inventory() {
                             step="0.01"
                             placeholder="0.00"
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -374,7 +374,7 @@ export default function Inventory() {
                             step="0.01"
                             placeholder="0.00"
                             {...field}
-                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                            onChange={(e) => field.onChange(e.target.value)}
                           />
                         </FormControl>
                         <FormMessage />
@@ -570,6 +570,7 @@ export default function Inventory() {
                     <th className="text-left p-3">ราคา</th>
                     <th className="text-left p-3">สต็อกคงเหลือ</th>
                     <th className="text-left p-3">สถานะ</th>
+                    <th className="text-left p-3">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -608,6 +609,25 @@ export default function Inventory() {
                             {getStatusIcon(status)}
                             <span>{getStatusText(status)}</span>
                           </Badge>
+                        </td>
+                        <td className="p-3">
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleEdit(product)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(product.id)}
+                              className="text-red-600 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );
