@@ -594,7 +594,7 @@ export default function Sales() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {!quotations || quotations.length === 0 ? (
+          {!quotations || !Array.isArray(quotations) || quotations.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               ไม่มีใบเสนอราคา
             </div>
@@ -612,7 +612,7 @@ export default function Sales() {
                   </tr>
                 </thead>
                 <tbody>
-                  {quotations.map((quotation: any) => {
+                  {(Array.isArray(quotations) ? quotations : []).map((quotation: any) => {
                     const customer = customers.find(c => c.id === quotation.customerId);
                     return (
                       <tr key={quotation.id} className="border-b hover:bg-gray-50">
