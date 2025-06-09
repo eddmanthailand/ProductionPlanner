@@ -773,61 +773,149 @@ export default function WorkOrderForm() {
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                          <Label>ชื่อสินค้า/งาน</Label>
+                          <Label>ชื่อสินค้า/งาน *</Label>
                           <Input
-                            value={item.productName || ""}
-                            onChange={(e) => handleItemChange(index, 'productName', e.target.value)}
+                            value={subJob.productName || ""}
+                            onChange={(e) => handleSubJobChange(index, 'productName', e.target.value)}
                             placeholder="ชื่อสินค้าหรืองาน"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>จำนวน</Label>
+                          <Label>แผนก *</Label>
+                          <Select 
+                            value={subJob.departmentId} 
+                            onValueChange={(value) => {
+                              handleSubJobChange(index, 'departmentId', value);
+                              // Reset team and work step when department changes
+                              handleSubJobChange(index, 'teamId', '');
+                              handleSubJobChange(index, 'workStepId', '');
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกแผนก" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {departments.map((dept) => (
+                                <SelectItem key={dept.id} value={dept.id}>
+                                  {dept.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>ทีม *</Label>
+                          <Select 
+                            value={subJob.teamId} 
+                            onValueChange={(value) => handleSubJobChange(index, 'teamId', value)}
+                            disabled={!subJob.departmentId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกทีม" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {teams
+                                .filter(team => team.departmentId === subJob.departmentId)
+                                .map((team) => (
+                                <SelectItem key={team.id} value={team.id}>
+                                  {team.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>ขั้นตอน *</Label>
+                          <Select 
+                            value={subJob.workStepId} 
+                            onValueChange={(value) => handleSubJobChange(index, 'workStepId', value)}
+                            disabled={!subJob.departmentId}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกขั้นตอน" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {workSteps
+                                .filter(step => step.departmentId === subJob.departmentId)
+                                .map((step) => (
+                                <SelectItem key={step.id} value={step.id.toString()}>
+                                  {step.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>สี *</Label>
+                          <Select 
+                            value={subJob.colorId} 
+                            onValueChange={(value) => handleSubJobChange(index, 'colorId', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกสี" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {colors.map((color) => (
+                                <SelectItem key={color.id} value={color.id.toString()}>
+                                  {color.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>ไซส์ *</Label>
+                          <Select 
+                            value={subJob.sizeId} 
+                            onValueChange={(value) => handleSubJobChange(index, 'sizeId', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกไซส์" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sizes.map((size) => (
+                                <SelectItem key={size.id} value={size.id.toString()}>
+                                  {size.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label>จำนวน *</Label>
                           <Input
                             type="number"
-                            value={item.quantity}
-                            onChange={(e) => handleItemChange(index, 'quantity', parseInt(e.target.value) || 0)}
+                            value={subJob.quantity}
+                            onChange={(e) => handleSubJobChange(index, 'quantity', parseInt(e.target.value) || 0)}
                             min="1"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>ราคาต่อหน่วย (บาท)</Label>
+                          <Label>ค่าผลิต (บาท/หน่วย) *</Label>
                           <Input
                             type="number"
-                            value={item.unitPrice}
-                            onChange={(e) => handleItemChange(index, 'unitPrice', parseFloat(e.target.value) || 0)}
+                            value={subJob.productionCost}
+                            onChange={(e) => handleSubJobChange(index, 'productionCost', parseFloat(e.target.value) || 0)}
                             min="0"
                             step="0.01"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label>ราคารวม (บาท)</Label>
+                          <Label>ต้นทุนรวม (บาท)</Label>
                           <Input
-                            value={item.totalPrice.toLocaleString()}
+                            value={subJob.totalCost.toLocaleString()}
                             readOnly
                             className="bg-gray-100"
-                          />
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2">
-                          <Label>รายละเอียด</Label>
-                          <Input
-                            value={item.description || ""}
-                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                            placeholder="รายละเอียดเพิ่มเติม"
-                          />
-                        </div>
-
-                        <div className="md:col-span-2 space-y-2">
-                          <Label>ข้อกำหนดพิเศษ</Label>
-                          <Input
-                            value={item.specifications || ""}
-                            onChange={(e) => handleItemChange(index, 'specifications', e.target.value)}
-                            placeholder="ข้อกำหนดหรือคุณสมบัติพิเศษ"
                           />
                         </div>
                       </div>
@@ -880,8 +968,8 @@ export default function WorkOrderForm() {
                   )}
 
                   <div className="flex justify-between">
-                    <span className="text-gray-600">จำนวนรายการ:</span>
-                    <span className="font-medium">{workOrderItems.length} รายการ</span>
+                    <span className="text-gray-600">จำนวน Sub-jobs:</span>
+                    <span className="font-medium">{subJobs.length} รายการ</span>
                   </div>
 
                   <Separator />
