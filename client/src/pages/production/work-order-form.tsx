@@ -16,47 +16,16 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-
-interface Customer {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  taxId: string;
-  address: string;
-  companyName: string;
-}
-
-interface Team {
-  id: string;
-  name: string;
-  leader: string;
-  status: string;
-}
-
-interface WorkType {
-  id: number;
-  name: string;
-  code: string;
-  description: string;
-  sortOrder: number;
-  isActive: boolean;
-}
-
-interface Quotation {
-  id: number;
-  quotationNumber: string;
-  customerId: number;
-  customerName?: string;
-  title?: string;
-  projectName?: string;
-  description?: string | null;
-  grandTotal: string;
-  status: string;
-  validUntil: string;
-  createdAt: string;
-  items?: QuotationItem[];
-}
+import type { 
+  Customer, 
+  Team, 
+  Quotation, 
+  WorkType, 
+  Department, 
+  WorkStep, 
+  Color, 
+  Size 
+} from "@shared/schema";
 
 interface QuotationItem {
   id: number;

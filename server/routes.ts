@@ -1661,9 +1661,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         `INSERT INTO work_orders (
           id, order_number, quotation_id, customer_id, customer_name, customer_tax_id,
           customer_address, customer_phone, customer_email, title, description,
-          total_amount, status, priority, start_date, due_date, assigned_team_id,
-          notes, tenant_id
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+          total_amount, status, priority, delivery_date, notes, tenant_id, work_type_id
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
         RETURNING *`,
         [
           `wo_${Date.now()}`, // Generate unique ID
@@ -1680,11 +1679,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
           totalAmount,
           "draft", // Default status
           workOrderData.priority || 3,
-          workOrderData.startDate || null,
-          workOrderData.dueDate || null,
-          workOrderData.assignedTeamId || null,
+          workOrderData.deliveryDate || null,
           workOrderData.notes || null,
-          tenantId
+          tenantId,
+          workOrderData.workTypeId || null
         ]
       );
       
