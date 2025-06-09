@@ -427,6 +427,7 @@ export const workOrders = pgTable("work_orders", {
   status: text("status").notNull().default("draft"), // draft, approved, in_progress, completed, cancelled
   priority: integer("priority").notNull().default(3), // 1=highest, 5=lowest
   workTypeId: integer("work_type_id").references(() => workTypes.id),
+  startDate: date("start_date"),
   deliveryDate: date("delivery_date"),
   completedDate: date("completed_date"),
   notes: text("notes"),
