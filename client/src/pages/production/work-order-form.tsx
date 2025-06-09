@@ -210,14 +210,22 @@ export default function WorkOrderForm() {
       ...prev,
       quotationId: quotation.id.toString(),
       title: (quotation as any).title || (quotation as any).projectName || "",
-      description: quotation.description || "",
+      description: (quotation as any).notes || "",
       customerId: quotation.customerId.toString()
     }));
     
-    // Auto-select customer if quotation has customer data
+    // Auto-select customer from quotation's customer relation
     if ((quotation as any).customer) {
-      setSelectedCustomer((quotation as any).customer);
-      setCustomerSearchValue((quotation as any).customer.name);
+      const customer = (quotation as any).customer;
+      setSelectedCustomer(customer);
+      setCustomerSearchValue(`${customer.name} - ${customer.companyName || customer.name}`);
+    } else {
+      // Fallback: find customer by ID from customers list
+      const customer = customers.find(c => c.id === quotation.customerId);
+      if (customer) {
+        setSelectedCustomer(customer);
+        setCustomerSearchValue(`${customer.name} - ${customer.companyName || customer.name}`);
+      }
     }
     
     setQuotationDialogOpen(false);
@@ -314,10 +322,10 @@ export default function WorkOrderForm() {
   };
 
   const handleSubmit = () => {
-    if (!formData.title || !formData.customerId || !formData.deliveryDate) {
+    if (!formData.title || !formData.customerId) {
       toast({
         title: "ข้อผิดพลาด",
-        description: "กรุณากรอกชื่องาน เลือกลูกค้า และกำหนดวันส่งสินค้า",
+        description: "กรุณากรอกชื่องานและเลือกลูกค้า",
         variant: "destructive",
       });
       return;
@@ -468,7 +476,7 @@ export default function WorkOrderForm() {
                                       ฿{Number(quotation.grandTotal).toLocaleString()}
                                     </TableCell>
                                     <TableCell className="text-center">
-                                      <Badge variant="success" className="bg-green-100 text-green-800">
+                                      <Badge variant="default" className="bg-green-100 text-green-800">
                                         อนุมัติแล้ว
                                       </Badge>
                                     </TableCell>
