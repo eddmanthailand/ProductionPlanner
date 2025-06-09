@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Settings, Plus, Edit2, Trash2, Clock, Users, CheckCircle } from "lucide-react";
+import { Settings, Plus, Edit2, Trash2, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -28,7 +28,7 @@ interface WorkStep {
   name: string;
   department_id: string;
   description?: string;
-  duration: number; // in minutes
+  duration: number;
   required_skills: string[];
   order: number;
   created_at: string;
@@ -364,14 +364,9 @@ export default function WorkStepsPage() {
                                 {workStep.required_skills?.[0] === 'expert' && 'ผู้เชี่ยวชาญ'}
                               </Badge>
                               
-                              <Badge variant="default">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                ใช้งาน
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                ลำดับ: {workStep.order}
                               </Badge>
-                            </div>
-
-                            <div className="text-xs text-gray-500 flex justify-between">
-                              <span>ลำดับ: {workStep.order}</span>
                             </div>
                           </div>
                         </div>
@@ -403,8 +398,8 @@ export default function WorkStepsPage() {
             <div>
               <Label>แผนก</Label>
               <Select 
-                value={newWorkStep.departmentId} 
-                onValueChange={(value) => setNewWorkStep({ ...newWorkStep, departmentId: value })}
+                value={newWorkStep.department_id} 
+                onValueChange={(value) => setNewWorkStep({ ...newWorkStep, department_id: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="เลือกแผนก" />
@@ -434,8 +429,8 @@ export default function WorkStepsPage() {
                 <Label>เวลาโดยประมาณ (นาที)</Label>
                 <Input
                   type="number"
-                  value={newWorkStep.estimatedDuration}
-                  onChange={(e) => setNewWorkStep({ ...newWorkStep, estimatedDuration: parseInt(e.target.value) || 0 })}
+                  value={newWorkStep.duration}
+                  onChange={(e) => setNewWorkStep({ ...newWorkStep, duration: parseInt(e.target.value) || 0 })}
                   min="1"
                 />
               </div>
@@ -444,8 +439,8 @@ export default function WorkStepsPage() {
                 <Label>ลำดับ</Label>
                 <Input
                   type="number"
-                  value={newWorkStep.sortOrder}
-                  onChange={(e) => setNewWorkStep({ ...newWorkStep, sortOrder: parseInt(e.target.value) || 1 })}
+                  value={newWorkStep.order}
+                  onChange={(e) => setNewWorkStep({ ...newWorkStep, order: parseInt(e.target.value) || 1 })}
                   min="1"
                 />
               </div>
@@ -454,8 +449,8 @@ export default function WorkStepsPage() {
             <div>
               <Label>ระดับทักษะที่ต้องการ</Label>
               <Select 
-                value={newWorkStep.skillRequired} 
-                onValueChange={(value) => setNewWorkStep({ ...newWorkStep, skillRequired: value })}
+                value={newWorkStep.required_skills[0]} 
+                onValueChange={(value) => setNewWorkStep({ ...newWorkStep, required_skills: [value] })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -478,7 +473,7 @@ export default function WorkStepsPage() {
               </Button>
               <Button 
                 onClick={handleCreateWorkStep}
-                disabled={!newWorkStep.name || !newWorkStep.departmentId}
+                disabled={!newWorkStep.name || !newWorkStep.department_id}
               >
                 เพิ่มขั้นตอน
               </Button>
@@ -517,8 +512,8 @@ export default function WorkStepsPage() {
                   <Label>เวลาโดยประมาณ (นาที)</Label>
                   <Input
                     type="number"
-                    value={editingWorkStep.estimatedDuration}
-                    onChange={(e) => setEditingWorkStep({ ...editingWorkStep, estimatedDuration: parseInt(e.target.value) || 0 })}
+                    value={editingWorkStep.duration}
+                    onChange={(e) => setEditingWorkStep({ ...editingWorkStep, duration: parseInt(e.target.value) || 0 })}
                     min="1"
                   />
                 </div>
@@ -527,8 +522,8 @@ export default function WorkStepsPage() {
                   <Label>ลำดับ</Label>
                   <Input
                     type="number"
-                    value={editingWorkStep.sortOrder}
-                    onChange={(e) => setEditingWorkStep({ ...editingWorkStep, sortOrder: parseInt(e.target.value) || 1 })}
+                    value={editingWorkStep.order}
+                    onChange={(e) => setEditingWorkStep({ ...editingWorkStep, order: parseInt(e.target.value) || 1 })}
                     min="1"
                   />
                 </div>
@@ -537,8 +532,8 @@ export default function WorkStepsPage() {
               <div>
                 <Label>ระดับทักษะที่ต้องการ</Label>
                 <Select 
-                  value={editingWorkStep.skillRequired} 
-                  onValueChange={(value) => setEditingWorkStep({ ...editingWorkStep, skillRequired: value })}
+                  value={editingWorkStep.required_skills?.[0] || 'basic'} 
+                  onValueChange={(value) => setEditingWorkStep({ ...editingWorkStep, required_skills: [value] })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -550,17 +545,6 @@ export default function WorkStepsPage() {
                     <SelectItem value="expert">ผู้เชี่ยวชาญ</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="isActive"
-                  checked={editingWorkStep.isActive}
-                  onChange={(e) => setEditingWorkStep({ ...editingWorkStep, isActive: e.target.checked })}
-                  className="rounded"
-                />
-                <Label htmlFor="isActive">ใช้งานขั้นตอนนี้</Label>
               </div>
 
               <div className="flex justify-end space-x-2 pt-4">
