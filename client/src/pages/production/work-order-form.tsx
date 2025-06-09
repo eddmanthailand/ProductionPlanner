@@ -1056,7 +1056,10 @@ export default function WorkOrderForm() {
                     disabled={createWorkOrderMutation.isPending}
                   >
                     <Save className="h-5 w-5 mr-2" />
-                    {createWorkOrderMutation.isPending ? "กำลังบันทึก..." : "บันทึกใบสั่งงาน"}
+                    {createWorkOrderMutation.isPending 
+                      ? (isEditMode ? "กำลังแก้ไข..." : "กำลังบันทึก...") 
+                      : (isEditMode ? "แก้ไขใบสั่งงาน" : "บันทึกใบสั่งงาน")
+                    }
                   </Button>
 
                   <Button 
