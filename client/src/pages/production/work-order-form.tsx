@@ -65,6 +65,14 @@ interface QuotationItem {
   unitPrice: number;
   total: number;
   createdAt: string;
+  product?: {
+    id: number;
+    name: string;
+    description: string;
+    sku: string;
+    type: string;
+    unit: string;
+  };
 }
 
 interface WorkOrderItem {
@@ -226,9 +234,16 @@ export default function WorkOrderForm() {
       }));
 
       // Use items from the quotation object if available
-      if ((quotation as any).items && Array.isArray((quotation as any).items)) {
-        console.log("Using quotation items from object:", (quotation as any).items);
-        setQuotationItems((quotation as any).items);
+      const quotationWithItems = quotation as any;
+      if (quotationWithItems.items && Array.isArray(quotationWithItems.items)) {
+        console.log("Using quotation items from object:", quotationWithItems.items);
+        console.log("Setting quotation items count:", quotationWithItems.items.length);
+        setQuotationItems(quotationWithItems.items);
+        
+        // Force a re-render by logging the state after setting
+        setTimeout(() => {
+          console.log("Quotation items after setting:", quotationItems);
+        }, 100);
       } else {
         console.log("No items in quotation object, trying API...");
         // Fallback to API call if items not in object
@@ -505,7 +520,12 @@ export default function WorkOrderForm() {
             </Card>
 
             {/* Quotation Items Display */}
-            {selectedQuotation && quotationItems.length > 0 && (
+            {(() => {
+              console.log("Table render check - selectedQuotation:", selectedQuotation);
+              console.log("Table render check - quotationItems.length:", quotationItems.length);
+              console.log("Table render check - should show:", selectedQuotation && quotationItems.length > 0);
+              return selectedQuotation && quotationItems.length > 0;
+            })() && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -532,10 +552,13 @@ export default function WorkOrderForm() {
                         {quotationItems.map((item, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-medium">
-                              สินค้ารหัส {item.productId}
+                              {item.product?.name || `สินค้ารหัส ${item.productId}`}
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">
-                              รายการสินค้าจากใบเสนอราคา
+                              {item.product?.description || `SKU: ${item.product?.sku || 'N/A'}`}
+                              <div className="text-xs text-gray-500 mt-1">
+                                หน่วย: {item.product?.unit || 'ไม่ระบุ'}
+                              </div>
                             </TableCell>
                             <TableCell className="text-center">
                               {item.quantity.toLocaleString()}
