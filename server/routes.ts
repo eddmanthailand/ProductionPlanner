@@ -1710,10 +1710,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           priority = COALESCE($4, priority),
           start_date = COALESCE($5, start_date),
           delivery_date = COALESCE($6, delivery_date),
-          assigned_team_id = COALESCE($7, assigned_team_id),
-          notes = COALESCE($8, notes),
+          notes = COALESCE($7, notes),
           updated_at = NOW()
-        WHERE id = $9 AND tenant_id = $10
+        WHERE id = $8 AND tenant_id = $9
         RETURNING *`,
         [
           updateData.title,
@@ -1722,7 +1721,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
           updateData.priority,
           updateData.startDate,
           updateData.deliveryDate || updateData.dueDate,
-          updateData.assignedTeamId,
           updateData.notes,
           id,
           tenantId

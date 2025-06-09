@@ -445,14 +445,14 @@ export default function WorkOrders() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed">
               <colgroup>
+                <col className="w-[14%]" />
+                <col className="w-[25%]" />
+                <col className="w-[18%]" />
+                <col className="w-[13%]" />
                 <col className="w-[12%]" />
-                <col className="w-[28%]" />
-                <col className="w-[16%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[12%]" />
-                <col className="w-[6%]" />
-                <col className="w-[2%]" />
+                <col className="w-[10%]" />
+                <col className="w-[8%]" />
+                <col className="w-[0%]" />
               </colgroup>
               <thead className="bg-gray-50 border-b">
                 <tr>
@@ -470,7 +470,7 @@ export default function WorkOrders() {
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <tr key={order.id} className="border-b hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-blue-600 text-sm">{order.orderNumber || `JB${order.id.slice(-6)}`}</td>
+                      <td className="px-3 py-2 font-medium text-blue-600 text-sm">{order.orderNumber}</td>
                       <td className="px-3 py-2">
                         <div>
                           <div className="font-medium text-sm">{order.title}</div>
