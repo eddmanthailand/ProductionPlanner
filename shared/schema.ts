@@ -149,6 +149,19 @@ export const sizes = pgTable("sizes", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Work Types table
+export const workTypes = pgTable("work_types", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(), // เช่น เสื้อยืด, กระโปรง, กางเกง
+  code: text("code"), // รหัสประเภทงาน เช่น T-SHIRT, SKIRT, PANTS
+  description: text("description"),
+  sortOrder: integer("sort_order").default(0),
+  isActive: boolean("is_active").default(true),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
 // Quotations table
 export const quotations = pgTable("quotations", {
   id: serial("id").primaryKey(),
@@ -193,6 +206,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
   customers: many(customers),
   colors: many(colors),
   sizes: many(sizes),
+  workTypes: many(workTypes),
   quotations: many(quotations)
 }));
 
@@ -270,6 +284,13 @@ export const colorsRelations = relations(colors, ({ one }) => ({
 export const sizesRelations = relations(sizes, ({ one }) => ({
   tenant: one(tenants, {
     fields: [sizes.tenantId],
+    references: [tenants.id]
+  })
+}));
+
+export const workTypesRelations = relations(workTypes, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [workTypes.tenantId],
     references: [tenants.id]
   })
 }));
@@ -668,6 +689,15 @@ export type InsertColor = z.infer<typeof insertColorSchema>;
 
 export type Size = typeof sizes.$inferSelect;
 export type InsertSize = z.infer<typeof insertSizeSchema>;
+
+export const insertWorkTypeSchema = createInsertSchema(workTypes).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export type WorkType = typeof workTypes.$inferSelect;
+export type InsertWorkType = z.infer<typeof insertWorkTypeSchema>;
 
 export type Quotation = typeof quotations.$inferSelect;
 export type InsertQuotation = z.infer<typeof insertQuotationSchema>;
