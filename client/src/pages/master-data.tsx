@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertColorSchema, insertSizeSchema, type Color, type Size } from "@shared/schema";
+import { insertColorSchema, insertSizeSchema, insertWorkTypeSchema, type Color, type Size, type WorkType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { Plus, Edit, Trash2, Palette, Ruler, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
@@ -24,8 +24,10 @@ export default function MasterData() {
   const [activeTab, setActiveTab] = useState("colors");
   const [isColorDialogOpen, setIsColorDialogOpen] = useState(false);
   const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
+  const [isWorkTypeDialogOpen, setIsWorkTypeDialogOpen] = useState(false);
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [editingSize, setEditingSize] = useState<Size | null>(null);
+  const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
 
   // Queries
   const { data: colors, isLoading: colorsLoading } = useQuery<Color[]>({
@@ -34,6 +36,10 @@ export default function MasterData() {
 
   const { data: sizes, isLoading: sizesLoading } = useQuery<Size[]>({
     queryKey: ["/api/sizes"]
+  });
+
+  const { data: workTypes, isLoading: workTypesLoading } = useQuery<WorkType[]>({
+    queryKey: ["/api/work-types"]
   });
 
   // Forms
@@ -51,6 +57,17 @@ export default function MasterData() {
     resolver: zodResolver(insertSizeSchema.omit({ tenantId: true })),
     defaultValues: {
       name: "",
+      isActive: true
+    }
+  });
+
+  const workTypeForm = useForm({
+    resolver: zodResolver(insertWorkTypeSchema.omit({ tenantId: true })),
+    defaultValues: {
+      name: "",
+      code: "",
+      description: "",
+      sortOrder: 0,
       isActive: true
     }
   });
@@ -111,6 +128,34 @@ export default function MasterData() {
     }
   });
 
+  // Work Type mutations
+  const createWorkTypeMutation = useMutation({
+    mutationFn: (data: any) => apiRequest("/api/work-types", "POST", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-types"] });
+      setIsWorkTypeDialogOpen(false);
+      workTypeForm.reset();
+    }
+  });
+
+  const updateWorkTypeMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) => 
+      apiRequest(`/api/work-types/${id}`, "PUT", data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-types"] });
+      setIsWorkTypeDialogOpen(false);
+      setEditingWorkType(null);
+      workTypeForm.reset();
+    }
+  });
+
+  const deleteWorkTypeMutation = useMutation({
+    mutationFn: (id: number) => apiRequest(`/api/work-types/${id}`, "DELETE"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-types"] });
+    }
+  });
+
   // Handlers
   const handleColorSubmit = (data: any) => {
     if (editingColor) {
@@ -125,6 +170,14 @@ export default function MasterData() {
       updateSizeMutation.mutate({ id: editingSize.id, data });
     } else {
       createSizeMutation.mutate(data);
+    }
+  };
+
+  const handleWorkTypeSubmit = (data: any) => {
+    if (editingWorkType) {
+      updateWorkTypeMutation.mutate({ id: editingWorkType.id, data });
+    } else {
+      createWorkTypeMutation.mutate(data);
     }
   };
 
@@ -154,6 +207,22 @@ export default function MasterData() {
 
   const handleDeleteSize = (id: number) => {
     deleteSizeMutation.mutate(id);
+  };
+
+  const handleEditWorkType = (workType: WorkType) => {
+    setEditingWorkType(workType);
+    workTypeForm.reset({
+      name: workType.name,
+      code: workType.code || "",
+      description: workType.description || "",
+      sortOrder: workType.sortOrder || 0,
+      isActive: workType.isActive
+    });
+    setIsWorkTypeDialogOpen(true);
+  };
+
+  const handleDeleteWorkType = (id: number) => {
+    deleteWorkTypeMutation.mutate(id);
   };
 
   // Handle drag and drop for colors
