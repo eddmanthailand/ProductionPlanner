@@ -328,20 +328,20 @@ export default function WorkOrderForm() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="priority">ลำดับความสำคัญ</Label>
+                    <Label htmlFor="workTypeId">ประเภทงาน</Label>
                     <Select 
-                      value={formData.priority.toString()} 
-                      onValueChange={(value) => handleInputChange('priority', parseInt(value))}
+                      value={formData.workTypeId} 
+                      onValueChange={(value) => handleInputChange('workTypeId', value)}
                     >
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="เลือกประเภทงาน" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="1">1 - สูงสุด</SelectItem>
-                        <SelectItem value="2">2 - สูง</SelectItem>
-                        <SelectItem value="3">3 - ปานกลาง</SelectItem>
-                        <SelectItem value="4">4 - ต่ำ</SelectItem>
-                        <SelectItem value="5">5 - ต่ำสุด</SelectItem>
+                        {workTypes.filter(wt => wt.isActive).map((workType) => (
+                          <SelectItem key={workType.id} value={workType.id.toString()}>
+                            {workType.name} {workType.code && `(${workType.code})`}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -602,10 +602,14 @@ export default function WorkOrderForm() {
                   </div>
                   
                   <div className="flex justify-between">
-                    <span className="text-gray-600">ลำดับความสำคัญ:</span>
-                    <Badge variant={formData.priority <= 2 ? "destructive" : formData.priority === 3 ? "default" : "secondary"}>
-                      ลำดับ {formData.priority}
-                    </Badge>
+                    <span className="text-gray-600">ประเภทงาน:</span>
+                    {formData.workTypeId && workTypes.find(wt => wt.id.toString() === formData.workTypeId) ? (
+                      <Badge variant="default">
+                        {workTypes.find(wt => wt.id.toString() === formData.workTypeId)?.name}
+                      </Badge>
+                    ) : (
+                      <span className="text-gray-400">ยังไม่ได้เลือก</span>
+                    )}
                   </div>
 
                   {selectedCustomer && (
