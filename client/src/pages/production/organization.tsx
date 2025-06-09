@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2, UserPlus, DollarSign } from "lucide-react";
+import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2, UserPlus, DollarSign, Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +45,18 @@ interface Employee {
   updatedAt: string;
 }
 
+interface WorkStep {
+  id: string;
+  name: string;
+  department_id: string;
+  description?: string;
+  duration: number;
+  required_skills: string[];
+  order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function OrganizationChart() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -77,6 +89,20 @@ export default function OrganizationChart() {
     managementPercentage: "",
     description: "",
     status: "active"
+  });
+
+  // Work Steps state
+  const [isAddWorkStepOpen, setIsAddWorkStepOpen] = useState(false);
+  const [isEditWorkStepOpen, setIsEditWorkStepOpen] = useState(false);
+  const [editingWorkStep, setEditingWorkStep] = useState<WorkStep | null>(null);
+  const [expandedDepartments, setExpandedDepartments] = useState<Set<string>>(new Set());
+  const [newWorkStep, setNewWorkStep] = useState({
+    name: "",
+    department_id: "",
+    description: "",
+    duration: 60,
+    required_skills: ["basic"],
+    order: 1
   });
 
   // Fetch departments from API
@@ -121,6 +147,12 @@ export default function OrganizationChart() {
       if (!response.ok) throw new Error("Failed to fetch employees");
       return response.json();
     },
+    refetchOnWindowFocus: false
+  });
+
+  // Fetch work steps from API
+  const { data: workSteps = [], isLoading: workStepsLoading } = useQuery<WorkStep[]>({
+    queryKey: ["/api/work-steps"],
     refetchOnWindowFocus: false
   });
 
@@ -610,6 +642,41 @@ export default function OrganizationChart() {
     return employees.filter(employee => employee.teamId === teamId);
   };
 
+  // Work Steps functions
+  const formatDuration = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours === 0) return `${mins} นาที`;
+    if (mins === 0) return `${hours} ชั่วโมง`;
+    return `${hours} ชม. ${mins} นาที`;
+  };
+
+  const getSkillLevelBadge = (skill: string) => {
+    const colors = {
+      basic: "bg-green-100 text-green-800",
+      intermediate: "bg-yellow-100 text-yellow-800",
+      advanced: "bg-red-100 text-red-800",
+      expert: "bg-purple-100 text-purple-800"
+    };
+    return colors[skill as keyof typeof colors] || "bg-gray-100 text-gray-800";
+  };
+
+  const getWorkStepsForDepartment = (departmentId: string) => {
+    return workSteps.filter(ws => ws.department_id === departmentId).sort((a, b) => a.order - b.order);
+  };
+
+  const toggleDepartmentExpansion = (departmentId: string) => {
+    setExpandedDepartments(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(departmentId)) {
+        newSet.delete(departmentId);
+      } else {
+        newSet.add(departmentId);
+      }
+      return newSet;
+    });
+  };
+
   const totalDepartments = departments.length;
   const totalTeams = teams.length;
   const activeDepartments = departments.filter(dept => dept.status === "active").length;
@@ -749,6 +816,14 @@ export default function OrganizationChart() {
                     <div className="text-sm text-gray-500">{department.location}</div>
                   </div>
                   <div className="flex gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleDepartmentExpansion(department.id)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
