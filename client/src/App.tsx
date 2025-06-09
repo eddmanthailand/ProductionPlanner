@@ -147,6 +147,12 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/production/work-steps">
+        <ProtectedRoute>
+          <WorkSteps />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/production/work-orders">
         <ProtectedRoute>
           <WorkOrders />

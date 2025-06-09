@@ -26,14 +26,13 @@ interface Department {
 interface WorkStep {
   id: string;
   name: string;
-  departmentId: string;
+  department_id: string;
   description?: string;
-  estimatedDuration: number; // in minutes
-  skillRequired: string;
-  sortOrder: number;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  duration: number; // in minutes
+  required_skills: string[];
+  order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Team {
@@ -57,11 +56,11 @@ export default function WorkStepsPage() {
   
   const [newWorkStep, setNewWorkStep] = useState({
     name: "",
-    departmentId: "",
+    department_id: "",
     description: "",
-    estimatedDuration: 60,
-    skillRequired: "basic",
-    sortOrder: 1
+    duration: 60,
+    required_skills: ["basic"],
+    order: 1
   });
 
   // Fetch departments
