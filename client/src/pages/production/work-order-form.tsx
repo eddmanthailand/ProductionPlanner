@@ -224,8 +224,8 @@ export default function WorkOrderForm() {
 
       // Fetch quotation items
       try {
-        const response = await apiRequest(`/api/quotations/${quotationId}/items`, "GET");
-        setQuotationItems(response || []);
+        const items = await apiRequest(`/api/quotations/${quotationId}/items`, "GET");
+        setQuotationItems(Array.isArray(items) ? items : []);
       } catch (error) {
         console.error("Failed to fetch quotation items:", error);
         setQuotationItems([]);
@@ -430,22 +430,42 @@ export default function WorkOrderForm() {
               <CardContent className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="customer">เลือกลูกค้า *</Label>
-                  <Select 
-                    value={formData.customerId} 
-                    onValueChange={(value) => handleInputChange('customerId', value)}
-                    disabled={!!selectedQuotation}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกลูกค้า" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id.toString()}>
-                          {customer.name} - {customer.companyName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={customerSearchOpen}
+                        className="w-full justify-between"
+                        disabled={!!selectedQuotation}
+                      >
+                        {customerSearchValue || "ค้นหาลูกค้า..."}
+                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="ค้นหาลูกค้า..." />
+                        <CommandEmpty>ไม่พบลูกค้า</CommandEmpty>
+                        <CommandGroup>
+                          <CommandList>
+                            {customers.map((customer) => (
+                              <CommandItem
+                                key={customer.id}
+                                value={`${customer.name} ${customer.companyName}`}
+                                onSelect={() => handleCustomerSelect(customer)}
+                              >
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{customer.name}</span>
+                                  <span className="text-sm text-gray-500">{customer.companyName}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandList>
+                        </CommandGroup>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {selectedCustomer && (
@@ -472,6 +492,72 @@ export default function WorkOrderForm() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Quotation Items Display */}
+            {selectedQuotation && quotationItems.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Package className="h-5 w-5" />
+                    <span>รายการสินค้าในใบเสนอราคา</span>
+                    <Badge variant="outline" className="ml-2">
+                      {selectedQuotation.quotationNumber}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>สินค้า/งาน</TableHead>
+                          <TableHead>รายละเอียด</TableHead>
+                          <TableHead className="text-center">จำนวน</TableHead>
+                          <TableHead className="text-right">ราคาต่อหน่วย</TableHead>
+                          <TableHead className="text-right">ราคารวม</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {quotationItems.map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">
+                              {item.productName}
+                            </TableCell>
+                            <TableCell className="text-sm text-gray-600">
+                              {item.description}
+                              {item.specifications && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  ข้อกำหนด: {item.specifications}
+                                </div>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-center">
+                              {item.quantity.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              ฿{item.unitPrice.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-right font-medium">
+                              ฿{item.totalPrice.toLocaleString()}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">
+                        ยอดรวมจากใบเสนอราคา:
+                      </span>
+                      <span className="text-lg font-bold text-blue-600">
+                        ฿{selectedQuotation.grandTotal}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* Schedule & Team */}
             <Card>

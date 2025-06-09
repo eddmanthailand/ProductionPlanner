@@ -646,6 +646,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/quotations/:id/items", async (req: any, res) => {
+    try {
+      const quotationId = parseInt(req.params.id);
+      console.log(`API: Fetching items for quotation ${quotationId}`);
+      
+      // Mock data for demonstration - in a real app this would come from database
+      const mockItems = [
+        {
+          id: 1,
+          quotationId: quotationId,
+          productName: "เสื้อยืดคอกลม",
+          description: "เสื้อยืดผ้าคอตตอน 100% คุณภาพดี",
+          quantity: 100,
+          unitPrice: 150,
+          totalPrice: 15000,
+          specifications: "สีขาว ไซส์ S-XL"
+        },
+        {
+          id: 2,
+          quotationId: quotationId,
+          productName: "กางเกงยีนส์",
+          description: "กางเกงยีนส์ทรงสลิม",
+          quantity: 50,
+          unitPrice: 450,
+          totalPrice: 22500,
+          specifications: "สีน้ำเงิน ไซส์ 28-36"
+        }
+      ];
+      
+      res.json(mockItems);
+    } catch (error) {
+      console.error("Error fetching quotation items:", error);
+      res.status(500).json({ error: "Failed to fetch quotation items" });
+    }
+  });
+
   app.post("/api/quotations", async (req: any, res) => {
     try {
       const tenantId = '550e8400-e29b-41d4-a716-446655440000'; // Default tenant for dev
