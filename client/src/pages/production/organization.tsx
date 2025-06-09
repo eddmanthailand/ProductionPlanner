@@ -104,6 +104,12 @@ export default function OrganizationChart() {
     description: ""
   });
 
+  // Delete confirmation dialog states
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteType, setDeleteType] = useState<'department' | 'team' | 'employee' | 'workstep'>('department');
+  const [deleteTarget, setDeleteTarget] = useState<string>('');
+  const [deleteTargetName, setDeleteTargetName] = useState<string>('');
+
   // Fetch departments from API
   const { data: departments = [], isLoading: departmentsLoading } = useQuery<Department[]>({
     queryKey: ["/api/departments"],
@@ -647,9 +653,11 @@ export default function OrganizationChart() {
   };
 
   const handleDeleteDepartment = (departmentId: string) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบแผนกนี้? ทีมทั้งหมดในแผนกจะถูกลบด้วย")) {
-      deleteDepartmentMutation.mutate(departmentId);
-    }
+    const department = departments.find(d => d.id === departmentId);
+    setDeleteType('department');
+    setDeleteTarget(departmentId);
+    setDeleteTargetName(department?.name || '');
+    setDeleteConfirmOpen(true);
   };
 
   const handleEditTeam = (team: Team) => {
@@ -671,9 +679,11 @@ export default function OrganizationChart() {
   };
 
   const handleDeleteTeam = (teamId: string) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบทีมนี้?")) {
-      deleteTeamMutation.mutate(teamId);
-    }
+    const team = teams.find(t => t.id === teamId);
+    setDeleteType('team');
+    setDeleteTarget(teamId);
+    setDeleteTargetName(team?.name || '');
+    setDeleteConfirmOpen(true);
   };
 
   const handleAddEmployee = (teamId: string) => {
@@ -717,9 +727,11 @@ export default function OrganizationChart() {
   };
 
   const handleDeleteEmployee = (employeeId: string) => {
-    if (confirm("คุณแน่ใจหรือไม่ที่จะลบข้อมูลพนักงานนี้?")) {
-      deleteEmployeeMutation.mutate(employeeId);
-    }
+    const employee = employees.find(e => e.id === employeeId);
+    setDeleteType('employee');
+    setDeleteTarget(employeeId);
+    setDeleteTargetName(`พนักงาน ${employee?.count} คน`);
+    setDeleteConfirmOpen(true);
   };
 
   // Calculate daily cost function
@@ -778,6 +790,27 @@ export default function OrganizationChart() {
       }
       return newSet;
     });
+  };
+
+  // Handle delete confirmation
+  const handleConfirmDelete = () => {
+    switch (deleteType) {
+      case 'department':
+        deleteDepartmentMutation.mutate(deleteTarget);
+        break;
+      case 'team':
+        deleteTeamMutation.mutate(deleteTarget);
+        break;
+      case 'employee':
+        deleteEmployeeMutation.mutate(deleteTarget);
+        break;
+      case 'workstep':
+        deleteWorkStepMutation.mutate(deleteTarget);
+        break;
+    }
+    setDeleteConfirmOpen(false);
+    setDeleteTarget('');
+    setDeleteTargetName('');
   };
 
   const totalDepartments = departments.length;
@@ -994,9 +1027,10 @@ export default function OrganizationChart() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => {
-                                  if (confirm("คุณต้องการลบขั้นตอนงานนี้หรือไม่?")) {
-                                    deleteWorkStepMutation.mutate(workStep.id);
-                                  }
+                                  setDeleteType('workstep');
+                                  setDeleteTarget(workStep.id);
+                                  setDeleteTargetName(workStep.name);
+                                  setDeleteConfirmOpen(true);
                                 }}
                                 className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                               >
@@ -1790,6 +1824,49 @@ export default function OrganizationChart() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-red-600">ยืนยันการลบ</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-gray-700">
+              คุณแน่ใจหรือไม่ที่จะลบ{' '}
+              {deleteType === 'department' && 'แผนก'} 
+              {deleteType === 'team' && 'ทีม'} 
+              {deleteType === 'employee' && 'ข้อมูลพนักงาน'} 
+              {deleteType === 'workstep' && 'ขั้นตอนงาน'} 
+              <span className="font-semibold"> "{deleteTargetName}"</span>?
+            </p>
+            {deleteType === 'department' && (
+              <p className="text-red-600 text-sm mt-2">
+                ⚠️ ทีมทั้งหมดในแผนกจะถูกลบด้วย
+              </p>
+            )}
+            <p className="text-gray-500 text-sm mt-2">
+              การดำเนินการนี้ไม่สามารถยกเลิกได้
+            </p>
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button 
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              className="flex-1"
+            >
+              ยืนยันการลบ
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirmOpen(false)}
+              className="flex-1"
+            >
+              ยกเลิก
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
