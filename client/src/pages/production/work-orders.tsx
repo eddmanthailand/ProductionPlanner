@@ -272,8 +272,8 @@ export default function WorkOrders() {
   };
 
   const handleEditWorkOrder = (workOrder: WorkOrder) => {
-    setEditingWorkOrder(workOrder);
-    setIsEditOpen(true);
+    // Navigate to edit form with work order ID
+    window.location.href = `/production/work-orders/edit/${workOrder.id}`;
   };
 
   const handleUpdateWorkOrder = () => {

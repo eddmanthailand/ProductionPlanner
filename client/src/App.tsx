@@ -166,6 +166,12 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/production/work-orders/edit/:id">
+        <ProtectedRoute>
+          <WorkOrderForm />
+        </ProtectedRoute>
+      </Route>
+
 
 
       <Route path="/production/reports">

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import { ArrowLeft, Save, FileText, User, Calendar, Package, Settings, Plus, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -61,6 +61,11 @@ export default function WorkOrderForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  
+  // Check if we're in edit mode
+  const [match, params] = useRoute("/production/work-orders/edit/:id");
+  const isEditMode = !!match;
+  const workOrderId = params?.id;
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
@@ -180,6 +185,13 @@ export default function WorkOrderForm() {
 
   const { data: sizes = [] } = useQuery<Size[]>({
     queryKey: ["/api/sizes"],
+  });
+
+  // Query for existing work order data in edit mode
+  const { data: existingWorkOrder, isLoading: loadingWorkOrder } = useQuery({
+    queryKey: ["/api/work-orders", workOrderId],
+    queryFn: () => apiRequest(`/api/work-orders/${workOrderId}`, "GET"),
+    enabled: isEditMode && !!workOrderId,
   });
 
   // Mutation
