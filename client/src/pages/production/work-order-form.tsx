@@ -63,9 +63,10 @@ export default function WorkOrderForm() {
   const [, navigate] = useLocation();
   
   // Check if we're in edit mode
-  const [match, params] = useRoute("/production/work-orders/edit/:id");
-  const isEditMode = !!match;
-  const workOrderId = params?.id;
+  const urlParams = new URLSearchParams(window.location.search);
+  const editId = urlParams.get('edit');
+  const isEditMode = !!editId;
+  const workOrderId = editId;
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
@@ -277,19 +278,20 @@ export default function WorkOrderForm() {
       const workOrder = existingWorkOrder as any;
       
       setFormData({
-        orderNumber: workOrder.order_number || "",
-        quotationId: workOrder.quotation_id?.toString() || "",
-        customerId: workOrder.customer_id?.toString() || "",
+        orderNumber: workOrder.orderNumber || workOrder.order_number || "",
+        quotationId: workOrder.quotationId?.toString() || workOrder.quotation_id?.toString() || "",
+        customerId: workOrder.customerId?.toString() || workOrder.customer_id?.toString() || "",
         title: workOrder.title || "",
         description: workOrder.description || "",
-        workTypeId: workOrder.work_type_id?.toString() || "",
-        deliveryDate: workOrder.delivery_date || "",
+        workTypeId: workOrder.workTypeId?.toString() || workOrder.work_type_id?.toString() || "",
+        deliveryDate: workOrder.deliveryDate || workOrder.delivery_date || "",
         notes: workOrder.notes || ""
       });
 
       // Load customer data
-      if (workOrder.customer_id) {
-        const customer = customers.find(c => c.id === workOrder.customer_id);
+      const customerId = workOrder.customerId || workOrder.customer_id;
+      if (customerId) {
+        const customer = customers.find(c => c.id === customerId);
         if (customer) {
           setSelectedCustomer(customer);
           setCustomerSearchValue(`${customer.name} - ${customer.companyName || customer.name}`);
@@ -297,11 +299,11 @@ export default function WorkOrderForm() {
       }
 
       // Load quotation data
-      if (workOrder.quotation_id) {
-        const quotation = quotations.find(q => q.id === workOrder.quotation_id);
+      const quotationId = workOrder.quotationId || workOrder.quotation_id;
+      if (quotationId) {
+        const quotation = quotations.find(q => q.id === quotationId);
         if (quotation) {
           setSelectedQuotation(quotation);
-          // Don't call handleQuotationSelectFromDialog to avoid circular dependency
         }
       }
 
