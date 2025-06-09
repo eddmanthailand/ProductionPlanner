@@ -101,10 +101,7 @@ export default function OrganizationChart() {
   const [newWorkStep, setNewWorkStep] = useState({
     name: "",
     department_id: "",
-    description: "",
-    duration: 60,
-    required_skills: ["basic"],
-    order: 1
+    description: ""
   });
 
   // Fetch departments from API
@@ -454,13 +451,21 @@ export default function OrganizationChart() {
   // Work Steps Mutations
   const createWorkStepMutation = useMutation({
     mutationFn: async (data: any) => {
+      // Add default values for required fields
+      const workStepData = {
+        ...data,
+        duration: 60, // Default 60 minutes
+        required_skills: ["basic"], // Default basic skill
+        order: 1 // Default order
+      };
+      
       const response = await fetch("/api/work-steps", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${localStorage.getItem("token")}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify(workStepData)
       });
       if (!response.ok) throw new Error("Failed to create work step");
       return response.json();
@@ -471,10 +476,7 @@ export default function OrganizationChart() {
       setNewWorkStep({
         name: "",
         department_id: "",
-        description: "",
-        duration: 60,
-        required_skills: ["basic"],
-        order: 1
+        description: ""
       });
       toast({
         title: "สำเร็จ",
@@ -1013,10 +1015,16 @@ export default function OrganizationChart() {
                             
                             <div className="flex items-center justify-between">
                               <Badge className={getSkillLevelBadge(workStep.required_skills?.[0] || 'basic')}>
-                                {workStep.required_skills?.[0] === 'basic' && 'เบื้องต้น'}
-                                {workStep.required_skills?.[0] === 'intermediate' && 'ปานกลาง'}
-                                {workStep.required_skills?.[0] === 'advanced' && 'สูง'}
-                                {workStep.required_skills?.[0] === 'expert' && 'ผู้เชี่ยวชาญ'}
+                                {(() => {
+                                  const skill = workStep.required_skills?.[0] || 'basic';
+                                  switch(skill) {
+                                    case 'basic': return 'เบื้องต้น';
+                                    case 'intermediate': return 'ปานกลาง';
+                                    case 'advanced': return 'สูง';
+                                    case 'expert': return 'ผู้เชี่ยวชาญ';
+                                    default: return 'เบื้องต้น';
+                                  }
+                                })()}
                               </Badge>
                               
                               <Badge variant="default" className="bg-green-100 text-green-800">
@@ -1708,47 +1716,7 @@ export default function OrganizationChart() {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="work-step-duration">เวลาโดยประมาณ (นาที) *</Label>
-                <Input
-                  id="work-step-duration"
-                  type="number"
-                  min="1"
-                  value={newWorkStep.duration}
-                  onChange={(e) => setNewWorkStep(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
-                />
-              </div>
 
-              <div className="grid gap-2">
-                <Label htmlFor="work-step-order">ลำดับ *</Label>
-                <Input
-                  id="work-step-order"
-                  type="number"
-                  min="1"
-                  value={newWorkStep.order}
-                  onChange={(e) => setNewWorkStep(prev => ({ ...prev, order: parseInt(e.target.value) || 1 }))}
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-2">
-              <Label htmlFor="work-step-skill">ระดับทักษะที่ต้องการ</Label>
-              <Select 
-                value={newWorkStep.required_skills[0]} 
-                onValueChange={(value) => setNewWorkStep(prev => ({ ...prev, required_skills: [value] }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="basic">เบื้องต้น</SelectItem>
-                  <SelectItem value="intermediate">ปานกลาง</SelectItem>
-                  <SelectItem value="advanced">สูง</SelectItem>
-                  <SelectItem value="expert">ผู้เชี่ยวชาญ</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
 
             <div className="flex gap-2 pt-4">
               <Button 
