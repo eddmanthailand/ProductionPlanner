@@ -76,14 +76,17 @@ interface QuotationItem {
   };
 }
 
-interface WorkOrderItem {
+interface SubJob {
   id?: number;
   productName: string;
-  description: string;
+  departmentId: string;
+  teamId: string;
+  workStepId: string;
+  colorId: string;
+  sizeId: string;
   quantity: number;
-  unitPrice: number;
-  totalPrice: number;
-  specifications: string;
+  productionCost: number;
+  totalCost: number;
 }
 
 export default function WorkOrderForm() {
@@ -96,8 +99,18 @@ export default function WorkOrderForm() {
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchValue, setCustomerSearchValue] = useState("");
   const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
-  const [workOrderItems, setWorkOrderItems] = useState<WorkOrderItem[]>([
-    { productName: "", description: "", quantity: 1, unitPrice: 0, totalPrice: 0, specifications: "" }
+  const [subJobs, setSubJobs] = useState<SubJob[]>([
+    { 
+      productName: "", 
+      departmentId: "", 
+      teamId: "", 
+      workStepId: "", 
+      colorId: "", 
+      sizeId: "", 
+      quantity: 1, 
+      productionCost: 0, 
+      totalCost: 0 
+    }
   ]);
 
   const [formData, setFormData] = useState({
@@ -182,6 +195,22 @@ export default function WorkOrderForm() {
 
   const { data: workTypes = [] } = useQuery<WorkType[]>({
     queryKey: ["/api/work-types"],
+  });
+
+  const { data: departments = [] } = useQuery<Department[]>({
+    queryKey: ["/api/departments"],
+  });
+
+  const { data: workSteps = [] } = useQuery<WorkStep[]>({
+    queryKey: ["/api/work-steps"],
+  });
+
+  const { data: colors = [] } = useQuery<Color[]>({
+    queryKey: ["/api/colors"],
+  });
+
+  const { data: sizes = [] } = useQuery<Size[]>({
+    queryKey: ["/api/sizes"],
   });
 
   // Mutation
@@ -270,38 +299,48 @@ export default function WorkOrderForm() {
     }));
   };
 
-  const handleItemChange = (index: number, field: keyof WorkOrderItem, value: string | number) => {
-    const updatedItems = [...workOrderItems];
-    updatedItems[index] = {
-      ...updatedItems[index],
+  const handleSubJobChange = (index: number, field: keyof SubJob, value: string | number) => {
+    const updatedSubJobs = [...subJobs];
+    updatedSubJobs[index] = {
+      ...updatedSubJobs[index],
       [field]: value
     };
 
-    // Calculate total price when quantity or unit price changes
-    if (field === 'quantity' || field === 'unitPrice') {
-      const quantity = field === 'quantity' ? Number(value) : updatedItems[index].quantity;
-      const unitPrice = field === 'unitPrice' ? Number(value) : updatedItems[index].unitPrice;
-      updatedItems[index].totalPrice = quantity * unitPrice;
+    // Calculate total cost when quantity or production cost changes
+    if (field === 'quantity' || field === 'productionCost') {
+      const quantity = field === 'quantity' ? Number(value) : updatedSubJobs[index].quantity;
+      const productionCost = field === 'productionCost' ? Number(value) : updatedSubJobs[index].productionCost;
+      updatedSubJobs[index].totalCost = quantity * productionCost;
     }
 
-    setWorkOrderItems(updatedItems);
+    setSubJobs(updatedSubJobs);
   };
 
-  const addItem = () => {
-    setWorkOrderItems([
-      ...workOrderItems,
-      { productName: "", description: "", quantity: 1, unitPrice: 0, totalPrice: 0, specifications: "" }
+  const addSubJob = () => {
+    setSubJobs([
+      ...subJobs,
+      { 
+        productName: "", 
+        departmentId: "", 
+        teamId: "", 
+        workStepId: "", 
+        colorId: "", 
+        sizeId: "", 
+        quantity: 1, 
+        productionCost: 0, 
+        totalCost: 0 
+      }
     ]);
   };
 
-  const removeItem = (index: number) => {
-    if (workOrderItems.length > 1) {
-      setWorkOrderItems(workOrderItems.filter((_, i) => i !== index));
+  const removeSubJob = (index: number) => {
+    if (subJobs.length > 1) {
+      setSubJobs(subJobs.filter((_, i) => i !== index));
     }
   };
 
   const calculateGrandTotal = () => {
-    return workOrderItems.reduce((total, item) => total + item.totalPrice, 0);
+    return subJobs.reduce((total, subJob) => total + subJob.totalCost, 0);
   };
 
   const handleSubmit = () => {
@@ -320,7 +359,7 @@ export default function WorkOrderForm() {
       quotationId: formData.quotationId ? parseInt(formData.quotationId) : null,
       workTypeId: formData.workTypeId ? parseInt(formData.workTypeId) : null,
       totalAmount: calculateGrandTotal(),
-      items: workOrderItems
+      items: subJobs
     };
 
     createWorkOrderMutation.mutate(orderData);
@@ -702,31 +741,31 @@ export default function WorkOrderForm() {
 
 
 
-            {/* Work Order Items */}
+            {/* Sub Jobs */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Package className="h-5 w-5" />
-                    <span>รายการสินค้า/งาน</span>
+                    <span>Sub-jobs</span>
                   </div>
-                  <Button onClick={addItem} size="sm" className="flex items-center space-x-2">
+                  <Button onClick={addSubJob} size="sm" className="flex items-center space-x-2">
                     <Plus className="h-4 w-4" />
-                    <span>เพิ่มรายการ</span>
+                    <span>เพิ่ม Sub-job</span>
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {workOrderItems.map((item, index) => (
+                  {subJobs.map((subJob, index) => (
                     <div key={index} className="p-4 border rounded-lg bg-gray-50">
                       <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium">รายการที่ {index + 1}</h4>
-                        {workOrderItems.length > 1 && (
+                        <h4 className="font-medium">Sub-job ที่ {index + 1}</h4>
+                        {subJobs.length > 1 && (
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => removeItem(index)}
+                            onClick={() => removeSubJob(index)}
                             className="text-red-600 hover:text-red-700"
                           >
                             <Trash2 className="h-4 w-4" />
