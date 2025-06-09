@@ -464,14 +464,14 @@ export default function WorkOrders() {
             <Table className="w-full table-fixed min-w-full">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b-2 border-gray-200">
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[11%] text-xs">JOB NO.</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[19%] text-xs">ชื่องาน</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[13%] text-xs">ลูกค้า</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[16%] text-xs">วันกำหนดส่ง</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[9%] text-xs">ประเภทงาน</TableHead>
-                  <TableHead className="text-right text-gray-700 px-2 py-2 w-[15%] text-xs">ยอดรวม</TableHead>
-                  <TableHead className="text-center text-gray-700 px-2 py-2 w-[14%] text-xs">สถานะ</TableHead>
-                  <TableHead className="text-center text-gray-700 px-2 py-2 w-[3%] text-xs">จัดการ</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">JOB NO.</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[20%] text-xs">ชื่องาน</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[15%] text-xs">ลูกค้า</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">วันกำหนดส่ง</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[15%] text-xs">ประเภทงาน</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">ยอดรวม</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">สถานะ</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -506,12 +506,12 @@ export default function WorkOrders() {
                           {getWorkTypeName(order.workTypeId)}
                         </span>
                       </TableCell>
-                      <TableCell className="px-2 py-1.5 text-right">
+                      <TableCell className="px-2 py-1.5 text-left">
                         <div className="text-xs text-green-700">
                           ฿{(parseFloat(order.totalAmount || '0') / 1000).toFixed(0)}K
                         </div>
                       </TableCell>
-                      <TableCell className="px-1 py-1.5 text-center">
+                      <TableCell className="px-1 py-1.5 text-left">
                         <Select 
                           value={order.status} 
                           onValueChange={(value) => handleStatusChange(order.id, value)}
@@ -534,8 +534,8 @@ export default function WorkOrders() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="px-1 py-1.5 text-center">
-                        <div className="flex items-center justify-center space-x-0.5">
+                      <TableCell className="px-1 py-1.5 text-left">
+                        <div className="flex items-center space-x-0.5">
                           <Button
                             variant="ghost"
                             size="sm"
