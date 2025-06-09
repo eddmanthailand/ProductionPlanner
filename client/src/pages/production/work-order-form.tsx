@@ -830,47 +830,47 @@ export default function WorkOrderForm() {
 
 
             {/* Sub Jobs Table */}
-            <Card className="w-full">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between">
+            <Card className="w-full shadow-lg border border-gray-200">
+              <CardHeader className="py-2 px-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
+                <CardTitle className="flex items-center justify-between text-base">
                   <div className="flex items-center space-x-2">
-                    <Package className="h-5 w-5" />
-                    <span>Sub-jobs</span>
+                    <Package className="h-4 w-4 text-blue-600" />
+                    <span className="text-gray-800 font-medium">Sub-jobs</span>
                   </div>
-                  <Button onClick={addSubJob} size="sm" className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700">
-                    <Plus className="h-4 w-4" />
+                  <Button onClick={addSubJob} size="sm" className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1 h-7">
+                    <Plus className="h-3 w-3" />
                     <span>เพิ่ม Sub-job</span>
                   </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="w-full overflow-x-auto border-t">
-                  <Table className="w-full">
+                <div className="w-full overflow-x-auto">
+                  <Table className="w-full table-fixed">
                     <TableHeader>
-                      <TableRow className="hover:bg-gray-50 border-b">
-                        <TableHead className="text-left font-semibold text-gray-700 px-4 py-3 min-w-[240px]">ชื่อสินค้า/งาน</TableHead>
-                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-3 min-w-[140px]">แผนก</TableHead>
-                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-3 min-w-[140px]">ขั้นตอนงาน</TableHead>
-                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-3 min-w-[100px]">สี</TableHead>
-                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-3 min-w-[100px]">ขนาด</TableHead>
-                        <TableHead className="text-center font-semibold text-gray-700 px-3 py-3 min-w-[80px]">จำนวน</TableHead>
-                        <TableHead className="text-right font-semibold text-gray-700 px-3 py-3 min-w-[100px]">ต้นทุน/ชิ้น</TableHead>
-                        <TableHead className="text-right font-semibold text-gray-700 px-3 py-3 min-w-[100px]">รวม</TableHead>
-                        <TableHead className="text-center font-semibold text-gray-700 px-3 py-3 w-[60px]">ลบ</TableHead>
+                      <TableRow className="bg-gray-100 border-b-2 border-gray-200">
+                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[25%] text-sm">ชื่อสินค้า/งาน</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[12%] text-sm">แผนก</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[13%] text-sm">ขั้นตอนงาน</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">สี</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ขนาด</TableHead>
+                        <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[8%] text-sm">จำนวน</TableHead>
+                        <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ต้นทุน/ชิ้น</TableHead>
+                        <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">รวม</TableHead>
+                        <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[7%] text-sm">ลบ</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {subJobs.map((subJob, index) => (
-                        <TableRow key={index} className="hover:bg-gray-50 border-b">
-                          <TableCell className="px-4 py-2">
+                        <TableRow key={index} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors">
+                          <TableCell className="px-3 py-1.5">
                             <Input
                               value={subJob.productName || ""}
                               onChange={(e) => handleSubJobChange(index, 'productName', e.target.value)}
                               placeholder="ชื่อสินค้าหรืองาน"
-                              className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm"
+                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs shadow-sm"
                             />
                           </TableCell>
-                          <TableCell className="px-3 py-2">
+                          <TableCell className="px-2 py-1.5">
                             <Select 
                               value={subJob.departmentId} 
                               onValueChange={(value) => {
@@ -883,7 +883,7 @@ export default function WorkOrderForm() {
                                 setSubJobs(updatedSubJobs);
                               }}
                             >
-                              <SelectTrigger className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm">
+                              <SelectTrigger className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs shadow-sm">
                                 <SelectValue placeholder="เลือกแผนก" />
                               </SelectTrigger>
                               <SelectContent>
@@ -895,13 +895,13 @@ export default function WorkOrderForm() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="px-3 py-2">
+                          <TableCell className="px-2 py-1.5">
                             <Select 
                               value={subJob.workStepId} 
                               onValueChange={(value) => handleSubJobChange(index, 'workStepId', value)}
                               disabled={!subJob.departmentId}
                             >
-                              <SelectTrigger className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm">
+                              <SelectTrigger className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs shadow-sm">
                                 <SelectValue placeholder="เลือกขั้นตอน" />
                               </SelectTrigger>
                               <SelectContent>
@@ -915,12 +915,12 @@ export default function WorkOrderForm() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="px-3 py-2">
+                          <TableCell className="px-2 py-1.5">
                             <Select 
                               value={subJob.colorId} 
                               onValueChange={(value) => handleSubJobChange(index, 'colorId', value)}
                             >
-                              <SelectTrigger className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm">
+                              <SelectTrigger className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs shadow-sm">
                                 <SelectValue placeholder="เลือกสี" />
                               </SelectTrigger>
                               <SelectContent>
@@ -932,12 +932,12 @@ export default function WorkOrderForm() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="px-3 py-2">
+                          <TableCell className="px-2 py-1.5">
                             <Select 
                               value={subJob.sizeId} 
                               onValueChange={(value) => handleSubJobChange(index, 'sizeId', value)}
                             >
-                              <SelectTrigger className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm">
+                              <SelectTrigger className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs shadow-sm">
                                 <SelectValue placeholder="เลือกขนาด" />
                               </SelectTrigger>
                               <SelectContent>
@@ -949,36 +949,36 @@ export default function WorkOrderForm() {
                               </SelectContent>
                             </Select>
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-center">
+                          <TableCell className="px-2 py-1.5 text-center">
                             <Input
                               type="number"
                               min="1"
                               value={subJob.quantity || 1}
                               onChange={(e) => handleSubJobChange(index, 'quantity', parseInt(e.target.value) || 1)}
-                              className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm text-center"
+                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-center shadow-sm"
                             />
                           </TableCell>
-                          <TableCell className="px-3 py-2">
+                          <TableCell className="px-2 py-1.5">
                             <Input
                               type="number"
                               min="0"
                               step="0.01"
                               value={subJob.productionCost || 0}
                               onChange={(e) => handleSubJobChange(index, 'productionCost', parseFloat(e.target.value) || 0)}
-                              className="w-full border-gray-300 focus:border-blue-500 focus:ring-blue-500 h-8 text-sm text-right"
+                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-right shadow-sm"
                             />
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-right font-medium text-gray-900">
+                          <TableCell className="px-2 py-1.5 text-right font-medium text-gray-900 text-xs">
                             ฿{subJob.totalCost.toLocaleString()}
                           </TableCell>
-                          <TableCell className="px-3 py-2 text-center">
+                          <TableCell className="px-2 py-1.5 text-center">
                             <Button
                               variant="ghost"
                               size="sm"
                               onClick={() => removeSubJob(index)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0"
+                              className="text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 p-0 rounded-full transition-all"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-3 w-3" />
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -988,13 +988,13 @@ export default function WorkOrderForm() {
                 </div>
                 
                 {/* Summary Section */}
-                <div className="bg-gray-50 border-t px-6 py-4">
+                <div className="bg-gradient-to-r from-gray-50 to-blue-50 border-t-2 border-blue-200 px-4 py-3">
                   <div className="flex justify-between items-center">
-                    <div className="text-sm text-gray-600">
-                      จำนวน Sub-jobs: <span className="font-medium text-gray-900">{subJobs.length} รายการ</span>
+                    <div className="text-xs text-gray-600">
+                      จำนวน Sub-jobs: <span className="font-semibold text-gray-800">{subJobs.length} รายการ</span>
                     </div>
-                    <div className="text-lg font-bold text-blue-600">
-                      ยอดรวมทั้งสิ้น: ฿{calculateGrandTotal().toLocaleString()}
+                    <div className="text-sm font-bold text-blue-700 bg-white px-3 py-1 rounded-full shadow-sm border border-blue-200">
+                      ยอดรวม: ฿{calculateGrandTotal().toLocaleString()}
                     </div>
                   </div>
                 </div>
