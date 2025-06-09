@@ -429,7 +429,7 @@ export default function WorkOrders() {
           </div>
           
           {/* Status Tabs */}
-          <div className="flex space-x-8 border-b border-gray-200">
+          <div className="flex space-x-8 border-b border-gray-100">
             {[
               { value: "all", label: "ทั้งหมด", count: totalOrders },
               { value: "draft", label: "ร่าง", count: draftOrders },
@@ -441,15 +441,15 @@ export default function WorkOrders() {
               <button
                 key={tab.value}
                 onClick={() => setStatusFilter(tab.value)}
-                className={`pb-4 px-2 text-base font-medium transition-colors relative ${
+                className={`pb-3 px-1 text-sm font-medium transition-all duration-200 relative ${
                   statusFilter === tab.value
                     ? "text-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    : "text-gray-600 hover:text-gray-800"
                 }`}
               >
                 {tab.label} ({tab.count})
                 {statusFilter === tab.value && (
-                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600 rounded-full"></div>
                 )}
               </button>
             ))}
@@ -460,7 +460,7 @@ export default function WorkOrders() {
       <Card className="shadow-lg border-0">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-separate border-spacing-0">
+            <table className="w-full table-fixed">
               <colgroup>
                 <col className="w-[18%]" />
                 <col className="w-[25%]" />
@@ -486,7 +486,7 @@ export default function WorkOrders() {
               <tbody>
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
-                    <tr key={order.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors duration-200">
+                    <tr key={order.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
                       <td className="px-6 py-5 font-bold text-blue-700 text-base">{order.orderNumber}</td>
                       <td className="px-6 py-5">
                         <div>
