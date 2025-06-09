@@ -30,6 +30,15 @@ interface Team {
   status: string;
 }
 
+interface WorkType {
+  id: number;
+  name: string;
+  code: string;
+  description: string;
+  sortOrder: number;
+  isActive: boolean;
+}
+
 interface Quotation {
   id: number;
   quotationNumber: string;
@@ -68,7 +77,7 @@ export default function WorkOrderForm() {
     customerId: "",
     title: "",
     description: "",
-    priority: 3,
+    workTypeId: "",
     startDate: "",
     dueDate: "",
     assignedTeamId: "",
@@ -142,6 +151,10 @@ export default function WorkOrderForm() {
 
   const { data: quotations = [] } = useQuery<Quotation[]>({
     queryKey: ["/api/quotations"],
+  });
+
+  const { data: workTypes = [] } = useQuery<WorkType[]>({
+    queryKey: ["/api/work-types"],
   });
 
   // Mutation

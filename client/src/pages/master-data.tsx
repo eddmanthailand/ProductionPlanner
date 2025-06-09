@@ -216,7 +216,7 @@ export default function MasterData() {
       code: workType.code || "",
       description: workType.description || "",
       sortOrder: workType.sortOrder || 0,
-      isActive: workType.isActive
+      isActive: workType.isActive ?? true
     });
     setIsWorkTypeDialogOpen(true);
   };
@@ -291,7 +291,13 @@ export default function MasterData() {
     setIsSizeDialogOpen(true);
   };
 
-  if (colorsLoading || sizesLoading) {
+  const handleAddNewWorkType = () => {
+    setEditingWorkType(null);
+    workTypeForm.reset();
+    setIsWorkTypeDialogOpen(true);
+  };
+
+  if (colorsLoading || sizesLoading || workTypesLoading) {
     return (
       <div className="p-6">
         <div className="animate-pulse space-y-4">
@@ -309,7 +315,7 @@ export default function MasterData() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="colors" className="flex items-center gap-2">
             <Palette className="h-4 w-4" />
             จัดการสี
@@ -317,6 +323,10 @@ export default function MasterData() {
           <TabsTrigger value="sizes" className="flex items-center gap-2">
             <Ruler className="h-4 w-4" />
             จัดการไซส์
+          </TabsTrigger>
+          <TabsTrigger value="work-types" className="flex items-center gap-2">
+            <Edit className="h-4 w-4" />
+            ประเภทงาน
           </TabsTrigger>
         </TabsList>
 
@@ -587,6 +597,178 @@ export default function MasterData() {
                   </Droppable>
                 </Table>
               </DragDropContext>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="work-types" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">จัดการประเภทงาน</h2>
+            <Dialog open={isWorkTypeDialogOpen} onOpenChange={setIsWorkTypeDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNewWorkType}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  เพิ่มประเภทงานใหม่
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>
+                    {editingWorkType ? "แก้ไขประเภทงาน" : "เพิ่มประเภทงานใหม่"}
+                  </DialogTitle>
+                  <DialogDescription>
+                    กรอกข้อมูลประเภทงานที่ต้องการ{editingWorkType ? "แก้ไข" : "เพิ่ม"}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <Form {...workTypeForm}>
+                  <form onSubmit={workTypeForm.handleSubmit(handleWorkTypeSubmit)} className="space-y-4">
+                    <FormField
+                      control={workTypeForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ชื่อประเภทงาน</FormLabel>
+                          <FormControl>
+                            <Input placeholder="เช่น เสื้อยืด" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={workTypeForm.control}
+                      name="code"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>รหัสประเภทงาน</FormLabel>
+                          <FormControl>
+                            <Input placeholder="เช่น T-SHIRT" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={workTypeForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>คำอธิบาย</FormLabel>
+                          <FormControl>
+                            <Textarea placeholder="รายละเอียดประเภทงาน" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={workTypeForm.control}
+                      name="sortOrder"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ลำดับการเรียง</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end space-x-2">
+                      <Button type="button" variant="outline" onClick={() => setIsWorkTypeDialogOpen(false)}>
+                        ยกเลิก
+                      </Button>
+                      <Button type="submit" disabled={createWorkTypeMutation.isPending || updateWorkTypeMutation.isPending}>
+                        {editingWorkType ? "บันทึกการแก้ไข" : "เพิ่มประเภทงาน"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>รายการประเภทงาน</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ชื่อประเภทงาน</TableHead>
+                    <TableHead>รหัส</TableHead>
+                    <TableHead>คำอธิบาย</TableHead>
+                    <TableHead>ลำดับ</TableHead>
+                    <TableHead>สถานะ</TableHead>
+                    <TableHead className="text-right">จัดการ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {workTypes?.map((workType) => (
+                    <TableRow key={workType.id}>
+                      <TableCell className="font-medium">{workType.name}</TableCell>
+                      <TableCell>
+                        {workType.code && (
+                          <Badge variant="outline">{workType.code}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>{workType.description}</TableCell>
+                      <TableCell>{workType.sortOrder}</TableCell>
+                      <TableCell>
+                        <Badge variant={workType.isActive ? "default" : "secondary"}>
+                          {workType.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end space-x-2">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditWorkType(workType)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                              <DialogHeader>
+                                <DialogTitle>ยืนยันการลบ</DialogTitle>
+                                <DialogDescription>
+                                  คุณแน่ใจที่จะลบประเภทงาน "{workType.name}" หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="flex justify-end space-x-2">
+                                <Button variant="outline">ยกเลิก</Button>
+                                <Button 
+                                  variant="destructive" 
+                                  onClick={() => handleDeleteWorkType(workType.id)}
+                                  disabled={deleteWorkTypeMutation.isPending}
+                                >
+                                  ยืนยันที่จะลบ
+                                </Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </TabsContent>
