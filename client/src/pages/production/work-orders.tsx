@@ -445,57 +445,60 @@ export default function WorkOrders() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed">
               <colgroup>
-                <col className="w-[14%]" />
-                <col className="w-[25%]" />
-                <col className="w-[18%]" />
-                <col className="w-[13%]" />
+                <col className="w-[15%]" />
+                <col className="w-[30%]" />
+                <col className="w-[15%]" />
                 <col className="w-[12%]" />
                 <col className="w-[10%]" />
                 <col className="w-[8%]" />
-                <col className="w-[0%]" />
+                <col className="w-[6%]" />
+                <col className="w-[4%]" />
               </colgroup>
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <tr>
-                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">JOB NO.</th>
-                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">ชื่องาน</th>
-                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">ลูกค้า</th>
-                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">วันกำหนดส่ง</th>
-                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">ประเภทงาน</th>
-                  <th className="text-right px-3 py-2 font-medium text-gray-900 text-sm">ยอดรวม</th>
-                  <th className="text-center px-3 py-2 font-medium text-gray-900 text-sm">สถานะ</th>
-                  <th className="text-center px-3 py-2 font-medium text-gray-900 text-sm">จัดการ</th>
+                  <th className="text-left px-4 py-3 font-semibold text-sm">JOB NO.</th>
+                  <th className="text-left px-4 py-3 font-semibold text-sm">ชื่องาน</th>
+                  <th className="text-left px-4 py-3 font-semibold text-sm">ลูกค้า</th>
+                  <th className="text-left px-4 py-3 font-semibold text-sm">วันกำหนดส่ง</th>
+                  <th className="text-left px-4 py-3 font-semibold text-sm">ประเภทงาน</th>
+                  <th className="text-right px-4 py-3 font-semibold text-sm">ยอดรวม</th>
+                  <th className="text-center px-4 py-3 font-semibold text-sm">สถานะ</th>
+                  <th className="text-center px-4 py-3 font-semibold text-sm">จัดการ</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
-                    <tr key={order.id} className="border-b hover:bg-gray-50">
-                      <td className="px-3 py-2 font-medium text-blue-600 text-sm">{order.orderNumber}</td>
-                      <td className="px-3 py-2">
+                    <tr key={order.id} className="border-b hover:bg-blue-50 transition-colors">
+                      <td className="px-4 py-3 font-bold text-blue-700 text-sm">{order.orderNumber}</td>
+                      <td className="px-4 py-3">
                         <div>
-                          <div className="font-medium text-sm">{order.title}</div>
+                          <div className="font-semibold text-sm text-gray-900">{order.title}</div>
                           {order.description && (
-                            <div className="text-xs text-gray-500 mt-1 truncate">{order.description}</div>
+                            <div className="text-xs text-gray-600 mt-1 truncate max-w-[200px]">{order.description}</div>
                           )}
                         </div>
                       </td>
-                      <td className="px-3 py-2 text-sm">{order.customerName}</td>
-                      <td className="px-3 py-2 text-sm">
-                        {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('th-TH') : "ยังไม่กำหนด"}
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">{order.customerName}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {order.deliveryDate ? 
+                          new Date(order.deliveryDate).toLocaleDateString('th-TH') : 
+                          <span className="text-orange-600 font-medium">ยังไม่กำหนด</span>
+                        }
                       </td>
-                      <td className="px-3 py-2 text-sm">
+                      <td className="px-4 py-3 text-sm text-gray-700">
                         {getWorkTypeName(order.workTypeId)}
                       </td>
-                      <td className="px-3 py-2 text-right font-medium text-sm">
-                        ฿{parseFloat(order.totalAmount).toLocaleString()}
+                      <td className="px-4 py-3 text-right font-bold text-sm text-green-700">
+                        ฿{parseFloat(order.totalAmount || '0').toLocaleString()}
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-4 py-3 text-center">
                         <Select 
                           value={order.status} 
                           onValueChange={(value) => handleStatusChange(order.id, value)}
                         >
-                          <SelectTrigger className="h-7 w-16 text-xs border-0 bg-transparent">
-                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                          <SelectTrigger className="h-8 w-20 text-xs border-0 bg-transparent">
+                            <div className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
                               {order.status === "draft" && "ร่าง"}
                               {order.status === "approved" && "อนุมัติ"}
                               {order.status === "in_progress" && "ดำเนินการ"}
@@ -512,23 +515,23 @@ export default function WorkOrders() {
                           </SelectContent>
                         </Select>
                       </td>
-                      <td className="px-3 py-2 text-center">
+                      <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditWorkOrder(order)}
-                            className="h-7 w-7 p-0"
+                            className="h-8 w-8 p-0 hover:bg-blue-100"
                           >
-                            <Edit2 className="h-3 w-3" />
+                            <Edit2 className="h-4 w-4 text-blue-600" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteWorkOrder(order.id)}
-                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                            className="h-8 w-8 p-0 text-red-600 hover:bg-red-100"
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
