@@ -478,7 +478,7 @@ export default function WorkOrders() {
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <TableRow key={order.id} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors">
-                      <TableCell className="px-2 py-1.5 font-bold text-blue-700 text-xs">{order.orderNumber}</TableCell>
+                      <TableCell className="px-2 py-1.5 font-bold text-blue-700 text-xs">{order.orderNumber || order.order_number}</TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div>
                           <div className="font-bold text-xs text-gray-900 leading-4 truncate">{order.title}</div>
@@ -488,7 +488,7 @@ export default function WorkOrders() {
                         </div>
                       </TableCell>
                       <TableCell className="px-2 py-1.5">
-                        <div className="text-xs font-medium text-gray-900 truncate">{order.customerName}</div>
+                        <div className="text-xs font-medium text-gray-900 truncate">{order.customerName || order.customer_name}</div>
                       </TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div className="text-xs text-gray-700">
