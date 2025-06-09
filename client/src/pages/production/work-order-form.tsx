@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, Save, FileText, User, Calendar, Package, Settings, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, FileText, User, Calendar, Package, Settings, Plus, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -52,6 +55,17 @@ interface Quotation {
   createdAt: string;
 }
 
+interface QuotationItem {
+  id: number;
+  quotationId: number;
+  productName: string;
+  description: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  specifications?: string;
+}
+
 interface WorkOrderItem {
   id?: number;
   productName: string;
@@ -66,7 +80,11 @@ export default function WorkOrderForm() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(null);
+  const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
+  const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
+  const [customerSearchValue, setCustomerSearchValue] = useState("");
   const [workOrderItems, setWorkOrderItems] = useState<WorkOrderItem[]>([
     { productName: "", description: "", quantity: 1, unitPrice: 0, totalPrice: 0, specifications: "" }
   ]);
@@ -179,9 +197,10 @@ export default function WorkOrderForm() {
     }
   });
 
-  const handleQuotationSelect = (quotationId: string) => {
+  const handleQuotationSelect = async (quotationId: string) => {
     if (!quotationId || quotationId === "none") {
       setSelectedQuotation(null);
+      setQuotationItems([]);
       setFormData(prev => ({
         ...prev,
         quotationId: "",
@@ -202,6 +221,15 @@ export default function WorkOrderForm() {
         description: quotation.description || "",
         customerId: quotation.customerId.toString()
       }));
+
+      // Fetch quotation items
+      try {
+        const response = await apiRequest(`/api/quotations/${quotationId}/items`, "GET");
+        setQuotationItems(response || []);
+      } catch (error) {
+        console.error("Failed to fetch quotation items:", error);
+        setQuotationItems([]);
+      }
     }
   };
 
@@ -271,7 +299,27 @@ export default function WorkOrderForm() {
     return customers.find(c => c.id === id);
   };
 
-  const selectedCustomer = formData.customerId ? getCustomerById(parseInt(formData.customerId)) : null;
+  // Update selected customer when customerId changes
+  useEffect(() => {
+    if (formData.customerId) {
+      const customer = getCustomerById(parseInt(formData.customerId));
+      setSelectedCustomer(customer || null);
+      setCustomerSearchValue(customer ? `${customer.name} - ${customer.companyName}` : "");
+    } else {
+      setSelectedCustomer(null);
+      setCustomerSearchValue("");
+    }
+  }, [formData.customerId, customers]);
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setFormData(prev => ({
+      ...prev,
+      customerId: customer.id.toString()
+    }));
+    setCustomerSearchValue(`${customer.name} - ${customer.companyName}`);
+    setCustomerSearchOpen(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
