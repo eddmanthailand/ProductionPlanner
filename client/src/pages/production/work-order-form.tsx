@@ -785,8 +785,8 @@ export default function WorkOrderForm() {
 
                         <div className="space-y-2">
                           <Label>แผนก *</Label>
-                          <Dialog>
-                            <DialogTrigger asChild>
+                          <Popover>
+                            <PopoverTrigger asChild>
                               <Button 
                                 variant="outline" 
                                 className="w-full justify-between"
@@ -797,31 +797,28 @@ export default function WorkOrderForm() {
                                 }
                                 <Search className="h-4 w-4 ml-2" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>เลือกแผนก</DialogTitle>
-                                <DialogDescription>
-                                  เลือกแผนกสำหรับ Sub-job นี้
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid gap-2 py-4">
-                                {departments?.map((dept) => (
-                                  <Button
-                                    key={dept.id}
-                                    variant={subJob.departmentId === dept.id ? "default" : "outline"}
-                                    className="justify-start"
-                                    onClick={() => {
-                                      handleSubJobChange(index, 'departmentId', dept.id);
-                                      handleSubJobChange(index, 'workStepId', '');
-                                    }}
-                                  >
-                                    {dept.name}
-                                  </Button>
-                                ))}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0">
+                              <Command>
+                                <CommandInput placeholder="ค้นหาแผนก..." />
+                                <CommandEmpty>ไม่พบแผนก</CommandEmpty>
+                                <CommandGroup>
+                                  {departments?.map((dept) => (
+                                    <CommandItem
+                                      key={dept.id}
+                                      value={dept.name}
+                                      onSelect={() => {
+                                        handleSubJobChange(index, 'departmentId', dept.id);
+                                        handleSubJobChange(index, 'workStepId', '');
+                                      }}
+                                    >
+                                      {dept.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
 
 
@@ -850,8 +847,8 @@ export default function WorkOrderForm() {
 
                         <div className="space-y-2">
                           <Label>สี *</Label>
-                          <Dialog>
-                            <DialogTrigger asChild>
+                          <Popover>
+                            <PopoverTrigger asChild>
                               <Button 
                                 variant="outline" 
                                 className="w-full justify-between"
@@ -862,34 +859,31 @@ export default function WorkOrderForm() {
                                 }
                                 <Search className="h-4 w-4 ml-2" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>เลือกสี</DialogTitle>
-                                <DialogDescription>
-                                  เลือกสีสำหรับ Sub-job นี้
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid grid-cols-2 gap-2 py-4">
-                                {colors?.map((color) => (
-                                  <Button
-                                    key={color.id}
-                                    variant={subJob.colorId === color.id.toString() ? "default" : "outline"}
-                                    className="justify-start"
-                                    onClick={() => handleSubJobChange(index, 'colorId', color.id.toString())}
-                                  >
-                                    {color.name}
-                                  </Button>
-                                ))}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0">
+                              <Command>
+                                <CommandInput placeholder="ค้นหาสี..." />
+                                <CommandEmpty>ไม่พบสี</CommandEmpty>
+                                <CommandGroup>
+                                  {colors?.map((color) => (
+                                    <CommandItem
+                                      key={color.id}
+                                      value={color.name}
+                                      onSelect={() => handleSubJobChange(index, 'colorId', color.id.toString())}
+                                    >
+                                      {color.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
 
                         <div className="space-y-2">
                           <Label>ไซส์ *</Label>
-                          <Dialog>
-                            <DialogTrigger asChild>
+                          <Popover>
+                            <PopoverTrigger asChild>
                               <Button 
                                 variant="outline" 
                                 className="w-full justify-between"
@@ -900,28 +894,25 @@ export default function WorkOrderForm() {
                                 }
                                 <Search className="h-4 w-4 ml-2" />
                               </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-md">
-                              <DialogHeader>
-                                <DialogTitle>เลือกไซส์</DialogTitle>
-                                <DialogDescription>
-                                  เลือกไซส์สำหรับ Sub-job นี้
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="grid grid-cols-3 gap-2 py-4">
-                                {sizes?.map((size) => (
-                                  <Button
-                                    key={size.id}
-                                    variant={subJob.sizeId === size.id.toString() ? "default" : "outline"}
-                                    className="justify-center"
-                                    onClick={() => handleSubJobChange(index, 'sizeId', size.id.toString())}
-                                  >
-                                    {size.name}
-                                  </Button>
-                                ))}
-                              </div>
-                            </DialogContent>
-                          </Dialog>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80 p-0">
+                              <Command>
+                                <CommandInput placeholder="ค้นหาไซส์..." />
+                                <CommandEmpty>ไม่พบไซส์</CommandEmpty>
+                                <CommandGroup>
+                                  {sizes?.map((size) => (
+                                    <CommandItem
+                                      key={size.id}
+                                      value={size.name}
+                                      onSelect={() => handleSubJobChange(index, 'sizeId', size.id.toString())}
+                                    >
+                                      {size.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
 
                         <div className="space-y-2">
