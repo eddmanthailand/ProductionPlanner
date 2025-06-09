@@ -190,27 +190,34 @@ export default function WorkOrderForm() {
   // Query for existing work order data in edit mode
   const { data: existingWorkOrder, isLoading: loadingWorkOrder } = useQuery({
     queryKey: ["/api/work-orders", workOrderId],
-    queryFn: () => apiRequest(`/api/work-orders/${workOrderId}`, "GET"),
+    queryFn: async () => {
+      const response = await apiRequest(`/api/work-orders/${workOrderId}`, "GET");
+      return response as any; // Type cast to fix TypeScript errors
+    },
     enabled: isEditMode && !!workOrderId,
   });
 
-  // Mutation
+  // Mutation for creating and updating work orders
   const createWorkOrderMutation = useMutation({
     mutationFn: async (data: any) => {
-      return await apiRequest("/api/work-orders", "POST", data);
+      if (isEditMode && workOrderId) {
+        return await apiRequest(`/api/work-orders/${workOrderId}`, "PUT", data);
+      } else {
+        return await apiRequest("/api/work-orders", "POST", data);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
       toast({
         title: "สำเร็จ",
-        description: "สร้างใบสั่งงานแล้ว",
+        description: isEditMode ? "แก้ไขใบสั่งงานเรียบร้อยแล้ว" : "สร้างใบสั่งงานแล้ว",
       });
       navigate("/production/work-orders");
     },
     onError: () => {
       toast({
         title: "ข้อผิดพลาด",
-        description: "ไม่สามารถสร้างใบสั่งงานได้",
+        description: isEditMode ? "ไม่สามารถแก้ไขใบสั่งงานได้" : "ไม่สามารถสร้างใบสั่งงานได้",
         variant: "destructive",
       });
     }
@@ -257,6 +264,64 @@ export default function WorkOrderForm() {
     setCustomerSearchValue("");
   };
 
+  // Generate order number on component mount (only for new orders)
+  useEffect(() => {
+    if (!isEditMode) {
+      generateOrderNumber();
+    }
+  }, [isEditMode]);
+
+  // Load existing work order data in edit mode
+  useEffect(() => {
+    if (isEditMode && existingWorkOrder && customers.length > 0 && quotations.length > 0) {
+      const workOrder = existingWorkOrder as any;
+      
+      setFormData({
+        orderNumber: workOrder.order_number || "",
+        quotationId: workOrder.quotation_id?.toString() || "",
+        customerId: workOrder.customer_id?.toString() || "",
+        title: workOrder.title || "",
+        description: workOrder.description || "",
+        workTypeId: workOrder.work_type_id?.toString() || "",
+        deliveryDate: workOrder.delivery_date || "",
+        notes: workOrder.notes || ""
+      });
+
+      // Load customer data
+      if (workOrder.customer_id) {
+        const customer = customers.find(c => c.id === workOrder.customer_id);
+        if (customer) {
+          setSelectedCustomer(customer);
+          setCustomerSearchValue(`${customer.name} - ${customer.companyName || customer.name}`);
+        }
+      }
+
+      // Load quotation data
+      if (workOrder.quotation_id) {
+        const quotation = quotations.find(q => q.id === workOrder.quotation_id);
+        if (quotation) {
+          setSelectedQuotation(quotation);
+          // Don't call handleQuotationSelectFromDialog to avoid circular dependency
+        }
+      }
+
+      // Load sub-jobs data
+      if (workOrder.sub_jobs && workOrder.sub_jobs.length > 0) {
+        setSubJobs(workOrder.sub_jobs.map((sj: any) => ({
+          id: sj.id,
+          productName: sj.product_name || "",
+          departmentId: sj.department_id || "",
+          workStepId: sj.work_step_id || "",
+          colorId: sj.color_id?.toString() || "",
+          sizeId: sj.size_id?.toString() || "",
+          quantity: sj.quantity || 1,
+          productionCost: sj.production_cost || 0,
+          totalCost: sj.total_cost || 0
+        })));
+      }
+    }
+  }, [isEditMode, existingWorkOrder, customers, quotations]);
+
   // Use useEffect to handle quotation items when selectedQuotation changes
   useEffect(() => {
     if (selectedQuotation) {
@@ -280,6 +345,35 @@ export default function WorkOrderForm() {
       setQuotationItems([]);
     }
   }, [selectedQuotation]);
+
+  const generateOrderNumber = async () => {
+    try {
+      const currentDate = new Date();
+      const year = currentDate.getFullYear();
+      const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+      
+      const response = await apiRequest("/api/work-orders/count", "POST", {
+        year: year,
+        month: month
+      });
+      
+      const count = (response as any).count || 0;
+      const sequence = String(count + 1).padStart(3, '0');
+      const orderNumber = `JB${year}${month}${sequence}`;
+      
+      setFormData(prev => ({
+        ...prev,
+        orderNumber: orderNumber
+      }));
+    } catch (error) {
+      console.error("Failed to generate order number:", error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถสร้างเลขที่ใบสั่งงานได้",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({
@@ -396,8 +490,12 @@ export default function WorkOrderForm() {
               <span>กลับ</span>
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">สร้างใบสั่งงานใหม่</h1>
-              <p className="text-gray-600">กรอกข้อมูลใบสั่งงานการผลิต</p>
+              <h1 className="text-3xl font-bold text-gray-900">
+                {isEditMode ? "แก้ไขใบสั่งงาน" : "สร้างใบสั่งงานใหม่"}
+              </h1>
+              <p className="text-gray-600">
+                {isEditMode ? "แก้ไขข้อมูลใบสั่งงานการผลิต" : "กรอกข้อมูลใบสั่งงานการผลิต"}
+              </p>
             </div>
           </div>
           <Badge variant="outline" className="text-lg px-4 py-2">
