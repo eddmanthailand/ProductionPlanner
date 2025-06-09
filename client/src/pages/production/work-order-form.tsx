@@ -785,49 +785,46 @@ export default function WorkOrderForm() {
 
                         <div className="space-y-2">
                           <Label>แผนก *</Label>
-                          <Select 
-                            value={subJob.departmentId} 
-                            onValueChange={(value) => {
-                              handleSubJobChange(index, 'departmentId', value);
-                              // Reset team and work step when department changes
-                              handleSubJobChange(index, 'teamId', '');
-                              handleSubJobChange(index, 'workStepId', '');
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกแผนก" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {departments.map((dept) => (
-                                <SelectItem key={dept.id} value={dept.id}>
-                                  {dept.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                className="w-full justify-between"
+                              >
+                                {subJob.departmentId ? 
+                                  departments?.find(d => d.id === subJob.departmentId)?.name || "เลือกแผนก" :
+                                  "เลือกแผนก"
+                                }
+                                <Search className="h-4 w-4 ml-2" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>เลือกแผนก</DialogTitle>
+                                <DialogDescription>
+                                  เลือกแผนกสำหรับ Sub-job นี้
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="grid gap-2 py-4">
+                                {departments?.map((dept) => (
+                                  <Button
+                                    key={dept.id}
+                                    variant={subJob.departmentId === dept.id ? "default" : "outline"}
+                                    className="justify-start"
+                                    onClick={() => {
+                                      handleSubJobChange(index, 'departmentId', dept.id);
+                                      handleSubJobChange(index, 'workStepId', '');
+                                    }}
+                                  >
+                                    {dept.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
 
-                        <div className="space-y-2">
-                          <Label>ทีม *</Label>
-                          <Select 
-                            value={subJob.teamId} 
-                            onValueChange={(value) => handleSubJobChange(index, 'teamId', value)}
-                            disabled={!subJob.departmentId}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกทีม" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {teams
-                                .filter(team => team.departmentId === subJob.departmentId)
-                                .map((team) => (
-                                <SelectItem key={team.id} value={team.id}>
-                                  {team.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+
 
                         <div className="space-y-2">
                           <Label>ขั้นตอน *</Label>
@@ -853,40 +850,78 @@ export default function WorkOrderForm() {
 
                         <div className="space-y-2">
                           <Label>สี *</Label>
-                          <Select 
-                            value={subJob.colorId} 
-                            onValueChange={(value) => handleSubJobChange(index, 'colorId', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกสี" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {colors.map((color) => (
-                                <SelectItem key={color.id} value={color.id.toString()}>
-                                  {color.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                className="w-full justify-between"
+                              >
+                                {subJob.colorId ? 
+                                  colors?.find(c => c.id.toString() === subJob.colorId)?.name || "เลือกสี" :
+                                  "เลือกสี"
+                                }
+                                <Search className="h-4 w-4 ml-2" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>เลือกสี</DialogTitle>
+                                <DialogDescription>
+                                  เลือกสีสำหรับ Sub-job นี้
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="grid grid-cols-2 gap-2 py-4">
+                                {colors?.map((color) => (
+                                  <Button
+                                    key={color.id}
+                                    variant={subJob.colorId === color.id.toString() ? "default" : "outline"}
+                                    className="justify-start"
+                                    onClick={() => handleSubJobChange(index, 'colorId', color.id.toString())}
+                                  >
+                                    {color.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
 
                         <div className="space-y-2">
                           <Label>ไซส์ *</Label>
-                          <Select 
-                            value={subJob.sizeId} 
-                            onValueChange={(value) => handleSubJobChange(index, 'sizeId', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกไซส์" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {sizes.map((size) => (
-                                <SelectItem key={size.id} value={size.id.toString()}>
-                                  {size.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                className="w-full justify-between"
+                              >
+                                {subJob.sizeId ? 
+                                  sizes?.find(s => s.id.toString() === subJob.sizeId)?.name || "เลือกไซส์" :
+                                  "เลือกไซส์"
+                                }
+                                <Search className="h-4 w-4 ml-2" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>เลือกไซส์</DialogTitle>
+                                <DialogDescription>
+                                  เลือกไซส์สำหรับ Sub-job นี้
+                                </DialogDescription>
+                              </DialogHeader>
+                              <div className="grid grid-cols-3 gap-2 py-4">
+                                {sizes?.map((size) => (
+                                  <Button
+                                    key={size.id}
+                                    variant={subJob.sizeId === size.id.toString() ? "default" : "outline"}
+                                    className="justify-center"
+                                    onClick={() => handleSubJobChange(index, 'sizeId', size.id.toString())}
+                                  >
+                                    {size.name}
+                                  </Button>
+                                ))}
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                         </div>
 
                         <div className="space-y-2">
