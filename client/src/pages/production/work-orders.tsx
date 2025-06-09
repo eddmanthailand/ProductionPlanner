@@ -478,17 +478,17 @@ export default function WorkOrders() {
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <TableRow key={order.id} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors">
-                      <TableCell className="px-2 py-1.5 font-bold text-blue-700 text-xs">{order.orderNumber || order.order_number}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-blue-700 text-xs">{order.orderNumber || order.order_number}</TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div>
-                          <div className="font-bold text-xs text-gray-900 leading-4 truncate">{order.title}</div>
+                          <div className="text-xs text-gray-900 leading-4 truncate">{order.title}</div>
                           {order.description && (
                             <div className="text-[10px] text-gray-600 mt-0.5 leading-3 truncate">{order.description}</div>
                           )}
                         </div>
                       </TableCell>
                       <TableCell className="px-2 py-1.5">
-                        <div className="text-xs font-medium text-gray-900 truncate">{order.customerName || order.customer_name}</div>
+                        <div className="text-xs text-gray-900 truncate">{order.customerName || order.customer_name}</div>
                       </TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div className="text-xs text-gray-700">
@@ -507,7 +507,7 @@ export default function WorkOrders() {
                         </span>
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-right">
-                        <div className="font-bold text-xs text-green-700">
+                        <div className="text-xs text-green-700">
                           ฿{(parseFloat(order.totalAmount || '0') / 1000).toFixed(0)}K
                         </div>
                       </TableCell>
@@ -517,7 +517,7 @@ export default function WorkOrders() {
                           onValueChange={(value) => handleStatusChange(order.id, value)}
                         >
                           <SelectTrigger className="h-6 w-16 text-[10px] border-0 bg-transparent p-0">
-                            <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getStatusColor(order.status)}`}>
+                            <div className={`px-1.5 py-0.5 rounded-full text-[10px] ${getStatusColor(order.status)}`}>
                               {order.status === "draft" && "ร่าง"}
                               {order.status === "approved" && "อนุมัติ"}
                               {order.status === "in_progress" && "ดำเนิน"}
