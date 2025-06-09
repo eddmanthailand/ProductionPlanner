@@ -453,6 +453,23 @@ export const workOrderItems = pgTable("work_order_items", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// Sub Jobs table
+export const subJobs = pgTable("sub_jobs", {
+  id: serial("id").primaryKey(),
+  workOrderId: text("work_order_id").references(() => workOrders.id, { onDelete: "cascade" }).notNull(),
+  productName: text("product_name").notNull(),
+  departmentId: text("department_id").references(() => departments.id),
+  workStepId: text("work_step_id").references(() => workSteps.id),
+  colorId: integer("color_id").references(() => colors.id),
+  sizeId: integer("size_id").references(() => sizes.id),
+  quantity: integer("quantity").notNull().default(1),
+  productionCost: decimal("production_cost", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull().default("0.00"),
+  status: text("status").notNull().default("pending"), // pending, in_progress, completed
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
@@ -649,6 +666,12 @@ export const insertHolidaySchema = createInsertSchema(holidays).omit({
 });
 
 export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertSubJobSchema = createInsertSchema(subJobs).omit({
   id: true,
   createdAt: true,
   updatedAt: true

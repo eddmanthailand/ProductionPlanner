@@ -312,15 +312,27 @@ export default function WorkOrderForm() {
       if (workOrder.sub_jobs && workOrder.sub_jobs.length > 0) {
         setSubJobs(workOrder.sub_jobs.map((sj: any) => ({
           id: sj.id,
-          productName: sj.product_name || "",
-          departmentId: sj.department_id || "",
-          workStepId: sj.work_step_id || "",
-          colorId: sj.color_id?.toString() || "",
-          sizeId: sj.size_id?.toString() || "",
+          productName: sj.product_name || sj.productName || "",
+          departmentId: sj.department_id || sj.departmentId || "",
+          workStepId: sj.work_step_id || sj.workStepId || "",
+          colorId: sj.color_id?.toString() || sj.colorId?.toString() || "",
+          sizeId: sj.size_id?.toString() || sj.sizeId?.toString() || "",
           quantity: sj.quantity || 1,
-          productionCost: sj.production_cost || 0,
-          totalCost: sj.total_cost || 0
+          productionCost: sj.production_cost || sj.productionCost || 0,
+          totalCost: sj.total_cost || sj.totalCost || 0
         })));
+      } else {
+        // If no sub-jobs, ensure we have at least one empty sub-job for the form
+        setSubJobs([{
+          productName: "", 
+          departmentId: "", 
+          workStepId: "", 
+          colorId: "", 
+          sizeId: "", 
+          quantity: 1, 
+          productionCost: 0, 
+          totalCost: 0 
+        }]);
       }
     }
   }, [isEditMode, existingWorkOrder, customers, quotations, workOrderId]);

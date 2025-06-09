@@ -1595,7 +1595,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Work order not found" });
       }
       
-      res.json(result.rows[0]);
+      const workOrder = result.rows[0];
+      
+      // Fetch sub-jobs for this work order
+      const subJobsResult = await pool.query(
+        `SELECT * FROM sub_jobs WHERE work_order_id = $1 ORDER BY created_at ASC`,
+        [id]
+      );
+      
+      workOrder.sub_jobs = subJobsResult.rows;
+      
+      res.json(workOrder);
     } catch (error) {
       console.error("Get work order error:", error);
       res.status(500).json({ message: "Failed to fetch work order" });
