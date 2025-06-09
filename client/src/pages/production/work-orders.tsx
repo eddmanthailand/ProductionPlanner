@@ -273,8 +273,18 @@ export default function WorkOrders() {
   };
 
   const handleEditWorkOrder = (workOrder: WorkOrder) => {
-    // Navigate to form page in edit mode
-    window.location.href = `/production/work-orders/new?edit=${workOrder.id}`;
+    setEditingWorkOrder({
+      id: workOrder.id,
+      title: workOrder.title,
+      description: workOrder.description || "",
+      status: workOrder.status,
+      priority: workOrder.priority,
+      assignedTeamId: workOrder.assignedTeamId || "",
+      startDate: workOrder.startDate || "",
+      dueDate: workOrder.dueDate || "",
+      notes: workOrder.notes || ""
+    });
+    setIsEditOpen(true);
   };
 
   const handleStatusChange = (workOrderId: string, newStatus: string) => {
