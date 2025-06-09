@@ -191,10 +191,6 @@ export default function WorkOrderForm() {
   // Query for existing work order data in edit mode
   const { data: existingWorkOrder, isLoading: loadingWorkOrder } = useQuery({
     queryKey: ["/api/work-orders", workOrderId],
-    queryFn: async () => {
-      const response = await apiRequest(`/api/work-orders/${workOrderId}`, "GET");
-      return response as any; // Type cast to fix TypeScript errors
-    },
     enabled: isEditMode && !!workOrderId,
   });
 
