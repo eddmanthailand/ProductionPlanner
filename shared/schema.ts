@@ -426,10 +426,9 @@ export const workOrders = pgTable("work_orders", {
   totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).notNull(),
   status: text("status").notNull().default("draft"), // draft, approved, in_progress, completed, cancelled
   priority: integer("priority").notNull().default(3), // 1=highest, 5=lowest
-  startDate: date("start_date"),
-  dueDate: date("due_date"),
+  workTypeId: integer("work_type_id").references(() => workTypes.id),
+  deliveryDate: date("delivery_date"),
   completedDate: date("completed_date"),
-  assignedTeamId: text("assigned_team_id").references(() => teams.id),
   notes: text("notes"),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -580,9 +579,9 @@ export const workOrdersRelations = relations(workOrders, ({ one, many }) => ({
     fields: [workOrders.quotationId],
     references: [quotations.id]
   }),
-  assignedTeam: one(teams, {
-    fields: [workOrders.assignedTeamId],
-    references: [teams.id]
+  workType: one(workTypes, {
+    fields: [workOrders.workTypeId],
+    references: [workTypes.id]
   }),
   items: many(workOrderItems)
 }));

@@ -107,9 +107,7 @@ export default function WorkOrderForm() {
     title: "",
     description: "",
     workTypeId: "",
-    startDate: "",
-    dueDate: "",
-    assignedTeamId: "",
+    deliveryDate: "",
     notes: ""
   });
 
@@ -307,10 +305,10 @@ export default function WorkOrderForm() {
   };
 
   const handleSubmit = () => {
-    if (!formData.title || !formData.customerId) {
+    if (!formData.title || !formData.customerId || !formData.deliveryDate) {
       toast({
         title: "ข้อผิดพลาด",
-        description: "กรุณากรอกข้อมูลที่จำเป็น",
+        description: "กรุณากรอกชื่องาน เลือกลูกค้า และกำหนดวันส่งสินค้า",
         variant: "destructive",
       });
       return;
@@ -320,6 +318,7 @@ export default function WorkOrderForm() {
       ...formData,
       customerId: parseInt(formData.customerId),
       quotationId: formData.quotationId ? parseInt(formData.quotationId) : null,
+      workTypeId: formData.workTypeId ? parseInt(formData.workTypeId) : null,
       totalAmount: calculateGrandTotal(),
       items: workOrderItems
     };
@@ -539,6 +538,27 @@ export default function WorkOrderForm() {
                     rows={3}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="deliveryDate">วันกำหนดส่งสินค้า *</Label>
+                  <Input
+                    id="deliveryDate"
+                    type="date"
+                    value={formData.deliveryDate}
+                    onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="notes">หมายเหตุ</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    placeholder="หมายเหตุเพิ่มเติม ข้อกำหนดพิเศษ หรือคำแนะนำ"
+                    rows={2}
+                  />
+                </div>
               </CardContent>
             </Card>
 
@@ -680,68 +700,7 @@ export default function WorkOrderForm() {
               </Card>
             )}
 
-            {/* Schedule & Team */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>กำหนดการและทีมงาน</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="startDate">วันที่เริ่มงาน</Label>
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) => handleInputChange('startDate', e.target.value)}
-                    />
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="dueDate">วันที่กำหนดเสร็จ</Label>
-                    <Input
-                      id="dueDate"
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={(e) => handleInputChange('dueDate', e.target.value)}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="team">ทีมที่รับผิดชอบ</Label>
-                  <Select 
-                    value={formData.assignedTeamId} 
-                    onValueChange={(value) => handleInputChange('assignedTeamId', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกทีม" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {teams.map((team) => (
-                        <SelectItem key={team.id} value={team.id}>
-                          {team.name} - หัวหน้าทีม: {team.leader}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">หมายเหตุ</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    placeholder="หมายเหตุเพิ่มเติม ข้อกำหนดพิเศษ หรือคำแนะนำ"
-                    rows={2}
-                  />
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Work Order Items */}
             <Card>
