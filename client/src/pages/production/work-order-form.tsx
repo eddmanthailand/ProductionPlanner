@@ -769,6 +769,7 @@ export default function WorkOrderForm() {
                         <TableRow>
                           <TableHead>สินค้า/งาน</TableHead>
                           <TableHead>รายละเอียด</TableHead>
+                          <TableHead className="text-center">หน่วย</TableHead>
                           <TableHead className="text-center">จำนวน</TableHead>
                           <TableHead className="text-right">ราคาต่อหน่วย</TableHead>
                           <TableHead className="text-right">ราคารวม</TableHead>
@@ -781,10 +782,10 @@ export default function WorkOrderForm() {
                               {item.product?.name || `สินค้ารหัส ${item.productId}`}
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">
-                              {item.product?.description || `SKU: ${item.product?.sku || 'N/A'}`}
-                              <div className="text-xs text-gray-500 mt-1">
-                                หน่วย: {item.product?.unit || 'ไม่ระบุ'}
-                              </div>
+                              {item.product?.description || item.product?.sku || 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-center text-sm">
+                              {item.product?.unit || 'ไม่ระบุ'}
                             </TableCell>
                             <TableCell className="text-center">
                               {item.quantity.toLocaleString()}
