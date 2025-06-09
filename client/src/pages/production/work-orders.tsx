@@ -464,14 +464,14 @@ export default function WorkOrders() {
             <Table className="w-full table-fixed">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b-2 border-gray-200">
-                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[14%] text-xs">JOB NO.</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[30%] text-xs">ชื่องาน</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[16%] text-xs">ลูกค้า</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[12%] text-xs">วันกำหนดส่ง</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-xs">ประเภทงาน</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[8%] text-xs">ยอดรวม</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[15%] text-xs">JOB NO.</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[32%] text-xs">ชื่องาน</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-xs">ลูกค้า</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[14%] text-xs">วันกำหนดส่ง</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[12%] text-xs">ประเภทงาน</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[7%] text-xs">ยอดรวม</TableHead>
                   <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[6%] text-xs">สถานะ</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[14%] text-xs">จัดการ</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[4%] text-xs">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
