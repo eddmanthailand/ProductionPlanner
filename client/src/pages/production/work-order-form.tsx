@@ -274,8 +274,9 @@ export default function WorkOrderForm() {
 
   // Load existing work order data in edit mode
   useEffect(() => {
-    if (isEditMode && existingWorkOrder && customers.length > 0 && quotations.length > 0) {
+    if (isEditMode && existingWorkOrder) {
       const workOrder = existingWorkOrder as any;
+      console.log("Loading work order data:", workOrder);
       
       setFormData({
         orderNumber: workOrder.orderNumber || workOrder.order_number || "",
@@ -284,26 +285,30 @@ export default function WorkOrderForm() {
         title: workOrder.title || "",
         description: workOrder.description || "",
         workTypeId: workOrder.workTypeId?.toString() || workOrder.work_type_id?.toString() || "",
-        deliveryDate: workOrder.deliveryDate || workOrder.delivery_date || "",
+        deliveryDate: workOrder.deliveryDate || workOrder.delivery_date || workOrder.dueDate || workOrder.due_date || "",
         notes: workOrder.notes || ""
       });
 
-      // Load customer data
-      const customerId = workOrder.customerId || workOrder.customer_id;
-      if (customerId) {
-        const customer = customers.find(c => c.id === customerId);
-        if (customer) {
-          setSelectedCustomer(customer);
-          setCustomerSearchValue(`${customer.name} - ${customer.companyName || customer.name}`);
+      // Load customer data when customers are available
+      if (customers.length > 0) {
+        const customerId = workOrder.customerId || workOrder.customer_id;
+        if (customerId) {
+          const customer = customers.find(c => c.id === customerId);
+          if (customer) {
+            setSelectedCustomer(customer);
+            setCustomerSearchValue(`${customer.name} - ${customer.companyName || customer.name}`);
+          }
         }
       }
 
-      // Load quotation data
-      const quotationId = workOrder.quotationId || workOrder.quotation_id;
-      if (quotationId) {
-        const quotation = quotations.find(q => q.id === quotationId);
-        if (quotation) {
-          setSelectedQuotation(quotation);
+      // Load quotation data when quotations are available
+      if (quotations.length > 0) {
+        const quotationId = workOrder.quotationId || workOrder.quotation_id;
+        if (quotationId) {
+          const quotation = quotations.find(q => q.id === quotationId);
+          if (quotation) {
+            setSelectedQuotation(quotation);
+          }
         }
       }
 
