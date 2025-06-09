@@ -480,8 +480,8 @@ export default function WorkOrders() {
                   <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">วันกำหนดส่ง</TableHead>
                   <TableHead className="text-left text-gray-700 px-2 py-2 w-[15%] text-xs">ประเภทงาน</TableHead>
                   <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">ยอดรวม</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">สถานะ</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[10%] text-xs">จัดการ</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[15%] text-xs">สถานะ</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[5%] text-xs">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
