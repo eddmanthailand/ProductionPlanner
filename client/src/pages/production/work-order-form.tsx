@@ -379,7 +379,7 @@ export default function WorkOrderForm() {
                         <SelectItem value="none">สร้างใหม่ (ไม่อ้างอิง)</SelectItem>
                         {quotations.filter(q => q.status === "approved").map((quotation) => (
                           <SelectItem key={quotation.id} value={quotation.id.toString()}>
-                            {quotation.quotationNumber} - {quotation.title}
+                            {quotation.quotationNumber} - {(quotation as any).projectName || (quotation as any).title || 'ไม่มีชื่อโครงการ'}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -505,12 +505,7 @@ export default function WorkOrderForm() {
             </Card>
 
             {/* Quotation Items Display */}
-            {(() => {
-              console.log("Debug - selectedQuotation:", selectedQuotation);
-              console.log("Debug - quotationItems:", quotationItems);
-              console.log("Debug - quotationItems.length:", quotationItems.length);
-              return selectedQuotation && quotationItems.length > 0;
-            })() && (
+            {selectedQuotation && quotationItems.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
