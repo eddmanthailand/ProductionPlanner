@@ -464,60 +464,63 @@ export default function WorkOrders() {
             <Table className="w-full table-fixed">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b-2 border-gray-200">
-                  <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[18%] text-sm">JOB NO.</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[25%] text-sm">ชื่องาน</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[15%] text-sm">ลูกค้า</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[12%] text-sm">วันกำหนดส่ง</TableHead>
-                  <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[10%] text-sm">ประเภทงาน</TableHead>
-                  <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ยอดรวม</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[8%] text-sm">สถานะ</TableHead>
-                  <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[12%] text-sm">จัดการ</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[14%] text-xs">JOB NO.</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[30%] text-xs">ชื่องาน</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[16%] text-xs">ลูกค้า</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[12%] text-xs">วันกำหนดส่ง</TableHead>
+                  <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-xs">ประเภทงาน</TableHead>
+                  <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[8%] text-xs">ยอดรวม</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[6%] text-xs">สถานะ</TableHead>
+                  <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[14%] text-xs">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <TableRow key={order.id} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors">
-                      <TableCell className="px-3 py-2 font-bold text-blue-700 text-sm">{order.orderNumber}</TableCell>
-                      <TableCell className="px-3 py-2">
+                      <TableCell className="px-2 py-1.5 font-bold text-blue-700 text-xs">{order.orderNumber}</TableCell>
+                      <TableCell className="px-2 py-1.5">
                         <div>
-                          <div className="font-bold text-sm text-gray-900 leading-5">{order.title}</div>
+                          <div className="font-bold text-xs text-gray-900 leading-4 truncate">{order.title}</div>
                           {order.description && (
-                            <div className="text-xs text-gray-600 mt-1 leading-relaxed">{order.description}</div>
+                            <div className="text-[10px] text-gray-600 mt-0.5 leading-3 truncate">{order.description}</div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <div className="text-sm font-medium text-gray-900">{order.customerName}</div>
+                      <TableCell className="px-2 py-1.5">
+                        <div className="text-xs font-medium text-gray-900 truncate">{order.customerName}</div>
                       </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <div className="text-sm text-gray-700">
+                      <TableCell className="px-2 py-1.5">
+                        <div className="text-xs text-gray-700">
                           {order.deliveryDate ? 
-                            new Date(order.deliveryDate).toLocaleDateString('th-TH') : 
-                            <span className="text-orange-600 font-semibold">ยังไม่กำหนด</span>
+                            new Date(order.deliveryDate).toLocaleDateString('th-TH', { 
+                              month: 'short', 
+                              day: 'numeric' 
+                            }) : 
+                            <span className="text-orange-600 font-semibold text-[10px]">ยังไม่กำหนด</span>
                           }
                         </div>
                       </TableCell>
-                      <TableCell className="px-3 py-2">
-                        <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-1 text-xs font-medium text-blue-800">
+                      <TableCell className="px-2 py-1.5">
+                        <span className="inline-flex items-center rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-800 truncate">
                           {getWorkTypeName(order.workTypeId)}
                         </span>
                       </TableCell>
-                      <TableCell className="px-2 py-2 text-right">
-                        <div className="font-bold text-sm text-green-700">
-                          ฿{parseFloat(order.totalAmount || '0').toLocaleString()}
+                      <TableCell className="px-2 py-1.5 text-right">
+                        <div className="font-bold text-xs text-green-700">
+                          ฿{(parseFloat(order.totalAmount || '0') / 1000).toFixed(0)}K
                         </div>
                       </TableCell>
-                      <TableCell className="px-2 py-2 text-center">
+                      <TableCell className="px-1 py-1.5 text-center">
                         <Select 
                           value={order.status} 
                           onValueChange={(value) => handleStatusChange(order.id, value)}
                         >
-                          <SelectTrigger className="h-7 w-20 text-xs border-0 bg-transparent">
-                            <div className={`px-2 py-1 rounded-full text-xs font-bold ${getStatusColor(order.status)}`}>
+                          <SelectTrigger className="h-6 w-16 text-[10px] border-0 bg-transparent p-0">
+                            <div className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${getStatusColor(order.status)}`}>
                               {order.status === "draft" && "ร่าง"}
                               {order.status === "approved" && "อนุมัติ"}
-                              {order.status === "in_progress" && "ดำเนินการ"}
+                              {order.status === "in_progress" && "ดำเนิน"}
                               {order.status === "completed" && "เสร็จ"}
                               {order.status === "cancelled" && "ยกเลิก"}
                             </div>
@@ -531,24 +534,24 @@ export default function WorkOrders() {
                           </SelectContent>
                         </Select>
                       </TableCell>
-                      <TableCell className="px-2 py-2 text-center">
-                        <div className="flex items-center justify-center space-x-1">
+                      <TableCell className="px-1 py-1.5 text-center">
+                        <div className="flex items-center justify-center space-x-0.5">
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditWorkOrder(order)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-6 px-2 py-1 text-xs transition-all"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-5 px-1.5 py-0.5 text-[10px] transition-all"
                           >
-                            <Edit2 className="h-3 w-3 mr-1" />
+                            <Edit2 className="h-2.5 w-2.5 mr-0.5" />
                             แก้ไข
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteWorkOrder(order.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-6 px-2 py-1 text-xs transition-all"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-5 px-1.5 py-0.5 text-[10px] transition-all"
                           >
-                            <Trash2 className="h-3 w-3 mr-1" />
+                            <Trash2 className="h-2.5 w-2.5 mr-0.5" />
                             ลบ
                           </Button>
                         </div>
