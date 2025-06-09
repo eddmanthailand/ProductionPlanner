@@ -644,50 +644,54 @@ export default function WorkOrderForm() {
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="title" className="text-sm font-medium text-gray-700">ชื่องาน *</Label>
-                  <Input
-                    id="title"
-                    value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    placeholder="ระบุชื่องาน"
-                    className="h-9 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm font-medium"
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="title" className="text-sm font-medium text-gray-700">ชื่องาน *</Label>
+                    <Input
+                      id="title"
+                      value={formData.title}
+                      onChange={(e) => handleInputChange('title', e.target.value)}
+                      placeholder="ระบุชื่องาน"
+                      className="h-9 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm font-medium"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="deliveryDate" className="text-sm font-medium text-gray-700">วันกำหนดส่งสินค้า *</Label>
+                    <Input
+                      id="deliveryDate"
+                      type="date"
+                      value={formData.deliveryDate}
+                      onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
+                      className="h-9 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
+                    />
+                  </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="description" className="text-sm font-medium text-gray-700">รายละเอียดงาน</Label>
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    placeholder="รายละเอียดและข้อกำหนดของงาน"
-                    rows={2}
-                    className="text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="description" className="text-sm font-medium text-gray-700">รายละเอียดงาน</Label>
+                    <Textarea
+                      id="description"
+                      value={formData.description}
+                      onChange={(e) => handleInputChange('description', e.target.value)}
+                      placeholder="รายละเอียดและข้อกำหนดของงาน"
+                      rows={2}
+                      className="text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
+                    />
+                  </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="deliveryDate" className="text-sm font-medium text-gray-700">วันกำหนดส่งสินค้า *</Label>
-                  <Input
-                    id="deliveryDate"
-                    type="date"
-                    value={formData.deliveryDate}
-                    onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
-                    className="h-8 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label htmlFor="notes" className="text-sm font-medium text-gray-700">หมายเหตุ</Label>
-                  <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange('notes', e.target.value)}
-                    placeholder="หมายเหตุเพิ่มเติม ข้อกำหนดพิเศษ หรือคำแนะนำ"
-                    rows={1}
-                    className="text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
-                  />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="notes" className="text-sm font-medium text-gray-700">หมายเหตุ</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => handleInputChange('notes', e.target.value)}
+                      placeholder="หมายเหตุเพิ่มเติม ข้อกำหนดพิเศษ หรือคำแนะนำ"
+                      rows={2}
+                      className="text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
