@@ -9,6 +9,7 @@ import {
   customers,
   colors,
   sizes,
+  workTypes,
   quotations,
   quotationItems,
   departments,
@@ -40,6 +41,8 @@ import {
   type InsertColor,
   type Size,
   type InsertSize,
+  type WorkType,
+  type InsertWorkType,
   type Quotation,
   type InsertQuotation,
   type QuotationItem,
@@ -132,6 +135,13 @@ export interface IStorage {
   createSize(size: InsertSize): Promise<Size>;
   updateSize(id: number, size: Partial<InsertSize>, tenantId: string): Promise<Size | undefined>;
   deleteSize(id: number, tenantId: string): Promise<boolean>;
+
+  // Work Types
+  getWorkTypes(tenantId: string): Promise<WorkType[]>;
+  getWorkType(id: number, tenantId: string): Promise<WorkType | undefined>;
+  createWorkType(workType: InsertWorkType): Promise<WorkType>;
+  updateWorkType(id: number, workType: Partial<InsertWorkType>, tenantId: string): Promise<WorkType | undefined>;
+  deleteWorkType(id: number, tenantId: string): Promise<boolean>;
 
   // Quotations
   getQuotations(tenantId: string): Promise<Quotation[]>;
@@ -528,6 +538,38 @@ export class DatabaseStorage implements IStorage {
   async deleteSize(id: number, tenantId: string): Promise<boolean> {
     const result = await db.delete(sizes).where(
       and(eq(sizes.id, id), eq(sizes.tenantId, tenantId))
+    );
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  // Work Types methods
+  async getWorkTypes(tenantId: string): Promise<WorkType[]> {
+    return await db.select().from(workTypes).where(eq(workTypes.tenantId, tenantId)).orderBy(asc(workTypes.sortOrder), asc(workTypes.id));
+  }
+
+  async getWorkType(id: number, tenantId: string): Promise<WorkType | undefined> {
+    const [workType] = await db.select().from(workTypes).where(
+      and(eq(workTypes.id, id), eq(workTypes.tenantId, tenantId))
+    );
+    return workType || undefined;
+  }
+
+  async createWorkType(insertWorkType: InsertWorkType): Promise<WorkType> {
+    const [workType] = await db.insert(workTypes).values(insertWorkType).returning();
+    return workType;
+  }
+
+  async updateWorkType(id: number, updateData: Partial<InsertWorkType>, tenantId: string): Promise<WorkType | undefined> {
+    const [workType] = await db.update(workTypes)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(workTypes.id, id), eq(workTypes.tenantId, tenantId)))
+      .returning();
+    return workType || undefined;
+  }
+
+  async deleteWorkType(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.delete(workTypes).where(
+      and(eq(workTypes.id, id), eq(workTypes.tenantId, tenantId))
     );
     return (result.rowCount ?? 0) > 0;
   }

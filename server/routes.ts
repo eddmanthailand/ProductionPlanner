@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -1446,6 +1446,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete holiday error:", error);
       res.status(500).json({ message: "Failed to delete holiday" });
+    }
+  });
+
+  // Work Types routes
+  app.get("/api/work-types", async (req: any, res: any) => {
+    try {
+      // Dev mode - bypass auth and use default tenant
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+
+      const workTypes = await storage.getWorkTypes(tenantId);
+      res.json(workTypes);
+    } catch (error) {
+      console.error("Get work types error:", error);
+      res.status(500).json({ message: "Failed to fetch work types" });
+    }
+  });
+
+  app.post("/api/work-types", async (req: any, res: any) => {
+    try {
+      // Dev mode - bypass auth and use default tenant
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+
+      const validatedData = insertWorkTypeSchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const workType = await storage.createWorkType(validatedData);
+      res.status(201).json(workType);
+    } catch (error) {
+      console.error("Create work type error:", error);
+      res.status(500).json({ message: "Failed to create work type" });
+    }
+  });
+
+  app.put("/api/work-types/:id", async (req: any, res: any) => {
+    try {
+      // Dev mode - bypass auth and use default tenant
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { id } = req.params;
+      
+      const validatedData = insertWorkTypeSchema.parse({
+        ...req.body,
+        tenantId
+      });
+      
+      const workType = await storage.updateWorkType(parseInt(id), validatedData, tenantId);
+      if (!workType) {
+        return res.status(404).json({ message: "Work type not found" });
+      }
+      
+      res.json(workType);
+    } catch (error) {
+      console.error("Update work type error:", error);
+      res.status(500).json({ message: "Failed to update work type" });
+    }
+  });
+
+  app.delete("/api/work-types/:id", async (req: any, res: any) => {
+    try {
+      // Dev mode - bypass auth and use default tenant
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { id } = req.params;
+      
+      const deleted = await storage.deleteWorkType(parseInt(id), tenantId);
+      if (!deleted) {
+        return res.status(404).json({ message: "Work type not found" });
+      }
+      
+      res.json({ message: "Work type deleted successfully" });
+    } catch (error) {
+      console.error("Delete work type error:", error);
+      res.status(500).json({ message: "Failed to delete work type" });
     }
   });
 
