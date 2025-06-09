@@ -50,13 +50,13 @@ interface Employee {
 interface WorkStep {
   id: string;
   name: string;
-  department_id: string;
+  departmentId: string;
   description?: string;
   duration: number;
-  required_skills: string[];
+  requiredSkills: string[];
   order: number;
-  created_at: string;
-  updated_at: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export default function OrganizationChart() {
@@ -765,7 +765,7 @@ export default function OrganizationChart() {
   };
 
   const getWorkStepsForDepartment = (departmentId: string) => {
-    return workSteps.filter(ws => ws.department_id === departmentId).sort((a, b) => a.order - b.order);
+    return workSteps.filter(ws => ws.departmentId === departmentId).sort((a, b) => a.order - b.order);
   };
 
   const toggleDepartmentExpansion = (departmentId: string) => {
@@ -1016,9 +1016,9 @@ export default function OrganizationChart() {
                             </div>
                             
                             <div className="flex items-center justify-between">
-                              <Badge className={getSkillLevelBadge(workStep.required_skills?.[0] || 'basic')}>
+                              <Badge className={getSkillLevelBadge(workStep.requiredSkills?.[0] || 'basic')}>
                                 {(() => {
-                                  const skill = workStep.required_skills?.[0] || 'basic';
+                                  const skill = workStep.requiredSkills?.[0] || 'basic';
                                   switch(skill) {
                                     case 'basic': return 'เบื้องต้น';
                                     case 'intermediate': return 'ปานกลาง';
@@ -1794,8 +1794,8 @@ export default function OrganizationChart() {
               <div className="grid gap-2">
                 <Label htmlFor="edit-work-step-skill">ระดับทักษะที่ต้องการ</Label>
                 <Select 
-                  value={editingWorkStep.required_skills?.[0] || 'basic'} 
-                  onValueChange={(value) => setEditingWorkStep(prev => prev ? { ...prev, required_skills: [value] } : null)}
+                  value={editingWorkStep.requiredSkills?.[0] || 'basic'} 
+                  onValueChange={(value) => setEditingWorkStep(prev => prev ? { ...prev, requiredSkills: [value] } : null)}
                 >
                   <SelectTrigger>
                     <SelectValue />
