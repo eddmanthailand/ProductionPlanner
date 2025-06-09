@@ -443,84 +443,92 @@ export default function WorkOrders() {
       <Card>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full table-fixed">
+              <colgroup>
+                <col className="w-[12%]" />
+                <col className="w-[28%]" />
+                <col className="w-[16%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[12%]" />
+                <col className="w-[6%]" />
+                <col className="w-[2%]" />
+              </colgroup>
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-left p-4 font-medium text-gray-900">เลขที่ Job</th>
-                  <th className="text-left p-4 font-medium text-gray-900">ชื่องาน</th>
-                  <th className="text-left p-4 font-medium text-gray-900">ลูกค้า</th>
-                  <th className="text-left p-4 font-medium text-gray-900">วันกำหนดส่ง</th>
-                  <th className="text-left p-4 font-medium text-gray-900">ประเภทงาน</th>
-                  <th className="text-right p-4 font-medium text-gray-900">ยอดรวม</th>
-                  <th className="text-center p-4 font-medium text-gray-900">สถานะ</th>
-                  <th className="text-center p-4 font-medium text-gray-900">จัดการ</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">เลขที่ Job</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">ชื่องาน</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">ลูกค้า</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">วันกำหนดส่ง</th>
+                  <th className="text-left px-3 py-2 font-medium text-gray-900 text-sm">ประเภทงาน</th>
+                  <th className="text-right px-3 py-2 font-medium text-gray-900 text-sm">ยอดรวม</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-900 text-sm">สถานะ</th>
+                  <th className="text-center px-3 py-2 font-medium text-gray-900 text-sm">จัดการ</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <tr key={order.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4 font-medium text-blue-600">{order.id}</td>
-                      <td className="p-4">
+                      <td className="px-3 py-2 font-medium text-blue-600 text-sm">{order.orderNumber || `JB${order.id.slice(-6)}`}</td>
+                      <td className="px-3 py-2">
                         <div>
-                          <div className="font-medium">{order.title}</div>
+                          <div className="font-medium text-sm">{order.title}</div>
                           {order.description && (
-                            <div className="text-sm text-gray-500 mt-1">{order.description}</div>
+                            <div className="text-xs text-gray-500 mt-1 truncate">{order.description}</div>
                           )}
                         </div>
                       </td>
-                      <td className="p-4">{order.customerName}</td>
-                      <td className="p-4">
+                      <td className="px-3 py-2 text-sm">{order.customerName}</td>
+                      <td className="px-3 py-2 text-sm">
                         {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('th-TH') : "ยังไม่กำหนด"}
                       </td>
-                      <td className="p-4">
+                      <td className="px-3 py-2 text-sm">
                         {getWorkTypeName(order.workTypeId)}
                       </td>
-                      <td className="p-4 text-right font-medium">
+                      <td className="px-3 py-2 text-right font-medium text-sm">
                         ฿{parseFloat(order.totalAmount).toLocaleString()}
                       </td>
-                      <td className="p-4 text-center">
-                        <div className="flex flex-col items-center gap-1">
-                          <Badge className={getStatusColor(order.status)}>
-                            {order.status === "draft" && "ร่าง"}
-                            {order.status === "approved" && "อนุมัติแล้ว"}
-                            {order.status === "in_progress" && "กำลังดำเนินการ"}
-                            {order.status === "completed" && "เสร็จแล้ว"}
-                            {order.status === "cancelled" && "ยกเลิก"}
-                          </Badge>
-                          <Select 
-                            value={order.status} 
-                            onValueChange={(value) => handleStatusChange(order.id, value)}
-                          >
-                            <SelectTrigger className="h-6 w-20 text-xs">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="draft">ร่าง</SelectItem>
-                              <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
-                              <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
-                              <SelectItem value="completed">เสร็จแล้ว</SelectItem>
-                              <SelectItem value="cancelled">ยกเลิก</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
+                      <td className="px-3 py-2 text-center">
+                        <Select 
+                          value={order.status} 
+                          onValueChange={(value) => handleStatusChange(order.id, value)}
+                        >
+                          <SelectTrigger className="h-7 w-16 text-xs border-0 bg-transparent">
+                            <div className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                              {order.status === "draft" && "ร่าง"}
+                              {order.status === "approved" && "อนุมัติ"}
+                              {order.status === "in_progress" && "ดำเนินการ"}
+                              {order.status === "completed" && "เสร็จ"}
+                              {order.status === "cancelled" && "ยกเลิก"}
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">ร่าง</SelectItem>
+                            <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
+                            <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                            <SelectItem value="completed">เสร็จแล้ว</SelectItem>
+                            <SelectItem value="cancelled">ยกเลิก</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </td>
-                      <td className="p-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="px-3 py-2 text-center">
+                        <div className="flex items-center justify-center gap-1">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleEditWorkOrder(order)}
+                            className="h-7 w-7 p-0"
                           >
-                            <Edit2 className="h-4 w-4" />
+                            <Edit2 className="h-3 w-3" />
                           </Button>
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteWorkOrder(order.id)}
-                            className="text-red-600 hover:text-red-700"
+                            className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </td>
