@@ -272,8 +272,15 @@ export default function WorkOrders() {
   };
 
   const handleEditWorkOrder = (workOrder: WorkOrder) => {
-    // Navigate to edit form with work order ID
-    window.location.href = `/production/work-orders/edit/${workOrder.id}`;
+    // Navigate to form page in edit mode
+    window.location.href = `/production/work-orders/new?edit=${workOrder.id}`;
+  };
+
+  const handleStatusChange = (workOrderId: string, newStatus: string) => {
+    updateWorkOrderMutation.mutate({
+      id: workOrderId,
+      status: newStatus
+    });
   };
 
   const handleUpdateWorkOrder = () => {
@@ -453,7 +460,7 @@ export default function WorkOrders() {
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <tr key={order.id} className="border-b hover:bg-gray-50">
-                      <td className="p-4 font-medium text-blue-600">{order.orderNumber}</td>
+                      <td className="p-4 font-medium text-blue-600">{order.id}</td>
                       <td className="p-4">
                         <div>
                           <div className="font-medium">{order.title}</div>
@@ -473,13 +480,30 @@ export default function WorkOrders() {
                         ฿{parseFloat(order.totalAmount).toLocaleString()}
                       </td>
                       <td className="p-4 text-center">
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status === "draft" && "ร่าง"}
-                          {order.status === "approved" && "อนุมัติแล้ว"}
-                          {order.status === "in_progress" && "กำลังดำเนินการ"}
-                          {order.status === "completed" && "เสร็จแล้ว"}
-                          {order.status === "cancelled" && "ยกเลิก"}
-                        </Badge>
+                        <div className="flex flex-col items-center gap-1">
+                          <Badge className={getStatusColor(order.status)}>
+                            {order.status === "draft" && "ร่าง"}
+                            {order.status === "approved" && "อนุมัติแล้ว"}
+                            {order.status === "in_progress" && "กำลังดำเนินการ"}
+                            {order.status === "completed" && "เสร็จแล้ว"}
+                            {order.status === "cancelled" && "ยกเลิก"}
+                          </Badge>
+                          <Select 
+                            value={order.status} 
+                            onValueChange={(value) => handleStatusChange(order.id, value)}
+                          >
+                            <SelectTrigger className="h-6 w-20 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">ร่าง</SelectItem>
+                              <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
+                              <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                              <SelectItem value="completed">เสร็จแล้ว</SelectItem>
+                              <SelectItem value="cancelled">ยกเลิก</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </td>
                       <td className="p-4 text-center">
                         <div className="flex items-center justify-center gap-2">
