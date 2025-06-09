@@ -232,32 +232,35 @@ export default function WorkOrderForm() {
         description: quotation.description || "",
         customerId: quotation.customerId.toString()
       }));
-
-      // Use items from the quotation object if available
-      const quotationWithItems = quotation as any;
-      if (quotationWithItems.items && Array.isArray(quotationWithItems.items)) {
-        console.log("Using quotation items from object:", quotationWithItems.items);
-        console.log("Setting quotation items count:", quotationWithItems.items.length);
-        setQuotationItems(quotationWithItems.items);
-        
-        // Force a re-render by logging the state after setting
-        setTimeout(() => {
-          console.log("Quotation items after setting:", quotationItems);
-        }, 100);
-      } else {
-        console.log("No items in quotation object, trying API...");
-        // Fallback to API call if items not in object
-        try {
-          const items = await apiRequest(`/api/quotations/${quotationId}/items`, "GET");
-          console.log("Fetched quotation items from API:", items);
-          setQuotationItems(Array.isArray(items) ? items : []);
-        } catch (error) {
-          console.error("Failed to fetch quotation items:", error);
-          setQuotationItems([]);
-        }
-      }
     }
   };
+
+  // Use useEffect to handle quotation items when selectedQuotation changes
+  useEffect(() => {
+    if (selectedQuotation) {
+      const quotationWithItems = selectedQuotation as any;
+      if (quotationWithItems.items && Array.isArray(quotationWithItems.items)) {
+        console.log("useEffect: Setting quotation items from object:", quotationWithItems.items);
+        setQuotationItems(quotationWithItems.items);
+      } else {
+        console.log("useEffect: No items in quotation object, trying API...");
+        // Fallback to API call if items not in object
+        const fetchItems = async () => {
+          try {
+            const items = await apiRequest(`/api/quotations/${selectedQuotation.id}/items`, "GET");
+            console.log("useEffect: Fetched quotation items from API:", items);
+            setQuotationItems(Array.isArray(items) ? items : []);
+          } catch (error) {
+            console.error("useEffect: Failed to fetch quotation items:", error);
+            setQuotationItems([]);
+          }
+        };
+        fetchItems();
+      }
+    } else {
+      setQuotationItems([]);
+    }
+  }, [selectedQuotation]);
 
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({
