@@ -510,7 +510,7 @@ export default function WorkOrderForm() {
                       <SelectContent>
                         {workTypes.filter(wt => wt.isActive).map((workType) => (
                           <SelectItem key={workType.id} value={workType.id.toString()}>
-                            {workType.name} {workType.code && `(${workType.code})`}
+                            {workType.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
