@@ -789,8 +789,13 @@ export default function WorkOrderForm() {
                           <Select 
                             value={subJob.departmentId} 
                             onValueChange={(value) => {
-                              handleSubJobChange(index, 'departmentId', value);
-                              handleSubJobChange(index, 'workStepId', '');
+                              const updatedSubJobs = [...subJobs];
+                              updatedSubJobs[index] = {
+                                ...updatedSubJobs[index],
+                                departmentId: value,
+                                workStepId: '' // Reset work step when department changes
+                              };
+                              setSubJobs(updatedSubJobs);
                             }}
                           >
                             <SelectTrigger>
@@ -834,7 +839,14 @@ export default function WorkOrderForm() {
                           <Label>สี *</Label>
                           <Select 
                             value={subJob.colorId} 
-                            onValueChange={(value) => handleSubJobChange(index, 'colorId', value)}
+                            onValueChange={(value) => {
+                              const updatedSubJobs = [...subJobs];
+                              updatedSubJobs[index] = {
+                                ...updatedSubJobs[index],
+                                colorId: value
+                              };
+                              setSubJobs(updatedSubJobs);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="เลือกสี" />
@@ -853,7 +865,14 @@ export default function WorkOrderForm() {
                           <Label>ไซส์ *</Label>
                           <Select 
                             value={subJob.sizeId} 
-                            onValueChange={(value) => handleSubJobChange(index, 'sizeId', value)}
+                            onValueChange={(value) => {
+                              const updatedSubJobs = [...subJobs];
+                              updatedSubJobs[index] = {
+                                ...updatedSubJobs[index],
+                                sizeId: value
+                              };
+                              setSubJobs(updatedSubJobs);
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue placeholder="เลือกไซส์" />
