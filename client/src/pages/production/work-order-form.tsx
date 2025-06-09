@@ -46,24 +46,25 @@ interface Quotation {
   id: number;
   quotationNumber: string;
   customerId: number;
-  customerName: string;
-  title: string;
-  description: string | null;
+  customerName?: string;
+  title?: string;
+  projectName?: string;
+  description?: string | null;
   grandTotal: string;
   status: string;
   validUntil: string;
   createdAt: string;
+  items?: QuotationItem[];
 }
 
 interface QuotationItem {
   id: number;
   quotationId: number;
-  productName: string;
-  description: string;
+  productId: number;
   quantity: number;
   unitPrice: number;
-  totalPrice: number;
-  specifications?: string;
+  total: number;
+  createdAt: string;
 }
 
 interface WorkOrderItem {
@@ -198,6 +199,7 @@ export default function WorkOrderForm() {
   });
 
   const handleQuotationSelect = async (quotationId: string) => {
+    console.log("handleQuotationSelect called with:", quotationId);
     if (!quotationId || quotationId === "none") {
       setSelectedQuotation(null);
       setQuotationItems([]);
@@ -212,23 +214,32 @@ export default function WorkOrderForm() {
     }
 
     const quotation = quotations.find(q => q.id === parseInt(quotationId));
+    console.log("Found quotation:", quotation);
     if (quotation) {
       setSelectedQuotation(quotation);
       setFormData(prev => ({
         ...prev,
         quotationId: quotationId,
-        title: quotation.title,
+        title: (quotation as any).title || (quotation as any).projectName || "",
         description: quotation.description || "",
         customerId: quotation.customerId.toString()
       }));
 
-      // Fetch quotation items
-      try {
-        const items = await apiRequest(`/api/quotations/${quotationId}/items`, "GET");
-        setQuotationItems(Array.isArray(items) ? items : []);
-      } catch (error) {
-        console.error("Failed to fetch quotation items:", error);
-        setQuotationItems([]);
+      // Use items from the quotation object if available
+      if ((quotation as any).items && Array.isArray((quotation as any).items)) {
+        console.log("Using quotation items from object:", (quotation as any).items);
+        setQuotationItems((quotation as any).items);
+      } else {
+        console.log("No items in quotation object, trying API...");
+        // Fallback to API call if items not in object
+        try {
+          const items = await apiRequest(`/api/quotations/${quotationId}/items`, "GET");
+          console.log("Fetched quotation items from API:", items);
+          setQuotationItems(Array.isArray(items) ? items : []);
+        } catch (error) {
+          console.error("Failed to fetch quotation items:", error);
+          setQuotationItems([]);
+        }
       }
     }
   };
@@ -494,7 +505,12 @@ export default function WorkOrderForm() {
             </Card>
 
             {/* Quotation Items Display */}
-            {selectedQuotation && quotationItems.length > 0 && (
+            {(() => {
+              console.log("Debug - selectedQuotation:", selectedQuotation);
+              console.log("Debug - quotationItems:", quotationItems);
+              console.log("Debug - quotationItems.length:", quotationItems.length);
+              return selectedQuotation && quotationItems.length > 0;
+            })() && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
@@ -521,15 +537,10 @@ export default function WorkOrderForm() {
                         {quotationItems.map((item, index) => (
                           <TableRow key={index}>
                             <TableCell className="font-medium">
-                              {item.productName}
+                              สินค้ารหัส {item.productId}
                             </TableCell>
                             <TableCell className="text-sm text-gray-600">
-                              {item.description}
-                              {item.specifications && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  ข้อกำหนด: {item.specifications}
-                                </div>
-                              )}
+                              รายการสินค้าจากใบเสนอราคา
                             </TableCell>
                             <TableCell className="text-center">
                               {item.quantity.toLocaleString()}
@@ -538,7 +549,7 @@ export default function WorkOrderForm() {
                               ฿{item.unitPrice.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-right font-medium">
-                              ฿{item.totalPrice.toLocaleString()}
+                              ฿{item.total.toLocaleString()}
                             </TableCell>
                           </TableRow>
                         ))}
