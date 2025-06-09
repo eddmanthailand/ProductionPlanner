@@ -462,14 +462,14 @@ export default function WorkOrders() {
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-separate border-spacing-0">
               <colgroup>
-                <col className="w-[16%]" />
-                <col className="w-[28%]" />
-                <col className="w-[16%]" />
-                <col className="w-[14%]" />
+                <col className="w-[18%]" />
+                <col className="w-[25%]" />
+                <col className="w-[18%]" />
+                <col className="w-[15%]" />
+                <col className="w-[12%]" />
                 <col className="w-[12%]" />
                 <col className="w-[10%]" />
-                <col className="w-[8%]" />
-                <col className="w-[6%]" />
+                <col className="w-[10%]" />
               </colgroup>
               <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <tr>
