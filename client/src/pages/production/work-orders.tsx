@@ -549,10 +549,9 @@ export default function WorkOrders() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteWorkOrder(order.id)}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-5 px-1.5 py-0.5 text-[10px] transition-all"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-5 w-5 p-0 transition-all"
                           >
-                            <Trash2 className="h-2.5 w-2.5 mr-0.5" />
-                            ลบ
+                            <Trash2 className="h-3 w-3" />
                           </Button>
                         </div>
                       </TableCell>
