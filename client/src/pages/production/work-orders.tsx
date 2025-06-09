@@ -540,10 +540,9 @@ export default function WorkOrders() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleEditWorkOrder(order)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-5 px-1.5 py-0.5 text-[10px] transition-all"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-5 w-5 p-0 transition-all"
                           >
-                            <Edit2 className="h-2.5 w-2.5 mr-0.5" />
-                            แก้ไข
+                            <Edit2 className="h-3 w-3" />
                           </Button>
                           <Button
                             variant="ghost"
