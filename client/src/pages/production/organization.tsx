@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -449,6 +451,103 @@ export default function OrganizationChart() {
     }
   });
 
+  // Work Steps Mutations
+  const createWorkStepMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch("/api/work-steps", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to create work step");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-steps"] });
+      setIsAddWorkStepOpen(false);
+      setNewWorkStep({
+        name: "",
+        department_id: "",
+        description: "",
+        duration: 60,
+        required_skills: ["basic"],
+        order: 1
+      });
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างขั้นตอนงานใหม่เรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถสร้างขั้นตอนงานได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const updateWorkStepMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/work-steps/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(data)
+      });
+      if (!response.ok) throw new Error("Failed to update work step");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-steps"] });
+      setIsEditWorkStepOpen(false);
+      setEditingWorkStep(null);
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขขั้นตอนงานเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถแก้ไขขั้นตอนงานได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const deleteWorkStepMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/work-steps/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      if (!response.ok) throw new Error("Failed to delete work step");
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-steps"] });
+      toast({
+        title: "สำเร็จ",
+        description: "ลบขั้นตอนงานเรียบร้อยแล้ว"
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถลบขั้นตอนงานได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const getDepartmentTypeColor = (type: string) => {
     switch (type) {
       case "production": return "bg-blue-100 text-blue-800";
@@ -843,6 +942,99 @@ export default function OrganizationChart() {
                   </div>
                 </div>
               </div>
+
+              {/* Work Steps Section - Only show when expanded */}
+              {expandedDepartments.has(department.id) && (
+                <div className="ml-8 mb-6 space-y-3">
+                  <div className="text-sm font-medium text-gray-700 flex items-center gap-2 justify-between">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      ขั้นตอนการทำงาน ({getWorkStepsForDepartment(department.id).length})
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setNewWorkStep({ ...newWorkStep, department_id: department.id });
+                        setIsAddWorkStepOpen(true);
+                      }}
+                      className="h-7 px-3 text-blue-600 border-blue-300 hover:bg-blue-50"
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      เพิ่มขั้นตอน
+                    </Button>
+                  </div>
+
+                  {getWorkStepsForDepartment(department.id).length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {getWorkStepsForDepartment(department.id).map((workStep) => (
+                        <div
+                          key={workStep.id}
+                          className="border rounded-lg p-4 bg-blue-50 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex justify-between items-start mb-3">
+                            <h4 className="font-medium text-gray-900">{workStep.name}</h4>
+                            <div className="flex space-x-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setEditingWorkStep(workStep);
+                                  setIsEditWorkStepOpen(true);
+                                }}
+                                className="h-6 w-6 p-0"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (confirm("คุณต้องการลบขั้นตอนงานนี้หรือไม่?")) {
+                                    deleteWorkStepMutation.mutate(workStep.id);
+                                  }
+                                }}
+                                className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {workStep.description && (
+                            <p className="text-gray-600 text-sm mb-3">{workStep.description}</p>
+                          )}
+
+                          <div className="space-y-2">
+                            <div className="flex items-center text-sm text-gray-600">
+                              <Clock className="h-4 w-4 mr-2" />
+                              {formatDuration(workStep.duration)}
+                            </div>
+                            
+                            <div className="flex items-center justify-between">
+                              <Badge className={getSkillLevelBadge(workStep.required_skills?.[0] || 'basic')}>
+                                {workStep.required_skills?.[0] === 'basic' && 'เบื้องต้น'}
+                                {workStep.required_skills?.[0] === 'intermediate' && 'ปานกลาง'}
+                                {workStep.required_skills?.[0] === 'advanced' && 'สูง'}
+                                {workStep.required_skills?.[0] === 'expert' && 'ผู้เชี่ยวชาญ'}
+                              </Badge>
+                              
+                              <Badge variant="default" className="bg-green-100 text-green-800">
+                                ลำดับ: {workStep.order}
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500 bg-gray-50 rounded-lg">
+                      <Settings className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>ยังไม่มีขั้นตอนงานในแผนกนี้</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Teams */}
               <div className="ml-8 space-y-3">
@@ -1466,6 +1658,208 @@ export default function OrganizationChart() {
               ยกเลิก
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Work Step Dialog */}
+      <Dialog open={isAddWorkStepOpen} onOpenChange={setIsAddWorkStepOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>เพิ่มขั้นตอนงานใหม่</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label htmlFor="work-step-name">ชื่อขั้นตอน *</Label>
+              <Input
+                id="work-step-name"
+                value={newWorkStep.name}
+                onChange={(e) => setNewWorkStep(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="เช่น การตัดผ้า, การเย็บชิ้นส่วน"
+              />
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="work-step-department">แผนก</Label>
+              <Select 
+                value={newWorkStep.department_id} 
+                onValueChange={(value) => setNewWorkStep(prev => ({ ...prev, department_id: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกแผนก" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept.id} value={dept.id}>
+                      {dept.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="work-step-description">รายละเอียด</Label>
+              <Textarea
+                id="work-step-description"
+                value={newWorkStep.description}
+                onChange={(e) => setNewWorkStep(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="อธิบายรายละเอียดของขั้นตอนนี้"
+                rows={3}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="work-step-duration">เวลาโดยประมาณ (นาที) *</Label>
+                <Input
+                  id="work-step-duration"
+                  type="number"
+                  min="1"
+                  value={newWorkStep.duration}
+                  onChange={(e) => setNewWorkStep(prev => ({ ...prev, duration: parseInt(e.target.value) || 0 }))}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="work-step-order">ลำดับ *</Label>
+                <Input
+                  id="work-step-order"
+                  type="number"
+                  min="1"
+                  value={newWorkStep.order}
+                  onChange={(e) => setNewWorkStep(prev => ({ ...prev, order: parseInt(e.target.value) || 1 }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="work-step-skill">ระดับทักษะที่ต้องการ</Label>
+              <Select 
+                value={newWorkStep.required_skills[0]} 
+                onValueChange={(value) => setNewWorkStep(prev => ({ ...prev, required_skills: [value] }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="basic">เบื้องต้น</SelectItem>
+                  <SelectItem value="intermediate">ปานกลาง</SelectItem>
+                  <SelectItem value="advanced">สูง</SelectItem>
+                  <SelectItem value="expert">ผู้เชี่ยวชาญ</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2 pt-4">
+              <Button 
+                onClick={() => createWorkStepMutation.mutate(newWorkStep)}
+                disabled={!newWorkStep.name || !newWorkStep.department_id || createWorkStepMutation.isPending}
+                className="flex-1"
+              >
+                {createWorkStepMutation.isPending ? "กำลังเพิ่ม..." : "เพิ่มขั้นตอน"}
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setIsAddWorkStepOpen(false)}
+                className="flex-1"
+              >
+                ยกเลิก
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Work Step Dialog */}
+      <Dialog open={isEditWorkStepOpen} onOpenChange={setIsEditWorkStepOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>แก้ไขขั้นตอนงาน</DialogTitle>
+          </DialogHeader>
+          {editingWorkStep && (
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="edit-work-step-name">ชื่อขั้นตอน *</Label>
+                <Input
+                  id="edit-work-step-name"
+                  value={editingWorkStep.name}
+                  onChange={(e) => setEditingWorkStep(prev => prev ? { ...prev, name: e.target.value } : null)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-work-step-description">รายละเอียด</Label>
+                <Textarea
+                  id="edit-work-step-description"
+                  value={editingWorkStep.description || ""}
+                  onChange={(e) => setEditingWorkStep(prev => prev ? { ...prev, description: e.target.value } : null)}
+                  rows={3}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-work-step-duration">เวลาโดยประมาณ (นาที) *</Label>
+                  <Input
+                    id="edit-work-step-duration"
+                    type="number"
+                    min="1"
+                    value={editingWorkStep.duration}
+                    onChange={(e) => setEditingWorkStep(prev => prev ? { ...prev, duration: parseInt(e.target.value) || 0 } : null)}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-work-step-order">ลำดับ *</Label>
+                  <Input
+                    id="edit-work-step-order"
+                    type="number"
+                    min="1"
+                    value={editingWorkStep.order}
+                    onChange={(e) => setEditingWorkStep(prev => prev ? { ...prev, order: parseInt(e.target.value) || 1 } : null)}
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="edit-work-step-skill">ระดับทักษะที่ต้องการ</Label>
+                <Select 
+                  value={editingWorkStep.required_skills?.[0] || 'basic'} 
+                  onValueChange={(value) => setEditingWorkStep(prev => prev ? { ...prev, required_skills: [value] } : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="basic">เบื้องต้น</SelectItem>
+                    <SelectItem value="intermediate">ปานกลาง</SelectItem>
+                    <SelectItem value="advanced">สูง</SelectItem>
+                    <SelectItem value="expert">ผู้เชี่ยวชาญ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  onClick={() => updateWorkStepMutation.mutate({ id: editingWorkStep.id, data: editingWorkStep })}
+                  disabled={updateWorkStepMutation.isPending}
+                  className="flex-1"
+                >
+                  {updateWorkStepMutation.isPending ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    setIsEditWorkStepOpen(false);
+                    setEditingWorkStep(null);
+                  }}
+                  className="flex-1"
+                >
+                  ยกเลิก
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
