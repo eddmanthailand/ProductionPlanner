@@ -477,7 +477,7 @@ export default function WorkOrders() {
               <TableBody>
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
-                    <TableRow key={order.id} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors">
+                    <TableRow key={order.id} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors cursor-pointer" onClick={() => handleEditWorkOrder(order)}>
                       <TableCell className="px-2 py-1.5 text-blue-700 text-xs">{order.orderNumber || order.order_number}</TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div>
@@ -516,7 +516,10 @@ export default function WorkOrders() {
                           value={order.status} 
                           onValueChange={(value) => handleStatusChange(order.id, value)}
                         >
-                          <SelectTrigger className="h-6 w-16 text-[10px] border-0 bg-transparent p-0">
+                          <SelectTrigger 
+                            className="h-6 w-16 text-[10px] border-0 bg-transparent p-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
                             <div className={`px-1.5 py-0.5 rounded-full text-[10px] ${getStatusColor(order.status)}`}>
                               {order.status === "draft" && "ร่าง"}
                               {order.status === "approved" && "อนุมัติ"}
@@ -539,15 +542,10 @@ export default function WorkOrders() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleEditWorkOrder(order)}
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-5 w-5 p-0 transition-all"
-                          >
-                            <Edit2 className="h-3 w-3" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteWorkOrder(order.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteWorkOrder(order.id);
+                            }}
                             className="text-red-600 hover:text-red-700 hover:bg-red-50 h-5 w-5 p-0 transition-all"
                           >
                             <Trash2 className="h-3 w-3" />
