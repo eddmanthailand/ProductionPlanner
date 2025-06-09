@@ -190,7 +190,7 @@ export default function WorkOrderForm() {
 
   // Query for existing work order data in edit mode
   const { data: existingWorkOrder, isLoading: loadingWorkOrder } = useQuery({
-    queryKey: ["/api/work-orders", workOrderId],
+    queryKey: [`/api/work-orders/${workOrderId}`],
     enabled: isEditMode && !!workOrderId,
   });
 
@@ -323,7 +323,7 @@ export default function WorkOrderForm() {
         })));
       }
     }
-  }, [isEditMode, existingWorkOrder, customers, quotations]);
+  }, [isEditMode, existingWorkOrder, customers, quotations, workOrderId]);
 
   // Use useEffect to handle quotation items when selectedQuotation changes
   useEffect(() => {
