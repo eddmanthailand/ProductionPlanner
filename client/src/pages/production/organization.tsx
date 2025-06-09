@@ -451,11 +451,13 @@ export default function OrganizationChart() {
   // Work Steps Mutations
   const createWorkStepMutation = useMutation({
     mutationFn: async (data: any) => {
-      // Add default values for required fields
+      // Add default values for required fields and map field names to match server schema
       const workStepData = {
-        ...data,
+        name: data.name,
+        departmentId: data.department_id, // Map to server field name
+        description: data.description,
         duration: 60, // Default 60 minutes
-        required_skills: ["basic"], // Default basic skill
+        requiredSkills: ["basic"], // Default basic skill, map to server field name
         order: 1 // Default order
       };
       
