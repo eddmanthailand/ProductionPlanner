@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -94,6 +95,7 @@ export default function WorkOrderForm() {
   const [quotationItems, setQuotationItems] = useState<QuotationItem[]>([]);
   const [customerSearchOpen, setCustomerSearchOpen] = useState(false);
   const [customerSearchValue, setCustomerSearchValue] = useState("");
+  const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
   const [workOrderItems, setWorkOrderItems] = useState<WorkOrderItem[]>([
     { productName: "", description: "", quantity: 1, unitPrice: 0, totalPrice: 0, specifications: "" }
   ]);
@@ -207,7 +209,6 @@ export default function WorkOrderForm() {
   });
 
   const handleQuotationSelect = async (quotationId: string) => {
-    console.log("handleQuotationSelect called with:", quotationId);
     if (!quotationId || quotationId === "none") {
       setSelectedQuotation(null);
       setQuotationItems([]);
@@ -222,7 +223,6 @@ export default function WorkOrderForm() {
     }
 
     const quotation = quotations.find(q => q.id === parseInt(quotationId));
-    console.log("Found quotation:", quotation);
     if (quotation) {
       setSelectedQuotation(quotation);
       setFormData(prev => ({
@@ -240,18 +240,15 @@ export default function WorkOrderForm() {
     if (selectedQuotation) {
       const quotationWithItems = selectedQuotation as any;
       if (quotationWithItems.items && Array.isArray(quotationWithItems.items)) {
-        console.log("useEffect: Setting quotation items from object:", quotationWithItems.items);
         setQuotationItems(quotationWithItems.items);
       } else {
-        console.log("useEffect: No items in quotation object, trying API...");
         // Fallback to API call if items not in object
         const fetchItems = async () => {
           try {
             const items = await apiRequest(`/api/quotations/${selectedQuotation.id}/items`, "GET");
-            console.log("useEffect: Fetched quotation items from API:", items);
             setQuotationItems(Array.isArray(items) ? items : []);
           } catch (error) {
-            console.error("useEffect: Failed to fetch quotation items:", error);
+            console.error("Failed to fetch quotation items:", error);
             setQuotationItems([]);
           }
         };
@@ -397,7 +394,14 @@ export default function WorkOrderForm() {
                         <SelectItem value="none">สร้างใหม่ (ไม่อ้างอิง)</SelectItem>
                         {quotations.filter(q => q.status === "approved").map((quotation) => (
                           <SelectItem key={quotation.id} value={quotation.id.toString()}>
-                            {quotation.quotationNumber} - {(quotation as any).projectName || (quotation as any).title || 'ไม่มีชื่อโครงการ'}
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {quotation.quotationNumber} - {(quotation as any).projectName || (quotation as any).title || 'ไม่มีชื่อโครงการ'}
+                              </span>
+                              <span className="text-sm text-gray-500">
+                                ลูกค้า: {(quotation as any).customer?.name || 'ไม่ระบุ'} | ยอดรวม: ฿{quotation.grandTotal}
+                              </span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -523,12 +527,7 @@ export default function WorkOrderForm() {
             </Card>
 
             {/* Quotation Items Display */}
-            {(() => {
-              console.log("Table render check - selectedQuotation:", selectedQuotation);
-              console.log("Table render check - quotationItems.length:", quotationItems.length);
-              console.log("Table render check - should show:", selectedQuotation && quotationItems.length > 0);
-              return selectedQuotation && quotationItems.length > 0;
-            })() && (
+            {selectedQuotation && quotationItems.length > 0 && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
