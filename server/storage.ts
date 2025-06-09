@@ -1052,13 +1052,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWorkOrder(insertWorkOrder: InsertWorkOrder): Promise<WorkOrder> {
-    // Generate order number
-    const orderCount = await db
+    // Generate JB format order number (JB202506001)
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    
+    // Count orders for this month and year
+    const monthlyCount = await db
       .select({ count: sql<number>`count(*)` })
       .from(workOrders)
-      .where(eq(workOrders.tenantId, insertWorkOrder.tenantId));
+      .where(
+        and(
+          eq(workOrders.tenantId, insertWorkOrder.tenantId),
+          sql`EXTRACT(YEAR FROM created_at) = ${year}`,
+          sql`EXTRACT(MONTH FROM created_at) = ${parseInt(month)}`
+        )
+      );
     
-    const orderNumber = `WO${String(orderCount[0].count + 1).padStart(6, '0')}`;
+    const sequence = String(monthlyCount[0].count + 1).padStart(3, '0');
+    const orderNumber = `JB${year}${month}${sequence}`;
 
     // Get customer info if customerId is provided
     let customerData = {};
