@@ -1767,47 +1767,7 @@ export default function OrganizationChart() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-work-step-duration">เวลาโดยประมาณ (นาที) *</Label>
-                  <Input
-                    id="edit-work-step-duration"
-                    type="number"
-                    min="1"
-                    value={editingWorkStep.duration}
-                    onChange={(e) => setEditingWorkStep(prev => prev ? { ...prev, duration: parseInt(e.target.value) || 0 } : null)}
-                  />
-                </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="edit-work-step-order">ลำดับ *</Label>
-                  <Input
-                    id="edit-work-step-order"
-                    type="number"
-                    min="1"
-                    value={editingWorkStep.order}
-                    onChange={(e) => setEditingWorkStep(prev => prev ? { ...prev, order: parseInt(e.target.value) || 1 } : null)}
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="edit-work-step-skill">ระดับทักษะที่ต้องการ</Label>
-                <Select 
-                  value={editingWorkStep.requiredSkills?.[0] || 'basic'} 
-                  onValueChange={(value) => setEditingWorkStep(prev => prev ? { ...prev, requiredSkills: [value] } : null)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="basic">เบื้องต้น</SelectItem>
-                    <SelectItem value="intermediate">ปานกลาง</SelectItem>
-                    <SelectItem value="advanced">สูง</SelectItem>
-                    <SelectItem value="expert">ผู้เชี่ยวชาญ</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               <div className="flex gap-2 pt-4">
                 <Button 
