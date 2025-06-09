@@ -507,14 +507,14 @@ export default function WorkOrderForm() {
           {/* Main Form */}
           <div className="lg:col-span-3 space-y-6">
             {/* Basic Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>ข้อมูลพื้นฐาน</span>
+            <Card className="shadow-lg border border-gray-200">
+              <CardHeader className="py-3 px-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <FileText className="h-4 w-4 text-green-600" />
+                  <span className="text-gray-800 font-medium">ข้อมูลพื้นฐาน</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 p-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quotation">อ้างอิงใบเสนอราคา (ไม่บังคับ)</Label>
@@ -624,13 +624,13 @@ export default function WorkOrderForm() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="workTypeId">ประเภทงาน</Label>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="workTypeId" className="text-sm font-medium text-gray-700">ประเภทงาน</Label>
                     <Select 
                       value={formData.workTypeId} 
                       onValueChange={(value) => handleInputChange('workTypeId', value)}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="h-8 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm">
                         <SelectValue placeholder="เลือกประเภทงาน" />
                       </SelectTrigger>
                       <SelectContent>
@@ -644,104 +644,91 @@ export default function WorkOrderForm() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="title">ชื่องาน *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="title" className="text-sm font-medium text-gray-700">ชื่องาน *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => handleInputChange('title', e.target.value)}
                     placeholder="ระบุชื่องาน"
-                    className="text-lg"
+                    className="h-9 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm font-medium"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="description">รายละเอียดงาน</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="description" className="text-sm font-medium text-gray-700">รายละเอียดงาน</Label>
                   <Textarea
                     id="description"
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
                     placeholder="รายละเอียดและข้อกำหนดของงาน"
-                    rows={3}
+                    rows={2}
+                    className="text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="deliveryDate">วันกำหนดส่งสินค้า *</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="deliveryDate" className="text-sm font-medium text-gray-700">วันกำหนดส่งสินค้า *</Label>
                   <Input
                     id="deliveryDate"
                     type="date"
                     value={formData.deliveryDate}
                     onChange={(e) => handleInputChange('deliveryDate', e.target.value)}
+                    className="h-8 text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="notes">หมายเหตุ</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="notes" className="text-sm font-medium text-gray-700">หมายเหตุ</Label>
                   <Textarea
                     id="notes"
                     value={formData.notes}
                     onChange={(e) => handleInputChange('notes', e.target.value)}
                     placeholder="หมายเหตุเพิ่มเติม ข้อกำหนดพิเศษ หรือคำแนะนำ"
-                    rows={2}
+                    rows={1}
+                    className="text-sm border-gray-200 focus:border-green-400 focus:ring-1 focus:ring-green-200 shadow-sm"
                   />
                 </div>
               </CardContent>
             </Card>
 
             {/* Customer Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <User className="h-5 w-5" />
-                  <span>ข้อมูลลูกค้า</span>
+            <Card className="shadow-lg border border-gray-200">
+              <CardHeader className="py-3 px-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b">
+                <CardTitle className="flex items-center space-x-2 text-base">
+                  <User className="h-4 w-4 text-purple-600" />
+                  <span className="text-gray-800 font-medium">ข้อมูลลูกค้า</span>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="customer">เลือกลูกค้า *</Label>
-                  <Popover open={customerSearchOpen} onOpenChange={setCustomerSearchOpen}>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        aria-expanded={customerSearchOpen}
-                        className="w-full justify-between"
-                        disabled={!!selectedQuotation}
-                      >
-                        {customerSearchValue || "ค้นหาลูกค้า..."}
-                        <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-full p-0">
-                      <Command>
-                        <CommandInput placeholder="ค้นหาลูกค้า..." />
-                        <CommandEmpty>ไม่พบลูกค้า</CommandEmpty>
-                        <CommandGroup>
-                          <CommandList>
-                            {customers.map((customer) => (
-                              <CommandItem
-                                key={customer.id}
-                                value={`${customer.name} ${customer.companyName}`}
-                                onSelect={() => handleCustomerSelect(customer)}
-                              >
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{customer.name}</span>
-                                  <span className="text-sm text-gray-500">{customer.companyName}</span>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandList>
-                        </CommandGroup>
-                      </Command>
-                    </PopoverContent>
-                  </Popover>
+              <CardContent className="space-y-3 p-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="customer" className="text-sm font-medium text-gray-700">เลือกลูกค้า *</Label>
+                  <Select 
+                    value={formData.customerId || ""} 
+                    onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, customerId: value }));
+                      const customer = customers.find(c => c.id.toString() === value);
+                      setSelectedCustomer(customer || null);
+                    }}
+                    disabled={!!selectedQuotation}
+                  >
+                    <SelectTrigger className="h-8 text-sm border-gray-200 focus:border-purple-400 focus:ring-1 focus:ring-purple-200 shadow-sm">
+                      <SelectValue placeholder="เลือกลูกค้า" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {customers.map((customer) => (
+                        <SelectItem key={customer.id} value={customer.id.toString()}>
+                          {customer.name} - {customer.companyName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {selectedCustomer && (
-                  <div className="p-4 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-blue-900 mb-2">ข้อมูลลูกค้า</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+                  <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200 shadow-sm">
+                    <h4 className="font-medium text-purple-900 mb-2 text-sm">ข้อมูลลูกค้า</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-purple-800">
                       <div>
                         <span className="font-medium">ชื่อบริษัท:</span> {selectedCustomer.companyName}
                       </div>
@@ -765,12 +752,12 @@ export default function WorkOrderForm() {
 
             {/* Quotation Items Display */}
             {selectedQuotation && quotationItems.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Package className="h-5 w-5" />
-                    <span>รายการสินค้าในใบเสนอราคา</span>
-                    <Badge variant="outline" className="ml-2">
+              <Card className="shadow-lg border border-gray-200">
+                <CardHeader className="py-3 px-4 bg-gradient-to-r from-orange-50 to-amber-50 border-b">
+                  <CardTitle className="flex items-center space-x-2 text-base">
+                    <Package className="h-4 w-4 text-orange-600" />
+                    <span className="text-gray-800 font-medium">รายการสินค้าในใบเสนอราคา</span>
+                    <Badge variant="outline" className="ml-2 bg-orange-100 text-orange-800 border-orange-300">
                       {selectedQuotation.quotationNumber}
                     </Badge>
                   </CardTitle>
