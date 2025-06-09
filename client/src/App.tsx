@@ -20,6 +20,7 @@ import Production from "@/pages/production";
 import ProductionCalendar from "@/pages/production/calendar";
 import OrganizationChart from "@/pages/production/organization";
 import WorkQueue from "@/pages/production/work-queue";
+import WorkSteps from "@/pages/production/work-steps";
 import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
 import ProductionReports from "@/pages/production/reports";
