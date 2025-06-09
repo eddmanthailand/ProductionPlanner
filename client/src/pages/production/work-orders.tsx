@@ -335,8 +335,8 @@ export default function WorkOrders() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-full mx-auto space-y-6 px-4">
         {/* Header */}
         <div className="bg-white rounded-lg shadow-sm border p-8">
           <div className="flex items-center justify-between">
@@ -458,18 +458,18 @@ export default function WorkOrders() {
 
       {/* Work Orders Table */}
       <Card className="shadow-lg border-0">
-        <CardContent className="p-6">
+        <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full table-fixed border-separate border-spacing-0">
               <colgroup>
-                <col className="w-[15%]" />
-                <col className="w-[30%]" />
-                <col className="w-[15%]" />
+                <col className="w-[16%]" />
+                <col className="w-[28%]" />
+                <col className="w-[16%]" />
+                <col className="w-[14%]" />
                 <col className="w-[12%]" />
                 <col className="w-[10%]" />
                 <col className="w-[8%]" />
                 <col className="w-[6%]" />
-                <col className="w-[4%]" />
               </colgroup>
               <thead className="bg-gradient-to-r from-blue-600 to-blue-700 text-white">
                 <tr>
