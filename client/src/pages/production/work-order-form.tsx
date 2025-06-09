@@ -80,7 +80,6 @@ interface SubJob {
   id?: number;
   productName: string;
   departmentId: string;
-  teamId: string;
   workStepId: string;
   colorId: string;
   sizeId: string;
@@ -103,7 +102,6 @@ export default function WorkOrderForm() {
     { 
       productName: "", 
       departmentId: "", 
-      teamId: "", 
       workStepId: "", 
       colorId: "", 
       sizeId: "", 
@@ -302,6 +300,7 @@ export default function WorkOrderForm() {
   };
 
   const handleSubJobChange = (index: number, field: keyof SubJob, value: string | number) => {
+    console.log('SubJob change:', { index, field, value });
     const updatedSubJobs = [...subJobs];
     updatedSubJobs[index] = {
       ...updatedSubJobs[index],
@@ -315,6 +314,7 @@ export default function WorkOrderForm() {
       updatedSubJobs[index].totalCost = quantity * productionCost;
     }
 
+    console.log('Updated SubJobs:', updatedSubJobs);
     setSubJobs(updatedSubJobs);
   };
 
@@ -324,7 +324,6 @@ export default function WorkOrderForm() {
       { 
         productName: "", 
         departmentId: "", 
-        teamId: "", 
         workStepId: "", 
         colorId: "", 
         sizeId: "", 
