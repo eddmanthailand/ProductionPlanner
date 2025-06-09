@@ -464,14 +464,14 @@ export default function WorkOrders() {
             <Table className="w-full table-fixed min-w-full">
               <TableHeader>
                 <TableRow className="bg-gray-100 border-b-2 border-gray-200">
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[16%] text-xs">JOB NO.</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[11%] text-xs">JOB NO.</TableHead>
                   <TableHead className="text-left text-gray-700 px-2 py-2 w-[19%] text-xs">ชื่องาน</TableHead>
                   <TableHead className="text-left text-gray-700 px-2 py-2 w-[13%] text-xs">ลูกค้า</TableHead>
                   <TableHead className="text-left text-gray-700 px-2 py-2 w-[16%] text-xs">วันกำหนดส่ง</TableHead>
-                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[14%] text-xs">ประเภทงาน</TableHead>
-                  <TableHead className="text-right text-gray-700 px-2 py-2 w-[9%] text-xs">ยอดรวม</TableHead>
-                  <TableHead className="text-center text-gray-700 px-2 py-2 w-[8%] text-xs">สถานะ</TableHead>
-                  <TableHead className="text-center text-gray-700 px-2 py-2 w-[5%] text-xs">จัดการ</TableHead>
+                  <TableHead className="text-left text-gray-700 px-2 py-2 w-[9%] text-xs">ประเภทงาน</TableHead>
+                  <TableHead className="text-right text-gray-700 px-2 py-2 w-[15%] text-xs">ยอดรวม</TableHead>
+                  <TableHead className="text-center text-gray-700 px-2 py-2 w-[14%] text-xs">สถานะ</TableHead>
+                  <TableHead className="text-center text-gray-700 px-2 py-2 w-[3%] text-xs">จัดการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
