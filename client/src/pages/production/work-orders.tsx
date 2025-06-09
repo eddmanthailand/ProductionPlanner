@@ -415,38 +415,52 @@ export default function WorkOrders() {
         </Card>
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="ค้นหาเลขที่ใบสั่งงาน, ชื่องาน, หรือลูกค้า..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
-          />
+        {/* Search and Tabs Filter */}
+        <div className="bg-white rounded-lg shadow-sm border p-6 space-y-6">
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+            <Input
+              placeholder="ค้นหาเลขที่ใบสั่งงาน, ชื่องาน, หรือลูกค้า..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-12 h-12 text-base"
+            />
+          </div>
+          
+          {/* Status Tabs */}
+          <div className="flex space-x-8 border-b border-gray-200">
+            {[
+              { value: "all", label: "ทั้งหมด", count: totalOrders },
+              { value: "draft", label: "ร่าง", count: draftOrders },
+              { value: "approved", label: "อนุมัติแล้ว", count: approvedOrders },
+              { value: "in_progress", label: "กำลังดำเนินการ", count: inProgressOrders },
+              { value: "completed", label: "เสร็จแล้ว", count: completedOrders },
+              { value: "cancelled", label: "ยกเลิก", count: workOrders.filter(o => o.status === "cancelled").length }
+            ].map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className={`pb-4 px-2 text-base font-medium transition-colors relative ${
+                  statusFilter === tab.value
+                    ? "text-blue-600"
+                    : "text-gray-500 hover:text-gray-700"
+                }`}
+              >
+                {tab.label} ({tab.count})
+                {statusFilter === tab.value && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"></div>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="h-4 w-4 mr-2" />
-            <SelectValue placeholder="กรองตามสถานะ" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">ทุกสถานะ</SelectItem>
-            <SelectItem value="draft">ร่าง</SelectItem>
-            <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
-            <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
-            <SelectItem value="completed">เสร็จแล้ว</SelectItem>
-            <SelectItem value="cancelled">ยกเลิก</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
 
       {/* Work Orders Table */}
       <Card className="shadow-lg border-0">
         <CardContent className="p-6">
-          <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full table-fixed">
+          <div className="overflow-x-auto">
+            <table className="w-full table-fixed border-separate border-spacing-0">
               <colgroup>
                 <col className="w-[15%]" />
                 <col className="w-[30%]" />
@@ -472,7 +486,7 @@ export default function WorkOrders() {
               <tbody>
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
-                    <tr key={order.id} className="border-b hover:bg-blue-50 transition-colors duration-200">
+                    <tr key={order.id} className="border-b border-gray-100 hover:bg-blue-50 transition-colors duration-200">
                       <td className="px-6 py-5 font-bold text-blue-700 text-base">{order.orderNumber}</td>
                       <td className="px-6 py-5">
                         <div>
