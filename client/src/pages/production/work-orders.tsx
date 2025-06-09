@@ -25,7 +25,9 @@ interface WorkOrder {
   totalAmount: string;
   status: string;
   priority: number;
+  workTypeId: number | null;
   startDate: string | null;
+  deliveryDate: string | null;
   dueDate: string | null;
   completedDate: string | null;
   assignedTeamId: string | null;
@@ -120,6 +122,10 @@ export default function WorkOrders() {
     queryKey: ["/api/teams"],
   });
 
+  const { data: workTypes = [] } = useQuery<any[]>({
+    queryKey: ["/api/work-types"],
+  });
+
   // Mutations
   const createWorkOrderMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -212,6 +218,12 @@ export default function WorkOrders() {
     if (!teamId) return "ยังไม่กำหนดทีม";
     const team = teams.find(t => t.id === teamId);
     return team ? team.name : "ไม่ระบุทีม";
+  };
+
+  const getWorkTypeName = (workTypeId: number | null): string => {
+    if (!workTypeId) return "-";
+    const workType = workTypes.find((wt: any) => wt.id === workTypeId);
+    return workType ? workType.name : "-";
   };
 
   const handleQuotationSelect = (quotationId: string) => {
@@ -420,90 +432,94 @@ export default function WorkOrders() {
         </Select>
       </div>
 
-      {/* Work Orders List */}
-      <div className="space-y-4">
-        {filteredWorkOrders.length > 0 ? (
-          filteredWorkOrders.map((order) => (
-            <Card key={order.id} className="p-4">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-lg font-semibold">{order.orderNumber}</h3>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status === "draft" && "ร่าง"}
-                      {order.status === "approved" && "อนุมัติแล้ว"}
-                      {order.status === "in_progress" && "กำลังดำเนินการ"}
-                      {order.status === "completed" && "เสร็จแล้ว"}
-                      {order.status === "cancelled" && "ยกเลิก"}
-                    </Badge>
-                    <Badge className={getPriorityColor(order.priority)}>
-                      ลำดับ {order.priority}
-                    </Badge>
-                  </div>
-                  <h4 className="text-md font-medium text-gray-900 mb-2">{order.title}</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm text-gray-600">
-                    <div>
-                      <span className="font-medium">ลูกค้า:</span> {order.customerName}
-                    </div>
-                    <div>
-                      <span className="font-medium">ทีมที่รับผิดชอบ:</span> {getTeamName(order.assignedTeamId)}
-                    </div>
-                    <div>
-                      <span className="font-medium">วันที่เริ่ม:</span> {order.startDate || "ยังไม่กำหนด"}
-                    </div>
-                    <div>
-                      <span className="font-medium">วันที่กำหนดเสร็จ:</span> {order.dueDate || "ยังไม่กำหนด"}
-                    </div>
-                    <div>
-                      <span className="font-medium">จำนวนเงิน:</span> {parseFloat(order.totalAmount).toLocaleString()} บาท
-                    </div>
-                    <div>
-                      <span className="font-medium">สร้างเมื่อ:</span> {new Date(order.createdAt).toLocaleDateString('th-TH')}
-                    </div>
-                  </div>
-                  {order.description && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <span className="font-medium">รายละเอียด:</span> {order.description}
-                    </div>
-                  )}
-                  {order.notes && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <span className="font-medium">หมายเหตุ:</span> {order.notes}
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleEditWorkOrder(order)}
-                  >
-                    <Edit2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteWorkOrder(order.id)}
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          ))
-        ) : (
-          <Card className="p-8 text-center">
-            <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">ยังไม่มีใบสั่งงาน</h3>
-            <p className="text-gray-600 mb-4">เริ่มต้นด้วยการสร้างใบสั่งงานใหม่</p>
-            <Button onClick={() => window.location.href = "/production/work-orders/new"}>
-              <Plus className="h-4 w-4 mr-2" />
-              สร้างใบสั่งงานแรก
-            </Button>
-          </Card>
-        )}
-      </div>
+      {/* Work Orders Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b">
+                <tr>
+                  <th className="text-left p-4 font-medium text-gray-900">เลขที่ Job</th>
+                  <th className="text-left p-4 font-medium text-gray-900">ชื่องาน</th>
+                  <th className="text-left p-4 font-medium text-gray-900">ลูกค้า</th>
+                  <th className="text-left p-4 font-medium text-gray-900">วันกำหนดส่ง</th>
+                  <th className="text-left p-4 font-medium text-gray-900">ประเภทงาน</th>
+                  <th className="text-right p-4 font-medium text-gray-900">ยอดรวม</th>
+                  <th className="text-center p-4 font-medium text-gray-900">สถานะ</th>
+                  <th className="text-center p-4 font-medium text-gray-900">จัดการ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredWorkOrders.length > 0 ? (
+                  filteredWorkOrders.map((order) => (
+                    <tr key={order.id} className="border-b hover:bg-gray-50">
+                      <td className="p-4 font-medium text-blue-600">{order.orderNumber}</td>
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium">{order.title}</div>
+                          {order.description && (
+                            <div className="text-sm text-gray-500 mt-1">{order.description}</div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">{order.customerName}</td>
+                      <td className="p-4">
+                        {order.deliveryDate ? new Date(order.deliveryDate).toLocaleDateString('th-TH') : "ยังไม่กำหนด"}
+                      </td>
+                      <td className="p-4">
+                        {getWorkTypeName(order.workTypeId)}
+                      </td>
+                      <td className="p-4 text-right font-medium">
+                        ฿{parseFloat(order.totalAmount).toLocaleString()}
+                      </td>
+                      <td className="p-4 text-center">
+                        <Badge className={getStatusColor(order.status)}>
+                          {order.status === "draft" && "ร่าง"}
+                          {order.status === "approved" && "อนุมัติแล้ว"}
+                          {order.status === "in_progress" && "กำลังดำเนินการ"}
+                          {order.status === "completed" && "เสร็จแล้ว"}
+                          {order.status === "cancelled" && "ยกเลิก"}
+                        </Badge>
+                      </td>
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditWorkOrder(order)}
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteWorkOrder(order.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="p-8 text-center">
+                      <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">ยังไม่มีใบสั่งงาน</h3>
+                      <p className="text-gray-600 mb-4">เริ่มต้นด้วยการสร้างใบสั่งงานใหม่</p>
+                      <Button onClick={() => window.location.href = "/production/work-orders/new"}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        สร้างใบสั่งงานแรก
+                      </Button>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Create Work Order Dialog */}
       <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
