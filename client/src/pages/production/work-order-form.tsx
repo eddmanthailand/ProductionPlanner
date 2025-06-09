@@ -719,7 +719,7 @@ export default function WorkOrderForm() {
 
 
 
-            {/* Sub Jobs */}
+            {/* Sub Jobs Table */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
@@ -733,169 +733,150 @@ export default function WorkOrderForm() {
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {subJobs.map((subJob, index) => (
-                    <div key={index} className="p-4 border rounded-lg bg-gray-50">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium">Sub-job ที่ {index + 1}</h4>
-                        {subJobs.length > 1 && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeSubJob(index)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label>ชื่อสินค้า/งาน *</Label>
-                          <Input
-                            value={subJob.productName || ""}
-                            onChange={(e) => handleSubJobChange(index, 'productName', e.target.value)}
-                            placeholder="ชื่อสินค้าหรืองาน"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>แผนก *</Label>
-                          <Select 
-                            value={subJob.departmentId} 
-                            onValueChange={(value) => {
-                              const updatedSubJobs = [...subJobs];
-                              updatedSubJobs[index] = {
-                                ...updatedSubJobs[index],
-                                departmentId: value,
-                                workStepId: '' // Reset work step when department changes
-                              };
-                              setSubJobs(updatedSubJobs);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกแผนก" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {departments?.map((dept) => (
-                                <SelectItem key={dept.id} value={dept.id}>
-                                  {dept.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-
-
-                        <div className="space-y-2">
-                          <Label>ขั้นตอน *</Label>
-                          <Select 
-                            value={subJob.workStepId} 
-                            onValueChange={(value) => handleSubJobChange(index, 'workStepId', value)}
-                            disabled={!subJob.departmentId}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกขั้นตอน" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {workSteps
-                                .filter(step => step.departmentId === subJob.departmentId)
-                                .map((step) => (
-                                <SelectItem key={step.id} value={step.id.toString()}>
-                                  {step.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>สี *</Label>
-                          <Select 
-                            value={subJob.colorId} 
-                            onValueChange={(value) => {
-                              const updatedSubJobs = [...subJobs];
-                              updatedSubJobs[index] = {
-                                ...updatedSubJobs[index],
-                                colorId: value
-                              };
-                              setSubJobs(updatedSubJobs);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกสี" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {colors?.map((color) => (
-                                <SelectItem key={color.id} value={color.id.toString()}>
-                                  {color.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>ไซส์ *</Label>
-                          <Select 
-                            value={subJob.sizeId} 
-                            onValueChange={(value) => {
-                              const updatedSubJobs = [...subJobs];
-                              updatedSubJobs[index] = {
-                                ...updatedSubJobs[index],
-                                sizeId: value
-                              };
-                              setSubJobs(updatedSubJobs);
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="เลือกไซส์" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {sizes?.map((size) => (
-                                <SelectItem key={size.id} value={size.id.toString()}>
-                                  {size.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>จำนวน *</Label>
-                          <Input
-                            type="number"
-                            value={subJob.quantity}
-                            onChange={(e) => handleSubJobChange(index, 'quantity', parseInt(e.target.value) || 0)}
-                            min="1"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>ค่าผลิต (บาท/หน่วย) *</Label>
-                          <Input
-                            type="number"
-                            value={subJob.productionCost}
-                            onChange={(e) => handleSubJobChange(index, 'productionCost', parseFloat(e.target.value) || 0)}
-                            min="0"
-                            step="0.01"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>ต้นทุนรวม (บาท)</Label>
-                          <Input
-                            value={subJob.totalCost.toLocaleString()}
-                            readOnly
-                            className="bg-gray-100"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[200px]">ชื่อสินค้า/งาน</TableHead>
+                        <TableHead className="w-[150px]">แผนก</TableHead>
+                        <TableHead className="w-[150px]">ขั้นตอนงาน</TableHead>
+                        <TableHead className="w-[120px]">สี</TableHead>
+                        <TableHead className="w-[120px]">ขนาด</TableHead>
+                        <TableHead className="w-[80px]">จำนวน</TableHead>
+                        <TableHead className="w-[120px]">ต้นทุน/ชิ้น</TableHead>
+                        <TableHead className="w-[120px]">รวม</TableHead>
+                        <TableHead className="w-[80px]">จัดการ</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {subJobs.map((subJob, index) => (
+                        <TableRow key={index}>
+                          <TableCell>
+                            <Input
+                              value={subJob.productName || ""}
+                              onChange={(e) => handleSubJobChange(index, 'productName', e.target.value)}
+                              placeholder="ชื่อสินค้าหรืองาน"
+                              className="min-w-[180px]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={subJob.departmentId} 
+                              onValueChange={(value) => {
+                                const updatedSubJobs = [...subJobs];
+                                updatedSubJobs[index] = {
+                                  ...updatedSubJobs[index],
+                                  departmentId: value,
+                                  workStepId: '' // Reset work step when department changes
+                                };
+                                setSubJobs(updatedSubJobs);
+                              }}
+                            >
+                              <SelectTrigger className="min-w-[130px]">
+                                <SelectValue placeholder="เลือกแผนก" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {departments.map((dept) => (
+                                  <SelectItem key={dept.id} value={dept.id}>
+                                    {dept.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={subJob.workStepId} 
+                              onValueChange={(value) => handleSubJobChange(index, 'workStepId', value)}
+                              disabled={!subJob.departmentId}
+                            >
+                              <SelectTrigger className="min-w-[130px]">
+                                <SelectValue placeholder="เลือกขั้นตอน" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {workSteps
+                                  .filter(step => step.departmentId === subJob.departmentId)
+                                  .map((step) => (
+                                    <SelectItem key={step.id} value={step.id}>
+                                      {step.name}
+                                    </SelectItem>
+                                  ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={subJob.colorId} 
+                              onValueChange={(value) => handleSubJobChange(index, 'colorId', value)}
+                            >
+                              <SelectTrigger className="min-w-[100px]">
+                                <SelectValue placeholder="เลือกสี" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {colors.map((color) => (
+                                  <SelectItem key={color.id} value={color.id.toString()}>
+                                    {color.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Select 
+                              value={subJob.sizeId} 
+                              onValueChange={(value) => handleSubJobChange(index, 'sizeId', value)}
+                            >
+                              <SelectTrigger className="min-w-[100px]">
+                                <SelectValue placeholder="เลือกขนาด" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {sizes.map((size) => (
+                                  <SelectItem key={size.id} value={size.id.toString()}>
+                                    {size.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={subJob.quantity || 1}
+                              onChange={(e) => handleSubJobChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                              className="w-[70px]"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={subJob.productionCost || 0}
+                              onChange={(e) => handleSubJobChange(index, 'productionCost', parseFloat(e.target.value) || 0)}
+                              className="w-[100px]"
+                            />
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            ฿{subJob.totalCost.toLocaleString()}
+                          </TableCell>
+                          <TableCell>
+                            {subJobs.length > 1 && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => removeSubJob(index)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </CardContent>
             </Card>
