@@ -208,31 +208,37 @@ export default function WorkOrderForm() {
     }
   });
 
-  const handleQuotationSelect = async (quotationId: string) => {
-    if (!quotationId || quotationId === "none") {
-      setSelectedQuotation(null);
-      setQuotationItems([]);
-      setFormData(prev => ({
-        ...prev,
-        quotationId: "",
-        title: "",
-        description: "",
-        customerId: ""
-      }));
-      return;
+  const handleQuotationSelectFromDialog = (quotation: Quotation) => {
+    setSelectedQuotation(quotation);
+    setFormData(prev => ({
+      ...prev,
+      quotationId: quotation.id.toString(),
+      title: (quotation as any).title || (quotation as any).projectName || "",
+      description: quotation.description || "",
+      customerId: quotation.customerId.toString()
+    }));
+    
+    // Auto-select customer if quotation has customer data
+    if ((quotation as any).customer) {
+      setSelectedCustomer((quotation as any).customer);
+      setCustomerSearchValue((quotation as any).customer.name);
     }
+    
+    setQuotationDialogOpen(false);
+  };
 
-    const quotation = quotations.find(q => q.id === parseInt(quotationId));
-    if (quotation) {
-      setSelectedQuotation(quotation);
-      setFormData(prev => ({
-        ...prev,
-        quotationId: quotationId,
-        title: (quotation as any).title || (quotation as any).projectName || "",
-        description: quotation.description || "",
-        customerId: quotation.customerId.toString()
-      }));
-    }
+  const handleClearQuotation = () => {
+    setSelectedQuotation(null);
+    setQuotationItems([]);
+    setFormData(prev => ({
+      ...prev,
+      quotationId: "",
+      title: "",
+      description: "",
+      customerId: ""
+    }));
+    setSelectedCustomer(null);
+    setCustomerSearchValue("");
   };
 
   // Use useEffect to handle quotation items when selectedQuotation changes
@@ -386,26 +392,110 @@ export default function WorkOrderForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="quotation">อ้างอิงใบเสนอราคา (ไม่บังคับ)</Label>
-                    <Select value={formData.quotationId} onValueChange={handleQuotationSelect}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกใบเสนอราคา" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">สร้างใหม่ (ไม่อ้างอิง)</SelectItem>
-                        {quotations.filter(q => q.status === "approved").map((quotation) => (
-                          <SelectItem key={quotation.id} value={quotation.id.toString()}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {quotation.quotationNumber} - {(quotation as any).projectName || (quotation as any).title || 'ไม่มีชื่อโครงการ'}
-                              </span>
-                              <span className="text-sm text-gray-500">
-                                ลูกค้า: {(quotation as any).customer?.name || 'ไม่ระบุ'} | ยอดรวม: ฿{quotation.grandTotal}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    
+                    {selectedQuotation ? (
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-3 border rounded-lg bg-blue-50">
+                          <div className="font-medium text-blue-900">
+                            {selectedQuotation.quotationNumber} - {(selectedQuotation as any).projectName || 'ไม่มีชื่อโครงการ'}
+                          </div>
+                          <div className="text-sm text-blue-700">
+                            ลูกค้า: {(selectedQuotation as any).customer?.name || 'ไม่ระบุ'} | ยอดรวม: ฿{selectedQuotation.grandTotal}
+                          </div>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleClearQuotation}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <Dialog open={quotationDialogOpen} onOpenChange={setQuotationDialogOpen}>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" className="w-full justify-start">
+                            <FileText className="mr-2 h-4 w-4" />
+                            เลือกใบเสนอราคา...
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                          <DialogHeader>
+                            <DialogTitle>เลือกใบเสนอราคา</DialogTitle>
+                            <DialogDescription>
+                              เลือกใบเสนอราคาที่ได้รับการอนุมัติแล้วเพื่อสร้างใบสั่งงาน
+                            </DialogDescription>
+                          </DialogHeader>
+                          
+                          <div className="overflow-auto max-h-[60vh]">
+                            <Table>
+                              <TableHeader>
+                                <TableRow>
+                                  <TableHead>เลขที่</TableHead>
+                                  <TableHead>ชื่อโครงการ</TableHead>
+                                  <TableHead>ลูกค้า</TableHead>
+                                  <TableHead>วันที่</TableHead>
+                                  <TableHead className="text-right">ยอดรวม</TableHead>
+                                  <TableHead className="text-center">สถานะ</TableHead>
+                                  <TableHead className="text-center">เลือก</TableHead>
+                                </TableRow>
+                              </TableHeader>
+                              <TableBody>
+                                {quotations.filter(q => q.status === "approved").map((quotation) => (
+                                  <TableRow key={quotation.id} className="cursor-pointer hover:bg-gray-50">
+                                    <TableCell className="font-medium">
+                                      {quotation.quotationNumber}
+                                    </TableCell>
+                                    <TableCell>
+                                      {(quotation as any).projectName || (quotation as any).title || 'ไม่มีชื่อโครงการ'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {(quotation as any).customer?.name || 'ไม่ระบุ'}
+                                    </TableCell>
+                                    <TableCell>
+                                      {new Date(quotation.date).toLocaleDateString('th-TH')}
+                                    </TableCell>
+                                    <TableCell className="text-right font-medium">
+                                      ฿{Number(quotation.grandTotal).toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <Badge variant="success" className="bg-green-100 text-green-800">
+                                        อนุมัติแล้ว
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-center">
+                                      <Button
+                                        size="sm"
+                                        onClick={() => handleQuotationSelectFromDialog(quotation)}
+                                      >
+                                        เลือก
+                                      </Button>
+                                    </TableCell>
+                                  </TableRow>
+                                ))}
+                                {quotations.filter(q => q.status === "approved").length === 0 && (
+                                  <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-6 text-gray-500">
+                                      ไม่มีใบเสนอราคาที่ได้รับการอนุมัติ
+                                    </TableCell>
+                                  </TableRow>
+                                )}
+                              </TableBody>
+                            </Table>
+                          </div>
+                          
+                          <div className="flex justify-end pt-4 border-t">
+                            <Button
+                              variant="outline"
+                              onClick={() => setQuotationDialogOpen(false)}
+                            >
+                              ปิด
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                   </div>
 
                   <div className="space-y-2">
