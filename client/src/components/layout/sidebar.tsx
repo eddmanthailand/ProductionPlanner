@@ -75,6 +75,7 @@ export default function Sidebar() {
     { name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network },
     { name: "วางแผนและคิวงาน", href: "/production/work-queue", icon: GanttChart },
     { name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList },
+    { name: "สร้าง Job (Demo)", href: "/production/job-form-demo", icon: FileText },
     { name: "รายงานแผนผลิต", href: "/production/reports", icon: BarChart3 },
   ];
 

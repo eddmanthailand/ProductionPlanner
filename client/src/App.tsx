@@ -23,6 +23,7 @@ import WorkQueue from "@/pages/production/work-queue";
 import WorkSteps from "@/pages/production/work-steps-simple";
 import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
+import JobFormDemo from "@/pages/production/job-form-demo";
 import ProductionReports from "@/pages/production/reports";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
@@ -162,6 +163,12 @@ function Router() {
       <Route path="/production/work-orders/new">
         <ProtectedRoute>
           <WorkOrderForm />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/job-form-demo">
+        <ProtectedRoute>
+          <JobFormDemo />
         </ProtectedRoute>
       </Route>
 
