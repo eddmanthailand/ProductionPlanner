@@ -113,6 +113,8 @@ export default function WorkOrderForm() {
     }
   ]);
 
+
+
   const [formData, setFormData] = useState({
     orderNumber: "",
     quotationId: "",
@@ -785,40 +787,24 @@ export default function WorkOrderForm() {
 
                         <div className="space-y-2">
                           <Label>แผนก *</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                className="w-full justify-between"
-                              >
-                                {subJob.departmentId ? 
-                                  departments?.find(d => d.id === subJob.departmentId)?.name || "เลือกแผนก" :
-                                  "เลือกแผนก"
-                                }
-                                <Search className="h-4 w-4 ml-2" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-0">
-                              <Command>
-                                <CommandInput placeholder="ค้นหาแผนก..." />
-                                <CommandEmpty>ไม่พบแผนก</CommandEmpty>
-                                <CommandGroup>
-                                  {departments?.map((dept) => (
-                                    <CommandItem
-                                      key={dept.id}
-                                      value={dept.name}
-                                      onSelect={() => {
-                                        handleSubJobChange(index, 'departmentId', dept.id);
-                                        handleSubJobChange(index, 'workStepId', '');
-                                      }}
-                                    >
-                                      {dept.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                          <Select 
+                            value={subJob.departmentId} 
+                            onValueChange={(value) => {
+                              handleSubJobChange(index, 'departmentId', value);
+                              handleSubJobChange(index, 'workStepId', '');
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกแผนก" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {departments?.map((dept) => (
+                                <SelectItem key={dept.id} value={dept.id}>
+                                  {dept.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
 
@@ -847,72 +833,40 @@ export default function WorkOrderForm() {
 
                         <div className="space-y-2">
                           <Label>สี *</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                className="w-full justify-between"
-                              >
-                                {subJob.colorId ? 
-                                  colors?.find(c => c.id.toString() === subJob.colorId)?.name || "เลือกสี" :
-                                  "เลือกสี"
-                                }
-                                <Search className="h-4 w-4 ml-2" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-0">
-                              <Command>
-                                <CommandInput placeholder="ค้นหาสี..." />
-                                <CommandEmpty>ไม่พบสี</CommandEmpty>
-                                <CommandGroup>
-                                  {colors?.map((color) => (
-                                    <CommandItem
-                                      key={color.id}
-                                      value={color.name}
-                                      onSelect={() => handleSubJobChange(index, 'colorId', color.id.toString())}
-                                    >
-                                      {color.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                          <Select 
+                            value={subJob.colorId} 
+                            onValueChange={(value) => handleSubJobChange(index, 'colorId', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกสี" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {colors?.map((color) => (
+                                <SelectItem key={color.id} value={color.id.toString()}>
+                                  {color.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div className="space-y-2">
                           <Label>ไซส์ *</Label>
-                          <Popover>
-                            <PopoverTrigger asChild>
-                              <Button 
-                                variant="outline" 
-                                className="w-full justify-between"
-                              >
-                                {subJob.sizeId ? 
-                                  sizes?.find(s => s.id.toString() === subJob.sizeId)?.name || "เลือกไซส์" :
-                                  "เลือกไซส์"
-                                }
-                                <Search className="h-4 w-4 ml-2" />
-                              </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80 p-0">
-                              <Command>
-                                <CommandInput placeholder="ค้นหาไซส์..." />
-                                <CommandEmpty>ไม่พบไซส์</CommandEmpty>
-                                <CommandGroup>
-                                  {sizes?.map((size) => (
-                                    <CommandItem
-                                      key={size.id}
-                                      value={size.name}
-                                      onSelect={() => handleSubJobChange(index, 'sizeId', size.id.toString())}
-                                    >
-                                      {size.name}
-                                    </CommandItem>
-                                  ))}
-                                </CommandGroup>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                          <Select 
+                            value={subJob.sizeId} 
+                            onValueChange={(value) => handleSubJobChange(index, 'sizeId', value)}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกไซส์" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {sizes?.map((size) => (
+                                <SelectItem key={size.id} value={size.id.toString()}>
+                                  {size.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         <div className="space-y-2">
