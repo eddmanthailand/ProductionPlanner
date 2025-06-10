@@ -962,7 +962,7 @@ export default function WorkOrderForm() {
                               min="1"
                               value={subJob.quantity || 1}
                               onChange={(e) => handleSubJobChange(index, 'quantity', parseInt(e.target.value) || 1)}
-                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-center shadow-sm"
+                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-center shadow-sm [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                             />
                           </TableCell>
                           <TableCell className="px-2 py-1.5">
@@ -972,7 +972,7 @@ export default function WorkOrderForm() {
                               step="0.01"
                               value={subJob.productionCost || 0}
                               onChange={(e) => handleSubJobChange(index, 'productionCost', parseFloat(e.target.value) || 0)}
-                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-right shadow-sm"
+                              className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-right shadow-sm [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                             />
                           </TableCell>
                           <TableCell className="px-2 py-1.5 text-right font-medium text-gray-900 text-xs">
