@@ -221,6 +221,29 @@ export default function WorkOrderForm() {
     }
   });
 
+  // Mutation for reordering sub-jobs
+  const reorderSubJobsMutation = useMutation({
+    mutationFn: async (reorderedSubJobs: SubJob[]) => {
+      if (!workOrderId) return;
+      return await apiRequest(`/api/work-orders/${workOrderId}/sub-jobs/reorder`, "PUT", {
+        subJobs: reorderedSubJobs
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "เรียงลำดับ Sub-jobs แล้ว",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถเรียงลำดับ Sub-jobs ได้",
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleQuotationSelectFromDialog = (quotation: Quotation) => {
     setSelectedQuotation(quotation);
     setFormData(prev => ({
@@ -436,6 +459,22 @@ export default function WorkOrderForm() {
   const removeSubJob = (index: number) => {
     if (subJobs.length > 1) {
       setSubJobs(subJobs.filter((_, i) => i !== index));
+    }
+  };
+
+  // Handle drag and drop for sub-jobs reordering
+  const handleDragEnd = (result: any) => {
+    if (!result.destination) return;
+
+    const items = Array.from(subJobs);
+    const [reorderedItem] = items.splice(result.source.index, 1);
+    items.splice(result.destination.index, 0, reorderedItem);
+
+    setSubJobs(items);
+
+    // Only save to database if in edit mode and we have existing sub-jobs with IDs
+    if (isEditMode && items.some(item => item.id)) {
+      reorderSubJobsMutation.mutate(items);
     }
   };
 
@@ -856,21 +895,41 @@ export default function WorkOrderForm() {
                   <Table className="w-full table-fixed">
                     <TableHeader>
                       <TableRow className="bg-gray-100 border-b-2 border-gray-200">
-                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[25%] text-sm">ชื่อสินค้า/งาน</TableHead>
+                        <TableHead className="text-center font-semibold text-gray-700 px-1 py-2 w-[5%] text-sm"></TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[23%] text-sm">ชื่อสินค้า/งาน</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[12%] text-sm">แผนก</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[13%] text-sm">ขั้นตอนงาน</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">สี</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ขนาด</TableHead>
                         <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[8%] text-sm">จำนวน</TableHead>
-                        <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ต้นทุน/ชิ้น</TableHead>
+                        <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[9%] text-sm">ต้นทุน/ชิ้น</TableHead>
                         <TableHead className="text-right font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">รวม</TableHead>
-                        <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[7%] text-sm">ลบ</TableHead>
+                        <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[5%] text-sm">ลบ</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <TableBody>
-                      {subJobs.map((subJob, index) => (
-                        <TableRow key={index} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors">
-                          <TableCell className="px-3 py-1.5">
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="sub-jobs">
+                        {(provided) => (
+                          <TableBody {...provided.droppableProps} ref={provided.innerRef}>
+                            {subJobs.map((subJob, index) => (
+                              <Draggable key={index} draggableId={`sub-job-${index}`} index={index}>
+                                {(provided, snapshot) => (
+                                  <TableRow 
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`hover:bg-blue-50/30 border-b border-gray-100 transition-colors ${
+                                      snapshot.isDragging ? 'bg-blue-100 shadow-lg' : ''
+                                    }`}
+                                  >
+                                    <TableCell className="px-1 py-1.5 text-center">
+                                      <div 
+                                        {...provided.dragHandleProps}
+                                        className="flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 rounded p-1"
+                                      >
+                                        <GripVertical className="h-4 w-4 text-gray-400" />
+                                      </div>
+                                    </TableCell>
+                                    <TableCell className="px-3 py-1.5">
                             <Input
                               value={subJob.productName || ""}
                               onChange={(e) => handleSubJobChange(index, 'productName', e.target.value)}
@@ -990,8 +1049,14 @@ export default function WorkOrderForm() {
                             </Button>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </TableBody>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
                   </Table>
                 </div>
                 
