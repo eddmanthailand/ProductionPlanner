@@ -1019,9 +1019,16 @@ export default function WorkOrderForm() {
                                     <TableCell className="px-2 py-1.5 text-center">
                                       <Input
                                         type="number"
-                                        min="1"
-                                        value={subJob.quantity || 1}
-                                        onChange={(e) => handleSubJobChange(index, 'quantity', parseInt(e.target.value) || 1)}
+                                        min="0"
+                                        value={subJob.quantity === 0 ? "" : subJob.quantity || ""}
+                                        onChange={(e) => {
+                                          const value = e.target.value;
+                                          if (value === "") {
+                                            handleSubJobChange(index, 'quantity', 0);
+                                          } else {
+                                            handleSubJobChange(index, 'quantity', parseInt(value) || 0);
+                                          }
+                                        }}
                                         className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs text-center shadow-sm [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none [-moz-appearance:textfield]"
                                       />
                                     </TableCell>
