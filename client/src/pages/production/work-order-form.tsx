@@ -206,6 +206,9 @@ export default function WorkOrderForm() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      if (isEditMode && workOrderId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
+      }
       toast({
         title: "สำเร็จ",
         description: isEditMode ? "แก้ไขใบสั่งงานเรียบร้อยแล้ว" : "สร้างใบสั่งงานแล้ว",
