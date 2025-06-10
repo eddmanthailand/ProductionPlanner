@@ -1599,7 +1599,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Fetch sub-jobs for this work order
       const subJobsResult = await pool.query(
-        `SELECT * FROM sub_jobs WHERE work_order_id = $1 ORDER BY created_at ASC`,
+        `SELECT * FROM sub_jobs WHERE work_order_id = $1 ORDER BY sort_order ASC, created_at ASC`,
         [id]
       );
       
@@ -1770,6 +1770,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete work order error:", error);
       res.status(500).json({ message: "Failed to delete work order" });
+    }
+  });
+
+  // Sub-jobs sort order update endpoint
+  app.put("/api/work-orders/:workOrderId/sub-jobs/reorder", async (req: any, res: any) => {
+    try {
+      const { workOrderId } = req.params;
+      const { subJobs } = req.body; // Array of sub-jobs with updated sort orders
+      
+      console.log("API: Updating sub-job sort orders for work order:", workOrderId);
+      
+      // Update sort orders for each sub-job
+      for (let i = 0; i < subJobs.length; i++) {
+        const subJob = subJobs[i];
+        if (subJob.id) {
+          await pool.query(
+            `UPDATE sub_jobs SET sort_order = $1 WHERE id = $2 AND work_order_id = $3`,
+            [i + 1, subJob.id, workOrderId]
+          );
+        }
+      }
+      
+      console.log("API: Sub-job sort orders updated successfully");
+      res.json({ message: "Sort orders updated successfully" });
+    } catch (error) {
+      console.error("Update sub-job sort orders error:", error);
+      res.status(500).json({ message: "Failed to update sort orders" });
     }
   });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
-import { ArrowLeft, Save, FileText, User, Calendar, Package, Settings, Plus, Trash2, Search } from "lucide-react";
+import { ArrowLeft, Save, FileText, User, Calendar, Package, Settings, Plus, Trash2, Search, GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import type { 
   Customer, 
   Team, 
