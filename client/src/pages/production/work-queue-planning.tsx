@@ -452,11 +452,42 @@ export default function WorkQueuePlanning() {
     );
   };
 
-  const filteredAvailableJobs = availableJobs.filter(job =>
-    job.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.productName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Get all team queues to check for jobs already assigned
+  const { data: allTeamQueues = [] } = useQuery<SubJob[]>({
+    queryKey: ["/api/work-queues/all", teams.map(t => t.id).join(',')],
+    queryFn: async () => {
+      const allQueues: SubJob[] = [];
+      const promises = teams.map(async (team) => {
+        try {
+          const response = await fetch(`/api/work-queues/team/${team.id}`);
+          if (response.ok) {
+            const teamQueue = await response.json();
+            return teamQueue;
+          }
+          return [];
+        } catch (error) {
+          console.error(`Failed to fetch queue for team ${team.id}:`, error);
+          return [];
+        }
+      });
+      
+      const results = await Promise.all(promises);
+      results.forEach(queue => allQueues.push(...queue));
+      return allQueues;
+    },
+    enabled: teams.length > 0
+  });
+
+  const filteredAvailableJobs = availableJobs.filter(job => {
+    // Check if job is already in any team queue
+    const isInQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
+    if (isInQueue) return false;
+    
+    // Apply search filter
+    return job.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           job.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           job.productName.toLowerCase().includes(searchTerm.toLowerCase());
+  });
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -467,7 +498,7 @@ export default function WorkQueuePlanning() {
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             {/* Available Jobs Section */}
             <div>
               <Card>
@@ -634,7 +665,7 @@ export default function WorkQueuePlanning() {
             </div>
 
             {/* Team Queue Planning Section */}
-            <div>
+            <div className="xl:col-span-2">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -740,7 +771,7 @@ export default function WorkQueuePlanning() {
                                             <Button
                                               variant="ghost"
                                               size="sm"
-                                              onClick={() => removeFromTeamQueue((job as any).id, index)}
+                                              onClick={() => removeFromTeamQueue((job as any).queueId || (job as any).id, index)}
                                               className="text-red-600 hover:text-red-800"
                                             >
                                               <Trash2 className="h-4 w-4" />
@@ -767,8 +798,8 @@ export default function WorkQueuePlanning() {
                           {calculatedPlan.length > 0 ? (
                             <div className="mt-6">
                               <h4 className="font-medium text-gray-900 mb-4">ตารางแผนการผลิต</h4>
-                              <div className="border rounded-lg overflow-hidden">
-                                <table className="min-w-full divide-y divide-gray-200">
+                              <div className="border rounded-lg overflow-hidden overflow-x-auto">
+                                <table className="w-full min-w-full divide-y divide-gray-200 text-xs">
                                   <thead className="bg-gray-50">
                                     <tr>
                                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
