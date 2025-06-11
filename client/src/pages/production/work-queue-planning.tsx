@@ -129,6 +129,12 @@ export default function WorkQueuePlanning() {
   const { data: currentTeamQueue = [] } = useQuery<SubJob[]>({
     queryKey: ["/api/work-queues/team", selectedTeam],
     enabled: !!selectedTeam,
+    queryFn: async () => {
+      if (!selectedTeam) return [];
+      const response = await fetch(`/api/work-queues/team/${selectedTeam}`);
+      if (!response.ok) throw new Error('Failed to fetch team queue');
+      return response.json();
+    }
   });
 
   // Update team queue when data changes
