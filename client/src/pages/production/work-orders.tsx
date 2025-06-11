@@ -505,9 +505,10 @@ export default function WorkOrders() {
                       <TableCell className="px-2 py-1.5">
                         <div className="text-xs text-gray-700">
                           {order.deliveryDate ? 
-                            new Date(order.deliveryDate).toLocaleDateString('th-TH', { 
-                              month: 'short', 
-                              day: 'numeric' 
+                            new Date(order.deliveryDate).toLocaleDateString('en-GB', { 
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: '2-digit'
                             }) : 
                             <span className="text-orange-600 font-semibold text-[10px]">ยังไม่กำหนด</span>
                           }
