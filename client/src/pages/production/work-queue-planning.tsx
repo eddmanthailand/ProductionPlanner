@@ -125,11 +125,6 @@ export default function WorkQueuePlanning() {
   const { data: currentTeamQueue = [] } = useQuery<SubJob[]>({
     queryKey: ["/api/work-queues/team", selectedTeam],
     enabled: !!selectedTeam,
-    queryFn: async () => {
-      const response = await fetch(`/api/work-queues/team/${selectedTeam}`);
-      if (!response.ok) throw new Error('Failed to fetch team queue');
-      return response.json();
-    }
   });
 
   // Update team queue when data changes
@@ -157,16 +152,58 @@ export default function WorkQueuePlanning() {
     });
   };
 
+  // Mutations for queue management
+  const addToQueueMutation = useMutation({
+    mutationFn: async (data: { subJobId: number; teamId: string; priority: number }) => {
+      return apiRequest(`/api/work-queues/add-job`, {
+        method: 'POST',
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+    }
+  });
+
+  const removeFromQueueMutation = useMutation({
+    mutationFn: async (queueId: string) => {
+      return apiRequest(`/api/work-queues/${queueId}`, {
+        method: 'DELETE'
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+    }
+  });
+
+  const reorderQueueMutation = useMutation({
+    mutationFn: async (data: { teamId: string; queueItems: SubJob[] }) => {
+      return apiRequest(`/api/work-queues/reorder`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+    }
+  });
+
   // Drag and drop handlers
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
     const { source, destination } = result;
 
     // Moving from available jobs to team queue
     if (source.droppableId === "available-jobs" && destination.droppableId === "team-queue") {
+      if (!selectedTeam) return;
+      
       const jobToMove = availableJobs[source.index];
-      setTeamQueue(prev => [...prev, jobToMove]);
+      await addToQueueMutation.mutateAsync({
+        subJobId: jobToMove.id,
+        teamId: selectedTeam,
+        priority: teamQueue.length + 1
+      });
       return;
     }
 
@@ -175,12 +212,21 @@ export default function WorkQueuePlanning() {
       const newQueue = Array.from(teamQueue);
       const [removed] = newQueue.splice(source.index, 1);
       newQueue.splice(destination.index, 0, removed);
+      
       setTeamQueue(newQueue);
+      
+      if (selectedTeam) {
+        await reorderQueueMutation.mutateAsync({
+          teamId: selectedTeam,
+          queueItems: newQueue
+        });
+      }
       return;
     }
   };
 
-  const removeFromTeamQueue = (index: number) => {
+  const removeFromTeamQueue = async (queueId: string, index: number) => {
+    await removeFromQueueMutation.mutateAsync(queueId);
     setTeamQueue(prev => prev.filter((_, i) => i !== index));
   };
 
@@ -375,7 +421,7 @@ export default function WorkQueuePlanning() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => removeFromTeamQueue(index)}
+                                    onClick={() => removeFromTeamQueue(job.id.toString(), index)}
                                     className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
                                   >
                                     <Trash2 className="h-3 w-3" />

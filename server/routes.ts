@@ -1883,8 +1883,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const { teamId } = req.params;
       
-      const result = await storage.getWorkQueuesByTeam(teamId, tenantId);
-      res.json(result);
+      // Get work queue items for the team with sub job details
+      const result = await pool.query(`
+        SELECT 
+          wq.*,
+          sj.work_order_id,
+          sj.product_name,
+          sj.department_id,
+          sj.work_step_id,
+          sj.color_id,
+          sj.size_id,
+          sj.quantity as sub_job_quantity,
+          sj.production_cost,
+          sj.total_cost,
+          wo.order_number,
+          wo.customer_name,
+          wo.delivery_date
+        FROM work_queue wq
+        LEFT JOIN sub_jobs sj ON wq.product_name = sj.product_name
+        LEFT JOIN work_orders wo ON sj.work_order_id = wo.id
+        WHERE wq.team_id = $1 
+          AND wq.tenant_id = $2
+        ORDER BY wq.priority ASC, wq.created_at ASC
+      `, [teamId, tenantId]);
+
+      const teamQueue = result.rows.map(row => ({
+        id: row.id || `wq_${Date.now()}_${Math.random()}`,
+        workOrderId: row.work_order_id || row.id,
+        orderNumber: row.order_number || row.order_number,
+        customerName: row.customer_name || "ไม่ระบุลูกค้า",
+        deliveryDate: row.delivery_date,
+        productName: row.product_name,
+        departmentId: row.department_id,
+        workStepId: row.work_step_id,
+        colorId: row.color_id || 1,
+        sizeId: row.size_id || 1,
+        quantity: row.sub_job_quantity || row.quantity || 1,
+        productionCost: row.production_cost || "0.00",
+        totalCost: row.total_cost || "0.00",
+        status: row.status || "pending",
+        sortOrder: row.priority || 1
+      }));
+
+      res.json(teamQueue);
     } catch (error) {
       console.error("Get team work queues error:", error);
       res.status(500).json({ message: "Failed to fetch team work queues" });
@@ -1914,11 +1955,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE sj.work_step_id = $1 
           AND wo.tenant_id = $2
           AND wo.status IN ('approved', 'in_progress')
-          AND sj.id NOT IN (
-            SELECT DISTINCT sub_job_id 
-            FROM work_queues 
-            WHERE sub_job_id IS NOT NULL
-          )
         ORDER BY wo.delivery_date ASC NULLS LAST, wo.created_at ASC
       `, [workStepId, tenantId]);
 
@@ -1956,6 +1992,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get production capacities error:", error);
       res.status(500).json({ message: "Failed to fetch production capacities" });
+    }
+  });
+
+  // Add sub job to team queue
+  app.post("/api/work-queues/add-job", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { subJobId, teamId, priority } = req.body;
+
+      // Get sub job details
+      const subJobResult = await pool.query(
+        `SELECT sj.*, wo.order_number, wo.customer_name, wo.delivery_date 
+         FROM sub_jobs sj 
+         INNER JOIN work_orders wo ON sj.work_order_id = wo.id 
+         WHERE sj.id = $1`,
+        [subJobId]
+      );
+
+      if (subJobResult.rows.length === 0) {
+        return res.status(404).json({ message: "Sub job not found" });
+      }
+
+      const subJob = subJobResult.rows[0];
+
+      // Add to work queue
+      const queueResult = await pool.query(
+        `INSERT INTO work_queue (
+          id, team_id, order_number, product_name, quantity, 
+          priority, status, tenant_id, created_at, updated_at
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        RETURNING *`,
+        [
+          `wq_${Date.now()}_${Math.random()}`,
+          teamId,
+          subJob.order_number,
+          subJob.product_name,
+          subJob.quantity,
+          priority || 1,
+          'pending',
+          tenantId
+        ]
+      );
+
+      res.json({ success: true, queueItem: queueResult.rows[0] });
+    } catch (error) {
+      console.error("Add job to queue error:", error);
+      res.status(500).json({ message: "Failed to add job to queue" });
+    }
+  });
+
+  // Update queue order
+  app.put("/api/work-queues/reorder", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { teamId, queueItems } = req.body;
+
+      // Update priorities based on new order
+      for (let i = 0; i < queueItems.length; i++) {
+        await pool.query(
+          `UPDATE work_queue SET priority = $1, updated_at = NOW() 
+           WHERE id = $2 AND team_id = $3 AND tenant_id = $4`,
+          [i + 1, queueItems[i].id, teamId, tenantId]
+        );
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Reorder queue error:", error);
+      res.status(500).json({ message: "Failed to reorder queue" });
+    }
+  });
+
+  // Remove job from queue
+  app.delete("/api/work-queues/:queueId", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { queueId } = req.params;
+
+      await pool.query(
+        `DELETE FROM work_queue WHERE id = $1 AND tenant_id = $2`,
+        [queueId, tenantId]
+      );
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Remove job from queue error:", error);
+      res.status(500).json({ message: "Failed to remove job from queue" });
     }
   });
 
