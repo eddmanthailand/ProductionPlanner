@@ -25,7 +25,7 @@ import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
 import WorkQueuePlanning from "@/pages/production/work-queue-planning";
 
-import ProductionReports from "@/pages/production/reports";
+import ProductionReports from "@/pages/production/production-reports";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import Customers from "@/pages/customers";

@@ -2113,28 +2113,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  return httpServer;
-}
-
-// ฟังก์ชันคำนวณ check digit สำหรับเลขที่ผู้เสียภาษีไทย
-function calculateTaxIdCheckDigit(first12Digits: string): number {
-  const multipliers = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
-  let sum = 0;
-  
-  for (let i = 0; i < 12; i++) {
-    sum += parseInt(first12Digits.charAt(i)) * multipliers[i];
-  }
-  
-  const remainder = sum % 11;
-  const checkDigit = 11 - remainder;
-  
-  if (checkDigit >= 10) {
-    return checkDigit - 10;
-  }
-  
-  return checkDigit;
-}
-
   // Production Plans routes
   app.get('/api/production-plans', authenticateToken, async (req: any, res) => {
     try {
@@ -2143,31 +2121,6 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
     } catch (error) {
       console.error('Get production plans error:', error);
       res.status(500).json({ message: 'Failed to get production plans' });
-    }
-  });
-
-  app.get('/api/production-plans/team/:teamId', authenticateToken, async (req: any, res) => {
-    try {
-      const { teamId } = req.params;
-      const plans = await storage.getProductionPlansByTeam(teamId, req.user.tenantId);
-      res.json(plans);
-    } catch (error) {
-      console.error('Get production plans by team error:', error);
-      res.status(500).json({ message: 'Failed to get production plans by team' });
-    }
-  });
-
-  app.get('/api/production-plans/:id', authenticateToken, async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const plan = await storage.getProductionPlan(id, req.user.tenantId);
-      if (!plan) {
-        return res.status(404).json({ message: 'Production plan not found' });
-      }
-      res.json(plan);
-    } catch (error) {
-      console.error('Get production plan error:', error);
-      res.status(500).json({ message: 'Failed to get production plan' });
     }
   });
 
@@ -2236,4 +2189,24 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
   });
 
   return httpServer;
+}
+
+// ฟังก์ชันคำนวณ check digit สำหรับเลขที่ผู้เสียภาษีไทย
+function calculateTaxIdCheckDigit(first12Digits: string): number {
+  const multipliers = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
+  let sum = 0;
+  
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(first12Digits.charAt(i)) * multipliers[i];
+  }
+  
+  const remainder = sum % 11;
+  const checkDigit = 11 - remainder;
+  
+  if (checkDigit >= 10) {
+    return checkDigit - 10;
+  }
+  
+  return checkDigit;
+}
 
