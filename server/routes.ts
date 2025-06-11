@@ -1784,7 +1784,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle sub-jobs (items) update
       if (updateData.items && Array.isArray(updateData.items)) {
-        // Delete existing sub-jobs for this work order
+        // First, delete production plan items that reference sub-jobs for this work order
+        await pool.query(
+          `DELETE FROM production_plan_items 
+           WHERE sub_job_id IN (
+             SELECT id FROM sub_jobs WHERE work_order_id = $1
+           )`,
+          [id]
+        );
+
+        // Then delete existing sub-jobs for this work order
         await pool.query(
           `DELETE FROM sub_jobs WHERE work_order_id = $1`,
           [id]
