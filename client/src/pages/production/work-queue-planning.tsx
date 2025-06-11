@@ -902,7 +902,8 @@ export default function WorkQueuePlanning() {
                                     )}
                                     {getJobsForDate(date).length > 0 && (
                                       <div className="text-xs text-gray-500">
-                                        {getJobsForDate(date).reduce((sum: number, job: any) => sum + job.processedQuantity, 0)} ชิ้น
+                                        {getJobsForDate(date).reduce((sum: number, job: any) => sum + job.processedQuantity, 0)} ชิ้น •{" "}
+                                        {getJobsForDate(date).reduce((sum: number, job: any) => sum + (job.processedCost || 0), 0).toLocaleString()} บาท
                                       </div>
                                     )}
                                   </div>
