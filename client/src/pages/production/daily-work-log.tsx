@@ -278,7 +278,7 @@ export default function DailyWorkLog() {
                     <SelectValue placeholder="เลือกทีม" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">ทุกทีม</SelectItem>
+                    <SelectItem value="all">ทุกทีม</SelectItem>
                     {teams.map((team) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}

@@ -2200,6 +2200,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Daily Work Logs endpoints
+  app.get("/api/daily-work-logs", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { date, teamId } = req.query;
+      
+      const logs = await storage.getDailyWorkLogs(tenantId, { date, teamId });
+      res.json(logs);
+    } catch (error) {
+      console.error("Get daily work logs error:", error);
+      res.status(500).json({ message: "Failed to fetch daily work logs" });
+    }
+  });
+
+  app.post("/api/daily-work-logs", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const logData = { ...req.body, tenantId };
+      
+      const log = await storage.createDailyWorkLog(logData);
+      res.json(log);
+    } catch (error) {
+      console.error("Create daily work log error:", error);
+      res.status(500).json({ message: "Failed to create daily work log" });
+    }
+  });
+
+  app.put("/api/daily-work-logs/:id", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { id } = req.params;
+      
+      const log = await storage.updateDailyWorkLog(id, req.body, tenantId);
+      res.json(log);
+    } catch (error) {
+      console.error("Update daily work log error:", error);
+      res.status(500).json({ message: "Failed to update daily work log" });
+    }
+  });
+
+  app.get("/api/sub-jobs/by-work-order/:workOrderId", async (req: any, res: any) => {
+    try {
+      const { workOrderId } = req.params;
+      const subJobs = await storage.getSubJobsByWorkOrder(workOrderId);
+      res.json(subJobs);
+    } catch (error) {
+      console.error("Get sub jobs by work order error:", error);
+      res.status(500).json({ message: "Failed to fetch sub jobs" });
+    }
+  });
+
   return httpServer;
 }
 

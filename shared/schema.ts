@@ -2,6 +2,7 @@ import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, json
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { nanoid } from "nanoid";
 
 // Tenants table
 export const tenants = pgTable("tenants", {
@@ -449,7 +450,7 @@ export const subJobs = pgTable("sub_jobs", {
 
 // Daily Work Logs table
 export const dailyWorkLogs = pgTable("daily_work_logs", {
-  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  id: text("id").primaryKey().$defaultFn(() => `dwl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
   date: date("date").notNull(),
   teamId: text("team_id").references(() => teams.id).notNull(),
   employeeId: text("employee_id").references(() => employees.id).notNull(),
@@ -672,6 +673,12 @@ export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit
   createdAt: true
 });
 
+export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Types
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -752,6 +759,9 @@ export type SubJob = typeof subJobs.$inferSelect & {
   jobName?: string;
 };
 export type InsertSubJob = z.infer<typeof insertSubJobSchema>;
+
+export type DailyWorkLog = typeof dailyWorkLogs.$inferSelect;
+export type InsertDailyWorkLog = z.infer<typeof insertDailyWorkLogSchema>;
 
 // Production Plans table
 export const productionPlans = pgTable("production_plans", {

@@ -1330,6 +1330,69 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // Daily Work Logs methods
+  async getDailyWorkLogs(tenantId: string, filters?: { date?: string; teamId?: string }): Promise<DailyWorkLog[]> {
+    try {
+      let query = db
+        .select()
+        .from(dailyWorkLogs)
+        .where(eq(dailyWorkLogs.tenantId, tenantId));
+
+      if (filters?.date) {
+        query = query.where(eq(dailyWorkLogs.date, filters.date));
+      }
+
+      if (filters?.teamId && filters.teamId !== 'all') {
+        query = query.where(eq(dailyWorkLogs.teamId, filters.teamId));
+      }
+
+      const logs = await query.orderBy(desc(dailyWorkLogs.createdAt));
+      return logs;
+    } catch (error) {
+      console.error('Get daily work logs error:', error);
+      return [];
+    }
+  }
+
+  async createDailyWorkLog(insertLog: InsertDailyWorkLog): Promise<DailyWorkLog> {
+    const [log] = await db
+      .insert(dailyWorkLogs)
+      .values(insertLog)
+      .returning();
+    return log;
+  }
+
+  async updateDailyWorkLog(id: string, updateData: Partial<InsertDailyWorkLog>, tenantId: string): Promise<DailyWorkLog | undefined> {
+    try {
+      const [updated] = await db
+        .update(dailyWorkLogs)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(and(
+          eq(dailyWorkLogs.id, id),
+          eq(dailyWorkLogs.tenantId, tenantId)
+        ))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Update daily work log error:', error);
+      return undefined;
+    }
+  }
+
+  async getSubJobsByWorkOrder(workOrderId: string): Promise<SubJob[]> {
+    try {
+      const jobs = await db
+        .select()
+        .from(subJobs)
+        .where(eq(subJobs.workOrderId, workOrderId))
+        .orderBy(asc(subJobs.id));
+      return jobs;
+    } catch (error) {
+      console.error('Get sub jobs by work order error:', error);
+      return [];
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();
