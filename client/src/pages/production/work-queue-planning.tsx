@@ -358,12 +358,14 @@ export default function WorkQueuePlanning() {
                           key={job.id}
                           className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                           onClick={() => {
-                            addToQueueMutation.mutate({
-                              subJobId: job.id,
-                              teamId: selectedTeam,
-                              priority: teamQueue.length + 1
-                            });
-                            setDialogOpen(false);
+                            if (selectedTeam) {
+                              addToQueueMutation.mutate({
+                                subJobId: job.id,
+                                teamId: selectedTeam,
+                                priority: teamQueue.length + 1
+                              });
+                              setDialogOpen(false);
+                            }
                           }}
                         >
                           <div className="text-sm font-medium text-gray-900 mb-2">
@@ -482,49 +484,17 @@ export default function WorkQueuePlanning() {
               </Card>
             </div>
 
-            {/* Second Panel - Team Queue */}
-            <div className="col-span-1">
+            {/* Planning Calendar - 85% width */}
+            <div className="flex-1">
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-green-600" />
-                    <CardTitle className="text-lg">คิวของทีม</CardTitle>
+                    <Calculator className="h-5 w-5 text-purple-600" />
+                    <CardTitle className="text-lg">แผนการผลิต</CardTitle>
                   </div>
-                  <div className="mt-3 space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">เลือกทีม</label>
-                      <Select 
-                        value={selectedTeam} 
-                        onValueChange={setSelectedTeam}
-                        disabled={!selectedWorkStep}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={
-                            selectedWorkStep 
-                              ? "เลือกทีม" 
-                              : "เลือกขั้นตอนงานก่อน"
-                          } />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableTeams.map((team) => (
-                            <SelectItem key={team.id} value={team.id}>
-                              {team.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 mb-2 block">วันที่เริ่มงาน</label>
-                      <Input
-                        type="date"
-                        value={teamStartDate}
-                        onChange={(e) => setTeamStartDate(e.target.value)}
-                      />
-                    </div>
+                  <div className="flex items-center gap-4 mt-3">
                     <Button 
                       onClick={calculatePlan}
-                      className="w-full"
                       disabled={!selectedTeam || !teamStartDate || teamQueue.length === 0}
                     >
                       <Calculator className="h-4 w-4 mr-2" />
@@ -533,82 +503,85 @@ export default function WorkQueuePlanning() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Droppable droppableId="team-queue">
-                    {(provided) => (
-                      <div
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                        className="space-y-2 min-h-[400px]"
-                      >
-                        {teamQueue.map((job, index) => (
-                          <Draggable key={`team-${job.id}`} draggableId={`team-${job.id}`} index={index}>
-                            {(provided, snapshot) => (
-                              <div
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                {...provided.dragHandleProps}
-                                className={`p-3 bg-white border rounded-lg cursor-grab hover:shadow-md transition-shadow ${
-                                  snapshot.isDragging ? 'shadow-lg' : ''
-                                }`}
-                              >
-                                <div className="flex items-center justify-between mb-1">
-                                  <div className="text-xs text-gray-900 line-clamp-1 flex-1">
-                                    {job.customerName} • {job.orderNumber} • {job.productName}
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => removeFromTeamQueue(job.id.toString(), index)}
-                                    className="h-5 w-5 p-0 text-red-500 hover:text-red-700 ml-2"
-                                  >
-                                    <Trash2 className="h-3 w-3" />
-                                  </Button>
-                                </div>
-                                <div className="flex items-center justify-between text-xs">
-                                  <div className="text-gray-600">
-                                    {formatDate(job.deliveryDate)}
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Badge variant="outline" className="text-xs px-1 py-0">
-                                      {getColorName(job.colorId)}
-                                    </Badge>
-                                    <Badge variant="outline" className="text-xs px-1 py-0">
-                                      {getSizeName(job.sizeId)}
-                                    </Badge>
-                                    <span className="font-medium text-green-700">
-                                      {job.quantity} ตัว
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
+                  {/* Calendar View for Planning */}
+                  {selectedTeam && teamStartDate ? (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-700 mb-2">
+                        <div className="p-2 text-center">จันทร์</div>
+                        <div className="p-2 text-center">อังคาร</div>
+                        <div className="p-2 text-center">พุธ</div>
+                        <div className="p-2 text-center">พฤหัสบดี</div>
+                        <div className="p-2 text-center">ศุกร์</div>
+                        <div className="p-2 text-center">เสาร์</div>
+                        <div className="p-2 text-center">อาทิตย์</div>
                       </div>
-                    )}
-                  </Droppable>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Panel - Planning Space */}
-            <div className="col-span-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-center text-xl text-gray-600">
-                    พื้นที่วางแผน
-                  </CardTitle>
-                  <p className="text-center text-sm text-gray-500">
-                    ลากงานจาก "งานรอวางคิว" ไปยัง "คิวของทีม" เพื่อจัดลำดับการผลิต
-                  </p>
-                </CardHeader>
-                <CardContent className="min-h-[600px] flex items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <Clock className="h-16 w-16 mx-auto mb-4" />
-                    <p className="text-lg">เลือกขั้นตอนงานและทีม</p>
-                    <p className="text-sm">เพื่อเริ่มวางแผนการผลิต</p>
-                  </div>
+                      
+                      <div className="grid grid-cols-7 gap-1">
+                        {/* Generate calendar days for 4 weeks */}
+                        {Array.from({ length: 28 }, (_, i) => {
+                          const date = new Date(teamStartDate);
+                          date.setDate(date.getDate() + i);
+                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                          
+                          return (
+                            <Droppable key={`date-${i}`} droppableId={`calendar-${date.toISOString().split('T')[0]}`}>
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className={`
+                                    min-h-[120px] p-2 border rounded-lg
+                                    ${isWeekend ? 'bg-gray-100' : 'bg-white'}
+                                    ${snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : 'border-gray-200'}
+                                  `}
+                                >
+                                  <div className="text-xs font-medium text-gray-600 mb-1">
+                                    {date.getDate()}/{date.getMonth() + 1}
+                                  </div>
+                                  
+                                  {/* Jobs scheduled for this date would appear here */}
+                                  <div className="space-y-1">
+                                    {/* TODO: Add scheduled jobs for this date */}
+                                  </div>
+                                  
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </Droppable>
+                          );
+                        })}
+                      </div>
+                      
+                      {/* Summary section */}
+                      <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 className="font-medium text-gray-900 mb-2">สรุปการวางแผน</h4>
+                        <div className="grid grid-cols-3 gap-4 text-sm">
+                          <div>
+                            <span className="text-gray-600">งานทั้งหมด: </span>
+                            <span className="font-medium">{teamQueue.length} งาน</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">วันที่เริ่ม: </span>
+                            <span className="font-medium">{formatDate(teamStartDate)}</span>
+                          </div>
+                          <div>
+                            <span className="text-gray-600">ทีม: </span>
+                            <span className="font-medium">
+                              {availableTeams.find(t => t.id === selectedTeam)?.name || '-'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="min-h-[500px] flex items-center justify-center">
+                      <div className="text-center text-gray-400">
+                        <Clock className="h-16 w-16 mx-auto mb-4" />
+                        <p className="text-lg">เลือกทีมและกำหนดวันเริ่มงาน</p>
+                        <p className="text-sm">เพื่อดูตารางวางแผนการผลิต</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </div>
