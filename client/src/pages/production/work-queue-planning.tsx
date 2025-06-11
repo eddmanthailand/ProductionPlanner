@@ -9,7 +9,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { CalendarDays, Clock, Users, Trash2, Calculator, Plus, Search, List, ChevronDown } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
@@ -146,20 +146,25 @@ export default function WorkQueuePlanning() {
 
   // Get all team queues to check for jobs already assigned
   const { data: allTeamQueues = [] } = useQuery<SubJob[]>({
-    queryKey: ["/api/work-queues/all"],
+    queryKey: ["/api/work-queues/all", teams.map(t => t.id).join(',')],
     queryFn: async () => {
       const allQueues: SubJob[] = [];
-      for (const team of teams) {
+      const promises = teams.map(async (team) => {
         try {
           const response = await fetch(`/api/work-queues/team/${team.id}`);
           if (response.ok) {
             const teamQueue = await response.json();
-            allQueues.push(...teamQueue);
+            return teamQueue;
           }
+          return [];
         } catch (error) {
           console.error(`Failed to fetch queue for team ${team.id}:`, error);
+          return [];
         }
-      }
+      });
+      
+      const results = await Promise.all(promises);
+      results.forEach(queue => allQueues.push(...queue));
       return allQueues;
     },
     enabled: teams.length > 0
@@ -205,17 +210,13 @@ export default function WorkQueuePlanning() {
 
   // Filter available jobs by search term and exclude jobs already assigned to any team
   const filteredAvailableJobs = availableJobs.filter(job => {
-    // Check if job is already assigned to any team queue
-    const isInAnyQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
-    
-    // Debug logging
-    if (job.id === 37) {
-      console.log('Checking job 37:', {
-        jobId: job.id,
-        allTeamQueues: allTeamQueues.map(q => ({ id: q.id, orderNumber: q.orderNumber })),
-        isInAnyQueue
-      });
-    }
+    // Check if job is already assigned to any team queue by comparing order number and product name
+    const isInAnyQueue = allTeamQueues.some(queueJob => 
+      queueJob.orderNumber === job.orderNumber && 
+      queueJob.productName === job.productName &&
+      queueJob.colorId === job.colorId &&
+      queueJob.sizeId === job.sizeId
+    );
     
     if (isInAnyQueue) return false;
 
@@ -456,6 +457,9 @@ export default function WorkQueuePlanning() {
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
                 <DialogHeader>
                   <DialogTitle>เลือกงานรอวางคิว - {workSteps.find(ws => ws.id === selectedWorkStep)?.name || 'ไม่ระบุขั้นตอน'}</DialogTitle>
+                  <DialogDescription>
+                    เลือกงานที่ต้องการเพิ่มเข้าคิวของทีม งานที่อยู่ในคิวแล้วจะไม่แสดงในรายการ
+                  </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
@@ -814,6 +818,9 @@ export default function WorkQueuePlanning() {
           <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
             <DialogHeader>
               <DialogTitle>คิวงานของทีมทั้งหมด</DialogTitle>
+              <DialogDescription>
+                แสดงคิวงานปัจจุบันของทุกทีมในแผนก
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
