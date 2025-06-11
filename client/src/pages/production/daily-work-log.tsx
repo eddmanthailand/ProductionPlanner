@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList } from "lucide-react";
+import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface DailyWorkLog {
   id: string;
@@ -67,6 +70,7 @@ interface SubJob {
   orderNumber?: string;
   unitPrice?: number;
   completedQuantity?: number;
+  workStepId?: string;
 }
 
 interface Department {
@@ -91,6 +95,7 @@ export default function DailyWorkLog() {
   const [selectedWorkStep, setSelectedWorkStep] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<string>("");
+  const [workOrderOpen, setWorkOrderOpen] = useState(false);
   const [selectedSubJobs, setSelectedSubJobs] = useState<{[key: string]: boolean}>({});
   const [selectedQuantities, setSelectedQuantities] = useState<{[key: string]: string}>({});
   const [workDescription, setWorkDescription] = useState<string>("");
@@ -141,13 +146,19 @@ export default function DailyWorkLog() {
   });
 
   const { data: subJobs = [] } = useQuery<SubJob[]>({
-    queryKey: ["/api/sub-jobs/by-work-order", selectedWorkOrder],
+    queryKey: ["/api/sub-jobs/by-work-order", selectedWorkOrder, selectedWorkStep],
     enabled: !!selectedWorkOrder,
     queryFn: async () => {
       if (!selectedWorkOrder) return [];
       const response = await fetch(`/api/sub-jobs/by-work-order/${selectedWorkOrder}`);
       if (!response.ok) throw new Error('Failed to fetch sub jobs');
-      return response.json();
+      const allSubJobs = await response.json();
+      
+      // Filter by work step if selected
+      if (selectedWorkStep) {
+        return allSubJobs.filter((job: SubJob) => job.workStepId === selectedWorkStep);
+      }
+      return allSubJobs;
     }
   });
 
@@ -171,12 +182,20 @@ export default function DailyWorkLog() {
     setSelectedWorkStep("");
     setSelectedEmployee("");
     setSelectedWorkOrder("");
+    setWorkOrderOpen(false);
     setSelectedSubJobs({});
     setSelectedQuantities({});
     setWorkDescription("");
     setWorkStatus("in_progress");
     setNotes("");
     setEditingLog(null);
+  };
+
+  // Reset sub job selections when work step changes
+  const handleWorkStepChange = (workStepId: string) => {
+    setSelectedWorkStep(workStepId);
+    setSelectedSubJobs({});
+    setSelectedQuantities({});
   };
 
   const handleSubJobSelection = (subJobId: string, isSelected: boolean) => {
@@ -369,7 +388,7 @@ export default function DailyWorkLog() {
                 <Workflow className="h-4 w-4 text-purple-600" />
                 3. เลือกขั้นตอน
               </Label>
-              <Select value={selectedWorkStep} onValueChange={setSelectedWorkStep} disabled={!selectedDepartment}>
+              <Select value={selectedWorkStep} onValueChange={handleWorkStepChange} disabled={!selectedDepartment}>
                 <SelectTrigger className="h-11">
                   <SelectValue placeholder={selectedDepartment ? "เลือกขั้นตอนงาน" : "เลือกแผนกก่อน"} />
                 </SelectTrigger>
@@ -383,118 +402,177 @@ export default function DailyWorkLog() {
               </Select>
             </div>
 
-            {/* Step 4: Work Order */}
+            {/* Step 4: Work Order Combobox */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
                 <ClipboardList className="h-4 w-4 text-orange-600" />
                 4. เลือกใบสั่งงาน
               </Label>
-              <Select value={selectedWorkOrder} onValueChange={setSelectedWorkOrder}>
-                <SelectTrigger className="h-11">
-                  <SelectValue placeholder="เลือกใบสั่งงาน" />
-                </SelectTrigger>
-                <SelectContent>
-                  {workOrders.map((order) => (
-                    <SelectItem key={order.id} value={order.id}>
-                      {order.orderNumber} - {order.customerName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Popover open={workOrderOpen} onOpenChange={setWorkOrderOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={workOrderOpen}
+                    className="h-11 w-full justify-between"
+                  >
+                    {selectedWorkOrder
+                      ? workOrders.find((order) => order.id === selectedWorkOrder)?.orderNumber + " - " + 
+                        workOrders.find((order) => order.id === selectedWorkOrder)?.customerName
+                      : "ค้นหาและเลือกใบสั่งงาน..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-full p-0">
+                  <Command>
+                    <CommandInput placeholder="ค้นหาใบสั่งงาน..." />
+                    <CommandEmpty>ไม่พบใบสั่งงาน</CommandEmpty>
+                    <CommandGroup>
+                      {workOrders.map((order) => (
+                        <CommandItem
+                          key={order.id}
+                          value={`${order.orderNumber} ${order.customerName} ${order.title}`}
+                          onSelect={() => {
+                            setSelectedWorkOrder(order.id);
+                            setWorkOrderOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              selectedWorkOrder === order.id ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          <div className="flex flex-col">
+                            <span className="font-medium">{order.orderNumber}</span>
+                            <span className="text-sm text-gray-500">{order.customerName} - {order.title}</span>
+                          </div>
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Sub Job Details - Full Width Display */}
-      {selectedWorkOrder && selectedWorkOrderDetails && subJobs.length > 0 && (
+      {selectedWorkOrder && selectedWorkOrderDetails && (
         <Card className="mb-6 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardList className="h-5 w-5" />
-              รายละเอียดงาน - {selectedWorkOrderDetails.orderNumber}
+            <CardTitle className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-5 w-5" />
+                รายละเอียดงาน - {selectedWorkOrderDetails.orderNumber}
+              </div>
+              {selectedWorkStep && (
+                <Badge variant="outline" className="ml-2">
+                  {workSteps.find(ws => ws.id === selectedWorkStep)?.name}
+                </Badge>
+              )}
             </CardTitle>
+            {!selectedWorkStep && (
+              <p className="text-sm text-amber-600 mt-2 flex items-center gap-2">
+                <AlertCircle className="h-4 w-4" />
+                กรุณาเลือกขั้นตอนงานเพื่อแสดงรายละเอียดที่เกี่ยวข้อง
+              </p>
+            )}
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow style={{ fontSize: '12px' }}>
-                    <TableHead className="w-16">เลือก</TableHead>
-                    <TableHead>ลูกค้า</TableHead>
-                    <TableHead>ชื่อสินค้า</TableHead>
-                    <TableHead>สี</TableHead>
-                    <TableHead>ไซส์</TableHead>
-                    <TableHead className="text-right">จำนวนสั่ง</TableHead>
-                    <TableHead className="text-right">ราคาต่อหน่วย</TableHead>
-                    <TableHead className="text-right">ราคารวม</TableHead>
-                    <TableHead className="text-right">ทำแล้ว</TableHead>
-                    <TableHead className="text-right">คงเหลือ</TableHead>
-                    <TableHead>สถานะ</TableHead>
-                    <TableHead className="w-32">จำนวนที่ทำ</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {subJobs.map((subJob) => (
-                    <TableRow 
-                      key={subJob.id} 
-                      className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                        selectedSubJobs[subJob.id.toString()] ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                      }`}
-                      style={{ fontSize: '12px' }}
-                    >
-                      <TableCell>
-                        <Checkbox
-                          checked={selectedSubJobs[subJob.id.toString()] || false}
-                          onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
-                        />
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {subJob.customerName || selectedWorkOrderDetails.customerName}
-                      </TableCell>
-                      <TableCell>{subJob.productName}</TableCell>
-                      <TableCell>{subJob.colorName || '-'}</TableCell>
-                      <TableCell>{subJob.sizeName || '-'}</TableCell>
-                      <TableCell className="text-right font-medium">
-                        {subJob.quantity?.toLocaleString() || 0}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        ฿{subJob.unitPrice?.toLocaleString() || 0}
-                      </TableCell>
-                      <TableCell className="text-right font-medium">
-                        ฿{parseFloat(subJob.totalCost || '0').toLocaleString()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {subJob.completedQuantity?.toLocaleString() || 0}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {((subJob.quantity || 0) - (subJob.completedQuantity || 0)).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={subJob.status === 'completed' ? 'default' : 'secondary'}>
-                          {subJob.status === 'completed' ? 'เสร็จสิ้น' : 
-                           subJob.status === 'in_progress' ? 'กำลังดำเนินการ' : 
-                           subJob.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        {selectedSubJobs[subJob.id.toString()] && (
-                          <Input
-                            type="number"
-                            placeholder="จำนวน"
-                            value={selectedQuantities[subJob.id.toString()] || ""}
-                            onChange={(e) => handleQuantityChange(subJob.id.toString(), e.target.value)}
-                            className="w-20 h-8 text-xs"
-                            min="0"
-                            max={subJob.quantity - (subJob.completedQuantity || 0)}
-                          />
-                        )}
-                      </TableCell>
+            {selectedWorkStep && subJobs.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow style={{ fontSize: '12px' }}>
+                      <TableHead className="w-16">เลือก</TableHead>
+                      <TableHead>ลูกค้า</TableHead>
+                      <TableHead>ชื่อสินค้า</TableHead>
+                      <TableHead>สี</TableHead>
+                      <TableHead>ไซส์</TableHead>
+                      <TableHead className="text-right">จำนวนสั่ง</TableHead>
+                      <TableHead className="text-right">ราคาต่อหน่วย</TableHead>
+                      <TableHead className="text-right">ราคารวม</TableHead>
+                      <TableHead className="text-right">ทำแล้ว</TableHead>
+                      <TableHead className="text-right">คงเหลือ</TableHead>
+                      <TableHead>สถานะ</TableHead>
+                      <TableHead className="w-32">จำนวนที่ทำ</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {subJobs.map((subJob) => (
+                      <TableRow 
+                        key={subJob.id} 
+                        className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                          selectedSubJobs[subJob.id.toString()] ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        }`}
+                        style={{ fontSize: '12px' }}
+                      >
+                        <TableCell>
+                          <Checkbox
+                            checked={selectedSubJobs[subJob.id.toString()] || false}
+                            onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
+                          />
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {subJob.customerName || selectedWorkOrderDetails.customerName}
+                        </TableCell>
+                        <TableCell>{subJob.productName}</TableCell>
+                        <TableCell>{subJob.colorName || '-'}</TableCell>
+                        <TableCell>{subJob.sizeName || '-'}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {subJob.quantity?.toLocaleString() || 0}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          ฿{subJob.unitPrice?.toLocaleString() || 0}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          ฿{parseFloat(subJob.totalCost || '0').toLocaleString()}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {subJob.completedQuantity?.toLocaleString() || 0}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {((subJob.quantity || 0) - (subJob.completedQuantity || 0)).toLocaleString()}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={subJob.status === 'completed' ? 'default' : 'secondary'}>
+                            {subJob.status === 'completed' ? 'เสร็จสิ้น' : 
+                             subJob.status === 'in_progress' ? 'กำลังดำเนินการ' : 
+                             subJob.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {selectedSubJobs[subJob.id.toString()] && (
+                            <Input
+                              type="number"
+                              placeholder="จำนวน"
+                              value={selectedQuantities[subJob.id.toString()] || ""}
+                              onChange={(e) => handleQuantityChange(subJob.id.toString(), e.target.value)}
+                              className="w-20 h-8 text-xs"
+                              min="0"
+                              max={subJob.quantity - (subJob.completedQuantity || 0)}
+                            />
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : selectedWorkStep && subJobs.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <ClipboardList className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>ไม่พบงานที่ตรงกับขั้นตอน "{workSteps.find(ws => ws.id === selectedWorkStep)?.name}"</p>
+                <p className="text-sm mt-1">กรุณาเลือกขั้นตอนอื่นหรือตรวจสอบข้อมูลใบสั่งงาน</p>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Workflow className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>เลือกขั้นตอนงานเพื่อดูรายละเอียด</p>
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
