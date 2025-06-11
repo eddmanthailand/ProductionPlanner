@@ -192,10 +192,7 @@ export default function WorkQueuePlanning() {
   // Mutations
   const addToQueueMutation = useMutation({
     mutationFn: (data: { subJobId: number; teamId: string; priority: number }) => 
-      apiRequest('/api/work-queues/add-job', {
-        method: 'POST',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('/api/work-queues/add-job', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
@@ -205,13 +202,8 @@ export default function WorkQueuePlanning() {
   });
 
   const removeFromQueueMutation = useMutation({
-    mutationFn: async (queueId: string) => {
-      const response = await fetch(`/api/work-queues/${queueId}`, {
-        method: 'DELETE'
-      });
-      if (!response.ok) throw new Error('Failed to remove job from queue');
-      return response.json();
-    },
+    mutationFn: (queueId: string) => 
+      apiRequest(`/api/work-queues/${queueId}`, 'DELETE'),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
@@ -222,10 +214,7 @@ export default function WorkQueuePlanning() {
 
   const reorderQueueMutation = useMutation({
     mutationFn: (data: { teamId: string; queueItems: SubJob[] }) => 
-      apiRequest('/api/work-queues/reorder', {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      }),
+      apiRequest('/api/work-queues/reorder', 'PUT', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
     }
