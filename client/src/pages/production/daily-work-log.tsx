@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye } from "lucide-react";
+import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -758,51 +758,83 @@ export default function DailyWorkLog() {
             <Table>
               <TableHeader>
                 <TableRow style={{ fontSize: '12px' }}>
-                  <TableHead>วันเวลา</TableHead>
-                  <TableHead>ทีม</TableHead>
-                  <TableHead>ใบสั่งงาน</TableHead>
-                  <TableHead>จำนวนงาน</TableHead>
-                  <TableHead className="text-right">จำนวนรวม</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                  <TableHead>การดำเนินการ</TableHead>
+                  <TableHead className="w-[120px]">วันเวลา</TableHead>
+                  <TableHead className="w-[100px]">ทีม</TableHead>
+                  <TableHead className="w-[140px]">ใบสั่งงาน</TableHead>
+                  <TableHead className="w-[100px] text-center">จำนวนงาน</TableHead>
+                  <TableHead className="w-[100px] text-right">จำนวนรวม</TableHead>
+                  <TableHead className="w-[120px]">สถานะ</TableHead>
+                  <TableHead className="w-[120px] text-center">การดำเนินการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {consolidatedLogs.map((log, index) => (
-                  <TableRow key={`${log.date}-${log.teamId}-${log.workOrderId}-${index}`} style={{ fontSize: '12px' }}>
-                    <TableCell>
-                      {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm')}
+                  <TableRow key={`${log.date}-${log.teamId}-${log.workOrderId}-${index}`} 
+                           style={{ fontSize: '12px' }}
+                           className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <TableCell className="font-mono text-xs">
+                      <div className="flex flex-col">
+                        <span>{format(new Date(log.createdAt), 'dd/MM/yyyy')}</span>
+                        <span className="text-gray-500">{format(new Date(log.createdAt), 'HH:mm')}</span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {teams.find(t => t.id === log.teamId)?.name || log.teamId}
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span className="font-medium text-sm">
+                          {teams.find(t => t.id === log.teamId)?.name || log.teamId}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {workOrders.find(wo => wo.id === log.workOrderId)?.orderNumber || log.workOrderId}
+                      <div className="flex flex-col">
+                        <span className="font-medium text-sm">
+                          {workOrders.find(wo => wo.id === log.workOrderId)?.orderNumber || log.workOrderId}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {workOrders.find(wo => wo.id === log.workOrderId)?.customerName || ''}
+                        </span>
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      {log.subJobs.length} รายการ
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {log.totalQuantity}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={
-                        log.status === 'completed' ? 'default' : 
-                        log.status === 'in_progress' ? 'secondary' : 
-                        'outline'
-                      }>
-                        {log.status === 'completed' ? 'เสร็จสิ้น' : 
-                         log.status === 'in_progress' ? 'กำลังดำเนินการ' : 
-                         'หยุดชั่วคราว'}
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="text-xs">
+                        {log.subJobs.length} รายการ
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      <span className="font-bold text-blue-600 dark:text-blue-400">
+                        {log.totalQuantity?.toLocaleString() || 0}
+                      </span>
+                    </TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handlePreview(log)} title="ดูรายละเอียด">
-                          <Eye className="h-3 w-3" />
+                      <div className="flex items-center gap-2">
+                        <Circle className={`h-2 w-2 fill-current ${
+                          log.status === 'completed' ? 'text-green-500' : 
+                          log.status === 'in_progress' ? 'text-yellow-500' : 
+                          'text-red-500'
+                        }`} />
+                        <Badge variant={
+                          log.status === 'completed' ? 'default' : 
+                          log.status === 'in_progress' ? 'secondary' : 
+                          'outline'
+                        } className="text-xs">
+                          {log.status === 'completed' ? 'เสร็จสิ้น' : 
+                           log.status === 'in_progress' ? 'กำลังดำเนินการ' : 
+                           'หยุดชั่วคราว'}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1 justify-center">
+                        <Button variant="ghost" size="sm" onClick={() => handlePreview(log)} 
+                               title="ดูรายละเอียด"
+                               className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900">
+                          <Eye className="h-3 w-3 text-blue-600" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(log)} title="แก้ไข">
-                          <Edit2 className="h-3 w-3" />
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(log)} 
+                               title="แก้ไข"
+                               className="h-8 w-8 p-0 hover:bg-orange-100 dark:hover:bg-orange-900">
+                          <Edit2 className="h-3 w-3 text-orange-600" />
                         </Button>
                       </div>
                     </TableCell>
