@@ -397,16 +397,33 @@ export default function WorkQueuePlanning() {
               </DialogTrigger>
               <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
                 <DialogHeader>
-                  <DialogTitle>เลือกงานรอวางคิว</DialogTitle>
+                  <DialogTitle>เลือกงานรอวางคิว - {workSteps.find(ws => ws.id === selectedWorkStep)?.name || 'ไม่ระบุขั้นตอน'}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-2">
-                    <Input
-                      placeholder="ค้นหางาน..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="max-w-xs"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="ค้นหางาน..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-48"
+                      />
+                      <div className="text-sm text-gray-600">
+                        เลือกทีม:
+                      </div>
+                      <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue placeholder="เลือกทีม" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableTeams.map((team) => (
+                            <SelectItem key={team.id} value={team.id}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                     <div className="flex items-center gap-2">
                       <Button
                         variant="outline"
@@ -472,6 +489,11 @@ export default function WorkQueuePlanning() {
                   <div className="flex items-center justify-between pt-4 border-t">
                     <div className="text-sm text-gray-600">
                       เลือกแล้ว {selectedJobs.length} งาน
+                      {selectedTeam && (
+                        <span className="ml-2 text-green-600">
+                          → ทีม: {availableTeams.find(t => t.id === selectedTeam)?.name}
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" onClick={() => setDialogOpen(false)}>
@@ -499,8 +521,20 @@ export default function WorkQueuePlanning() {
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-green-600" />
-                    <CardTitle className="text-sm">คิวของทีม</CardTitle>
+                    <CardTitle className="text-sm">
+                      คิวของทีม
+                      {selectedTeam && (
+                        <span className="text-blue-600 ml-2">
+                          - {availableTeams.find(t => t.id === selectedTeam)?.name}
+                        </span>
+                      )}
+                    </CardTitle>
                   </div>
+                  {selectedWorkStep && (
+                    <div className="mt-2 text-xs text-gray-600">
+                      ขั้นตอน: {workSteps.find(ws => ws.id === selectedWorkStep)?.name}
+                    </div>
+                  )}
                   <div className="mt-3">
                     <label className="text-xs font-medium text-gray-700 mb-2 block">เลือกทีม</label>
                     <Select value={selectedTeam} onValueChange={setSelectedTeam}>
