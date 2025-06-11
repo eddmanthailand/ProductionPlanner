@@ -200,6 +200,27 @@ export default function DailyWorkLog() {
     },
   });
 
+  const updateLogMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: any }) => {
+      const response = await fetch(`/api/daily-work-logs/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to update log');
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      toast({ title: "สำเร็จ", description: "อัปเดตบันทึกงานแล้ว" });
+      setEditingLog(null);
+      resetForm();
+    },
+    onError: () => {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถอัปเดตบันทึกงานได้", variant: "destructive" });
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -221,7 +242,26 @@ export default function DailyWorkLog() {
       quantityCompleted: quantityCompleted ? parseInt(quantityCompleted) : 0,
     };
 
-    createLogMutation.mutate(logData);
+    if (editingLog) {
+      updateLogMutation.mutate({ id: editingLog.id, data: logData });
+    } else {
+      createLogMutation.mutate(logData);
+    }
+  };
+
+  const handleEdit = (log: DailyWorkLog) => {
+    setSelectedDepartment(""); // Will be set based on team
+    setSelectedTeam(log.teamId);
+    setSelectedWorkStep("");
+    setSelectedEmployee(log.employeeId);
+    setSelectedWorkOrder(log.workOrderId);
+    setSelectedSubJob(log.subJobId.toString());
+    setHoursWorked(log.hoursWorked.toString());
+    setQuantityCompleted(log.quantityCompleted?.toString() || "0");
+    setWorkDescription(log.workDescription);
+    setWorkStatus(log.status);
+    setNotes(log.notes || "");
+    setEditingLog(log);
   };
 
   // Get selected sub job details
@@ -434,9 +474,16 @@ export default function DailyWorkLog() {
       {selectedSubJob && (
         <Card className="mb-6 shadow-lg">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Plus className="h-5 w-5" />
-              บันทึกการทำงาน
+            <CardTitle className="flex items-center gap-2 justify-between">
+              <div className="flex items-center gap-2">
+                {editingLog ? <Edit2 className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                {editingLog ? "แก้ไขบันทึกการทำงาน" : "บันทึกการทำงาน"}
+              </div>
+              {editingLog && (
+                <Button variant="outline" size="sm" onClick={resetForm}>
+                  ยกเลิก
+                </Button>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -589,7 +636,7 @@ export default function DailyWorkLog() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm">
+                      <Button variant="ghost" size="sm" onClick={() => handleEdit(log)}>
                         <Edit2 className="h-3 w-3" />
                       </Button>
                     </TableCell>
