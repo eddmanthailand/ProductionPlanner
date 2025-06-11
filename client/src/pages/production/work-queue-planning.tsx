@@ -430,8 +430,8 @@ export default function WorkQueuePlanning() {
         return;
       }
 
-      // Daily capacity with efficiency
-      const dailyCapacity = Math.floor(capacity.capacityPerDay * (capacity.efficiency / 100));
+      // Daily capacity with efficiency - use correct property names from database
+      const dailyCapacity = Math.floor((capacity as any).capacity_per_day * ((capacity as any).efficiency / 100));
       
       // Calculate job schedule
       const schedule: any[] = [];
@@ -784,7 +784,7 @@ export default function WorkQueuePlanning() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => removeFromTeamQueue(job.queueId || job.id.toString(), index)}
+                                    onClick={() => removeFromTeamQueue((job as any).queueId || job.id.toString(), index)}
                                     className="h-4 w-4 p-0 text-red-500 hover:text-red-700 ml-1"
                                   >
                                     <Trash2 className="h-3 w-3" />
@@ -877,7 +877,7 @@ export default function WorkQueuePlanning() {
                                   <div className="space-y-1">
                                     {getJobsForDate(date).length > 0 && (
                                       <div className="relative w-full h-6 bg-gray-200 rounded">
-                                        {getJobsForDate(date).map((scheduledJob, jobIdx) => (
+                                        {getJobsForDate(date).map((scheduledJob: any, jobIdx: number) => (
                                           <div
                                             key={`${scheduledJob.id}-${jobIdx}`}
                                             className={`absolute h-full rounded ${getJobColor(scheduledJob.jobIndex)} opacity-80`}
@@ -896,7 +896,7 @@ export default function WorkQueuePlanning() {
                                     )}
                                     {getJobsForDate(date).length > 0 && (
                                       <div className="text-xs text-gray-500">
-                                        {getJobsForDate(date).reduce((sum, job) => sum + job.processedQuantity, 0)} ชิ้น
+                                        {getJobsForDate(date).reduce((sum: number, job: any) => sum + job.processedQuantity, 0)} ชิ้น
                                       </div>
                                     )}
                                   </div>
