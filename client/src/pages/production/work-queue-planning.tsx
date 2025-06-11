@@ -438,11 +438,18 @@ export default function WorkQueuePlanning() {
       let currentDate = new Date(teamStartDate);
       let remainingDailyCapacity = dailyCapacity;
       
+      // Track job completion dates
+      const jobCompletionMap = new Map();
+      
       for (let jobIndex = 0; jobIndex < teamQueue.length; jobIndex++) {
         const job = teamQueue[jobIndex];
         // Calculate job cost = quantity × unit price (ต้นทุนการผลิต sub job)
-        const unitPrice = parseFloat((job as any).unit_price || "350");
+        const unitPrice = 350; // Fixed unit price
         let remainingJobCost = job.quantity * unitPrice;
+        const totalJobCost = remainingJobCost;
+        
+        // Create job key for tracking completion
+        const jobKey = `${job.id}-${job.colorId}-${job.sizeId}`;
         
         while (remainingJobCost > 0) {
           // Skip weekends and holidays
@@ -464,6 +471,8 @@ export default function WorkQueuePlanning() {
               jobIndex,
               processedQuantity,
               processedCost: costToProcess,
+              totalJobCost,
+              jobKey,
               width: (costToProcess / dailyCapacity) * 100,
               leftOffset: ((dailyCapacity - remainingDailyCapacity) / dailyCapacity) * 100
             };
@@ -481,6 +490,9 @@ export default function WorkQueuePlanning() {
             
             remainingJobCost -= costToProcess;
             remainingDailyCapacity -= costToProcess;
+            
+            // Track completion date
+            jobCompletionMap.set(jobKey, new Date(currentDate));
           }
           
           // Move to next day if capacity is exhausted
@@ -490,6 +502,13 @@ export default function WorkQueuePlanning() {
           }
         }
       }
+      
+      // Add completion dates to schedule data
+      schedule.forEach(dayPlan => {
+        dayPlan.jobs.forEach((job: any) => {
+          job.completionDate = jobCompletionMap.get(job.jobKey);
+        });
+      });
       
       setCalculatedPlan(schedule);
       
@@ -879,68 +898,68 @@ export default function WorkQueuePlanning() {
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                              {calculatedPlan.map((dayPlan, dayIndex) => 
-                                dayPlan.jobs.map((job: any, jobIndex: number) => {
-                                  // Calculate completion date for this sub job
-                                  let completionDate = new Date(dayPlan.date);
-                                  
-                                  // If job spans multiple days, find the last day
-                                  for (let i = dayIndex + 1; i < calculatedPlan.length; i++) {
-                                    const futureDay = calculatedPlan[i];
-                                    const hasMoreOfThisJob = futureDay.jobs.some((futureJob: any) => 
-                                      futureJob.id === job.id && 
-                                      futureJob.colorId === job.colorId && 
-                                      futureJob.sizeId === job.sizeId
-                                    );
-                                    if (hasMoreOfThisJob) {
-                                      completionDate = new Date(futureDay.date);
-                                    } else {
-                                      break;
+                              {(() => {
+                                // Create a unique list of jobs with their completion dates
+                                const uniqueJobs = new Map();
+                                
+                                calculatedPlan.forEach(dayPlan => {
+                                  dayPlan.jobs.forEach((job: any) => {
+                                    const jobKey = `${job.id}-${job.colorId}-${job.sizeId}`;
+                                    if (!uniqueJobs.has(jobKey)) {
+                                      uniqueJobs.set(jobKey, {
+                                        ...job,
+                                        startDate: dayPlan.date,
+                                        totalQuantity: job.quantity,
+                                        totalCost: job.totalJobCost || (job.quantity * 350)
+                                      });
                                     }
-                                  }
+                                    // Update completion date to the latest date this job appears
+                                    const existingJob = uniqueJobs.get(jobKey);
+                                    existingJob.completionDate = job.completionDate || dayPlan.date;
+                                  });
+                                });
 
-                                  return (
-                                    <tr key={`${job.id}-${dayIndex}-${jobIndex}`} className="hover:bg-gray-50">
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                        {job.orderNumber}
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                        {job.productName}
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                        <div className="flex items-center gap-2">
-                                          <Badge variant="outline" className="text-xs">
-                                            {getColorName(job.colorId)}
-                                          </Badge>
-                                          <Badge variant="outline" className="text-xs">
-                                            {getSizeName(job.sizeId)}
-                                          </Badge>
-                                        </div>
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                        {job.processedQuantity} ชิ้น
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                        {job.processedCost?.toLocaleString()} บาท
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                        {dayPlan.date.toLocaleDateString('th-TH')}
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                        {completionDate.toLocaleDateString('th-TH')}
-                                      </td>
-                                      <td className="px-4 py-3 whitespace-nowrap">
-                                        <Badge 
-                                          variant="outline" 
-                                          className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                        >
-                                          วางแผนแล้ว
+                                return Array.from(uniqueJobs.values()).map((job: any, index: number) => (
+                                  <tr key={`${job.id}-${job.colorId}-${job.sizeId}`} className="hover:bg-gray-50">
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                      {job.orderNumber}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      {job.productName}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      <div className="flex items-center gap-2">
+                                        <Badge variant="outline" className="text-xs">
+                                          {getColorName(job.colorId)}
                                         </Badge>
-                                      </td>
-                                    </tr>
-                                  );
-                                })
-                              )}
+                                        <Badge variant="outline" className="text-xs">
+                                          {getSizeName(job.sizeId)}
+                                        </Badge>
+                                      </div>
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      {job.totalQuantity} ชิ้น
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      {job.totalCost?.toLocaleString()} บาท
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      {job.startDate.toLocaleDateString('th-TH')}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                      {job.completionDate.toLocaleDateString('th-TH')}
+                                    </td>
+                                    <td className="px-4 py-3 whitespace-nowrap">
+                                      <Badge 
+                                        variant="outline" 
+                                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                      >
+                                        วางแผนแล้ว
+                                      </Badge>
+                                    </td>
+                                  </tr>
+                                ));
+                              })()}
                             </tbody>
                           </table>
                         </div>
