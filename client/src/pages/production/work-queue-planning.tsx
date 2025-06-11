@@ -144,6 +144,27 @@ export default function WorkQueuePlanning() {
     }
   });
 
+  // Get all team queues to check for jobs already assigned
+  const { data: allTeamQueues = [] } = useQuery<SubJob[]>({
+    queryKey: ["/api/work-queues/all"],
+    queryFn: async () => {
+      const allQueues: SubJob[] = [];
+      for (const team of teams) {
+        try {
+          const response = await fetch(`/api/work-queues/team/${team.id}`);
+          if (response.ok) {
+            const teamQueue = await response.json();
+            allQueues.push(...teamQueue);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch queue for team ${team.id}:`, error);
+        }
+      }
+      return allQueues;
+    },
+    enabled: teams.length > 0
+  });
+
   // Update team queue when data changes
   useEffect(() => {
     setTeamQueue(currentTeamQueue);
@@ -182,11 +203,11 @@ export default function WorkQueuePlanning() {
     return workStep && team.departmentId === workStep.departmentId;
   });
 
-  // Filter available jobs by search term and exclude jobs already in team queue
+  // Filter available jobs by search term and exclude jobs already assigned to any team
   const filteredAvailableJobs = availableJobs.filter(job => {
-    // Check if job is already in current team queue
-    const isInQueue = currentTeamQueue.some(queueJob => queueJob.id === job.id);
-    if (isInQueue) return false;
+    // Check if job is already assigned to any team queue
+    const isInAnyQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
+    if (isInAnyQueue) return false;
 
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
@@ -277,6 +298,7 @@ export default function WorkQueuePlanning() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
     }
   });
@@ -291,6 +313,7 @@ export default function WorkQueuePlanning() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
     }
   });
