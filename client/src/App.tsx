@@ -23,7 +23,7 @@ import WorkQueue from "@/pages/production/work-queue";
 import WorkSteps from "@/pages/production/work-steps-simple";
 import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
-import WorkQueuePlanning from "@/pages/production/work-queue-planning";
+import WorkQueuePlanning from "@/pages/production/work-queue-planning-v2";
 
 import ProductionReports from "@/pages/production/reports";
 import Accounting from "@/pages/accounting";

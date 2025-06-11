@@ -1950,7 +1950,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           wo.order_number,
           wo.customer_name,
           wo.delivery_date,
-          wo.product_name as job_name,
+          wo.order_number as job_name,
           wo.status as work_order_status
         FROM sub_jobs sj
         INNER JOIN work_orders wo ON sj.work_order_id = wo.id
