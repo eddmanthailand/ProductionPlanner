@@ -80,11 +80,19 @@ export default function WorkQueuePlanning() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Get current date in Thailand timezone (UTC+7)
+  const getThailandDate = () => {
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const thailandTime = new Date(utc + (7 * 3600000));
+    return thailandTime;
+  };
+
   // State management
   const [selectedWorkStep, setSelectedWorkStep] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [teamStartDate, setTeamStartDate] = useState<string>("");
-  const [calendarDate, setCalendarDate] = useState<Date>();
+  const [calendarDate, setCalendarDate] = useState<Date | undefined>(getThailandDate());
   const [teamQueue, setTeamQueue] = useState<SubJob[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -180,7 +188,7 @@ export default function WorkQueuePlanning() {
     if (selectedWorkStep) {
       setSelectedTeam("");
       setTeamStartDate("");
-      setCalendarDate(undefined);
+      setCalendarDate(getThailandDate());
       setTeamQueue([]);
       setSelectedJobs([]);
     }
@@ -192,6 +200,14 @@ export default function WorkQueuePlanning() {
       setTeamStartDate(format(calendarDate, "yyyy-MM-dd"));
     }
   }, [calendarDate]);
+
+  // Initialize team start date with Thailand date
+  useEffect(() => {
+    if (!teamStartDate) {
+      const thailandDate = getThailandDate();
+      setTeamStartDate(format(thailandDate, "yyyy-MM-dd"));
+    }
+  }, []);
 
   // Reset selected jobs when dialog closes
   useEffect(() => {
@@ -765,7 +781,7 @@ export default function WorkQueuePlanning() {
                         <CalendarComponent
                           mode="single"
                           selected={calendarDate}
-                          onSelect={setCalendarDate}
+                          onSelect={(date) => setCalendarDate(date)}
                           initialFocus
                         />
                       </PopoverContent>
