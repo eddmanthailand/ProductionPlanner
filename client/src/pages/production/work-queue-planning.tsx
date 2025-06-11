@@ -155,10 +155,13 @@ export default function WorkQueuePlanning() {
   // Mutations for queue management
   const addToQueueMutation = useMutation({
     mutationFn: async (data: { subJobId: number; teamId: string; priority: number }) => {
-      return apiRequest(`/api/work-queues/add-job`, {
+      const response = await fetch('/api/work-queues/add-job', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      if (!response.ok) throw new Error('Failed to add job to queue');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
@@ -167,9 +170,11 @@ export default function WorkQueuePlanning() {
 
   const removeFromQueueMutation = useMutation({
     mutationFn: async (queueId: string) => {
-      return apiRequest(`/api/work-queues/${queueId}`, {
+      const response = await fetch(`/api/work-queues/${queueId}`, {
         method: 'DELETE'
       });
+      if (!response.ok) throw new Error('Failed to remove job from queue');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
@@ -178,10 +183,13 @@ export default function WorkQueuePlanning() {
 
   const reorderQueueMutation = useMutation({
     mutationFn: async (data: { teamId: string; queueItems: SubJob[] }) => {
-      return apiRequest(`/api/work-queues/reorder`, {
+      const response = await fetch('/api/work-queues/reorder', {
         method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
+      if (!response.ok) throw new Error('Failed to reorder queue');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
@@ -226,8 +234,17 @@ export default function WorkQueuePlanning() {
   };
 
   const removeFromTeamQueue = async (queueId: string, index: number) => {
-    await removeFromQueueMutation.mutateAsync(queueId);
-    setTeamQueue(prev => prev.filter((_, i) => i !== index));
+    try {
+      await removeFromQueueMutation.mutateAsync(queueId);
+      setTeamQueue(prev => prev.filter((_, i) => i !== index));
+    } catch (error) {
+      console.error('Failed to remove job:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถลบงานจากคิวได้",
+        variant: "destructive"
+      });
+    }
   };
 
   const calculatePlan = () => {
