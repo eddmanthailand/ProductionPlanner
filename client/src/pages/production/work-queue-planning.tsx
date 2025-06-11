@@ -30,6 +30,7 @@ interface SubJob {
   quantity: number;
   unitPrice: number;
   totalCost: number;
+  productionCost?: number;
   status: string;
   queueId?: string;
   priority?: number;
@@ -294,7 +295,7 @@ export default function WorkQueuePlanning() {
       let remainingCapacity = dailyCapacity;
       
       for (const job of teamQueue) {
-        const jobCost = job.quantity * 350; // 350 baht per piece
+        const jobCost = job.totalCost || (job.quantity * 350); // Use total cost from job or fallback calculation
         
         // If job cost exceeds remaining capacity for the day, move to next working day
         if (jobCost > remainingCapacity) {
@@ -319,7 +320,7 @@ export default function WorkQueuePlanning() {
           sizeName: getSizeName(job.sizeId),
           quantity: job.quantity,
           completionDate: format(currentDate, "dd/MM/yyyy"),
-          jobCost: jobCost,
+          jobCost: jobCost.toFixed(2),
           remainingCapacity: remainingCapacity
         });
       }

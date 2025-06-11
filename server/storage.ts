@@ -1260,6 +1260,12 @@ export class DatabaseStorage implements IStorage {
 
   async deleteProductionPlan(id: string, tenantId: string): Promise<boolean> {
     try {
+      // First, delete all production plan items for this plan
+      await db
+        .delete(productionPlanItems)
+        .where(eq(productionPlanItems.planId, id));
+
+      // Then delete the production plan
       const [deleted] = await db
         .delete(productionPlans)
         .where(and(
