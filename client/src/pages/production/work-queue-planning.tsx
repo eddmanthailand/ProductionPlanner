@@ -191,15 +191,11 @@ export default function WorkQueuePlanning() {
 
   // Mutations
   const addToQueueMutation = useMutation({
-    mutationFn: async (data: { subJobId: number; teamId: string; priority: number }) => {
-      const response = await fetch('/api/work-queues/add-job', {
+    mutationFn: (data: { subJobId: number; teamId: string; priority: number }) => 
+      apiRequest('/api/work-queues/add-job', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Failed to add job to queue');
-      return response.json();
-    },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
@@ -225,15 +221,11 @@ export default function WorkQueuePlanning() {
   });
 
   const reorderQueueMutation = useMutation({
-    mutationFn: async (data: { teamId: string; queueItems: SubJob[] }) => {
-      const response = await fetch('/api/work-queues/reorder', {
+    mutationFn: (data: { teamId: string; queueItems: SubJob[] }) => 
+      apiRequest('/api/work-queues/reorder', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
-      });
-      if (!response.ok) throw new Error('Failed to reorder queue');
-      return response.json();
-    },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
     }
@@ -410,6 +402,15 @@ export default function WorkQueuePlanning() {
       toast({
         title: "ไม่ได้เลือกงาน",
         description: "กรุณาเลือกงานที่ต้องการเพิ่มเข้าคิว",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!selectedTeam) {
+      toast({
+        title: "ไม่ได้เลือกทีม",
+        description: "กรุณาเลือกทีมก่อนเพิ่มงานเข้าคิว",
         variant: "destructive"
       });
       return;
@@ -619,44 +620,7 @@ export default function WorkQueuePlanning() {
                           </Dialog>
                         </div>
 
-                        <div className="border rounded-lg">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>หมายเลขงาน</TableHead>
-                                <TableHead>ลูกค้า</TableHead>
-                                <TableHead>สินค้า</TableHead>
-                                <TableHead>สี/ไซส์</TableHead>
-                                <TableHead>จำนวน</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {availableJobs.slice(0, 5).map((job) => (
-                                <TableRow key={job.id}>
-                                  <TableCell className="font-medium">{job.orderNumber}</TableCell>
-                                  <TableCell>{job.customerName}</TableCell>
-                                  <TableCell>{job.productName}</TableCell>
-                                  <TableCell>
-                                    <div className="flex gap-1">
-                                      <Badge variant="outline" className="text-xs">
-                                        {getColorName(job.colorId)}
-                                      </Badge>
-                                      <Badge variant="outline" className="text-xs">
-                                        {getSizeName(job.sizeId)}
-                                      </Badge>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{job.quantity}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          {availableJobs.length > 5 && (
-                            <div className="p-3 text-center text-sm text-gray-500 border-t">
-                              และอีก {availableJobs.length - 5} รายการ...
-                            </div>
-                          )}
-                        </div>
+
                       </div>
                     )}
                   </div>
