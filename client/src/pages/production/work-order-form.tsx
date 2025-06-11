@@ -481,11 +481,7 @@ export default function WorkOrderForm() {
     items.splice(result.destination.index, 0, reorderedItem);
 
     setSubJobs(items);
-
-    // Only save to database if in edit mode and we have existing sub-jobs with IDs
-    if (isEditMode && items.some(item => item.id)) {
-      reorderSubJobsMutation.mutate(items);
-    }
+    // Note: Reordering will be saved only when user clicks Save button
   };
 
   const calculateGrandTotal = () => {
