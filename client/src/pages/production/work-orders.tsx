@@ -199,6 +199,22 @@ export default function WorkOrders() {
     }
   };
 
+  const getWorkTypeName = (workTypeId: number | string | null | undefined): string => {
+    if (!workTypeId) return "ไม่ระบุ";
+    const workType = workTypes.find(wt => wt.id === Number(workTypeId));
+    return workType ? workType.name : "ไม่ระบุ";
+  };
+
+  const calculateWorkOrderTotal = (order: any): number => {
+    if (order.sub_jobs && Array.isArray(order.sub_jobs)) {
+      return order.sub_jobs.reduce((total: number, subJob: any) => {
+        const cost = typeof subJob.total_cost === 'string' ? parseFloat(subJob.total_cost) || 0 : subJob.total_cost || 0;
+        return total + cost;
+      }, 0);
+    }
+    return parseFloat(order.totalAmount || order.total_amount || '0') || 0;
+  };
+
   const getPriorityColor = (priority: number): string => {
     switch (priority) {
       case 1: return "bg-red-100 text-red-800";
@@ -221,11 +237,7 @@ export default function WorkOrders() {
     return team ? team.name : "ไม่ระบุทีม";
   };
 
-  const getWorkTypeName = (workTypeId: number | null): string => {
-    if (!workTypeId) return "-";
-    const workType = workTypes.find((wt: any) => wt.id === workTypeId);
-    return workType ? workType.name : "-";
-  };
+
 
   const handleQuotationSelect = (quotationId: string) => {
     if (!quotationId || quotationId === "none") {
@@ -478,7 +490,7 @@ export default function WorkOrders() {
                 {filteredWorkOrders.length > 0 ? (
                   filteredWorkOrders.map((order) => (
                     <TableRow key={order.id} className="hover:bg-blue-50/30 border-b border-gray-100 transition-colors cursor-pointer" onClick={() => handleEditWorkOrder(order)}>
-                      <TableCell className="px-2 py-1.5 text-blue-700 text-xs">{order.orderNumber || order.order_number}</TableCell>
+                      <TableCell className="px-2 py-1.5 text-blue-700 text-xs">{order.orderNumber}</TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div>
                           <div className="text-xs text-gray-900 leading-4 truncate">{order.title}</div>
@@ -488,7 +500,7 @@ export default function WorkOrders() {
                         </div>
                       </TableCell>
                       <TableCell className="px-2 py-1.5">
-                        <div className="text-xs text-gray-900 truncate">{order.customerName || order.customer_name}</div>
+                        <div className="text-xs text-gray-900 truncate">{order.customerName}</div>
                       </TableCell>
                       <TableCell className="px-2 py-1.5">
                         <div className="text-xs text-gray-700">
@@ -508,7 +520,7 @@ export default function WorkOrders() {
                       </TableCell>
                       <TableCell className="px-2 py-1.5 text-left">
                         <div className="text-xs text-green-700">
-                          ฿{(parseFloat(order.totalAmount || '0') / 1000).toFixed(0)}K
+                          ฿{(calculateWorkOrderTotal(order) / 1000).toFixed(0)}K
                         </div>
                       </TableCell>
                       <TableCell className="px-1 py-1.5 text-left">
