@@ -263,11 +263,16 @@ export default function WorkQueuePlanning() {
 
     try {
       // Refresh data to get latest production costs from work orders
-      if (refetchTeamQueue) await refetchTeamQueue();
-      if (refetchAvailableJobs) await refetchAvailableJobs();
+      const [refreshedTeamQueue, refreshedAvailableJobs] = await Promise.all([
+        refetchTeamQueue ? refetchTeamQueue() : Promise.resolve({ data: teamQueueData }),
+        refetchAvailableJobs ? refetchAvailableJobs() : Promise.resolve({ data: availableJobs })
+      ]);
       
-      // Wait a moment for data to update
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Use the refreshed data for calculation
+      const currentTeamQueue = refreshedTeamQueue?.data || teamQueueData;
+      
+      console.log('Current team queue data for calculation:', currentTeamQueue);
+      console.log('Sample job cost data:', currentTeamQueue[0]?.totalCost, currentTeamQueue[0]?.quantity);
       
       // Get team cost per day (ต้นทุนต่อวัน = กำลังการผลิต)
       const team = teams.find(t => t.id === selectedTeam);
@@ -301,7 +306,7 @@ export default function WorkQueuePlanning() {
       let currentDate = new Date(teamStartDate + 'T00:00:00.000Z');
       let remainingCapacity = dailyCapacity;
       
-      for (const job of teamQueue) {
+      for (const job of currentTeamQueue) {
         const jobCost = job.totalCost || (job.quantity * 350); // Use total cost from job or fallback calculation
         
         // If job cost exceeds remaining capacity for the day, move to next working day
