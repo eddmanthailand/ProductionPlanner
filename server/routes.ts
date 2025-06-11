@@ -1339,6 +1339,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/work-queues/reorder", async (req: any, res: any) => {
+    try {
+      // Dev mode - bypass auth and use default tenant
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { teamId, queueItems } = req.body;
+      
+      if (!teamId || !queueItems) {
+        return res.status(400).json({ message: "Team ID and queue items are required" });
+      }
+
+      // Update priority for each queue item
+      for (let i = 0; i < queueItems.length; i++) {
+        const item = queueItems[i];
+        await storage.updateWorkQueue(item.id, { priority: i + 1 }, tenantId);
+      }
+      
+      res.json({ message: "Queue reordered successfully" });
+    } catch (error) {
+      console.error("Reorder work queue error:", error);
+      res.status(500).json({ message: "Failed to reorder queue" });
+    }
+  });
+
   // Production Capacity routes
   app.get("/api/production-capacity", authenticateToken, async (req: any, res: any) => {
     try {

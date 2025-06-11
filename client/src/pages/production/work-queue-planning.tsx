@@ -167,8 +167,12 @@ export default function WorkQueuePlanning() {
     return workStep && team.departmentId === workStep.departmentId;
   });
 
-  // Filter available jobs by search term
+  // Filter available jobs by search term and exclude jobs already in team queue
   const filteredAvailableJobs = availableJobs.filter(job => {
+    // Check if job is already in team queue
+    const isInQueue = teamQueue.some(queueJob => queueJob.id === job.id);
+    if (isInQueue) return false;
+
     if (!searchTerm) return true;
     const searchLower = searchTerm.toLowerCase();
     return (
