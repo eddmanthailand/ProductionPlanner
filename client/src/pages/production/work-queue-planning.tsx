@@ -405,7 +405,9 @@ export default function WorkQueuePlanning() {
     }
   };
 
-  const calculatePlan = () => {
+  const [calculatedPlan, setCalculatedPlan] = useState<any[]>([]);
+
+  const calculatePlan = async () => {
     if (!selectedTeam || !teamStartDate || teamQueue.length === 0) {
       toast({
         title: "ข้อมูลไม่ครบ",
@@ -415,11 +417,116 @@ export default function WorkQueuePlanning() {
       return;
     }
 
-    // TODO: Implement planning calculation logic
-    toast({
-      title: "กำลังคำนวณแผน",
-      description: "ระบบกำลังคำนวณแผนการผลิต...",
-    });
+    try {
+      // Get team production capacity (กำลังการผลิต = ต้นทุนต่อวัน)
+      const capacity = productionCapacities.find(pc => pc.teamId === selectedTeam);
+      
+      if (!capacity) {
+        toast({
+          title: "ไม่พบข้อมูลกำลังการผลิต",
+          description: "กรุณาตั้งค่ากำลังการผลิตของทีมก่อน",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Daily capacity with efficiency
+      const dailyCapacity = Math.floor(capacity.capacityPerDay * (capacity.efficiency / 100));
+      
+      // Calculate job schedule
+      const schedule: any[] = [];
+      let currentDate = new Date(teamStartDate);
+      let remainingDailyCapacity = dailyCapacity;
+      
+      for (let jobIndex = 0; jobIndex < teamQueue.length; jobIndex++) {
+        const job = teamQueue[jobIndex];
+        let remainingQuantity = job.quantity;
+        
+        while (remainingQuantity > 0) {
+          // Skip weekends and holidays (ไม่นับเป็นต้นทุน)
+          while (isWeekendOrHoliday(currentDate)) {
+            currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+          }
+          
+          const quantityToProcess = Math.min(remainingQuantity, remainingDailyCapacity);
+          
+          if (quantityToProcess > 0) {
+            const dateKey = currentDate.toISOString().split('T')[0];
+            const existingSchedule = schedule.find(s => s.dateKey === dateKey);
+            
+            const jobBarData = {
+              ...job,
+              jobIndex,
+              processedQuantity: quantityToProcess,
+              width: (quantityToProcess / dailyCapacity) * 100,
+              leftOffset: ((dailyCapacity - remainingDailyCapacity) / dailyCapacity) * 100
+            };
+            
+            if (existingSchedule) {
+              existingSchedule.jobs.push(jobBarData);
+            } else {
+              schedule.push({
+                date: new Date(currentDate),
+                dateKey,
+                dailyCapacity,
+                jobs: [jobBarData]
+              });
+            }
+            
+            remainingQuantity -= quantityToProcess;
+            remainingDailyCapacity -= quantityToProcess;
+          }
+          
+          // Move to next day if capacity is exhausted
+          if (remainingDailyCapacity === 0) {
+            currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+            remainingDailyCapacity = dailyCapacity;
+          }
+        }
+      }
+      
+      setCalculatedPlan(schedule);
+      
+      toast({
+        title: "คำนวณแผนสำเร็จ",
+        description: `วางแผนการผลิต ${teamQueue.length} งาน ใช้เวลา ${schedule.length} วันทำการ`
+      });
+      
+    } catch (error) {
+      console.error('Calculate plan error:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถคำนวณแผนการผลิตได้",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const isWeekendOrHoliday = (date: Date): boolean => {
+    const dayOfWeek = date.getDay();
+    if (dayOfWeek === 0 || dayOfWeek === 6) return true; // Weekend
+    
+    const dateString = date.toISOString().split('T')[0];
+    return holidays.some(holiday => holiday.date === dateString);
+  };
+
+  const getJobsForDate = (date: Date) => {
+    const dateKey = date.toISOString().split('T')[0];
+    return calculatedPlan.find(plan => plan.dateKey === dateKey)?.jobs || [];
+  };
+
+  const getJobColor = (jobIndex: number) => {
+    const colors = [
+      'bg-blue-500',
+      'bg-green-500', 
+      'bg-yellow-500',
+      'bg-purple-500',
+      'bg-pink-500',
+      'bg-indigo-500',
+      'bg-red-500',
+      'bg-orange-500'
+    ];
+    return colors[jobIndex % colors.length];
   };
 
   return (
@@ -766,9 +873,32 @@ export default function WorkQueuePlanning() {
                                     {date.getDate()}/{date.getMonth() + 1}
                                   </div>
                                   
-                                  {/* Jobs scheduled for this date would appear here */}
+                                  {/* Jobs scheduled for this date */}
                                   <div className="space-y-1">
-                                    {/* TODO: Add scheduled jobs for this date */}
+                                    {getJobsForDate(date).length > 0 && (
+                                      <div className="relative w-full h-6 bg-gray-200 rounded">
+                                        {getJobsForDate(date).map((scheduledJob, jobIdx) => (
+                                          <div
+                                            key={`${scheduledJob.id}-${jobIdx}`}
+                                            className={`absolute h-full rounded ${getJobColor(scheduledJob.jobIndex)} opacity-80`}
+                                            style={{
+                                              left: `${scheduledJob.leftOffset}%`,
+                                              width: `${scheduledJob.width}%`
+                                            }}
+                                            title={`${scheduledJob.orderNumber} • ${scheduledJob.productName} • ${getColorName(scheduledJob.colorId)} • ${getSizeName(scheduledJob.sizeId)} • ${scheduledJob.processedQuantity} ชิ้น`}
+                                          >
+                                            <div className="text-xs text-white p-1 truncate">
+                                              {scheduledJob.processedQuantity}
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+                                    {getJobsForDate(date).length > 0 && (
+                                      <div className="text-xs text-gray-500">
+                                        {getJobsForDate(date).reduce((sum, job) => sum + job.processedQuantity, 0)} ชิ้น
+                                      </div>
+                                    )}
                                   </div>
                                   
                                   {provided.placeholder}
