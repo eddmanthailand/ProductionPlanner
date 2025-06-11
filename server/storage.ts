@@ -23,6 +23,7 @@ import {
   subJobs,
   productionPlans,
   productionPlanItems,
+  dailyWorkLogs,
   type User,
   type InsertUser,
   type Tenant,
@@ -70,7 +71,9 @@ import {
   type ProductionPlan,
   type InsertProductionPlan,
   type ProductionPlanItem,
-  type InsertProductionPlanItem
+  type InsertProductionPlanItem,
+  type DailyWorkLog,
+  type InsertDailyWorkLog
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -1334,20 +1337,22 @@ export class DatabaseStorage implements IStorage {
   // Daily Work Logs methods
   async getDailyWorkLogs(tenantId: string, filters?: { date?: string; teamId?: string }): Promise<DailyWorkLog[]> {
     try {
-      let query = db
-        .select()
-        .from(dailyWorkLogs)
-        .where(eq(dailyWorkLogs.tenantId, tenantId));
+      const conditions = [eq(dailyWorkLogs.tenantId, tenantId)];
 
       if (filters?.date) {
-        query = query.where(eq(dailyWorkLogs.date, filters.date));
+        conditions.push(eq(dailyWorkLogs.date, filters.date));
       }
 
       if (filters?.teamId && filters.teamId !== 'all') {
-        query = query.where(eq(dailyWorkLogs.teamId, filters.teamId));
+        conditions.push(eq(dailyWorkLogs.teamId, filters.teamId));
       }
 
-      const logs = await query.orderBy(desc(dailyWorkLogs.createdAt));
+      const logs = await db
+        .select()
+        .from(dailyWorkLogs)
+        .where(and(...conditions))
+        .orderBy(desc(dailyWorkLogs.createdAt));
+      
       return logs;
     } catch (error) {
       console.error('Get daily work logs error:', error);
