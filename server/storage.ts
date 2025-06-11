@@ -183,7 +183,7 @@ export interface IStorage {
 
   // Work Queue
   getWorkQueues(tenantId: string): Promise<WorkQueue[]>;
-  getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<WorkQueue[]>;
+  getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<SubJob[]>;
   getWorkQueue(id: string, tenantId: string): Promise<WorkQueue | undefined>;
   createWorkQueue(workQueue: InsertWorkQueue): Promise<WorkQueue>;
   updateWorkQueue(id: string, workQueue: Partial<InsertWorkQueue>, tenantId: string): Promise<WorkQueue | undefined>;
@@ -918,12 +918,30 @@ export class DatabaseStorage implements IStorage {
       .orderBy(asc(workQueue.priority), asc(workQueue.createdAt));
   }
 
-  async getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<WorkQueue[]> {
-    return await db
-      .select()
+  async getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<any[]> {
+    // For now, return work queue items as they are until proper sub-job integration
+    const result = await db
+      .select({
+        id: workQueue.id,
+        workOrderId: workQueue.orderNumber,
+        orderNumber: workQueue.orderNumber,
+        customerName: workQueue.productName, // temporary mapping
+        productName: workQueue.productName,
+        quantity: workQueue.quantity,
+        colorId: sql<number>`1`, // default color id
+        sizeId: sql<number>`1`, // default size id
+        workTypeId: sql<number>`1`, // default work type id
+        deliveryDate: workQueue.expectedEndDate,
+        status: workQueue.status,
+        notes: workQueue.notes,
+        createdAt: workQueue.createdAt,
+        updatedAt: workQueue.updatedAt
+      })
       .from(workQueue)
       .where(and(eq(workQueue.teamId, teamId), eq(workQueue.tenantId, tenantId)))
       .orderBy(asc(workQueue.priority), asc(workQueue.createdAt));
+    
+    return result;
   }
 
   async getWorkQueue(id: string, tenantId: string): Promise<WorkQueue | undefined> {
