@@ -207,6 +207,16 @@ export default function WorkQueuePlanning() {
   const filteredAvailableJobs = availableJobs.filter(job => {
     // Check if job is already assigned to any team queue
     const isInAnyQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
+    
+    // Debug logging
+    if (job.id === 37) {
+      console.log('Checking job 37:', {
+        jobId: job.id,
+        allTeamQueues: allTeamQueues.map(q => ({ id: q.id, orderNumber: q.orderNumber })),
+        isInAnyQueue
+      });
+    }
+    
     if (isInAnyQueue) return false;
 
     if (!searchTerm) return true;
