@@ -448,6 +448,15 @@ export default function WorkQueuePlanning() {
       // Daily capacity = team cost per day (in Baht)
       const dailyCapacity = parseFloat((team as any).cost_per_day || "0");
       
+      if (dailyCapacity <= 0) {
+        toast({
+          title: "ข้อมูลไม่ถูกต้อง",
+          description: "ทีมนี้ไม่มีข้อมูลต้นทุนต่อวัน",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       // Calculate job schedule
       const schedule: any[] = [];
       let currentDate = new Date(teamStartDate);
@@ -456,76 +465,56 @@ export default function WorkQueuePlanning() {
       // Track job completion dates
       const jobCompletionMap = new Map();
       
+      // Create a simple job completion list for table display
+      const jobCompletions: any[] = [];
+      let processDate = new Date(teamStartDate);
+      let dailyRemainingBudget = dailyCapacity;
+      
       for (let jobIndex = 0; jobIndex < teamQueue.length; jobIndex++) {
         const job = teamQueue[jobIndex];
-        // Calculate job cost = quantity × unit price (ต้นทุนการผลิต sub job)
-        const unitPrice = 350; // Fixed unit price
-        let remainingJobCost = job.quantity * unitPrice;
-        const totalJobCost = remainingJobCost;
+        const unitPrice = 350;
+        const totalJobCost = job.quantity * unitPrice;
+        let remainingJobCost = totalJobCost;
+        let jobStartDate = new Date(processDate);
         
-        // Create job key for tracking completion
-        const jobKey = `${job.id}-${job.colorId}-${job.sizeId}`;
-        
+        // Process this job until complete
         while (remainingJobCost > 0) {
           // Skip weekends and holidays
-          while (isWeekendOrHoliday(currentDate)) {
-            currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+          while (isWeekendOrHoliday(processDate)) {
+            processDate = new Date(processDate.getTime() + 24 * 60 * 60 * 1000);
           }
           
-          const costToProcess = Math.min(remainingJobCost, remainingDailyCapacity);
+          // How much of this job can we process today?
+          const costToProcess = Math.min(remainingJobCost, dailyRemainingBudget);
           
           if (costToProcess > 0) {
-            const dateKey = currentDate.toISOString().split('T')[0];
-            const existingSchedule = schedule.find(s => s.dateKey === dateKey);
-            
-            // Calculate processed quantity based on cost
-            const processedQuantity = Math.round(costToProcess / unitPrice);
-            
-            const jobBarData = {
-              ...job,
-              jobIndex,
-              processedQuantity,
-              processedCost: costToProcess,
-              totalJobCost,
-              jobKey,
-              width: (costToProcess / dailyCapacity) * 100,
-              leftOffset: ((dailyCapacity - remainingDailyCapacity) / dailyCapacity) * 100
-            };
-            
-            if (existingSchedule) {
-              existingSchedule.jobs.push(jobBarData);
-            } else {
-              schedule.push({
-                date: new Date(currentDate),
-                dateKey,
-                dailyCapacity,
-                jobs: [jobBarData]
+            remainingJobCost -= costToProcess;
+            dailyRemainingBudget -= costToProcess;
+          }
+          
+          // If day is full or job is complete, move to next day
+          if (dailyRemainingBudget <= 0 || remainingJobCost <= 0) {
+            if (remainingJobCost <= 0) {
+              // Job is complete - record completion
+              jobCompletions.push({
+                ...job,
+                jobKey: `${job.id}-${job.colorId}-${job.sizeId}`,
+                startDate: jobStartDate,
+                completionDate: new Date(processDate),
+                totalCost: totalJobCost,
+                totalQuantity: job.quantity
               });
             }
             
-            remainingJobCost -= costToProcess;
-            remainingDailyCapacity -= costToProcess;
-            
-            // Track completion date
-            jobCompletionMap.set(jobKey, new Date(currentDate));
-          }
-          
-          // Move to next day if capacity is exhausted
-          if (remainingDailyCapacity <= 0) {
-            currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
-            remainingDailyCapacity = dailyCapacity;
+            // Move to next working day
+            processDate = new Date(processDate.getTime() + 24 * 60 * 60 * 1000);
+            dailyRemainingBudget = dailyCapacity;
           }
         }
       }
       
-      // Add completion dates to schedule data
-      schedule.forEach(dayPlan => {
-        dayPlan.jobs.forEach((job: any) => {
-          job.completionDate = jobCompletionMap.get(job.jobKey);
-        });
-      });
-      
-      setCalculatedPlan(schedule);
+      // Use job completions for the table display
+      setCalculatedPlan(jobCompletions);
       
       toast({
         title: "คำนวณแผนสำเร็จ",
@@ -913,68 +902,46 @@ export default function WorkQueuePlanning() {
                               </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                              {(() => {
-                                // Create a unique list of jobs with their completion dates
-                                const uniqueJobs = new Map();
-                                
-                                calculatedPlan.forEach(dayPlan => {
-                                  dayPlan.jobs.forEach((job: any) => {
-                                    const jobKey = `${job.id}-${job.colorId}-${job.sizeId}`;
-                                    if (!uniqueJobs.has(jobKey)) {
-                                      uniqueJobs.set(jobKey, {
-                                        ...job,
-                                        startDate: dayPlan.date,
-                                        totalQuantity: job.quantity,
-                                        totalCost: job.totalJobCost || (job.quantity * 350)
-                                      });
-                                    }
-                                    // Update completion date to the latest date this job appears
-                                    const existingJob = uniqueJobs.get(jobKey);
-                                    existingJob.completionDate = job.completionDate || dayPlan.date;
-                                  });
-                                });
-
-                                return Array.from(uniqueJobs.values()).map((job: any, index: number) => (
-                                  <tr key={`${job.id}-${job.colorId}-${job.sizeId}`} className="hover:bg-gray-50">
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                      {job.orderNumber}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {job.productName}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      <div className="flex items-center gap-2">
-                                        <Badge variant="outline" className="text-xs">
-                                          {getColorName(job.colorId)}
-                                        </Badge>
-                                        <Badge variant="outline" className="text-xs">
-                                          {getSizeName(job.sizeId)}
-                                        </Badge>
-                                      </div>
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {job.totalQuantity} ชิ้น
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {job.totalCost?.toLocaleString()} บาท
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {job.startDate.toLocaleDateString('th-TH')}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                                      {job.completionDate.toLocaleDateString('th-TH')}
-                                    </td>
-                                    <td className="px-4 py-3 whitespace-nowrap">
-                                      <Badge 
-                                        variant="outline" 
-                                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                      >
-                                        วางแผนแล้ว
+                              {calculatedPlan.map((job: any, index: number) => (
+                                <tr key={`${job.id}-${job.colorId}-${job.sizeId}-${index}`} className="hover:bg-gray-50">
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                    {job.orderNumber}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {job.productName}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    <div className="flex items-center gap-2">
+                                      <Badge variant="outline" className="text-xs">
+                                        {getColorName(job.colorId)}
                                       </Badge>
-                                    </td>
-                                  </tr>
-                                ));
-                              })()}
+                                      <Badge variant="outline" className="text-xs">
+                                        {getSizeName(job.sizeId)}
+                                      </Badge>
+                                    </div>
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {job.totalQuantity} ชิ้น
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {job.totalCost?.toLocaleString()} บาท
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {job.startDate?.toLocaleDateString('th-TH')}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                    {job.completionDate?.toLocaleDateString('th-TH')}
+                                  </td>
+                                  <td className="px-4 py-3 whitespace-nowrap">
+                                    <Badge 
+                                      variant="outline" 
+                                      className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                    >
+                                      วางแผนแล้ว
+                                    </Badge>
+                                  </td>
+                                </tr>
+                              ))}
                             </tbody>
                           </table>
                         </div>
