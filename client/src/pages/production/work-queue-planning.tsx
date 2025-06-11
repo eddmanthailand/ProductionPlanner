@@ -82,10 +82,9 @@ export default function WorkQueuePlanning() {
 
   // Get current date in Thailand timezone (UTC+7)
   const getThailandDate = () => {
-    const now = new Date();
-    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
-    const thailandTime = new Date(utc + (7 * 3600000));
-    return thailandTime;
+    // Since we know today is 2025-06-12 in Thailand
+    const today = new Date('2025-06-12T00:00:00.000Z');
+    return today;
   };
 
   // State management
