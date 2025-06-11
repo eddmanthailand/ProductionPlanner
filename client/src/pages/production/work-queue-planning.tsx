@@ -132,6 +132,27 @@ export default function WorkQueuePlanning() {
     setTeamQueue(currentTeamQueue);
   }, [currentTeamQueue]);
 
+  // Reset team selection when work step changes
+  useEffect(() => {
+    if (selectedWorkStep) {
+      setSelectedTeam("");
+      setTeamStartDate("");
+      setTeamQueue([]);
+    }
+  }, [selectedWorkStep]);
+
+  // Filter teams based on selected work step's department
+  const availableTeams = teams.filter(team => {
+    if (!selectedWorkStep || !workSteps.length) return false;
+    const workStep = workSteps.find(ws => ws.id === selectedWorkStep);
+    return workStep && team.departmentId === workStep.departmentId;
+  });
+
+  // Filter sub jobs - exclude completed and cancelled statuses
+  const filteredAvailableJobs = availableJobs.filter(job => 
+    job.status !== 'completed' && job.status !== 'cancelled'
+  );
+
   // Helper functions
   const getColorName = (colorId: number): string => {
     const color = colors.find(c => c.id === colorId);
@@ -316,7 +337,7 @@ export default function WorkQueuePlanning() {
                         ref={provided.innerRef}
                         className="space-y-2 min-h-[400px]"
                       >
-                        {selectedWorkStep && availableJobs.map((job, index) => (
+                        {selectedWorkStep && filteredAvailableJobs.map((job, index) => (
                           <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
                             {(provided, snapshot) => (
                               <div
@@ -327,25 +348,24 @@ export default function WorkQueuePlanning() {
                                   snapshot.isDragging ? 'shadow-lg' : ''
                                 }`}
                               >
-                                <div className="text-sm font-medium text-blue-700 mb-1">
-                                  {job.orderNumber}
+                                <div className="text-sm font-medium text-blue-700 mb-1 line-clamp-1">
+                                  {job.productName || job.orderNumber}
                                 </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {job.customerName}
+                                <div className="text-xs text-gray-600 mb-1 line-clamp-1">
+                                  {job.customerName} • กำหนดส่ง: {formatDate(job.deliveryDate)}
                                 </div>
-                                <div className="text-xs text-gray-500 mb-2">
-                                  กำหนดส่ง: {formatDate(job.deliveryDate)}
-                                </div>
-                                <div className="flex items-center gap-1 mb-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {getColorName(job.colorId)}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs">
-                                    {getSizeName(job.sizeId)}
-                                  </Badge>
-                                </div>
-                                <div className="text-xs font-medium text-green-700">
-                                  {job.quantity} ตัว
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-xs px-1 py-0">
+                                      {getColorName(job.colorId)}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs px-1 py-0">
+                                      {getSizeName(job.sizeId)}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-xs font-medium text-green-700">
+                                    {job.quantity} ตัว
+                                  </div>
                                 </div>
                               </div>
                             )}
@@ -370,12 +390,20 @@ export default function WorkQueuePlanning() {
                   <div className="mt-3 space-y-3">
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-2 block">เลือกทีม</label>
-                      <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                      <Select 
+                        value={selectedTeam} 
+                        onValueChange={setSelectedTeam}
+                        disabled={!selectedWorkStep}
+                      >
                         <SelectTrigger>
-                          <SelectValue placeholder="เลือกทีม" />
+                          <SelectValue placeholder={
+                            selectedWorkStep 
+                              ? "เลือกทีม" 
+                              : "เลือกขั้นตอนงานก่อน"
+                          } />
                         </SelectTrigger>
                         <SelectContent>
-                          {teams.map((team) => (
+                          {availableTeams.map((team) => (
                             <SelectItem key={team.id} value={team.id}>
                               {team.name}
                             </SelectItem>
@@ -421,8 +449,8 @@ export default function WorkQueuePlanning() {
                                 }`}
                               >
                                 <div className="flex items-center justify-between mb-1">
-                                  <div className="text-sm font-medium text-blue-700">
-                                    {job.orderNumber}
+                                  <div className="text-sm font-medium text-blue-700 line-clamp-1">
+                                    {job.productName || job.orderNumber}
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -433,22 +461,21 @@ export default function WorkQueuePlanning() {
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
                                 </div>
-                                <div className="text-xs text-gray-600 mb-2">
-                                  {job.customerName}
+                                <div className="text-xs text-gray-600 mb-1 line-clamp-1">
+                                  {job.customerName} • กำหนดส่ง: {formatDate(job.deliveryDate)}
                                 </div>
-                                <div className="text-xs text-gray-500 mb-2">
-                                  กำหนดส่ง: {formatDate(job.deliveryDate)}
-                                </div>
-                                <div className="flex items-center gap-1 mb-1">
-                                  <Badge variant="outline" className="text-xs">
-                                    {getColorName(job.colorId)}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-xs">
-                                    {getSizeName(job.sizeId)}
-                                  </Badge>
-                                </div>
-                                <div className="text-xs font-medium text-green-700">
-                                  {job.quantity} ตัว
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-1">
+                                    <Badge variant="outline" className="text-xs px-1 py-0">
+                                      {getColorName(job.colorId)}
+                                    </Badge>
+                                    <Badge variant="outline" className="text-xs px-1 py-0">
+                                      {getSizeName(job.sizeId)}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-xs font-medium text-green-700">
+                                    {job.quantity} ตัว
+                                  </div>
                                 </div>
                               </div>
                             )}
