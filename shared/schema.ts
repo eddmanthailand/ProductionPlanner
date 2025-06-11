@@ -457,6 +457,7 @@ export const dailyWorkLogs = pgTable("daily_work_logs", {
   workOrderId: text("work_order_id").references(() => workOrders.id).notNull(),
   subJobId: integer("sub_job_id").references(() => subJobs.id).notNull(),
   hoursWorked: decimal("hours_worked", { precision: 4, scale: 1 }).notNull(),
+  quantityCompleted: integer("quantity_completed").default(0),
   workDescription: text("work_description").notNull(),
   status: text("status").notNull().default("in_progress"), // in_progress, completed, paused
   notes: text("notes"),

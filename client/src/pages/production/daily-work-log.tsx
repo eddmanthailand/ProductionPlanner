@@ -96,6 +96,7 @@ export default function DailyWorkLog() {
   const [workDescription, setWorkDescription] = useState<string>("");
   const [workStatus, setWorkStatus] = useState<string>("in_progress");
   const [notes, setNotes] = useState<string>("");
+  const [editingLog, setEditingLog] = useState<DailyWorkLog | null>(null);
 
   // Data queries
   const { data: departments = [] } = useQuery<Department[]>({
@@ -114,7 +115,14 @@ export default function DailyWorkLog() {
   });
 
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
-    queryKey: ["/api/work-steps"],
+    queryKey: ["/api/work-steps", selectedDepartment],
+    enabled: !!selectedDepartment,
+    queryFn: async () => {
+      if (!selectedDepartment) return [];
+      const response = await fetch(`/api/departments/${selectedDepartment}/work-steps`);
+      if (!response.ok) throw new Error('Failed to fetch work steps');
+      return response.json();
+    }
   });
 
   const { data: employees = [] } = useQuery<Employee[]>({
