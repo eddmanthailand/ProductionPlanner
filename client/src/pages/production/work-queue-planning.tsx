@@ -278,7 +278,12 @@ export default function WorkQueuePlanning() {
       
       // Refresh data
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
+      
+      // Clear selected jobs
+      setSelectedJobs([]);
       
       toast({
         title: "เพิ่มงานสำเร็จ",
@@ -310,6 +315,7 @@ export default function WorkQueuePlanning() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
     }
   });
@@ -325,6 +331,7 @@ export default function WorkQueuePlanning() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available"] });
       queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
     }
   });
