@@ -51,22 +51,7 @@ export const products = pgTable("products", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-// Production orders table
-export const productionOrders = pgTable("production_orders", {
-  id: serial("id").primaryKey(),
-  orderNumber: text("order_number").notNull(),
-  productId: integer("product_id").references(() => products.id),
-  quantity: integer("quantity").notNull(),
-  status: text("status").notNull().default("pending"),
-  priority: text("priority").notNull().default("normal"),
-  startDate: timestamp("start_date"),
-  endDate: timestamp("end_date"),
-  completedDate: timestamp("completed_date"),
-  notes: text("notes"),
-  tenantId: uuid("tenant_id").references(() => tenants.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
-});
+
 
 // Stock movements table - for tracking stock changes
 export const stockMovements = pgTable("stock_movements", {
@@ -199,7 +184,6 @@ export const quotationItems = pgTable("quotation_items", {
 export const tenantsRelations = relations(tenants, ({ many }) => ({
   users: many(users),
   products: many(products),
-  productionOrders: many(productionOrders),
   stockMovements: many(stockMovements),
   transactions: many(transactions),
   activities: many(activities),
@@ -223,20 +207,10 @@ export const productsRelations = relations(products, ({ one, many }) => ({
     fields: [products.tenantId],
     references: [tenants.id]
   }),
-  productionOrders: many(productionOrders),
   stockMovements: many(stockMovements)
 }));
 
-export const productionOrdersRelations = relations(productionOrders, ({ one }) => ({
-  tenant: one(tenants, {
-    fields: [productionOrders.tenantId],
-    references: [tenants.id]
-  }),
-  product: one(products, {
-    fields: [productionOrders.productId],
-    references: [products.id]
-  })
-}));
+
 
 export const stockMovementsRelations = relations(stockMovements, ({ one }) => ({
   tenant: one(tenants, {
@@ -692,8 +666,7 @@ export type InsertUser = z.infer<typeof insertUserSchema>;
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;
 
-export type ProductionOrder = typeof productionOrders.$inferSelect;
-export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
+
 
 export type StockMovement = typeof stockMovements.$inferSelect;
 export type InsertStockMovement = z.infer<typeof insertStockMovementSchema>;

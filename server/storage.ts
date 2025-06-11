@@ -2,7 +2,6 @@ import {
   users,
   tenants,
   products,
-  productionOrders,
   stockMovements,
   transactions,
   activities,
@@ -27,8 +26,6 @@ import {
   type InsertTenant,
   type Product,
   type InsertProduct,
-  type ProductionOrder,
-  type InsertProductionOrder,
   type StockMovement,
   type InsertStockMovement,
   type Transaction,
@@ -91,11 +88,7 @@ export interface IStorage {
   updateProduct(id: number, product: Partial<InsertProduct>, tenantId: string): Promise<Product | undefined>;
   deleteProduct(id: number, tenantId: string): Promise<boolean>;
 
-  // Production Orders
-  getProductionOrders(tenantId: string): Promise<ProductionOrder[]>;
-  getProductionOrder(id: number, tenantId: string): Promise<ProductionOrder | undefined>;
-  createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
-  updateProductionOrder(id: number, order: Partial<InsertProductionOrder>, tenantId: string): Promise<ProductionOrder | undefined>;
+
 
   // Stock Management
   getStockMovements(tenantId: string): Promise<StockMovement[]>;
