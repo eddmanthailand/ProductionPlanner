@@ -210,12 +210,11 @@ export default function WorkQueuePlanning() {
 
   // Filter available jobs by search term and exclude jobs already assigned to any team
   const filteredAvailableJobs = availableJobs.filter(job => {
-    // Check if job is already assigned to any team queue by comparing order number and product name
+    // Check if job is already assigned to any team queue by comparing order number and product name only
+    // (work_queue table doesn't store color_id, size_id, customer_name)
     const isInAnyQueue = allTeamQueues.some(queueJob => 
       queueJob.orderNumber === job.orderNumber && 
-      queueJob.productName === job.productName &&
-      queueJob.colorId === job.colorId &&
-      queueJob.sizeId === job.sizeId
+      queueJob.productName === job.productName
     );
     
     if (isInAnyQueue) return false;
