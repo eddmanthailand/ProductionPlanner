@@ -8,9 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { CalendarDays, Clock, Users, Trash2, Calculator, Plus } from "lucide-react";
+import { CalendarDays, Clock, Users, Trash2, Calculator, Plus, Search, List, ChevronDown } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface SubJob {
   id: number;
@@ -80,10 +84,13 @@ export default function WorkQueuePlanning() {
   const [selectedWorkStep, setSelectedWorkStep] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [teamStartDate, setTeamStartDate] = useState<string>("");
+  const [calendarDate, setCalendarDate] = useState<Date>();
   const [teamQueue, setTeamQueue] = useState<SubJob[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedJobs, setSelectedJobs] = useState<number[]>([]);
+  const [viewTeamQueueDialog, setViewTeamQueueDialog] = useState(false);
+  const [viewingTeam, setViewingTeam] = useState<string>("");
 
   // Data queries
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
@@ -147,10 +154,18 @@ export default function WorkQueuePlanning() {
     if (selectedWorkStep) {
       setSelectedTeam("");
       setTeamStartDate("");
+      setCalendarDate(undefined);
       setTeamQueue([]);
       setSelectedJobs([]);
     }
   }, [selectedWorkStep]);
+
+  // Update team start date when calendar date changes
+  useEffect(() => {
+    if (calendarDate) {
+      setTeamStartDate(format(calendarDate, "yyyy-MM-dd"));
+    }
+  }, [calendarDate]);
 
   // Reset selected jobs when dialog closes
   useEffect(() => {
@@ -525,8 +540,8 @@ export default function WorkQueuePlanning() {
 
         <DragDropContext onDragEnd={handleDragEnd}>
           <div className="flex gap-6">
-            {/* Team Queue - 15% width */}
-            <div className="w-[15%]">
+            {/* Team Queue - 25% width */}
+            <div className="w-[25%]">
               <Card className="h-fit">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
@@ -562,12 +577,39 @@ export default function WorkQueuePlanning() {
                   </div>
                   <div className="mt-3">
                     <label className="text-xs font-medium text-gray-700 mb-2 block">วันเริ่มงาน</label>
-                    <Input
-                      type="date"
-                      value={teamStartDate}
-                      onChange={(e) => setTeamStartDate(e.target.value)}
-                      className="text-xs"
-                    />
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full justify-start text-left font-normal text-xs",
+                            !calendarDate && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarDays className="mr-2 h-4 w-4" />
+                          {calendarDate ? format(calendarDate, "dd/MM/yyyy") : "เลือกวันที่"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0">
+                        <CalendarComponent
+                          mode="single"
+                          selected={calendarDate}
+                          onSelect={setCalendarDate}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setViewTeamQueueDialog(true)}
+                      className="w-full text-xs"
+                    >
+                      <List className="h-4 w-4 mr-2" />
+                      ดูคิวทีมอื่น ๆ
+                    </Button>
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -733,7 +775,112 @@ export default function WorkQueuePlanning() {
             </div>
           </div>
         </DragDropContext>
+
+        {/* View Team Queue Dialog */}
+        <Dialog open={viewTeamQueueDialog} onOpenChange={setViewTeamQueueDialog}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+            <DialogHeader>
+              <DialogTitle>คิวงานของทีมทั้งหมด</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {teams.map((team) => (
+                  <TeamQueueView key={team.id} team={team} />
+                ))}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
+  );
+}
+
+// Component to display individual team queue
+function TeamQueueView({ team }: { team: Team }) {
+  const { data: teamQueue = [] } = useQuery<SubJob[]>({
+    queryKey: ["/api/work-queues/team", team.id],
+    queryFn: async () => {
+      const response = await fetch(`/api/work-queues/team/${team.id}`);
+      if (!response.ok) throw new Error('Failed to fetch team queue');
+      return response.json();
+    }
+  });
+
+  const { data: colors = [] } = useQuery<Color[]>({
+    queryKey: ["/api/colors"],
+  });
+
+  const { data: sizes = [] } = useQuery<Size[]>({
+    queryKey: ["/api/sizes"],
+  });
+
+  const getColorName = (colorId: number): string => {
+    const color = colors.find(c => c.id === colorId);
+    return color ? color.name : '-';
+  };
+
+  const getSizeName = (sizeId: number): string => {
+    const size = sizes.find(s => s.id === sizeId);
+    return size ? size.name : '-';
+  };
+
+  const formatDate = (dateString: string | null): string => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('th-TH');
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex items-center gap-2">
+          <Users className="h-4 w-4 text-blue-600" />
+          <CardTitle className="text-sm">{team.name}</CardTitle>
+          <Badge variant="outline" className="text-xs">
+            {teamQueue.length} งาน
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-2 max-h-[300px] overflow-auto">
+          {teamQueue.length === 0 ? (
+            <div className="text-center text-gray-400 py-4">
+              <Clock className="h-8 w-8 mx-auto mb-2" />
+              <p className="text-sm">ไม่มีงานในคิว</p>
+            </div>
+          ) : (
+            teamQueue.map((job, index) => (
+              <div key={job.id} className="p-2 bg-gray-50 border rounded-lg">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="text-xs text-gray-900 line-clamp-1 flex-1">
+                    {job.customerName} • {job.orderNumber} • {job.productName}
+                  </div>
+                  <Badge variant="secondary" className="text-xs px-1 py-0">
+                    #{index + 1}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs">
+                  <div className="text-gray-600">
+                    {formatDate(job.deliveryDate)}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      {getColorName(job.colorId)}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs px-1 py-0">
+                      {getSizeName(job.sizeId)}
+                    </Badge>
+                    <span className="font-medium text-green-700">
+                      {job.quantity}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </CardContent>
+    </Card>
   );
 }
