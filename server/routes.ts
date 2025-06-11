@@ -1740,6 +1740,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateResult.rows.length === 0) {
         return res.status(404).json({ message: "Work order not found" });
       }
+
+      // Handle sub-jobs (items) update
+      if (updateData.items && Array.isArray(updateData.items)) {
+        // Delete existing sub-jobs for this work order
+        await pool.query(
+          `DELETE FROM sub_jobs WHERE work_order_id = $1`,
+          [id]
+        );
+
+        // Insert new sub-jobs
+        for (let i = 0; i < updateData.items.length; i++) {
+          const item = updateData.items[i];
+          await pool.query(
+            `INSERT INTO sub_jobs (
+              work_order_id, product_name, department_id, work_step_id, 
+              color_id, size_id, quantity, production_cost, total_cost, 
+              status, sort_order, created_at, updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())`,
+            [
+              id,
+              item.productName || '',
+              item.departmentId || null,
+              item.workStepId || null,
+              item.colorId ? parseInt(item.colorId) : null,
+              item.sizeId ? parseInt(item.sizeId) : null,
+              item.quantity || 0,
+              item.productionCost || 0,
+              item.totalCost || 0,
+              'pending',
+              item.sortOrder || (i + 1)
+            ]
+          );
+        }
+      }
       
       console.log("API: Work order updated successfully");
       res.json(updateResult.rows[0]);
