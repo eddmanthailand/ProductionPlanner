@@ -357,6 +357,7 @@ export const productionCapacity = pgTable("production_capacity", {
 // Work Queue table
 export const workQueue = pgTable("work_queue", {
   id: text("id").primaryKey(),
+  subJobId: integer("sub_job_id").references(() => subJobs.id, { onDelete: "cascade" }).notNull(),
   orderNumber: text("order_number").notNull(),
   productName: text("product_name").notNull(),
   quantity: integer("quantity").notNull(),
