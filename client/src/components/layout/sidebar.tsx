@@ -73,7 +73,6 @@ export default function Sidebar() {
   const productionSubMenu = [
     { name: "ปฏิทินการทำงาน", href: "/production/calendar", icon: Calendar },
     { name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network },
-    { name: "คิวงาน", href: "/production/work-queue", icon: GanttChart },
     { name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: Calendar },
     { name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList },
     { name: "รายงานแผนผลิต", href: "/production/production-reports", icon: BarChart3 },
