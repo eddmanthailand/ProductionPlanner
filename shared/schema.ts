@@ -310,7 +310,7 @@ export const teams = pgTable("teams", {
   departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
   leader: text("leader"),
-  costPerDay: decimal("cost_per_day", { precision: 10, scale: 2 }).notNull().default("0.00"), // ต้นทุนต่อวัน = กำลังการผลิต
+  costPerDay: decimal("cost_per_day", { precision: 10, scale: 2 }).notNull().default("0.00"), // ต้นทุนต่อวัน (บาท) = กำลังการผลิต
   status: text("status").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
@@ -439,6 +439,7 @@ export const subJobs = pgTable("sub_jobs", {
   colorId: integer("color_id").references(() => colors.id),
   sizeId: integer("size_id").references(() => sizes.id),
   quantity: integer("quantity").notNull().default(1),
+  unitPrice: decimal("unit_price", { precision: 10, scale: 2 }).notNull().default("350.00"), // ราคาต่อชิ้น
   productionCost: decimal("production_cost", { precision: 10, scale: 2 }).notNull().default("0.00"),
   totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull().default("0.00"),
   status: text("status").notNull().default("pending"), // pending, in_progress, completed

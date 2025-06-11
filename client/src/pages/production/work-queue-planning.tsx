@@ -430,8 +430,8 @@ export default function WorkQueuePlanning() {
         return;
       }
 
-      // Daily capacity = team cost per day
-      const dailyCapacity = Math.floor(parseFloat(team.costPerDay || "0"));
+      // Daily capacity = team cost per day (in Baht)
+      const dailyCapacity = parseFloat((team as any).cost_per_day || "0");
       
       // Calculate job schedule
       const schedule: any[] = [];
@@ -440,25 +440,31 @@ export default function WorkQueuePlanning() {
       
       for (let jobIndex = 0; jobIndex < teamQueue.length; jobIndex++) {
         const job = teamQueue[jobIndex];
-        let remainingQuantity = job.quantity;
+        // Calculate job cost = quantity × unit price (ต้นทุนการผลิต sub job)
+        const unitPrice = parseFloat((job as any).unit_price || "350");
+        let remainingJobCost = job.quantity * unitPrice;
         
-        while (remainingQuantity > 0) {
-          // Skip weekends and holidays (ไม่นับเป็นต้นทุน)
+        while (remainingJobCost > 0) {
+          // Skip weekends and holidays
           while (isWeekendOrHoliday(currentDate)) {
             currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
           }
           
-          const quantityToProcess = Math.min(remainingQuantity, remainingDailyCapacity);
+          const costToProcess = Math.min(remainingJobCost, remainingDailyCapacity);
           
-          if (quantityToProcess > 0) {
+          if (costToProcess > 0) {
             const dateKey = currentDate.toISOString().split('T')[0];
             const existingSchedule = schedule.find(s => s.dateKey === dateKey);
+            
+            // Calculate processed quantity based on cost
+            const processedQuantity = Math.round(costToProcess / unitPrice);
             
             const jobBarData = {
               ...job,
               jobIndex,
-              processedQuantity: quantityToProcess,
-              width: (quantityToProcess / dailyCapacity) * 100,
+              processedQuantity,
+              processedCost: costToProcess,
+              width: (costToProcess / dailyCapacity) * 100,
               leftOffset: ((dailyCapacity - remainingDailyCapacity) / dailyCapacity) * 100
             };
             
@@ -473,12 +479,12 @@ export default function WorkQueuePlanning() {
               });
             }
             
-            remainingQuantity -= quantityToProcess;
-            remainingDailyCapacity -= quantityToProcess;
+            remainingJobCost -= costToProcess;
+            remainingDailyCapacity -= costToProcess;
           }
           
           // Move to next day if capacity is exhausted
-          if (remainingDailyCapacity === 0) {
+          if (remainingDailyCapacity <= 0) {
             currentDate = new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
             remainingDailyCapacity = dailyCapacity;
           }
@@ -885,7 +891,7 @@ export default function WorkQueuePlanning() {
                                               left: `${scheduledJob.leftOffset}%`,
                                               width: `${scheduledJob.width}%`
                                             }}
-                                            title={`${scheduledJob.orderNumber} • ${scheduledJob.productName} • ${getColorName(scheduledJob.colorId)} • ${getSizeName(scheduledJob.sizeId)} • ${scheduledJob.processedQuantity} ชิ้น`}
+                                            title={`${scheduledJob.orderNumber} • ${scheduledJob.productName} • ${getColorName(scheduledJob.colorId)} • ${getSizeName(scheduledJob.sizeId)} • ${scheduledJob.processedQuantity} ชิ้น • ${scheduledJob.processedCost?.toLocaleString()} บาท`}
                                           >
                                             <div className="text-xs text-white p-1 truncate">
                                               {scheduledJob.processedQuantity}
