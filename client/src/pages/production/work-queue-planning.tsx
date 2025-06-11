@@ -169,8 +169,8 @@ export default function WorkQueuePlanning() {
 
   // Filter available jobs by search term and exclude jobs already in team queue
   const filteredAvailableJobs = availableJobs.filter(job => {
-    // Check if job is already in team queue
-    const isInQueue = teamQueue.some(queueJob => queueJob.id === job.id);
+    // Check if job is already in current team queue
+    const isInQueue = currentTeamQueue.some(queueJob => queueJob.id === job.id);
     if (isInQueue) return false;
 
     if (!searchTerm) return true;
