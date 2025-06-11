@@ -83,6 +83,7 @@ export default function WorkQueuePlanning() {
   const [teamQueue, setTeamQueue] = useState<SubJob[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedJobs, setSelectedJobs] = useState<number[]>([]);
 
   // Data queries
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
@@ -141,8 +142,17 @@ export default function WorkQueuePlanning() {
       setSelectedTeam("");
       setTeamStartDate("");
       setTeamQueue([]);
+      setSelectedJobs([]);
     }
   }, [selectedWorkStep]);
+
+  // Reset selected jobs when dialog closes
+  useEffect(() => {
+    if (!dialogOpen) {
+      setSelectedJobs([]);
+      setSearchTerm("");
+    }
+  }, [dialogOpen]);
 
   // Filter teams based on selected work step's department
   const availableTeams = teams.filter(team => {
@@ -180,6 +190,53 @@ export default function WorkQueuePlanning() {
       month: '2-digit',
       year: '2-digit'
     });
+  };
+
+  // Function to toggle job selection
+  const toggleJobSelection = (jobId: number) => {
+    setSelectedJobs(prev => 
+      prev.includes(jobId) 
+        ? prev.filter(id => id !== jobId)
+        : [...prev, jobId]
+    );
+  };
+
+  // Function to add selected jobs to queue
+  const addSelectedJobsToQueue = async () => {
+    if (!selectedTeam || selectedJobs.length === 0) return;
+    
+    try {
+      for (const jobId of selectedJobs) {
+        const response = await fetch('/api/work-queues/add-job', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            subJobId: jobId,
+            teamId: selectedTeam,
+            priority: teamQueue.length + 1
+          }),
+        });
+        if (!response.ok) throw new Error('Failed to add job to queue');
+      }
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
+      
+      toast({
+        title: "เพิ่มงานสำเร็จ",
+        description: `เพิ่ม ${selectedJobs.length} งานเข้าคิวของทีมแล้ว`,
+      });
+      
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Add to queue error:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเพิ่มงานเข้าคิวได้",
+        variant: "destructive"
+      });
+    }
   };
 
   // Mutations for queue management
@@ -343,44 +400,89 @@ export default function WorkQueuePlanning() {
                   <DialogTitle>เลือกงานรอวางคิว</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-between gap-2">
                     <Input
                       placeholder="ค้นหางาน..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="max-w-xs"
                     />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedJobs(filteredAvailableJobs.map(job => job.id))}
+                        disabled={filteredAvailableJobs.length === 0}
+                      >
+                        เลือกทั้งหมด
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setSelectedJobs([])}
+                        disabled={selectedJobs.length === 0}
+                      >
+                        ยกเลิกการเลือก
+                      </Button>
+                    </div>
                   </div>
+                  
                   <div className="max-h-96 overflow-y-auto border rounded-lg">
                     <div className="grid gap-2 p-4">
-                      {filteredAvailableJobs.map((job) => (
-                        <div
-                          key={job.id}
-                          className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
-                          onClick={() => {
-                            if (selectedTeam) {
-                              addToQueueMutation.mutate({
-                                subJobId: job.id,
-                                teamId: selectedTeam,
-                                priority: teamQueue.length + 1
-                              });
-                              setDialogOpen(false);
-                            }
-                          }}
-                        >
-                          <div className="text-sm font-medium text-gray-900 mb-2">
-                            {job.customerName} • {job.orderNumber} • {job.productName}
-                          </div>
-                          <div className="flex items-center justify-between text-xs text-gray-600">
-                            <div>
-                              {formatDate(job.deliveryDate)} • {getColorName(job.colorId)} • {getSizeName(job.sizeId)}
+                      {filteredAvailableJobs.map((job) => {
+                        const isSelected = selectedJobs.includes(job.id);
+                        return (
+                          <div
+                            key={job.id}
+                            className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                              isSelected 
+                                ? 'border-blue-500 bg-blue-50' 
+                                : 'border-gray-200 hover:bg-gray-50'
+                            }`}
+                            onClick={() => toggleJobSelection(job.id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => toggleJobSelection(job.id)}
+                                className="mt-1"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <div className="flex-1">
+                                <div className="text-sm font-medium text-gray-900 mb-2">
+                                  {job.customerName} • {job.orderNumber} • {job.productName}
+                                </div>
+                                <div className="flex items-center justify-between text-xs text-gray-600">
+                                  <div>
+                                    {formatDate(job.deliveryDate)} • {getColorName(job.colorId)} • {getSizeName(job.sizeId)}
+                                  </div>
+                                  <div className="font-medium">
+                                    {job.quantity} ชิ้น
+                                  </div>
+                                </div>
+                              </div>
                             </div>
-                            <div className="font-medium">
-                              {job.quantity} ชิ้น
-                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <div className="text-sm text-gray-600">
+                      เลือกแล้ว {selectedJobs.length} งาน
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                        ยกเลิก
+                      </Button>
+                      <Button 
+                        onClick={addSelectedJobsToQueue}
+                        disabled={selectedJobs.length === 0 || !selectedTeam}
+                      >
+                        เพิ่มเข้าคิว ({selectedJobs.length})
+                      </Button>
                     </div>
                   </div>
                 </div>
