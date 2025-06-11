@@ -134,7 +134,7 @@ export default function WorkQueuePlanning() {
   });
 
   // Get available sub jobs for selected work step
-  const { data: availableJobs = [] } = useQuery<SubJob[]>({
+  const { data: availableJobs = [], refetch: refetchAvailableJobs } = useQuery<SubJob[]>({
     queryKey: ["/api/sub-jobs/available", selectedWorkStep],
     enabled: !!selectedWorkStep,
     queryFn: async () => {
@@ -145,7 +145,7 @@ export default function WorkQueuePlanning() {
   });
 
   // Get team queue
-  const { data: teamQueueData = [] } = useQuery<SubJob[]>({
+  const { data: teamQueueData = [], refetch: refetchTeamQueue } = useQuery<SubJob[]>({
     queryKey: ["/api/work-queues/team", selectedTeam],
     enabled: !!selectedTeam,
     queryFn: async () => {
@@ -262,6 +262,13 @@ export default function WorkQueuePlanning() {
     }
 
     try {
+      // Refresh data to get latest production costs from work orders
+      if (refetchTeamQueue) await refetchTeamQueue();
+      if (refetchAvailableJobs) await refetchAvailableJobs();
+      
+      // Wait a moment for data to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       // Get team cost per day (ต้นทุนต่อวัน = กำลังการผลิต)
       const team = teams.find(t => t.id === selectedTeam);
       
