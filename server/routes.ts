@@ -1193,6 +1193,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/employees/by-team/:teamId", async (req: any, res: any) => {
+    try {
+      // Dev mode - bypass auth and use default tenant
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { teamId } = req.params;
+      
+      const employees = await storage.getEmployeesByTeam(teamId, tenantId);
+      res.json(employees);
+    } catch (error) {
+      console.error("Get employees by team error:", error);
+      res.status(500).json({ message: "Failed to fetch employees" });
+    }
+  });
+
   app.get("/api/teams/:teamId/employees", authenticateToken, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;

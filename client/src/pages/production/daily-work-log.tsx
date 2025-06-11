@@ -105,6 +105,12 @@ export default function DailyWorkLog() {
   const { data: teams = [] } = useQuery<Team[]>({
     queryKey: ["/api/teams", selectedDepartment],
     enabled: !!selectedDepartment,
+    queryFn: async () => {
+      if (!selectedDepartment) return [];
+      const response = await fetch(`/api/teams?departmentId=${selectedDepartment}`);
+      if (!response.ok) throw new Error('Failed to fetch teams');
+      return response.json();
+    }
   });
 
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
@@ -114,6 +120,12 @@ export default function DailyWorkLog() {
   const { data: employees = [] } = useQuery<Employee[]>({
     queryKey: ["/api/employees/by-team", selectedTeam],
     enabled: !!selectedTeam,
+    queryFn: async () => {
+      if (!selectedTeam) return [];
+      const response = await fetch(`/api/employees/by-team/${selectedTeam}`);
+      if (!response.ok) throw new Error('Failed to fetch employees');
+      return response.json();
+    }
   });
 
   const { data: workOrders = [] } = useQuery<WorkOrder[]>({
@@ -123,10 +135,25 @@ export default function DailyWorkLog() {
   const { data: subJobs = [] } = useQuery<SubJob[]>({
     queryKey: ["/api/sub-jobs/by-work-order", selectedWorkOrder],
     enabled: !!selectedWorkOrder,
+    queryFn: async () => {
+      if (!selectedWorkOrder) return [];
+      const response = await fetch(`/api/sub-jobs/by-work-order/${selectedWorkOrder}`);
+      if (!response.ok) throw new Error('Failed to fetch sub jobs');
+      return response.json();
+    }
   });
 
   const { data: dailyLogs = [] } = useQuery<DailyWorkLog[]>({
     queryKey: ["/api/daily-work-logs", selectedDate, selectedTeam],
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        date: selectedDate,
+        ...(selectedTeam && { teamId: selectedTeam })
+      });
+      const response = await fetch(`/api/daily-work-logs?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch daily logs');
+      return response.json();
+    }
   });
 
   // Helper functions
@@ -146,10 +173,15 @@ export default function DailyWorkLog() {
 
   // Mutations
   const createLogMutation = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/daily-work-logs', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/daily-work-logs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      if (!response.ok) throw new Error('Failed to create log');
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
       toast({ title: "สำเร็จ", description: "บันทึกงานประจำวันแล้ว" });
