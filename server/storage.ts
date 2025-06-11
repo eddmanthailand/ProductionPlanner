@@ -945,7 +945,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<any[]> {
-    // Join with sub_jobs to get proper data including sub_job_id
+    // Join with sub_jobs to get proper data including sub_job_id and totalCost
     const result = await db
       .select({
         id: workQueue.subJobId, // Use sub_job_id as the main id for filtering
@@ -961,6 +961,7 @@ export class DatabaseStorage implements IStorage {
         deliveryDate: workOrders.deliveryDate,
         status: workQueue.status,
         notes: workQueue.notes,
+        totalCost: subJobs.totalCost, // Add totalCost from sub_jobs
         createdAt: workQueue.createdAt,
         updatedAt: workQueue.updatedAt
       })

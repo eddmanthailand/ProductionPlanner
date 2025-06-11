@@ -1,0 +1,29 @@
+Response received: 10 items
+Response received: 4 items
+Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at div
+    at div
+    at div
+    at _c9 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=d2aeecb9:945:20)
+    at App (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=d2aeecb9:7462:25)
+    at ErrorBoundary2 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=d2aeecb9:1959:35)
+    at DragDropContext (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=d2aeecb9:7582:19)
+    at div
+    at div
+    at WorkQueuePlanning (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/work-queue-planning.tsx:37:21)
+    at main
+    at div
+    at div
+    at MainLayout (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/layout/main-layout.tsx:19:38)
+    at ProtectedRoute (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/App.tsx?v=6bKf2T1svvM-T8LaPkQMt:51:27)
+    at Route (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=d2aeecb9:323:16)
+    at Switch (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=d2aeecb9:379:17)
+    at Router
+    at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-M3NVYRND.js?v=d2aeecb9:48:15)
+    at TooltipProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=d2aeecb9:59:5)
+    at QueryClientProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=d2aeecb9:2805:3)
+    at App
