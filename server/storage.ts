@@ -20,6 +20,7 @@ import {
   holidays,
   workOrders,
   workOrderItems,
+  subJobs,
   type User,
   type InsertUser,
   type Tenant,
@@ -61,7 +62,9 @@ import {
   type WorkOrder,
   type InsertWorkOrder,
   type WorkOrderItem,
-  type InsertWorkOrderItem
+  type InsertWorkOrderItem,
+  type SubJob,
+  type InsertSubJob
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
@@ -183,7 +186,7 @@ export interface IStorage {
 
   // Work Queue
   getWorkQueues(tenantId: string): Promise<WorkQueue[]>;
-  getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<SubJob[]>;
+  getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<any[]>;
   getWorkQueue(id: string, tenantId: string): Promise<WorkQueue | undefined>;
   createWorkQueue(workQueue: InsertWorkQueue): Promise<WorkQueue>;
   updateWorkQueue(id: string, workQueue: Partial<InsertWorkQueue>, tenantId: string): Promise<WorkQueue | undefined>;
