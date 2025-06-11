@@ -148,10 +148,8 @@ export default function WorkQueuePlanning() {
     return workStep && team.departmentId === workStep.departmentId;
   });
 
-  // Filter sub jobs - exclude completed and cancelled statuses
-  const filteredAvailableJobs = availableJobs.filter(job => 
-    job.status !== 'completed' && job.status !== 'cancelled'
-  );
+  // Available jobs are already filtered on the server side
+  const filteredAvailableJobs = availableJobs;
 
   // Helper functions
   const getColorName = (colorId: number): string => {
@@ -348,13 +346,13 @@ export default function WorkQueuePlanning() {
                                   snapshot.isDragging ? 'shadow-lg' : ''
                                 }`}
                               >
-                                <div className="text-sm font-medium text-blue-700 mb-1 line-clamp-1">
-                                  {job.productName || job.orderNumber}
+                                <div className="text-xs text-gray-900 mb-1 line-clamp-1">
+                                  {job.customerName} • {job.jobName} • {job.productName}
                                 </div>
-                                <div className="text-xs text-gray-600 mb-1 line-clamp-1">
-                                  {job.customerName} • กำหนดส่ง: {formatDate(job.deliveryDate)}
-                                </div>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between text-xs">
+                                  <div className="text-gray-600">
+                                    {formatDate(job.deliveryDate)}
+                                  </div>
                                   <div className="flex items-center gap-1">
                                     <Badge variant="outline" className="text-xs px-1 py-0">
                                       {getColorName(job.colorId)}
@@ -362,9 +360,9 @@ export default function WorkQueuePlanning() {
                                     <Badge variant="outline" className="text-xs px-1 py-0">
                                       {getSizeName(job.sizeId)}
                                     </Badge>
-                                  </div>
-                                  <div className="text-xs font-medium text-green-700">
-                                    {job.quantity} ตัว
+                                    <span className="font-medium text-green-700">
+                                      {job.quantity} ตัว
+                                    </span>
                                   </div>
                                 </div>
                               </div>
@@ -449,22 +447,22 @@ export default function WorkQueuePlanning() {
                                 }`}
                               >
                                 <div className="flex items-center justify-between mb-1">
-                                  <div className="text-sm font-medium text-blue-700 line-clamp-1">
-                                    {job.productName || job.orderNumber}
+                                  <div className="text-xs text-gray-900 line-clamp-1 flex-1">
+                                    {job.customerName} • {job.jobName || job.orderNumber} • {job.productName}
                                   </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => removeFromTeamQueue(job.id.toString(), index)}
-                                    className="h-5 w-5 p-0 text-red-500 hover:text-red-700"
+                                    className="h-5 w-5 p-0 text-red-500 hover:text-red-700 ml-2"
                                   >
                                     <Trash2 className="h-3 w-3" />
                                   </Button>
                                 </div>
-                                <div className="text-xs text-gray-600 mb-1 line-clamp-1">
-                                  {job.customerName} • กำหนดส่ง: {formatDate(job.deliveryDate)}
-                                </div>
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between text-xs">
+                                  <div className="text-gray-600">
+                                    {formatDate(job.deliveryDate)}
+                                  </div>
                                   <div className="flex items-center gap-1">
                                     <Badge variant="outline" className="text-xs px-1 py-0">
                                       {getColorName(job.colorId)}
@@ -472,9 +470,9 @@ export default function WorkQueuePlanning() {
                                     <Badge variant="outline" className="text-xs px-1 py-0">
                                       {getSizeName(job.sizeId)}
                                     </Badge>
-                                  </div>
-                                  <div className="text-xs font-medium text-green-700">
-                                    {job.quantity} ตัว
+                                    <span className="font-medium text-green-700">
+                                      {job.quantity} ตัว
+                                    </span>
                                   </div>
                                 </div>
                               </div>

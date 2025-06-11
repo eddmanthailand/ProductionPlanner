@@ -724,3 +724,11 @@ export type InsertWorkOrder = z.infer<typeof insertWorkOrderSchema>;
 
 export type WorkOrderItem = typeof workOrderItems.$inferSelect;
 export type InsertWorkOrderItem = z.infer<typeof insertWorkOrderItemSchema>;
+
+export type SubJob = typeof subJobs.$inferSelect & {
+  orderNumber?: string;
+  customerName?: string;
+  deliveryDate?: string;
+  jobName?: string;
+};
+export type InsertSubJob = z.infer<typeof insertSubJobSchema>;
