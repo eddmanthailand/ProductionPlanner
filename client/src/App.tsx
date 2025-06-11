@@ -23,6 +23,7 @@ import WorkQueue from "@/pages/production/work-queue";
 import WorkSteps from "@/pages/production/work-steps-simple";
 import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
+import WorkQueuePlanning from "@/pages/production/work-queue-planning";
 
 import ProductionReports from "@/pages/production/reports";
 import Accounting from "@/pages/accounting";
@@ -145,6 +146,12 @@ function Router() {
       <Route path="/production/work-queue">
         <ProtectedRoute>
           <WorkQueue />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/work-queue-planning">
+        <ProtectedRoute>
+          <WorkQueuePlanning />
         </ProtectedRoute>
       </Route>
 

@@ -1877,6 +1877,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get work queues by team
+  app.get("/api/work-queues/team/:teamId", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { teamId } = req.params;
+      
+      const result = await storage.getWorkQueuesByTeam(teamId, tenantId);
+      res.json(result);
+    } catch (error) {
+      console.error("Get team work queues error:", error);
+      res.status(500).json({ message: "Failed to fetch team work queues" });
+    }
+  });
+
+  // Get available sub jobs for work step
+  app.get("/api/sub-jobs/available", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { workStepId } = req.query;
+      
+      if (!workStepId) {
+        return res.status(400).json({ message: "Work step ID is required" });
+      }
+
+      // Get sub jobs that are approved or in progress, for the specified work step
+      const result = await pool.query(`
+        SELECT 
+          sj.*,
+          wo.order_number,
+          wo.customer_name,
+          wo.delivery_date,
+          wo.status as work_order_status
+        FROM sub_jobs sj
+        INNER JOIN work_orders wo ON sj.work_order_id = wo.id
+        WHERE sj.work_step_id = $1 
+          AND wo.tenant_id = $2
+          AND wo.status IN ('approved', 'in_progress')
+          AND sj.id NOT IN (
+            SELECT DISTINCT sub_job_id 
+            FROM work_queues 
+            WHERE sub_job_id IS NOT NULL
+          )
+        ORDER BY wo.delivery_date ASC NULLS LAST, wo.created_at ASC
+      `, [workStepId, tenantId]);
+
+      const subJobs = result.rows.map(row => ({
+        id: row.id,
+        workOrderId: row.work_order_id,
+        orderNumber: row.order_number,
+        customerName: row.customer_name,
+        deliveryDate: row.delivery_date,
+        productName: row.product_name,
+        departmentId: row.department_id,
+        workStepId: row.work_step_id,
+        colorId: row.color_id,
+        sizeId: row.size_id,
+        quantity: row.quantity,
+        productionCost: row.production_cost,
+        totalCost: row.total_cost,
+        status: row.status,
+        sortOrder: row.sort_order
+      }));
+
+      res.json(subJobs);
+    } catch (error) {
+      console.error("Get available sub jobs error:", error);
+      res.status(500).json({ message: "Failed to fetch available sub jobs" });
+    }
+  });
+
+  // Get production capacities
+  app.get("/api/production-capacities", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const result = await storage.getProductionCapacities(tenantId);
+      res.json(result);
+    } catch (error) {
+      console.error("Get production capacities error:", error);
+      res.status(500).json({ message: "Failed to fetch production capacities" });
+    }
+  });
+
   return httpServer;
 }
 
