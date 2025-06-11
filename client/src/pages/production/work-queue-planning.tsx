@@ -210,12 +210,8 @@ export default function WorkQueuePlanning() {
 
   // Filter available jobs by search term and exclude jobs already assigned to any team
   const filteredAvailableJobs = availableJobs.filter(job => {
-    // Check if job is already assigned to any team queue by comparing order number and product name only
-    // (work_queue table doesn't store color_id, size_id, customer_name)
-    const isInAnyQueue = allTeamQueues.some(queueJob => 
-      queueJob.orderNumber === job.orderNumber && 
-      queueJob.productName === job.productName
-    );
+    // Check if this specific sub job is already assigned to any team queue by checking sub_job_id
+    const isInAnyQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
     
     if (isInAnyQueue) return false;
 
@@ -681,7 +677,7 @@ export default function WorkQueuePlanning() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => removeFromTeamQueue(job.id.toString(), index)}
+                                    onClick={() => removeFromTeamQueue(job.queueId || job.id.toString(), index)}
                                     className="h-4 w-4 p-0 text-red-500 hover:text-red-700 ml-1"
                                   >
                                     <Trash2 className="h-3 w-3" />

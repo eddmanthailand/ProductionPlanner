@@ -2049,12 +2049,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Add to work queue
       const queueResult = await pool.query(
         `INSERT INTO work_queue (
-          id, team_id, order_number, product_name, quantity, 
+          id, sub_job_id, team_id, order_number, product_name, quantity, 
           priority, status, tenant_id, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
         RETURNING *`,
         [
           `wq_${Date.now()}_${Math.random()}`,
+          subJobId,
           teamId,
           subJob.order_number,
           subJob.product_name,

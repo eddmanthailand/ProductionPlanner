@@ -922,25 +922,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getWorkQueuesByTeam(teamId: string, tenantId: string): Promise<any[]> {
-    // For now, return work queue items as they are until proper sub-job integration
+    // Join with sub_jobs to get proper data including sub_job_id
     const result = await db
       .select({
-        id: workQueue.id,
-        workOrderId: workQueue.orderNumber,
+        id: workQueue.subJobId, // Use sub_job_id as the main id for filtering
+        queueId: workQueue.id,
+        workOrderId: subJobs.workOrderId,
         orderNumber: workQueue.orderNumber,
-        customerName: workQueue.productName, // temporary mapping
+        customerName: workOrders.customerName,
         productName: workQueue.productName,
         quantity: workQueue.quantity,
-        colorId: sql<number>`1`, // default color id
-        sizeId: sql<number>`1`, // default size id
-        workTypeId: sql<number>`1`, // default work type id
-        deliveryDate: workQueue.expectedEndDate,
+        colorId: subJobs.colorId,
+        sizeId: subJobs.sizeId,
+        workTypeId: subJobs.workStepId,
+        deliveryDate: workOrders.deliveryDate,
         status: workQueue.status,
         notes: workQueue.notes,
         createdAt: workQueue.createdAt,
         updatedAt: workQueue.updatedAt
       })
       .from(workQueue)
+      .innerJoin(subJobs, eq(workQueue.subJobId, subJobs.id))
+      .innerJoin(workOrders, eq(subJobs.workOrderId, workOrders.id))
       .where(and(eq(workQueue.teamId, teamId), eq(workQueue.tenantId, tenantId)))
       .orderBy(asc(workQueue.priority), asc(workQueue.createdAt));
     
