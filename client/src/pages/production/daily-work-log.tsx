@@ -55,6 +55,7 @@ interface WorkOrder {
   customerName: string;
   title: string;
   status: string;
+  deliveryDate?: string;
 }
 
 interface SubJob {
@@ -93,7 +94,7 @@ export default function DailyWorkLog() {
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [selectedWorkStep, setSelectedWorkStep] = useState<string>("");
-  const [selectedEmployee, setSelectedEmployee] = useState<string>("");
+
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<string>("");
   const [workOrderOpen, setWorkOrderOpen] = useState(false);
   const [selectedSubJobs, setSelectedSubJobs] = useState<{[key: string]: boolean}>({});
@@ -130,16 +131,7 @@ export default function DailyWorkLog() {
     }
   });
 
-  const { data: employees = [] } = useQuery<Employee[]>({
-    queryKey: ["/api/employees/by-team", selectedTeam],
-    enabled: !!selectedTeam,
-    queryFn: async () => {
-      if (!selectedTeam) return [];
-      const response = await fetch(`/api/employees/by-team/${selectedTeam}`);
-      if (!response.ok) throw new Error('Failed to fetch employees');
-      return response.json();
-    }
-  });
+
 
   const { data: workOrders = [] } = useQuery<WorkOrder[]>({
     queryKey: ["/api/work-orders"],
@@ -180,7 +172,6 @@ export default function DailyWorkLog() {
     setSelectedDepartment("");
     setSelectedTeam("");
     setSelectedWorkStep("");
-    setSelectedEmployee("");
     setSelectedWorkOrder("");
     setWorkOrderOpen(false);
     setSelectedSubJobs({});
@@ -264,8 +255,15 @@ export default function DailyWorkLog() {
     e.preventDefault();
     
     const selectedSubJobIds = Object.keys(selectedSubJobs).filter(id => selectedSubJobs[id]);
-    if (!selectedTeam || !selectedEmployee || !selectedWorkOrder || selectedSubJobIds.length === 0) {
+    if (!selectedTeam || !selectedWorkOrder || selectedSubJobIds.length === 0) {
       toast({ title: "ข้อผิดพลาด", description: "กรุณาเลือกงานที่จะบันทึก", variant: "destructive" });
+      return;
+    }
+
+    // Get team leader as the employee automatically
+    const selectedTeamData = teams.find(t => t.id === selectedTeam);
+    if (!selectedTeamData?.leader) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลหัวหน้าทีม", variant: "destructive" });
       return;
     }
 
@@ -277,7 +275,7 @@ export default function DailyWorkLog() {
         const logData = {
           date: selectedDate,
           teamId: selectedTeam,
-          employeeId: selectedEmployee,
+          employeeId: selectedTeamData.leader, // Use team leader automatically
           workOrderId: selectedWorkOrder,
           subJobId: parseInt(subJobId),
           hoursWorked: 8, // Default 8 hours - auto calculated
@@ -296,7 +294,7 @@ export default function DailyWorkLog() {
 
       await Promise.all(logPromises);
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
-      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว` });
+      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ผู้บันทึก: ${selectedTeamData.leader})` });
       resetForm();
     } catch (error) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
@@ -307,7 +305,6 @@ export default function DailyWorkLog() {
     setSelectedDepartment("");
     setSelectedTeam(log.teamId);
     setSelectedWorkStep("");
-    setSelectedEmployee(log.employeeId);
     setSelectedWorkOrder(log.workOrderId);
     setSelectedSubJobs({ [log.subJobId.toString()]: true });
     setSelectedQuantities({ [log.subJobId.toString()]: log.quantityCompleted?.toString() || "0" });
@@ -465,7 +462,7 @@ export default function DailyWorkLog() {
             <CardTitle className="flex items-center gap-2 justify-between">
               <div className="flex items-center gap-2">
                 <ClipboardList className="h-5 w-5" />
-                รายละเอียดงาน - {selectedWorkOrderDetails.orderNumber}
+                รายละเอียดงาน
               </div>
               {selectedWorkStep && (
                 <Badge variant="outline" className="ml-2">
@@ -473,6 +470,25 @@ export default function DailyWorkLog() {
                 </Badge>
               )}
             </CardTitle>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">รหัสใบสั่งงาน</Label>
+                <p className="font-medium text-lg">{selectedWorkOrderDetails.orderNumber}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ชื่อใบสั่งงาน</Label>
+                <p className="font-medium text-lg">{selectedWorkOrderDetails.title}</p>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">กำหนดส่งสินค้า</Label>
+                <p className="font-medium text-lg">
+                  {selectedWorkOrderDetails.deliveryDate 
+                    ? format(new Date(selectedWorkOrderDetails.deliveryDate), 'dd/MM/yyyy')
+                    : 'ไม่ระบุ'
+                  }
+                </p>
+              </div>
+            </div>
             {!selectedWorkStep && (
               <p className="text-sm text-amber-600 mt-2 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
@@ -597,19 +613,17 @@ export default function DailyWorkLog() {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label>พนักงาน</Label>
-                  <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="เลือกพนักงาน" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees.map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id}>
-                          {emp.firstName} {emp.lastName} - {emp.position}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label>ผู้บันทึก</Label>
+                  <div className="h-11 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800 flex items-center">
+                    <UserCheck className="h-4 w-4 mr-2 text-green-600" />
+                    <span className="text-sm font-medium">
+                      {selectedTeam && teams.find(t => t.id === selectedTeam)?.leader 
+                        ? `${teams.find(t => t.id === selectedTeam)?.leader} (หัวหน้าทีม)` 
+                        : 'กรุณาเลือกทีมก่อน'
+                      }
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-500">ระบบจะใช้ชื่อหัวหน้าทีมเป็นผู้บันทึกอัตโนมัติ</p>
                 </div>
 
                 <div className="space-y-2">
@@ -695,8 +709,7 @@ export default function DailyWorkLog() {
                       {teams.find(t => t.id === log.teamId)?.name || log.teamId}
                     </TableCell>
                     <TableCell>
-                      {employees.find(e => e.id === log.employeeId)?.firstName || 'N/A'} {' '}
-                      {employees.find(e => e.id === log.employeeId)?.lastName || ''}
+                      {teams.find(t => t.id === log.teamId)?.leader || 'N/A'}
                     </TableCell>
                     <TableCell>
                       {workOrders.find(wo => wo.id === log.workOrderId)?.orderNumber || log.workOrderId}
