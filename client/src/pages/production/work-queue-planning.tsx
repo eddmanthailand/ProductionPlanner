@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { CalendarDays, Clock, Users, Trash2, Calculator } from "lucide-react";
+import { CalendarDays, Clock, Users, Trash2, Calculator, Plus } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface SubJob {
@@ -80,6 +81,8 @@ export default function WorkQueuePlanning() {
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [teamStartDate, setTeamStartDate] = useState<string>("");
   const [teamQueue, setTeamQueue] = useState<SubJob[]>([]);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   // Data queries
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
@@ -148,8 +151,16 @@ export default function WorkQueuePlanning() {
     return workStep && team.departmentId === workStep.departmentId;
   });
 
-  // Available jobs are already filtered on the server side
-  const filteredAvailableJobs = availableJobs;
+  // Filter available jobs by search term
+  const filteredAvailableJobs = availableJobs.filter(job => {
+    if (!searchTerm) return true;
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      job.customerName.toLowerCase().includes(searchLower) ||
+      job.orderNumber.toLowerCase().includes(searchLower) ||
+      job.productName.toLowerCase().includes(searchLower)
+    );
+  });
 
   // Helper functions
   const getColorName = (colorId: number): string => {
@@ -301,53 +312,147 @@ export default function WorkQueuePlanning() {
           <p className="text-gray-600 mt-1">จัดการลำดับงานและวางแผนการผลิต</p>
         </div>
 
+        {/* Top Bar - Controls */}
+        <div className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">เลือกขั้นตอนงาน</label>
+              <Select value={selectedWorkStep} onValueChange={setSelectedWorkStep}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="เลือกขั้นตอน" />
+                </SelectTrigger>
+                <SelectContent>
+                  {workSteps.map((step) => (
+                    <SelectItem key={step.id} value={step.id}>
+                      {step.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" disabled={!selectedWorkStep}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  เลือกงานรอ
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                <DialogHeader>
+                  <DialogTitle>เลือกงานรอวางคิว</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="ค้นหางาน..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="max-w-xs"
+                    />
+                  </div>
+                  <div className="max-h-96 overflow-y-auto border rounded-lg">
+                    <div className="grid gap-2 p-4">
+                      {filteredAvailableJobs.map((job) => (
+                        <div
+                          key={job.id}
+                          className="p-4 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                          onClick={() => {
+                            addToQueueMutation.mutate({
+                              subJobId: job.id,
+                              teamId: selectedTeam,
+                              priority: teamQueue.length + 1
+                            });
+                            setDialogOpen(false);
+                          }}
+                        >
+                          <div className="text-sm font-medium text-gray-900 mb-2">
+                            {job.customerName} • {job.orderNumber} • {job.productName}
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-gray-600">
+                            <div>
+                              {formatDate(job.deliveryDate)} • {getColorName(job.colorId)} • {getSizeName(job.sizeId)}
+                            </div>
+                            <div className="font-medium">
+                              {job.quantity} ชิ้น
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-4 gap-6">
-            {/* Left Panel - Available Jobs */}
-            <div className="col-span-1">
-              <Card>
+          <div className="flex gap-6">
+            {/* Team Queue - 15% width */}
+            <div className="w-[15%]">
+              <Card className="h-fit">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
-                    <CalendarDays className="h-5 w-5 text-blue-600" />
-                    <CardTitle className="text-lg">งานรอวางคิว</CardTitle>
+                    <Users className="h-5 w-5 text-green-600" />
+                    <CardTitle className="text-sm">คิวของทีม</CardTitle>
                   </div>
                   <div className="mt-3">
-                    <label className="text-sm font-medium text-gray-700 mb-2 block">เลือกขั้นตอนงาน</label>
-                    <Select value={selectedWorkStep} onValueChange={setSelectedWorkStep}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="เลือกขั้นตอน" />
+                    <label className="text-xs font-medium text-gray-700 mb-2 block">เลือกทีม</label>
+                    <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                      <SelectTrigger className="text-xs">
+                        <SelectValue placeholder="เลือกทีม" />
                       </SelectTrigger>
                       <SelectContent>
-                        {workSteps.map((step) => (
-                          <SelectItem key={step.id} value={step.id}>
-                            {step.name}
+                        {availableTeams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="mt-3">
+                    <label className="text-xs font-medium text-gray-700 mb-2 block">วันเริ่มงาน</label>
+                    <Input
+                      type="date"
+                      value={teamStartDate}
+                      onChange={(e) => setTeamStartDate(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <Droppable droppableId="available-jobs">
+                  <Droppable droppableId="team-queue">
                     {(provided) => (
                       <div
                         {...provided.droppableProps}
                         ref={provided.innerRef}
                         className="space-y-2 min-h-[400px]"
                       >
-                        {selectedWorkStep && filteredAvailableJobs.map((job, index) => (
+                        {teamQueue.map((job, index) => (
                           <Draggable key={job.id} draggableId={job.id.toString()} index={index}>
                             {(provided, snapshot) => (
                               <div
                                 ref={provided.innerRef}
                                 {...provided.draggableProps}
                                 {...provided.dragHandleProps}
-                                className={`p-3 bg-white border rounded-lg cursor-grab hover:shadow-md transition-shadow ${
+                                className={`p-2 bg-white border rounded-lg cursor-grab hover:shadow-md transition-shadow ${
                                   snapshot.isDragging ? 'shadow-lg' : ''
                                 }`}
                               >
-                                <div className="text-xs text-gray-900 mb-1 line-clamp-1">
-                                  {job.customerName} • {job.orderNumber} • {job.productName}
+                                <div className="flex items-center justify-between mb-1">
+                                  <div className="text-xs text-gray-900 line-clamp-1 flex-1">
+                                    {job.customerName} • {job.orderNumber} • {job.productName}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeFromTeamQueue(job.id.toString(), index)}
+                                    className="h-4 w-4 p-0 text-red-500 hover:text-red-700 ml-1"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
                                   <div className="text-gray-600">
@@ -361,7 +466,7 @@ export default function WorkQueuePlanning() {
                                       {getSizeName(job.sizeId)}
                                     </Badge>
                                     <span className="font-medium text-green-700">
-                                      {job.quantity} ตัว
+                                      {job.quantity}
                                     </span>
                                   </div>
                                 </div>
