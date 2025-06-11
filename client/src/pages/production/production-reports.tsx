@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Calendar, Users, Trash2, Eye } from "lucide-react";
+import { FileText, Calendar, Users, Trash2, Eye, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
@@ -53,7 +53,7 @@ export default function ProductionReports() {
     queryKey: ["/api/teams"],
   });
 
-  const { data: productionPlans = [] } = useQuery<ProductionPlan[]>({
+  const { data: productionPlans = [], refetch: refetchPlans } = useQuery<ProductionPlan[]>({
     queryKey: ["/api/production-plans"],
   });
 
@@ -119,9 +119,20 @@ export default function ProductionReports() {
         {/* Filter Section */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              กรองข้อมูล
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                กรองข้อมูล
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetchPlans()}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                รีเฟรช
+              </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
