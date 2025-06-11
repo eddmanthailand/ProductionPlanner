@@ -1958,12 +1958,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           AND wo.tenant_id = $2
           AND wo.status IN ('approved', 'in_progress')
           AND sj.status NOT IN ('completed', 'cancelled')
-          AND NOT EXISTS (
-            SELECT 1 FROM work_queue wq 
-            WHERE wq.product_name = sj.product_name 
-            AND wq.order_number = wo.order_number
-            AND wq.tenant_id = $2
-          )
+
         ORDER BY wo.delivery_date ASC NULLS LAST, wo.created_at ASC
       `, [workStepId, tenantId]);
 
