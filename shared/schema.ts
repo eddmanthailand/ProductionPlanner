@@ -447,6 +447,23 @@ export const subJobs = pgTable("sub_jobs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// Daily Work Logs table
+export const dailyWorkLogs = pgTable("daily_work_logs", {
+  id: text("id").primaryKey().$defaultFn(() => nanoid()),
+  date: date("date").notNull(),
+  teamId: text("team_id").references(() => teams.id).notNull(),
+  employeeId: text("employee_id").references(() => employees.id).notNull(),
+  workOrderId: text("work_order_id").references(() => workOrders.id).notNull(),
+  subJobId: integer("sub_job_id").references(() => subJobs.id).notNull(),
+  hoursWorked: decimal("hours_worked", { precision: 4, scale: 1 }).notNull(),
+  workDescription: text("work_description").notNull(),
+  status: text("status").notNull().default("in_progress"), // in_progress, completed, paused
+  notes: text("notes"),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,

@@ -24,7 +24,7 @@ import WorkSteps from "@/pages/production/work-steps-simple";
 import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
 import WorkQueuePlanning from "@/pages/production/work-queue-planning";
-
+import DailyWorkLog from "@/pages/production/daily-work-log";
 import ProductionReports from "@/pages/production/production-reports";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
@@ -184,6 +184,12 @@ function Router() {
       <Route path="/production/production-reports">
         <ProtectedRoute>
           <ProductionReports />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/production/daily-work-log">
+        <ProtectedRoute>
+          <DailyWorkLog />
         </ProtectedRoute>
       </Route>
 
