@@ -233,6 +233,12 @@ export interface IStorage {
   createProductionPlanItem(item: InsertProductionPlanItem): Promise<ProductionPlanItem>;
   updateProductionPlanItem(id: number, item: Partial<InsertProductionPlanItem>): Promise<ProductionPlanItem | undefined>;
   deleteProductionPlanItem(id: number): Promise<boolean>;
+
+  // Daily Work Logs
+  getDailyWorkLogs(tenantId: string, filters?: { date?: string; teamId?: string }): Promise<DailyWorkLog[]>;
+  createDailyWorkLog(log: InsertDailyWorkLog): Promise<DailyWorkLog>;
+  updateDailyWorkLog(id: string, log: Partial<InsertDailyWorkLog>, tenantId: string): Promise<DailyWorkLog | undefined>;
+  getSubJobsByWorkOrder(workOrderId: string): Promise<SubJob[]>;
 }
 
 export class DatabaseStorage implements IStorage {
