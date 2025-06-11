@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown } from "lucide-react";
+import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -118,6 +119,7 @@ export default function DailyWorkLog() {
   const [workStatus, setWorkStatus] = useState<string>("in_progress");
   const [notes, setNotes] = useState<string>("");
   const [editingLog, setEditingLog] = useState<DailyWorkLog | null>(null);
+  const [previewingLog, setPreviewingLog] = useState<any>(null);
 
   // Data queries
   const { data: departments = [] } = useQuery<Department[]>({
@@ -189,6 +191,27 @@ export default function DailyWorkLog() {
       return response.json();
     }
   });
+
+  // Group daily logs by unique combinations of date, team, work order
+  const groupedLogs = dailyLogs.reduce((acc, log) => {
+    const key = `${log.date}-${log.teamId}-${log.workOrderId}`;
+    if (!acc[key]) {
+      acc[key] = {
+        ...log,
+        subJobs: [],
+        totalQuantity: 0
+      };
+    }
+    acc[key].subJobs.push({
+      subJobId: log.subJobId,
+      quantityCompleted: log.quantityCompleted || 0,
+      workDescription: log.workDescription
+    });
+    acc[key].totalQuantity += log.quantityCompleted || 0;
+    return acc;
+  }, {} as Record<string, any>);
+
+  const consolidatedLogs = Object.values(groupedLogs);
 
   // Helper functions
   const resetForm = () => {
@@ -332,17 +355,30 @@ export default function DailyWorkLog() {
     }
   };
 
-  const handleEdit = (log: DailyWorkLog) => {
+  const handleEdit = (log: any) => {
+    // For consolidated logs, we need to handle multiple sub jobs
+    const subJobSelections: {[key: string]: boolean} = {};
+    const quantitySelections: {[key: string]: string} = {};
+    
+    log.subJobs.forEach((subJob: any) => {
+      subJobSelections[subJob.subJobId.toString()] = true;
+      quantitySelections[subJob.subJobId.toString()] = subJob.quantityCompleted.toString();
+    });
+
     setSelectedDepartment("");
     setSelectedTeam(log.teamId);
     setSelectedWorkStep("");
     setSelectedWorkOrder(log.workOrderId);
-    setSelectedSubJobs({ [log.subJobId.toString()]: true });
-    setSelectedQuantities({ [log.subJobId.toString()]: log.quantityCompleted?.toString() || "0" });
+    setSelectedSubJobs(subJobSelections);
+    setSelectedQuantities(quantitySelections);
     setWorkDescription(log.workDescription);
     setWorkStatus(log.status);
     setNotes(log.notes || "");
     setEditingLog(log);
+  };
+
+  const handlePreview = (log: any) => {
+    setPreviewingLog(log);
   };
 
   const selectedWorkOrderDetails = workOrders.find(wo => wo.id === selectedWorkOrder);
@@ -724,17 +760,16 @@ export default function DailyWorkLog() {
                 <TableRow style={{ fontSize: '12px' }}>
                   <TableHead>วันเวลา</TableHead>
                   <TableHead>ทีม</TableHead>
-                  <TableHead>พนักงาน</TableHead>
                   <TableHead>ใบสั่งงาน</TableHead>
-                  <TableHead>รายละเอียดงาน</TableHead>
-                  <TableHead className="text-right">จำนวน</TableHead>
+                  <TableHead>จำนวนงาน</TableHead>
+                  <TableHead className="text-right">จำนวนรวม</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead>การดำเนินการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {dailyLogs.map((log) => (
-                  <TableRow key={log.id} style={{ fontSize: '12px' }}>
+                {consolidatedLogs.map((log, index) => (
+                  <TableRow key={`${log.date}-${log.teamId}-${log.workOrderId}-${index}`} style={{ fontSize: '12px' }}>
                     <TableCell>
                       {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm')}
                     </TableCell>
@@ -742,16 +777,13 @@ export default function DailyWorkLog() {
                       {teams.find(t => t.id === log.teamId)?.name || log.teamId}
                     </TableCell>
                     <TableCell>
-                      {teams.find(t => t.id === log.teamId)?.leader || 'N/A'}
-                    </TableCell>
-                    <TableCell>
                       {workOrders.find(wo => wo.id === log.workOrderId)?.orderNumber || log.workOrderId}
                     </TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {log.workDescription}
+                    <TableCell>
+                      {log.subJobs.length} รายการ
                     </TableCell>
                     <TableCell className="text-right">
-                      {log.quantityCompleted || 0}
+                      {log.totalQuantity}
                     </TableCell>
                     <TableCell>
                       <Badge variant={
@@ -765,9 +797,14 @@ export default function DailyWorkLog() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button variant="ghost" size="sm" onClick={() => handleEdit(log)}>
-                        <Edit2 className="h-3 w-3" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => handlePreview(log)} title="ดูรายละเอียด">
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(log)} title="แก้ไข">
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -776,6 +813,79 @@ export default function DailyWorkLog() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewingLog} onOpenChange={() => setPreviewingLog(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>รายละเอียดการบันทึกงาน</DialogTitle>
+          </DialogHeader>
+          {previewingLog && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">วันที่บันทึก</Label>
+                  <p className="font-medium">{format(new Date(previewingLog.createdAt), 'dd/MM/yyyy HH:mm')}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ทีม</Label>
+                  <p className="font-medium">{teams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ใบสั่งงาน</Label>
+                  <p className="font-medium">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.orderNumber || previewingLog.workOrderId}</p>
+                </div>
+              </div>
+              
+              <div>
+                <Label className="text-lg font-medium mb-2 block">รายการงานที่ทำ</Label>
+                <Table>
+                  <TableHeader>
+                    <TableRow style={{ fontSize: '12px' }}>
+                      <TableHead>ชื่อสินค้า</TableHead>
+                      <TableHead>สี</TableHead>
+                      <TableHead>ไซส์</TableHead>
+                      <TableHead className="text-right">จำนวนที่ทำ</TableHead>
+                      <TableHead>รายละเอียดงาน</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {previewingLog.subJobs.map((subJobLog: any, index: number) => {
+                      const subJob = subJobs.find(sj => sj.id === subJobLog.subJobId);
+                      return (
+                        <TableRow key={index} style={{ fontSize: '12px' }}>
+                          <TableCell>{subJob?.productName || '-'}</TableCell>
+                          <TableCell>
+                            {subJob?.colorId 
+                              ? colors.find(c => c.id === subJob.colorId)?.name || '-'
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {subJob?.sizeId 
+                              ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="text-right">{subJobLog.quantityCompleted}</TableCell>
+                          <TableCell>{subJobLog.workDescription}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {previewingLog.notes && (
+                <div>
+                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">หมายเหตุ</Label>
+                  <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">{previewingLog.notes}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
