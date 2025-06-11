@@ -735,3 +735,42 @@ export type SubJob = typeof subJobs.$inferSelect & {
   jobName?: string;
 };
 export type InsertSubJob = z.infer<typeof insertSubJobSchema>;
+
+// Production Plans table
+export const productionPlans = pgTable("production_plans", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  teamId: uuid("team_id").references(() => teams.id),
+  name: text("name").notNull(),
+  startDate: date("start_date").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  status: text("status").notNull().default("active") // active, completed, cancelled
+});
+
+// Production Plan Items table  
+export const productionPlanItems = pgTable("production_plan_items", {
+  id: serial("id").primaryKey(),
+  planId: uuid("plan_id").references(() => productionPlans.id),
+  subJobId: integer("sub_job_id").references(() => subJobs.id),
+  orderNumber: text("order_number").notNull(),
+  customerName: text("customer_name").notNull(),
+  productName: text("product_name").notNull(),
+  colorName: text("color_name").notNull(),
+  sizeName: text("size_name").notNull(),
+  quantity: integer("quantity").notNull(),
+  completionDate: date("completion_date").notNull(),
+  jobCost: decimal("job_cost", { precision: 10, scale: 2 }).notNull(),
+  priority: integer("priority").notNull().default(1),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Schema for production plans
+export const insertProductionPlanSchema = createInsertSchema(productionPlans);
+export const insertProductionPlanItemSchema = createInsertSchema(productionPlanItems);
+
+export type ProductionPlan = typeof productionPlans.$inferSelect;
+export type InsertProductionPlan = z.infer<typeof insertProductionPlanSchema>;
+
+export type ProductionPlanItem = typeof productionPlanItems.$inferSelect;
+export type InsertProductionPlanItem = z.infer<typeof insertProductionPlanItemSchema>;

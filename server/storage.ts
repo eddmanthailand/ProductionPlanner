@@ -21,6 +21,8 @@ import {
   workOrders,
   workOrderItems,
   subJobs,
+  productionPlans,
+  productionPlanItems,
   type User,
   type InsertUser,
   type Tenant,
@@ -210,6 +212,20 @@ export interface IStorage {
   createWorkOrderItem(item: InsertWorkOrderItem): Promise<WorkOrderItem>;
   updateWorkOrderItem(id: number, item: Partial<InsertWorkOrderItem>): Promise<WorkOrderItem | undefined>;
   deleteWorkOrderItem(id: number): Promise<boolean>;
+
+  // Production Plans
+  getProductionPlans(tenantId: string): Promise<ProductionPlan[]>;
+  getProductionPlansByTeam(teamId: string, tenantId: string): Promise<ProductionPlan[]>;
+  getProductionPlan(id: string, tenantId: string): Promise<ProductionPlan | undefined>;
+  createProductionPlan(plan: InsertProductionPlan): Promise<ProductionPlan>;
+  updateProductionPlan(id: string, plan: Partial<InsertProductionPlan>, tenantId: string): Promise<ProductionPlan | undefined>;
+  deleteProductionPlan(id: string, tenantId: string): Promise<boolean>;
+
+  // Production Plan Items
+  getProductionPlanItems(planId: string): Promise<ProductionPlanItem[]>;
+  createProductionPlanItem(item: InsertProductionPlanItem): Promise<ProductionPlanItem>;
+  updateProductionPlanItem(id: number, item: Partial<InsertProductionPlanItem>): Promise<ProductionPlanItem | undefined>;
+  deleteProductionPlanItem(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1163,6 +1179,145 @@ export class DatabaseStorage implements IStorage {
       .delete(workOrderItems)
       .where(eq(workOrderItems.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  // Production Plans methods
+  async getProductionPlans(tenantId: string): Promise<ProductionPlan[]> {
+    try {
+      const plans = await db
+        .select()
+        .from(productionPlans)
+        .where(eq(productionPlans.tenantId, tenantId))
+        .orderBy(desc(productionPlans.createdAt));
+      return plans;
+    } catch (error) {
+      console.error('Get production plans error:', error);
+      return [];
+    }
+  }
+
+  async getProductionPlansByTeam(teamId: string, tenantId: string): Promise<ProductionPlan[]> {
+    try {
+      const plans = await db
+        .select()
+        .from(productionPlans)
+        .where(and(
+          eq(productionPlans.teamId, teamId),
+          eq(productionPlans.tenantId, tenantId)
+        ))
+        .orderBy(desc(productionPlans.createdAt));
+      return plans;
+    } catch (error) {
+      console.error('Get production plans by team error:', error);
+      return [];
+    }
+  }
+
+  async getProductionPlan(id: string, tenantId: string): Promise<ProductionPlan | undefined> {
+    try {
+      const [plan] = await db
+        .select()
+        .from(productionPlans)
+        .where(and(
+          eq(productionPlans.id, id),
+          eq(productionPlans.tenantId, tenantId)
+        ));
+      return plan || undefined;
+    } catch (error) {
+      console.error('Get production plan error:', error);
+      return undefined;
+    }
+  }
+
+  async createProductionPlan(insertPlan: InsertProductionPlan): Promise<ProductionPlan> {
+    const [plan] = await db
+      .insert(productionPlans)
+      .values(insertPlan)
+      .returning();
+    return plan;
+  }
+
+  async updateProductionPlan(id: string, updateData: Partial<InsertProductionPlan>, tenantId: string): Promise<ProductionPlan | undefined> {
+    try {
+      const [updated] = await db
+        .update(productionPlans)
+        .set({ ...updateData, updatedAt: new Date() })
+        .where(and(
+          eq(productionPlans.id, id),
+          eq(productionPlans.tenantId, tenantId)
+        ))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Update production plan error:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProductionPlan(id: string, tenantId: string): Promise<boolean> {
+    try {
+      const [deleted] = await db
+        .delete(productionPlans)
+        .where(and(
+          eq(productionPlans.id, id),
+          eq(productionPlans.tenantId, tenantId)
+        ))
+        .returning();
+      return !!deleted;
+    } catch (error) {
+      console.error('Delete production plan error:', error);
+      return false;
+    }
+  }
+
+  // Production Plan Items methods
+  async getProductionPlanItems(planId: string): Promise<ProductionPlanItem[]> {
+    try {
+      const items = await db
+        .select()
+        .from(productionPlanItems)
+        .where(eq(productionPlanItems.planId, planId))
+        .orderBy(productionPlanItems.priority);
+      return items;
+    } catch (error) {
+      console.error('Get production plan items error:', error);
+      return [];
+    }
+  }
+
+  async createProductionPlanItem(insertItem: InsertProductionPlanItem): Promise<ProductionPlanItem> {
+    const [item] = await db
+      .insert(productionPlanItems)
+      .values(insertItem)
+      .returning();
+    return item;
+  }
+
+  async updateProductionPlanItem(id: number, updateData: Partial<InsertProductionPlanItem>): Promise<ProductionPlanItem | undefined> {
+    try {
+      const [updated] = await db
+        .update(productionPlanItems)
+        .set(updateData)
+        .where(eq(productionPlanItems.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Update production plan item error:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProductionPlanItem(id: number): Promise<boolean> {
+    try {
+      const [deleted] = await db
+        .delete(productionPlanItems)
+        .where(eq(productionPlanItems.id, id))
+        .returning();
+      return !!deleted;
+    } catch (error) {
+      console.error('Delete production plan item error:', error);
+      return false;
+    }
   }
 }
 
