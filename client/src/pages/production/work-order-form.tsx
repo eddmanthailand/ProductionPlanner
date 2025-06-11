@@ -489,7 +489,10 @@ export default function WorkOrderForm() {
   };
 
   const calculateGrandTotal = () => {
-    return subJobs.reduce((total, subJob) => total + subJob.totalCost, 0);
+    return subJobs.reduce((total, subJob) => {
+      const totalCost = typeof subJob.totalCost === 'string' ? parseFloat(subJob.totalCost) || 0 : subJob.totalCost || 0;
+      return total + totalCost;
+    }, 0);
   };
 
   const handleSubmit = () => {
