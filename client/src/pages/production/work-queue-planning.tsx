@@ -227,7 +227,7 @@ export default function WorkQueuePlanning() {
     if (source.droppableId === "available-jobs" && destination.droppableId === "team-queue") {
       if (!selectedTeam) return;
       
-      const jobToMove = availableJobs[source.index];
+      const jobToMove = filteredAvailableJobs[source.index];
       await addToQueueMutation.mutateAsync({
         subJobId: jobToMove.id,
         teamId: selectedTeam,
