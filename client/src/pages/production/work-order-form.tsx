@@ -233,6 +233,9 @@ export default function WorkOrderForm() {
       });
     },
     onSuccess: () => {
+      if (workOrderId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
+      }
       toast({
         title: "สำเร็จ",
         description: "เรียงลำดับ Sub-jobs แล้ว",
@@ -335,19 +338,23 @@ export default function WorkOrderForm() {
         }
       }
 
-      // Load sub-jobs data
+      // Load sub-jobs data and sort by sort_order
       if (workOrder.sub_jobs && workOrder.sub_jobs.length > 0) {
-        setSubJobs(workOrder.sub_jobs.map((sj: any) => ({
-          id: sj.id,
-          productName: sj.product_name || sj.productName || "",
-          departmentId: sj.department_id || sj.departmentId || "",
-          workStepId: sj.work_step_id || sj.workStepId || "",
-          colorId: sj.color_id?.toString() || sj.colorId?.toString() || "",
-          sizeId: sj.size_id?.toString() || sj.sizeId?.toString() || "",
-          quantity: sj.quantity || 1,
-          productionCost: sj.production_cost || sj.productionCost || 0,
-          totalCost: sj.total_cost || sj.totalCost || 0
-        })));
+        const sortedSubJobs = workOrder.sub_jobs
+          .map((sj: any) => ({
+            id: sj.id,
+            productName: sj.product_name || sj.productName || "",
+            departmentId: sj.department_id || sj.departmentId || "",
+            workStepId: sj.work_step_id || sj.workStepId || "",
+            colorId: sj.color_id?.toString() || sj.colorId?.toString() || "",
+            sizeId: sj.size_id?.toString() || sj.sizeId?.toString() || "",
+            quantity: sj.quantity || 1,
+            productionCost: sj.production_cost || sj.productionCost || 0,
+            totalCost: sj.total_cost || sj.totalCost || 0,
+            sortOrder: sj.sort_order || sj.sortOrder || 0
+          }))
+          .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
+        setSubJobs(sortedSubJobs);
       } else {
         // If no sub-jobs, ensure we have at least one empty sub-job for the form
         setSubJobs([{
@@ -501,7 +508,10 @@ export default function WorkOrderForm() {
       quotationId: formData.quotationId ? parseInt(formData.quotationId) : null,
       workTypeId: formData.workTypeId ? parseInt(formData.workTypeId) : null,
       totalAmount: calculateGrandTotal(),
-      items: subJobs
+      items: subJobs.map((subJob, index) => ({
+        ...subJob,
+        sortOrder: index + 1
+      }))
     };
 
     createWorkOrderMutation.mutate(orderData);
