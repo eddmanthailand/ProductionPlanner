@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FileText, Calendar, Users, Trash2, Eye, RefreshCw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -44,6 +44,7 @@ interface Team {
 
 export default function ProductionReports() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<ProductionPlan | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -78,14 +79,17 @@ export default function ProductionReports() {
     return team ? team.name : 'ไม่ทราบทีม';
   };
 
-  const handleDeletePlan = async (planId: string) => {
-    try {
-      await apiRequest(`/api/production-plans/${planId}`, 'DELETE');
+  // Delete plan mutation
+  const deletePlanMutation = useMutation({
+    mutationFn: (planId: string) => apiRequest(`/api/production-plans/${planId}`, 'DELETE'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/production-plans"] });
       toast({
         title: "ลบแผนการผลิตสำเร็จ",
         description: "แผนการผลิตถูกลบออกจากระบบแล้ว",
       });
-    } catch (error) {
+    },
+    onError: (error: any) => {
       console.error('Delete plan error:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -93,6 +97,10 @@ export default function ProductionReports() {
         variant: "destructive"
       });
     }
+  });
+
+  const handleDeletePlan = async (planId: string) => {
+    await deletePlanMutation.mutateAsync(planId);
   };
 
   const handleViewPlan = (plan: ProductionPlan) => {
