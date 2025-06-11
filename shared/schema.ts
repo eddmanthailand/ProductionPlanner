@@ -310,6 +310,7 @@ export const teams = pgTable("teams", {
   departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
   leader: text("leader"),
+  costPerDay: decimal("cost_per_day", { precision: 10, scale: 2 }).notNull().default("0.00"), // ต้นทุนต่อวัน = กำลังการผลิต
   status: text("status").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
