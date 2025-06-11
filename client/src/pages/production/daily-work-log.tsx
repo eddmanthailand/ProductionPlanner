@@ -65,6 +65,8 @@ interface SubJob {
   quantity: number;
   status: string;
   totalCost: string;
+  colorId?: number;
+  sizeId?: number;
   colorName?: string;
   sizeName?: string;
   customerName?: string;
@@ -85,6 +87,19 @@ interface WorkStep {
   name: string;
   sequence: number;
   tenantId: string;
+}
+
+interface Color {
+  id: number;
+  name: string;
+  code: string;
+  description?: string;
+}
+
+interface Size {
+  id: number;
+  name: string;
+  description?: string;
 }
 
 export default function DailyWorkLog() {
@@ -135,6 +150,14 @@ export default function DailyWorkLog() {
 
   const { data: workOrders = [] } = useQuery<WorkOrder[]>({
     queryKey: ["/api/work-orders"],
+  });
+
+  const { data: colors = [] } = useQuery<Color[]>({
+    queryKey: ["/api/colors"],
+  });
+
+  const { data: sizes = [] } = useQuery<Size[]>({
+    queryKey: ["/api/sizes"],
   });
 
   const { data: subJobs = [] } = useQuery<SubJob[]>({
@@ -541,8 +564,18 @@ export default function DailyWorkLog() {
                           />
                         </TableCell>
                         <TableCell>{subJob.productName}</TableCell>
-                        <TableCell>{subJob.colorName || '-'}</TableCell>
-                        <TableCell>{subJob.sizeName || '-'}</TableCell>
+                        <TableCell>
+                          {subJob.colorId 
+                            ? colors.find(c => c.id === subJob.colorId)?.name || '-'
+                            : '-'
+                          }
+                        </TableCell>
+                        <TableCell>
+                          {subJob.sizeId 
+                            ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
+                            : '-'
+                          }
+                        </TableCell>
                         <TableCell className="text-right font-medium">
                           {subJob.quantity?.toLocaleString() || 0}
                         </TableCell>
