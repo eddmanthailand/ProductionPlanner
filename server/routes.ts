@@ -1017,11 +1017,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       console.log("API: Teams endpoint called");
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
+      const { departmentId } = req.query;
       
       console.log("API: Fetching teams from database...");
-      console.log(`Storage: Getting teams for tenant: ${tenantId}`);
+      console.log(`Storage: Getting teams for tenant: ${tenantId}, departmentId: ${departmentId || 'all'}`);
       
-      const teams = await storage.getTeams(tenantId);
+      let teams;
+      if (departmentId) {
+        teams = await storage.getTeamsByDepartment(departmentId as string, tenantId);
+      } else {
+        teams = await storage.getTeams(tenantId);
+      }
+      
       console.log(`Storage: Found teams: ${teams.length}`);
       console.log("API: Sending response with teams");
       res.json(teams);
