@@ -193,6 +193,8 @@ export default function WorkOrderForm() {
   const { data: existingWorkOrder, isLoading: loadingWorkOrder } = useQuery({
     queryKey: [`/api/work-orders/${workOrderId}`],
     enabled: isEditMode && !!workOrderId,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true, // Refetch when component mounts
   });
 
   // Mutation for creating and updating work orders
@@ -208,6 +210,8 @@ export default function WorkOrderForm() {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
       if (isEditMode && workOrderId) {
         queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
+        // Force refetch data immediately
+        queryClient.refetchQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
       }
       toast({
         title: "สำเร็จ",
