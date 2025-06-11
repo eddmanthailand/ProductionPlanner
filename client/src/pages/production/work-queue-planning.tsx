@@ -326,10 +326,41 @@ export default function WorkQueuePlanning() {
       
       setCalculatedPlan(jobCompletions);
       
-      toast({
-        title: "คำนวณแผนเสร็จสิ้น",
-        description: `แผนการผลิตสำหรับ ${teamQueue.length} งาน`,
-      });
+      // Save production plan to database
+      try {
+        const teamName = teams.find(t => t.id === selectedTeam)?.name || 'Unknown Team';
+        const planName = `แผนการผลิต ${teamName} - ${format(new Date(), "dd/MM/yyyy HH:mm")}`;
+        
+        await apiRequest('/api/production-plans', 'POST', {
+          teamId: selectedTeam,
+          name: planName,
+          startDate: teamStartDate,
+          planItems: jobCompletions.map((job, index) => ({
+            subJobId: job.jobId,
+            orderNumber: job.orderNumber,
+            customerName: job.customerName,
+            productName: job.productName,
+            colorName: job.colorName,
+            sizeName: job.sizeName,
+            quantity: job.quantity,
+            completionDate: job.completionDate.split('/').reverse().join('-'), // Convert to YYYY-MM-DD
+            jobCost: job.jobCost,
+            priority: index + 1
+          }))
+        });
+        
+        toast({
+          title: "บันทึกแผนการผลิตสำเร็จ",
+          description: `แผนการผลิตสำหรับ ${teamQueue.length} งานถูกบันทึกแล้ว`,
+        });
+      } catch (error) {
+        console.error('Save production plan error:', error);
+        toast({
+          title: "คำนวณแผนเสร็จสิ้น",
+          description: `แผนการผลิตสำหรับ ${teamQueue.length} งาน (ไม่สามารถบันทึกได้)`,
+          variant: "destructive"
+        });
+      }
       
     } catch (error) {
       console.error('Calculate plan error:', error);

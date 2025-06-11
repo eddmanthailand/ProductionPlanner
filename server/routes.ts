@@ -2135,3 +2135,105 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
   return checkDigit;
 }
 
+  // Production Plans routes
+  app.get('/api/production-plans', authenticateToken, async (req: any, res) => {
+    try {
+      const plans = await storage.getProductionPlans(req.user.tenantId);
+      res.json(plans);
+    } catch (error) {
+      console.error('Get production plans error:', error);
+      res.status(500).json({ message: 'Failed to get production plans' });
+    }
+  });
+
+  app.get('/api/production-plans/team/:teamId', authenticateToken, async (req: any, res) => {
+    try {
+      const { teamId } = req.params;
+      const plans = await storage.getProductionPlansByTeam(teamId, req.user.tenantId);
+      res.json(plans);
+    } catch (error) {
+      console.error('Get production plans by team error:', error);
+      res.status(500).json({ message: 'Failed to get production plans by team' });
+    }
+  });
+
+  app.get('/api/production-plans/:id', authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const plan = await storage.getProductionPlan(id, req.user.tenantId);
+      if (!plan) {
+        return res.status(404).json({ message: 'Production plan not found' });
+      }
+      res.json(plan);
+    } catch (error) {
+      console.error('Get production plan error:', error);
+      res.status(500).json({ message: 'Failed to get production plan' });
+    }
+  });
+
+  app.post('/api/production-plans', authenticateToken, async (req: any, res) => {
+    try {
+      const { teamId, name, startDate, planItems } = req.body;
+      
+      // Create production plan
+      const plan = await storage.createProductionPlan({
+        teamId,
+        name,
+        startDate,
+        tenantId: req.user.tenantId,
+        status: 'active'
+      });
+
+      // Create plan items
+      if (planItems && planItems.length > 0) {
+        for (const item of planItems) {
+          await storage.createProductionPlanItem({
+            planId: plan.id,
+            subJobId: item.subJobId,
+            orderNumber: item.orderNumber,
+            customerName: item.customerName,
+            productName: item.productName,
+            colorName: item.colorName,
+            sizeName: item.sizeName,
+            quantity: item.quantity,
+            completionDate: item.completionDate,
+            jobCost: item.jobCost,
+            priority: item.priority
+          });
+        }
+      }
+
+      res.json({ success: true, plan });
+    } catch (error) {
+      console.error('Create production plan error:', error);
+      res.status(500).json({ message: 'Failed to create production plan' });
+    }
+  });
+
+  app.get('/api/production-plans/:id/items', authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const items = await storage.getProductionPlanItems(id);
+      res.json(items);
+    } catch (error) {
+      console.error('Get production plan items error:', error);
+      res.status(500).json({ message: 'Failed to get production plan items' });
+    }
+  });
+
+  app.delete('/api/production-plans/:id', authenticateToken, async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const success = await storage.deleteProductionPlan(id, req.user.tenantId);
+      if (!success) {
+        return res.status(404).json({ message: 'Production plan not found' });
+      }
+      res.json({ success: true });
+    } catch (error) {
+      console.error('Delete production plan error:', error);
+      res.status(500).json({ message: 'Failed to delete production plan' });
+    }
+  });
+
+  return httpServer;
+

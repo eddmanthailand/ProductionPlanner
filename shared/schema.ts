@@ -739,7 +739,7 @@ export type InsertSubJob = z.infer<typeof insertSubJobSchema>;
 // Production Plans table
 export const productionPlans = pgTable("production_plans", {
   id: uuid("id").primaryKey().defaultRandom(),
-  teamId: uuid("team_id").references(() => teams.id),
+  teamId: text("team_id").references(() => teams.id),
   name: text("name").notNull(),
   startDate: date("start_date").notNull(),
   createdAt: timestamp("created_at").defaultNow(),

@@ -66,7 +66,11 @@ import {
   type WorkOrderItem,
   type InsertWorkOrderItem,
   type SubJob,
-  type InsertSubJob
+  type InsertSubJob,
+  type ProductionPlan,
+  type InsertProductionPlan,
+  type ProductionPlanItem,
+  type InsertProductionPlanItem
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc } from "drizzle-orm";
