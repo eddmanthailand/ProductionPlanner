@@ -843,78 +843,116 @@ export default function WorkQueuePlanning() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {/* Calendar View for Planning */}
+                  {/* Table View for Planning */}
                   {selectedTeam && teamStartDate ? (
                     <div className="space-y-4">
-                      <div className="grid grid-cols-7 gap-1 text-xs font-semibold text-gray-700 mb-2">
-                        <div className="p-2 text-center">จันทร์</div>
-                        <div className="p-2 text-center">อังคาร</div>
-                        <div className="p-2 text-center">พุธ</div>
-                        <div className="p-2 text-center">พฤหัสบดี</div>
-                        <div className="p-2 text-center">ศุกร์</div>
-                        <div className="p-2 text-center">เสาร์</div>
-                        <div className="p-2 text-center">อาทิตย์</div>
-                      </div>
-                      
-                      <div className="grid grid-cols-7 gap-1">
-                        {/* Generate calendar days for 4 weeks */}
-                        {Array.from({ length: 28 }, (_, i) => {
-                          const date = new Date(teamStartDate);
-                          date.setDate(date.getDate() + i);
-                          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                          
-                          return (
-                            <Droppable key={`date-${i}`} droppableId={`calendar-${date.toISOString().split('T')[0]}`}>
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className={`
-                                    min-h-[120px] p-2 border rounded-lg
-                                    ${isWeekend ? 'bg-gray-100' : 'bg-white'}
-                                    ${snapshot.isDraggingOver ? 'bg-blue-50 border-blue-300' : 'border-gray-200'}
-                                  `}
-                                >
-                                  <div className="text-xs font-medium text-gray-600 mb-1">
-                                    {date.getDate()}/{date.getMonth() + 1}
-                                  </div>
+                      {/* Production Schedule Table */}
+                      {calculatedPlan.length > 0 ? (
+                        <div className="border rounded-lg overflow-hidden">
+                          <table className="w-full">
+                            <thead className="bg-gray-50">
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  หมายเลขงาน
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  ชื่อสินค้า
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  สี / ไซส์
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  จำนวน
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  ต้นทุน
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  วันที่เริ่ม
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  วันที่เสร็จ
+                                </th>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  สถานะ
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody className="bg-white divide-y divide-gray-200">
+                              {calculatedPlan.map((dayPlan, dayIndex) => 
+                                dayPlan.jobs.map((job: any, jobIndex: number) => {
+                                  // Calculate completion date for this sub job
+                                  let completionDate = new Date(dayPlan.date);
                                   
-                                  {/* Jobs scheduled for this date */}
-                                  <div className="space-y-1">
-                                    {getJobsForDate(date).length > 0 && (
-                                      <div className="relative w-full h-6 bg-gray-200 rounded">
-                                        {getJobsForDate(date).map((scheduledJob: any, jobIdx: number) => (
-                                          <div
-                                            key={`${scheduledJob.id}-${jobIdx}`}
-                                            className={`absolute h-full rounded ${getJobColor(scheduledJob.jobIndex)} opacity-80`}
-                                            style={{
-                                              left: `${scheduledJob.leftOffset}%`,
-                                              width: `${scheduledJob.width}%`
-                                            }}
-                                            title={`${scheduledJob.orderNumber} • ${scheduledJob.productName} • ${getColorName(scheduledJob.colorId)} • ${getSizeName(scheduledJob.sizeId)} • ${scheduledJob.processedQuantity} ชิ้น • ${scheduledJob.processedCost?.toLocaleString()} บาท`}
-                                          >
-                                            <div className="text-xs text-white p-1 truncate">
-                                              {scheduledJob.processedQuantity}
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                    {getJobsForDate(date).length > 0 && (
-                                      <div className="text-xs text-gray-500">
-                                        {getJobsForDate(date).reduce((sum: number, job: any) => sum + job.processedQuantity, 0)} ชิ้น •{" "}
-                                        {getJobsForDate(date).reduce((sum: number, job: any) => sum + (job.processedCost || 0), 0).toLocaleString()} บาท
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {provided.placeholder}
-                                </div>
+                                  // If job spans multiple days, find the last day
+                                  for (let i = dayIndex + 1; i < calculatedPlan.length; i++) {
+                                    const futureDay = calculatedPlan[i];
+                                    const hasMoreOfThisJob = futureDay.jobs.some((futureJob: any) => 
+                                      futureJob.id === job.id && 
+                                      futureJob.colorId === job.colorId && 
+                                      futureJob.sizeId === job.sizeId
+                                    );
+                                    if (hasMoreOfThisJob) {
+                                      completionDate = new Date(futureDay.date);
+                                    } else {
+                                      break;
+                                    }
+                                  }
+
+                                  return (
+                                    <tr key={`${job.id}-${dayIndex}-${jobIndex}`} className="hover:bg-gray-50">
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        {job.orderNumber}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {job.productName}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        <div className="flex items-center gap-2">
+                                          <Badge variant="outline" className="text-xs">
+                                            {getColorName(job.colorId)}
+                                          </Badge>
+                                          <Badge variant="outline" className="text-xs">
+                                            {getSizeName(job.sizeId)}
+                                          </Badge>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {job.processedQuantity} ชิ้น
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {job.processedCost?.toLocaleString()} บาท
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {dayPlan.date.toLocaleDateString('th-TH')}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
+                                        {completionDate.toLocaleDateString('th-TH')}
+                                      </td>
+                                      <td className="px-4 py-3 whitespace-nowrap">
+                                        <Badge 
+                                          variant="outline" 
+                                          className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                        >
+                                          วางแผนแล้ว
+                                        </Badge>
+                                      </td>
+                                    </tr>
+                                  );
+                                })
                               )}
-                            </Droppable>
-                          );
-                        })}
-                      </div>
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="min-h-[400px] flex items-center justify-center border rounded-lg bg-gray-50">
+                          <div className="text-center text-gray-400">
+                            <Calculator className="h-16 w-16 mx-auto mb-4" />
+                            <p className="text-lg">กดปุ่ม "คำนวณแผน" เพื่อสร้างตารางการผลิต</p>
+                            <p className="text-sm">ระบบจะแสดงรายละเอียด sub job และวันที่เสร็จสิ้น</p>
+                          </div>
+                        </div>
+                      )}
                       
                       {/* Daily Plan Summary */}
                       {calculatedPlan.length > 0 && (
