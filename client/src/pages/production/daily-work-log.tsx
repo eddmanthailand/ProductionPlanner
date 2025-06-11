@@ -12,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -851,6 +851,9 @@ export default function DailyWorkLog() {
         <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle>รายละเอียดการบันทึกงาน</DialogTitle>
+            <DialogDescription>
+              แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด
+            </DialogDescription>
           </DialogHeader>
           {previewingLog && (
             <div className="space-y-4">
