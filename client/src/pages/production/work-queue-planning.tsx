@@ -307,7 +307,7 @@ export default function WorkQueuePlanning() {
       let remainingCapacity = dailyCapacity;
       
       for (const job of currentTeamQueue) {
-        const jobCost = job.totalCost || (job.quantity * 350); // Use total cost from job or fallback calculation
+        const jobCost = job.totalCost ? parseFloat(job.totalCost) : (job.quantity * 350); // Convert string to number or use fallback calculation
         
         // If job cost exceeds remaining capacity for the day, move to next working day
         if (jobCost > remainingCapacity) {
