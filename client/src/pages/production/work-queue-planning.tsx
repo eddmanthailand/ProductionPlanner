@@ -418,20 +418,20 @@ export default function WorkQueuePlanning() {
     }
 
     try {
-      // Get team production capacity (กำลังการผลิต = ต้นทุนต่อวัน)
-      const capacity = productionCapacities.find(pc => pc.teamId === selectedTeam);
+      // Get team cost per day (ต้นทุนต่อวัน = กำลังการผลิต)
+      const team = teams.find(t => t.id === selectedTeam);
       
-      if (!capacity) {
+      if (!team) {
         toast({
-          title: "ไม่พบข้อมูลกำลังการผลิต",
-          description: "กรุณาตั้งค่ากำลังการผลิตของทีมก่อน",
+          title: "ไม่พบข้อมูลทีม",
+          description: "กรุณาเลือกทีมที่ถูกต้อง",
           variant: "destructive"
         });
         return;
       }
 
-      // Daily capacity with efficiency - use correct property names from database
-      const dailyCapacity = Math.floor((capacity as any).capacity_per_day * ((capacity as any).efficiency / 100));
+      // Daily capacity = team cost per day
+      const dailyCapacity = Math.floor(parseFloat(team.costPerDay || "0"));
       
       // Calculate job schedule
       const schedule: any[] = [];
