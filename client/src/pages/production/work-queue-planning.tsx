@@ -566,14 +566,35 @@ export default function WorkQueuePlanning() {
                   </DialogHeader>
                   
                   <div className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <Search className="h-4 w-4 text-gray-400" />
-                      <Input
-                        placeholder="ค้นหาเลขที่ใบสั่ง ลูกค้า หรือสินค้า..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="flex-1"
-                      />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Search className="h-4 w-4 text-gray-400" />
+                        <Input
+                          placeholder="ค้นหาเลขที่ใบสั่ง ลูกค้า หรือสินค้า..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="flex-1"
+                        />
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedJobs(filteredAvailableJobs.map(job => job.id))}
+                          disabled={filteredAvailableJobs.length === 0}
+                        >
+                          เลือกทั้งหมด ({filteredAvailableJobs.length})
+                        </Button>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setSelectedJobs([])}
+                          disabled={selectedJobs.length === 0}
+                        >
+                          ยกเลิกทั้งหมด
+                        </Button>
+                      </div>
                     </div>
 
                     <div className="border rounded-lg max-h-96 overflow-y-auto">
