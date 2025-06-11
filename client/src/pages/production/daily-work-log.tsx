@@ -260,12 +260,20 @@ export default function DailyWorkLog() {
       return;
     }
 
-    // Get team leader as the employee automatically
+    // Get team data and find first employee in the team
     const selectedTeamData = teams.find(t => t.id === selectedTeam);
-    if (!selectedTeamData?.leader) {
-      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลหัวหน้าทีม", variant: "destructive" });
+    if (!selectedTeamData) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลทีม", variant: "destructive" });
       return;
     }
+
+    // Use the first employee in the team as the recorder
+    const teamEmployees = await fetch(`/api/employees/by-team/${selectedTeam}`).then(res => res.json());
+    if (!teamEmployees || teamEmployees.length === 0) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่พบพนักงานในทีม", variant: "destructive" });
+      return;
+    }
+    const employeeId = teamEmployees[0].id;
 
     try {
       // Create log entries for selected sub jobs
@@ -275,7 +283,7 @@ export default function DailyWorkLog() {
         const logData = {
           date: selectedDate,
           teamId: selectedTeam,
-          employeeId: selectedTeamData.leader, // Use team leader automatically
+          employeeId: employeeId, // Use first employee in team
           workOrderId: selectedWorkOrder,
           subJobId: parseInt(subJobId),
           hoursWorked: 8, // Default 8 hours - auto calculated
@@ -294,7 +302,7 @@ export default function DailyWorkLog() {
 
       await Promise.all(logPromises);
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
-      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ผู้บันทึก: ${selectedTeamData.leader})` });
+      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ทีม: ${selectedTeamData.name})` });
       resetForm();
     } catch (error) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
@@ -609,13 +617,13 @@ export default function DailyWorkLog() {
                   <div className="h-11 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800 flex items-center">
                     <UserCheck className="h-4 w-4 mr-2 text-green-600" />
                     <span className="text-sm font-medium">
-                      {selectedTeam && teams.find(t => t.id === selectedTeam)?.leader 
-                        ? `${teams.find(t => t.id === selectedTeam)?.leader} (หัวหน้าทีม)` 
+                      {selectedTeam && teams.find(t => t.id === selectedTeam)?.name 
+                        ? `ทีม ${teams.find(t => t.id === selectedTeam)?.name}` 
                         : 'กรุณาเลือกทีมก่อน'
                       }
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">ระบบจะใช้ชื่อหัวหน้าทีมเป็นผู้บันทึกอัตโนมัติ</p>
+                  <p className="text-xs text-gray-500">ระบบจะใช้สมาชิกในทีมเป็นผู้บันทึกอัตโนมัติ</p>
                 </div>
 
                 <div className="space-y-2">
