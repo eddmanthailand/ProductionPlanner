@@ -470,7 +470,11 @@ export default function DailyWorkLog() {
                 </Badge>
               )}
             </CardTitle>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ชื่อลูกค้า</Label>
+                <p className="font-medium text-lg">{selectedWorkOrderDetails.customerName}</p>
+              </div>
               <div>
                 <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">รหัสใบสั่งงาน</Label>
                 <p className="font-medium text-lg">{selectedWorkOrderDetails.orderNumber}</p>
@@ -503,13 +507,10 @@ export default function DailyWorkLog() {
                   <TableHeader>
                     <TableRow style={{ fontSize: '12px' }}>
                       <TableHead className="w-16">เลือก</TableHead>
-                      <TableHead>ลูกค้า</TableHead>
                       <TableHead>ชื่อสินค้า</TableHead>
                       <TableHead>สี</TableHead>
                       <TableHead>ไซส์</TableHead>
                       <TableHead className="text-right">จำนวนสั่ง</TableHead>
-                      <TableHead className="text-right">ราคาต่อหน่วย</TableHead>
-                      <TableHead className="text-right">ราคารวม</TableHead>
                       <TableHead className="text-right">ทำแล้ว</TableHead>
                       <TableHead className="text-right">คงเหลือ</TableHead>
                       <TableHead>สถานะ</TableHead>
@@ -531,20 +532,11 @@ export default function DailyWorkLog() {
                             onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
                           />
                         </TableCell>
-                        <TableCell className="font-medium">
-                          {subJob.customerName || selectedWorkOrderDetails.customerName}
-                        </TableCell>
                         <TableCell>{subJob.productName}</TableCell>
                         <TableCell>{subJob.colorName || '-'}</TableCell>
                         <TableCell>{subJob.sizeName || '-'}</TableCell>
                         <TableCell className="text-right font-medium">
                           {subJob.quantity?.toLocaleString() || 0}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          ฿{subJob.unitPrice?.toLocaleString() || 0}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          ฿{parseFloat(subJob.totalCost || '0').toLocaleString()}
                         </TableCell>
                         <TableCell className="text-right">
                           {subJob.completedQuantity?.toLocaleString() || 0}
