@@ -916,6 +916,73 @@ export default function WorkQueuePlanning() {
                         })}
                       </div>
                       
+                      {/* Daily Plan Summary */}
+                      {calculatedPlan.length > 0 && (
+                        <div className="mt-6">
+                          <h4 className="font-medium text-gray-900 mb-4">แผนการผลิตรายวัน</h4>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {calculatedPlan.map((dayPlan, dayIndex) => (
+                              <div key={dayPlan.dateKey} className="border rounded-lg p-4 bg-white shadow-sm">
+                                <div className="mb-3">
+                                  <h5 className="font-medium text-lg">
+                                    {dayPlan.date.toLocaleDateString('th-TH', { 
+                                      weekday: 'short', 
+                                      year: 'numeric', 
+                                      month: 'short', 
+                                      day: 'numeric' 
+                                    })}
+                                  </h5>
+                                  <div className="text-sm text-gray-500">
+                                    ต้นทุนต่อวัน: {dayPlan.dailyCapacity.toLocaleString()} บาท
+                                  </div>
+                                </div>
+                                
+                                {/* Progress bar showing daily capacity usage */}
+                                <div className="mb-3">
+                                  <div className="w-full bg-gray-200 rounded-full h-4 relative">
+                                    {dayPlan.jobs.map((job: any, jobIndex: number) => (
+                                      <div
+                                        key={`${job.id}-${jobIndex}`}
+                                        className={`absolute h-full rounded ${getJobColor(job.jobIndex)} opacity-80`}
+                                        style={{
+                                          left: `${job.leftOffset}%`,
+                                          width: `${job.width}%`
+                                        }}
+                                        title={`${job.orderNumber} • ${job.productName} • ${getColorName(job.colorId)} • ${getSizeName(job.sizeId)} • ${job.processedQuantity} ชิ้น • ${job.processedCost?.toLocaleString()} บาท`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    รวม: {dayPlan.jobs.reduce((sum: number, job: any) => sum + job.processedQuantity, 0)} ชิ้น •{" "}
+                                    {dayPlan.jobs.reduce((sum: number, job: any) => sum + (job.processedCost || 0), 0).toLocaleString()} บาท
+                                  </div>
+                                </div>
+
+                                {/* Job details */}
+                                <div className="space-y-2">
+                                  {dayPlan.jobs.map((job: any, jobIndex: number) => (
+                                    <div
+                                      key={`${job.id}-${jobIndex}`}
+                                      className="text-xs p-2 border rounded bg-gray-50"
+                                    >
+                                      <div className="font-medium">
+                                        {job.orderNumber} • {job.productName}
+                                      </div>
+                                      <div className="text-gray-600">
+                                        {getColorName(job.colorId)} • {getSizeName(job.sizeId)} • {job.processedQuantity} ชิ้น
+                                      </div>
+                                      <div className="text-gray-500">
+                                        {job.processedCost?.toLocaleString()} บาท ({job.width.toFixed(1)}%)
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Summary section */}
                       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                         <h4 className="font-medium text-gray-900 mb-2">สรุปการวางแผน</h4>
@@ -935,6 +1002,28 @@ export default function WorkQueuePlanning() {
                             </span>
                           </div>
                         </div>
+                        {calculatedPlan.length > 0 && (
+                          <div className="grid grid-cols-3 gap-4 text-sm mt-2">
+                            <div>
+                              <span className="text-gray-600">วันที่เสร็จ: </span>
+                              <span className="font-medium">
+                                {calculatedPlan[calculatedPlan.length - 1]?.date.toLocaleDateString('th-TH') || '-'}
+                              </span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">ใช้เวลา: </span>
+                              <span className="font-medium">{calculatedPlan.length} วันทำการ</span>
+                            </div>
+                            <div>
+                              <span className="text-gray-600">ต้นทุนรวม: </span>
+                              <span className="font-medium">
+                                {calculatedPlan.reduce((total, day) => 
+                                  total + day.jobs.reduce((sum: number, job: any) => sum + (job.processedCost || 0), 0), 0
+                                ).toLocaleString()} บาท
+                              </span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ) : (
