@@ -397,7 +397,7 @@ export default function WorkQueuePlanningV2() {
                               >
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="text-xs text-gray-900 line-clamp-1 flex-1">
-                                    {job.customerName} • {job.jobName || job.orderNumber} • {job.productName}
+                                    {job.customerName || "ไม่ระบุลูกค้า"} • {job.jobName || job.orderNumber} • {job.productName}
                                   </div>
                                   <Button
                                     variant="ghost"
@@ -410,7 +410,7 @@ export default function WorkQueuePlanningV2() {
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
                                   <div className="text-gray-600">
-                                    {formatDate(job.deliveryDate)}
+                                    {formatDate(job.deliveryDate || null)}
                                   </div>
                                   <div className="flex items-center gap-1">
                                     <Badge variant="outline" className="text-xs px-1 py-0">
@@ -510,18 +510,18 @@ export default function WorkQueuePlanningV2() {
                             onClick={() => toggleJobSelection(job.id)}
                           >
                             <div className="text-xs text-gray-900 mb-1 line-clamp-1">
-                              {job.customerName} • {job.jobName || job.orderNumber} • {job.productName}
+                              {job.customerName || "ไม่ระบุลูกค้า"} • {job.jobName || job.orderNumber} • {job.productName}
                             </div>
                             <div className="flex items-center justify-between text-xs">
                               <div className="text-gray-600">
-                                {formatDate(job.deliveryDate)}
+                                {formatDate(job.deliveryDate || null)}
                               </div>
                               <div className="flex items-center gap-1">
                                 <Badge variant="outline" className="text-xs px-1 py-0">
-                                  {getColorName(job.colorId)}
+                                  {getColorName(job.colorId || null)}
                                 </Badge>
                                 <Badge variant="outline" className="text-xs px-1 py-0">
-                                  {getSizeName(job.sizeId)}
+                                  {getSizeName(job.sizeId || null)}
                                 </Badge>
                                 <span className="font-medium text-green-700">
                                   {job.quantity} ตัว
