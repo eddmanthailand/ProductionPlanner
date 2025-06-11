@@ -463,11 +463,7 @@ export const insertProductSchema = createInsertSchema(products).omit({
   updatedAt: true
 });
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
-});
+
 
 export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({
   id: true,

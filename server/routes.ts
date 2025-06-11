@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertProductionOrderSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
@@ -176,55 +176,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Production Orders routes
-  app.get("/api/production-orders", async (req: any, res) => {
-    try {
-      const orders = await storage.getProductionOrders('550e8400-e29b-41d4-a716-446655440000');
-      res.json(orders);
-    } catch (error) {
-      res.status(500).json({ message: "Failed to fetch production orders" });
-    }
-  });
 
-  app.post("/api/production-orders", async (req: any, res) => {
-    try {
-      const validatedData = insertProductionOrderSchema.parse({
-        ...req.body,
-        tenantId: '550e8400-e29b-41d4-a716-446655440000',
-        orderNumber: `PO-${Date.now()}`
-      });
-      
-      const order = await storage.createProductionOrder(validatedData);
-      
-      // Log activity
-      await storage.createActivity({
-        type: "production_order_created",
-        description: `Production order ${order.orderNumber} was created`,
-        userId: 1,
-        tenantId: '550e8400-e29b-41d4-a716-446655440000'
-      });
-
-      res.status(201).json(order);
-    } catch (error) {
-      res.status(400).json({ message: "Failed to create production order", error });
-    }
-  });
-
-  app.put("/api/production-orders/:id", async (req: any, res) => {
-    try {
-      const orderId = parseInt(req.params.id);
-      const validatedData = insertProductionOrderSchema.partial().parse(req.body);
-      
-      const order = await storage.updateProductionOrder(orderId, validatedData, '550e8400-e29b-41d4-a716-446655440000');
-      if (!order) {
-        return res.status(404).json({ message: "Production order not found" });
-      }
-
-      res.json(order);
-    } catch (error) {
-      res.status(400).json({ message: "Failed to update production order", error });
-    }
-  });
 
   // Products and Services routes (replacing inventory)
   app.get("/api/inventory", async (req: any, res) => {

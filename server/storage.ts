@@ -284,30 +284,7 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount ?? 0) > 0;
   }
 
-  async getProductionOrders(tenantId: string): Promise<ProductionOrder[]> {
-    return await db.select().from(productionOrders)
-      .where(eq(productionOrders.tenantId, tenantId))
-      .orderBy(desc(productionOrders.createdAt));
-  }
 
-  async getProductionOrder(id: number, tenantId: string): Promise<ProductionOrder | undefined> {
-    const [order] = await db.select().from(productionOrders)
-      .where(and(eq(productionOrders.id, id), eq(productionOrders.tenantId, tenantId)));
-    return order || undefined;
-  }
-
-  async createProductionOrder(insertOrder: InsertProductionOrder): Promise<ProductionOrder> {
-    const [order] = await db.insert(productionOrders).values(insertOrder).returning();
-    return order;
-  }
-
-  async updateProductionOrder(id: number, updateData: Partial<InsertProductionOrder>, tenantId: string): Promise<ProductionOrder | undefined> {
-    const [order] = await db.update(productionOrders)
-      .set({ ...updateData, updatedAt: new Date() })
-      .where(and(eq(productionOrders.id, id), eq(productionOrders.tenantId, tenantId)))
-      .returning();
-    return order || undefined;
-  }
 
   async getStockMovements(tenantId: string): Promise<StockMovement[]> {
     return await db.select().from(stockMovements)
@@ -397,9 +374,8 @@ export class DatabaseStorage implements IStorage {
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
 
-    // Get production orders
-    const orders = await this.getProductionOrders(tenantId);
-    const pendingOrders = orders.filter(o => o.status === 'pending' || o.status === 'in_progress').length;
+    // Production orders removed - using work orders instead
+    const pendingOrders = 0;
 
     // Get products with stock tracking
     const allProducts = await this.getProducts(tenantId);
