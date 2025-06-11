@@ -1524,9 +1524,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [tenantId]
       );
       
+      // Transform snake_case to camelCase for frontend and fetch sub_jobs
+      const workOrders = await Promise.all(result.rows.map(async (row) => {
+        // Fetch sub-jobs for each work order
+        const subJobsResult = await pool.query(
+          `SELECT * FROM sub_jobs WHERE work_order_id = $1 ORDER BY sort_order ASC, created_at ASC`,
+          [row.id]
+        );
+        
+        return {
+          id: row.id,
+          orderNumber: row.order_number,
+          quotationId: row.quotation_id,
+          customerId: row.customer_id,
+          customerName: row.customer_name,
+          customerTaxId: row.customer_tax_id,
+          customerAddress: row.customer_address,
+          customerPhone: row.customer_phone,
+          customerEmail: row.customer_email,
+          title: row.title,
+          description: row.description,
+          totalAmount: row.total_amount,
+          status: row.status,
+          priority: row.priority,
+          workTypeId: row.work_type_id,
+          startDate: row.start_date,
+          deliveryDate: row.delivery_date,
+          dueDate: row.due_date,
+          completedDate: row.completed_date,
+          assignedTeamId: row.assigned_team_id,
+          notes: row.notes,
+          tenantId: row.tenant_id,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          sub_jobs: subJobsResult.rows
+        };
+      }));
+      
       console.log(`Storage: Found work orders: ${result.rows.length}`);
       console.log("API: Sending response with work orders");
-      res.json(result.rows);
+      res.json(workOrders);
     } catch (error) {
       console.error("Get work orders error:", error);
       res.status(500).json({ message: "Failed to fetch work orders" });
@@ -1547,7 +1584,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Work order not found" });
       }
       
-      const workOrder = result.rows[0];
+      const row = result.rows[0];
       
       // Fetch sub-jobs for this work order
       const subJobsResult = await pool.query(
@@ -1555,7 +1592,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [id]
       );
       
-      workOrder.sub_jobs = subJobsResult.rows;
+      // Transform to camelCase
+      const workOrder = {
+        id: row.id,
+        orderNumber: row.order_number,
+        quotationId: row.quotation_id,
+        customerId: row.customer_id,
+        customerName: row.customer_name,
+        customerTaxId: row.customer_tax_id,
+        customerAddress: row.customer_address,
+        customerPhone: row.customer_phone,
+        customerEmail: row.customer_email,
+        title: row.title,
+        description: row.description,
+        totalAmount: row.total_amount,
+        status: row.status,
+        priority: row.priority,
+        workTypeId: row.work_type_id,
+        startDate: row.start_date,
+        deliveryDate: row.delivery_date,
+        dueDate: row.due_date,
+        completedDate: row.completed_date,
+        assignedTeamId: row.assigned_team_id,
+        notes: row.notes,
+        tenantId: row.tenant_id,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+        sub_jobs: subJobsResult.rows
+      };
       
       res.json(workOrder);
     } catch (error) {
