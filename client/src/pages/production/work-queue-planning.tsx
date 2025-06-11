@@ -165,6 +165,7 @@ export default function WorkQueuePlanning() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
     }
   });
 
@@ -178,6 +179,7 @@ export default function WorkQueuePlanning() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
     }
   });
 
@@ -237,6 +239,14 @@ export default function WorkQueuePlanning() {
     try {
       await removeFromQueueMutation.mutateAsync(queueId);
       setTeamQueue(prev => prev.filter((_, i) => i !== index));
+      
+      // Refetch available jobs to show the returned job
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
+      
+      toast({
+        title: "งานถูกย้ายออกจากคิว",
+        description: "งานได้กลับไปยัง 'งานรอวางคิว' แล้ว",
+      });
     } catch (error) {
       console.error('Failed to remove job:', error);
       toast({
@@ -273,14 +283,14 @@ export default function WorkQueuePlanning() {
         </div>
 
         <DragDropContext onDragEnd={handleDragEnd}>
-          <div className="grid grid-cols-5 gap-6">
+          <div className="grid grid-cols-4 gap-6">
             {/* Left Panel - Available Jobs */}
             <div className="col-span-1">
               <Card>
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-2">
                     <CalendarDays className="h-5 w-5 text-blue-600" />
-                    <CardTitle className="text-lg">งานที่พร้อมดำเนินการ</CardTitle>
+                    <CardTitle className="text-lg">งานรอวางคิว</CardTitle>
                   </div>
                   <div className="mt-3">
                     <label className="text-sm font-medium text-gray-700 mb-2 block">เลือกขั้นตอนงาน</label>
@@ -349,28 +359,7 @@ export default function WorkQueuePlanning() {
               </Card>
             </div>
 
-            {/* Middle Area - Planning Space */}
-            <div className="col-span-3">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-center text-xl text-gray-600">
-                    พื้นที่วางแผน
-                  </CardTitle>
-                  <p className="text-center text-sm text-gray-500">
-                    ลากงานจากด้านซ้ายมายังทีมด้านขวา เพื่อจัดลำดับการผลิต
-                  </p>
-                </CardHeader>
-                <CardContent className="min-h-[600px] flex items-center justify-center">
-                  <div className="text-center text-gray-400">
-                    <Clock className="h-16 w-16 mx-auto mb-4" />
-                    <p className="text-lg">เลือกขั้นตอนงานและทีม</p>
-                    <p className="text-sm">เพื่อเริ่มวางแผนการผลิต</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Panel - Team Queue */}
+            {/* Second Panel - Team Queue */}
             <div className="col-span-1">
               <Card>
                 <CardHeader className="pb-3">
@@ -469,6 +458,27 @@ export default function WorkQueuePlanning() {
                       </div>
                     )}
                   </Droppable>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Panel - Planning Space */}
+            <div className="col-span-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-center text-xl text-gray-600">
+                    พื้นที่วางแผน
+                  </CardTitle>
+                  <p className="text-center text-sm text-gray-500">
+                    ลากงานจาก "งานรอวางคิว" ไปยัง "คิวของทีม" เพื่อจัดลำดับการผลิต
+                  </p>
+                </CardHeader>
+                <CardContent className="min-h-[600px] flex items-center justify-center">
+                  <div className="text-center text-gray-400">
+                    <Clock className="h-16 w-16 mx-auto mb-4" />
+                    <p className="text-lg">เลือกขั้นตอนงานและทีม</p>
+                    <p className="text-sm">เพื่อเริ่มวางแผนการผลิต</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>

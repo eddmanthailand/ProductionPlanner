@@ -1943,6 +1943,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Get sub jobs that are approved or in progress, for the specified work step
+      // Exclude jobs that are already in work queue
       const result = await pool.query(`
         SELECT 
           sj.*,
@@ -1955,6 +1956,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE sj.work_step_id = $1 
           AND wo.tenant_id = $2
           AND wo.status IN ('approved', 'in_progress')
+          AND NOT EXISTS (
+            SELECT 1 FROM work_queue wq 
+            WHERE wq.product_name = sj.product_name 
+            AND wq.order_number = wo.order_number
+            AND wq.tenant_id = $2
+          )
         ORDER BY wo.delivery_date ASC NULLS LAST, wo.created_at ASC
       `, [workStepId, tenantId]);
 
