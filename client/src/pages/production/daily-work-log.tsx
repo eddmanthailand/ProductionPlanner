@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -90,9 +91,8 @@ export default function DailyWorkLog() {
   const [selectedWorkStep, setSelectedWorkStep] = useState<string>("");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("");
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<string>("");
-  const [selectedSubJob, setSelectedSubJob] = useState<string>("");
-  const [hoursWorked, setHoursWorked] = useState<string>("");
-  const [quantityCompleted, setQuantityCompleted] = useState<string>("");
+  const [selectedSubJobs, setSelectedSubJobs] = useState<{[key: string]: boolean}>({});
+  const [selectedQuantities, setSelectedQuantities] = useState<{[key: string]: string}>({});
   const [workDescription, setWorkDescription] = useState<string>("");
   const [workStatus, setWorkStatus] = useState<string>("in_progress");
   const [notes, setNotes] = useState<string>("");
@@ -171,12 +171,34 @@ export default function DailyWorkLog() {
     setSelectedWorkStep("");
     setSelectedEmployee("");
     setSelectedWorkOrder("");
-    setSelectedSubJob("");
-    setHoursWorked("");
-    setQuantityCompleted("");
+    setSelectedSubJobs({});
+    setSelectedQuantities({});
     setWorkDescription("");
     setWorkStatus("in_progress");
     setNotes("");
+    setEditingLog(null);
+  };
+
+  const handleSubJobSelection = (subJobId: string, isSelected: boolean) => {
+    setSelectedSubJobs(prev => ({
+      ...prev,
+      [subJobId]: isSelected
+    }));
+    
+    if (!isSelected) {
+      setSelectedQuantities(prev => {
+        const newQuantities = { ...prev };
+        delete newQuantities[subJobId];
+        return newQuantities;
+      });
+    }
+  };
+
+  const handleQuantityChange = (subJobId: string, quantity: string) => {
+    setSelectedQuantities(prev => ({
+      ...prev,
+      [subJobId]: quantity
+    }));
   };
 
   // Mutations
@@ -192,8 +214,6 @@ export default function DailyWorkLog() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
-      toast({ title: "สำเร็จ", description: "บันทึกงานประจำวันแล้ว" });
-      resetForm();
     },
     onError: () => {
       toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
@@ -221,52 +241,65 @@ export default function DailyWorkLog() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedTeam || !selectedEmployee || !selectedWorkOrder || !selectedSubJob || !hoursWorked) {
-      toast({ title: "ข้อผิดพลาด", description: "กรุณากรอกข้อมูลให้ครบถ้วน", variant: "destructive" });
+    const selectedSubJobIds = Object.keys(selectedSubJobs).filter(id => selectedSubJobs[id]);
+    if (!selectedTeam || !selectedEmployee || !selectedWorkOrder || selectedSubJobIds.length === 0) {
+      toast({ title: "ข้อผิดพลาด", description: "กรุณาเลือกงานที่จะบันทึก", variant: "destructive" });
       return;
     }
 
-    const logData = {
-      date: selectedDate,
-      teamId: selectedTeam,
-      employeeId: selectedEmployee,
-      workOrderId: selectedWorkOrder,
-      subJobId: parseInt(selectedSubJob),
-      hoursWorked: parseFloat(hoursWorked),
-      workDescription,
-      status: workStatus,
-      notes,
-      quantityCompleted: quantityCompleted ? parseInt(quantityCompleted) : 0,
-    };
+    try {
+      // Create log entries for selected sub jobs
+      const logPromises = selectedSubJobIds.map(subJobId => {
+        const quantity = selectedQuantities[subJobId] || "0";
+        const subJob = subJobs.find(sj => sj.id.toString() === subJobId);
+        const logData = {
+          date: selectedDate,
+          teamId: selectedTeam,
+          employeeId: selectedEmployee,
+          workOrderId: selectedWorkOrder,
+          subJobId: parseInt(subJobId),
+          hoursWorked: 8, // Default 8 hours - auto calculated
+          workDescription: workDescription || `ทำงาน ${subJob?.productName}`,
+          status: workStatus,
+          notes,
+          quantityCompleted: parseInt(quantity) || 0,
+        };
 
-    if (editingLog) {
-      updateLogMutation.mutate({ id: editingLog.id, data: logData });
-    } else {
-      createLogMutation.mutate(logData);
+        if (editingLog && selectedSubJobIds.length === 1) {
+          return updateLogMutation.mutateAsync({ id: editingLog.id, data: logData });
+        } else {
+          return createLogMutation.mutateAsync(logData);
+        }
+      });
+
+      await Promise.all(logPromises);
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว` });
+      resetForm();
+    } catch (error) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
     }
   };
 
   const handleEdit = (log: DailyWorkLog) => {
-    setSelectedDepartment(""); // Will be set based on team
+    setSelectedDepartment("");
     setSelectedTeam(log.teamId);
     setSelectedWorkStep("");
     setSelectedEmployee(log.employeeId);
     setSelectedWorkOrder(log.workOrderId);
-    setSelectedSubJob(log.subJobId.toString());
-    setHoursWorked(log.hoursWorked.toString());
-    setQuantityCompleted(log.quantityCompleted?.toString() || "0");
+    setSelectedSubJobs({ [log.subJobId.toString()]: true });
+    setSelectedQuantities({ [log.subJobId.toString()]: log.quantityCompleted?.toString() || "0" });
     setWorkDescription(log.workDescription);
     setWorkStatus(log.status);
     setNotes(log.notes || "");
     setEditingLog(log);
   };
 
-  // Get selected sub job details
-  const selectedSubJobDetails = subJobs.find(sj => sj.id === parseInt(selectedSubJob));
   const selectedWorkOrderDetails = workOrders.find(wo => wo.id === selectedWorkOrder);
+  const hasSelectedJobs = Object.values(selectedSubJobs).some(selected => selected);
 
   return (
     <div className="p-6 max-w-full mx-auto bg-gray-50 dark:bg-gray-900 min-h-screen">
@@ -276,7 +309,7 @@ export default function DailyWorkLog() {
           บันทึกงานประจำวัน
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
-          บันทึกการทำงานประจำวันของพนักงานในแต่ละทีมและติดตามความคืบหน้า
+          บันทึกการทำงานประจำวันของพนักงานในแต่ละทีม
         </p>
       </div>
 
@@ -336,9 +369,9 @@ export default function DailyWorkLog() {
                 <Workflow className="h-4 w-4 text-purple-600" />
                 3. เลือกขั้นตอน
               </Label>
-              <Select value={selectedWorkStep} onValueChange={setSelectedWorkStep}>
+              <Select value={selectedWorkStep} onValueChange={setSelectedWorkStep} disabled={!selectedDepartment}>
                 <SelectTrigger className="h-11">
-                  <SelectValue placeholder="เลือกขั้นตอนงาน" />
+                  <SelectValue placeholder={selectedDepartment ? "เลือกขั้นตอนงาน" : "เลือกแผนกก่อน"} />
                 </SelectTrigger>
                 <SelectContent>
                   {workSteps.map((step) => (
@@ -406,18 +439,14 @@ export default function DailyWorkLog() {
                     <TableRow 
                       key={subJob.id} 
                       className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                        selectedSubJob === subJob.id.toString() ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                        selectedSubJobs[subJob.id.toString()] ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                       }`}
                       style={{ fontSize: '12px' }}
-                      onClick={() => setSelectedSubJob(subJob.id.toString())}
                     >
                       <TableCell>
-                        <input
-                          type="radio"
-                          name="subJob"
-                          checked={selectedSubJob === subJob.id.toString()}
-                          onChange={() => setSelectedSubJob(subJob.id.toString())}
-                          className="h-4 w-4 text-blue-600"
+                        <Checkbox
+                          checked={selectedSubJobs[subJob.id.toString()] || false}
+                          onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
                         />
                       </TableCell>
                       <TableCell className="font-medium">
@@ -449,12 +478,12 @@ export default function DailyWorkLog() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {selectedSubJob === subJob.id.toString() && (
+                        {selectedSubJobs[subJob.id.toString()] && (
                           <Input
                             type="number"
                             placeholder="จำนวน"
-                            value={quantityCompleted}
-                            onChange={(e) => setQuantityCompleted(e.target.value)}
+                            value={selectedQuantities[subJob.id.toString()] || ""}
+                            onChange={(e) => handleQuantityChange(subJob.id.toString(), e.target.value)}
                             className="w-20 h-8 text-xs"
                             min="0"
                             max={subJob.quantity - (subJob.completedQuantity || 0)}
@@ -471,7 +500,7 @@ export default function DailyWorkLog() {
       )}
 
       {/* Work Log Form */}
-      {selectedSubJob && (
+      {hasSelectedJobs && (
         <Card className="mb-6 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 justify-between">
@@ -488,16 +517,7 @@ export default function DailyWorkLog() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <Label>วันที่</Label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                  />
-                </div>
-
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>พนักงาน</Label>
                   <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
@@ -515,14 +535,17 @@ export default function DailyWorkLog() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>ชั่วโมงทำงาน</Label>
-                  <Input
-                    type="number"
-                    step="0.5"
-                    placeholder="เช่น 8.5"
-                    value={hoursWorked}
-                    onChange={(e) => setHoursWorked(e.target.value)}
-                  />
+                  <Label>สถานะงาน</Label>
+                  <Select value={workStatus} onValueChange={setWorkStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                      <SelectItem value="completed">เสร็จสิ้น</SelectItem>
+                      <SelectItem value="paused">หยุดชั่วคราว</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -548,27 +571,13 @@ export default function DailyWorkLog() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label>สถานะงาน</Label>
-                <Select value={workStatus} onValueChange={setWorkStatus}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
-                    <SelectItem value="completed">เสร็จสิ้น</SelectItem>
-                    <SelectItem value="paused">หยุดชั่วคราว</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
               <Button 
                 type="submit" 
                 className="w-full md:w-auto"
-                disabled={createLogMutation.isPending}
+                disabled={createLogMutation.isPending || updateLogMutation.isPending}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {createLogMutation.isPending ? "กำลังบันทึก..." : "บันทึกงาน"}
+                {createLogMutation.isPending || updateLogMutation.isPending ? "กำลังบันทึก..." : "บันทึกงาน"}
               </Button>
             </form>
           </CardContent>
@@ -588,12 +597,11 @@ export default function DailyWorkLog() {
             <Table>
               <TableHeader>
                 <TableRow style={{ fontSize: '12px' }}>
-                  <TableHead>เวลา</TableHead>
+                  <TableHead>วันเวลา</TableHead>
                   <TableHead>ทีม</TableHead>
                   <TableHead>พนักงาน</TableHead>
                   <TableHead>ใบสั่งงาน</TableHead>
                   <TableHead>รายละเอียดงาน</TableHead>
-                  <TableHead className="text-right">ชั่วโมง</TableHead>
                   <TableHead className="text-right">จำนวน</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead>การดำเนินการ</TableHead>
@@ -603,7 +611,7 @@ export default function DailyWorkLog() {
                 {dailyLogs.map((log) => (
                   <TableRow key={log.id} style={{ fontSize: '12px' }}>
                     <TableCell>
-                      {format(new Date(log.createdAt), 'HH:mm')}
+                      {format(new Date(log.createdAt), 'dd/MM/yyyy HH:mm')}
                     </TableCell>
                     <TableCell>
                       {teams.find(t => t.id === log.teamId)?.name || log.teamId}
@@ -617,9 +625,6 @@ export default function DailyWorkLog() {
                     </TableCell>
                     <TableCell className="max-w-xs truncate">
                       {log.workDescription}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {log.hoursWorked}
                     </TableCell>
                     <TableCell className="text-right">
                       {log.quantityCompleted || 0}
