@@ -446,12 +446,14 @@ export default function WorkQueuePlanning() {
       }
 
       // Daily capacity = team cost per day (in Baht)
-      const dailyCapacity = parseFloat((team as any).cost_per_day || "0");
+      console.log('Selected team data:', team);
+      const dailyCapacity = parseFloat((team as any).cost_per_day || (team as any).costPerDay || "0");
+      console.log('Daily capacity:', dailyCapacity);
       
       if (dailyCapacity <= 0) {
         toast({
           title: "ข้อมูลไม่ถูกต้อง",
-          description: "ทีมนี้ไม่มีข้อมูลต้นทุนต่อวัน",
+          description: `ทีมนี้ไม่มีข้อมูลต้นทุนต่อวัน (ได้รับ: ${dailyCapacity})`,
           variant: "destructive"
         });
         return;

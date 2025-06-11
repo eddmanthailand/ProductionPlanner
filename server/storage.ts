@@ -681,11 +681,18 @@ export class DatabaseStorage implements IStorage {
   // Team methods
   async getTeams(tenantId: string): Promise<Team[]> {
     return await db
-      .select()
+      .select({
+        id: teams.id,
+        name: teams.name,
+        departmentId: teams.departmentId,
+        cost_per_day: teams.costPerDay,
+        description: teams.description,
+        createdAt: teams.createdAt,
+        updatedAt: teams.updatedAt
+      })
       .from(teams)
       .innerJoin(departments, eq(teams.departmentId, departments.id))
-      .where(eq(departments.tenantId, tenantId))
-      .then(rows => rows.map(row => row.teams));
+      .where(eq(departments.tenantId, tenantId));
   }
 
   async getTeamsByDepartment(departmentId: string, tenantId: string): Promise<Team[]> {
