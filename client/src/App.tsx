@@ -181,7 +181,7 @@ function Router() {
 
 
 
-      <Route path="/production/reports">
+      <Route path="/production/production-reports">
         <ProtectedRoute>
           <ProductionReports />
         </ProtectedRoute>

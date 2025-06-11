@@ -76,7 +76,7 @@ export default function Sidebar() {
     { name: "คิวงาน", href: "/production/work-queue", icon: GanttChart },
     { name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: Calendar },
     { name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList },
-    { name: "รายงานแผนผลิต", href: "/production/reports", icon: BarChart3 },
+    { name: "รายงานแผนผลิต", href: "/production/production-reports", icon: BarChart3 },
   ];
 
   const navigation = [
