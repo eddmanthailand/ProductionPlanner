@@ -1960,7 +1960,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           AND sj.status NOT IN ('completed', 'cancelled')
           AND NOT EXISTS (
             SELECT 1 FROM work_queue wq 
-            WHERE wq.sub_job_id = sj.id
+            WHERE wq.product_name = sj.product_name 
+            AND wq.order_number = wo.order_number
             AND wq.tenant_id = $2
           )
         ORDER BY wo.delivery_date ASC NULLS LAST, wo.created_at ASC

@@ -347,7 +347,7 @@ export default function WorkQueuePlanning() {
                                 }`}
                               >
                                 <div className="text-xs text-gray-900 mb-1 line-clamp-1">
-                                  {job.customerName} • {job.jobName} • {job.productName}
+                                  {job.customerName} • {job.orderNumber} • {job.productName}
                                 </div>
                                 <div className="flex items-center justify-between text-xs">
                                   <div className="text-gray-600">
@@ -448,7 +448,7 @@ export default function WorkQueuePlanning() {
                               >
                                 <div className="flex items-center justify-between mb-1">
                                   <div className="text-xs text-gray-900 line-clamp-1 flex-1">
-                                    {job.customerName} • {job.jobName || job.orderNumber} • {job.productName}
+                                    {job.customerName} • {job.orderNumber} • {job.productName}
                                   </div>
                                   <Button
                                     variant="ghost"
