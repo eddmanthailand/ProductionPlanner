@@ -613,7 +613,7 @@ export default function DailyWorkLog() {
                     {subJobs.map((subJob) => {
                       const progressData = subJobsProgress.find(p => p.id === subJob.id);
                       const quantityCompleted = progressData?.quantityCompleted || 0;
-                      const quantityRemaining = progressData?.quantityRemaining || subJob.quantity;
+                      const quantityRemaining = Math.max(0, (progressData?.quantityRemaining || subJob.quantity));
                       const progressPercentage = progressData?.progressPercentage || 0;
                       
                       return (
