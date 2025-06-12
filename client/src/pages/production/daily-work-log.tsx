@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -103,6 +104,19 @@ interface Size {
   description?: string;
 }
 
+interface SubJobProgress {
+  id: number;
+  productName: string;
+  quantity: number;
+  quantityCompleted: number;
+  quantityRemaining: number;
+  progressPercentage: number;
+  colorId?: number;
+  sizeId?: number;
+  colorName?: string;
+  sizeName?: string;
+}
+
 export default function DailyWorkLog() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -176,6 +190,17 @@ export default function DailyWorkLog() {
         return allSubJobs.filter((job: SubJob) => job.workStepId === selectedWorkStep);
       }
       return allSubJobs;
+    }
+  });
+
+  const { data: subJobsProgress = [] } = useQuery<SubJobProgress[]>({
+    queryKey: ["/api/sub-jobs/progress", selectedWorkOrder],
+    enabled: !!selectedWorkOrder,
+    queryFn: async () => {
+      if (!selectedWorkOrder) return [];
+      const response = await fetch(`/api/sub-jobs/progress/${selectedWorkOrder}`);
+      if (!response.ok) throw new Error('Failed to fetch sub jobs progress');
+      return response.json();
     }
   });
 

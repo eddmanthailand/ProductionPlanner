@@ -2277,6 +2277,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get sub jobs progress with completed quantities
+  app.get("/api/sub-jobs/progress/:workOrderId", async (req: any, res: any) => {
+    try {
+      const { workOrderId } = req.params;
+      
+      const result = await pool.query(`
+        SELECT 
+          sj.id, 
+          sj.product_name,
+          sj.quantity as quantity_total,
+          sj.color_id,
+          sj.size_id,
+          c.name as color_name,
+          s.name as size_name,
+          COALESCE(SUM(dwl.quantity_completed), 0) as quantity_completed,
+          (sj.quantity - COALESCE(SUM(dwl.quantity_completed), 0)) as quantity_remaining,
+          CASE 
+            WHEN sj.quantity > 0 THEN 
+              ROUND((COALESCE(SUM(dwl.quantity_completed), 0) * 100.0 / sj.quantity), 1)
+            ELSE 0 
+          END as progress_percentage
+        FROM sub_jobs sj
+        LEFT JOIN daily_work_logs dwl ON sj.id = dwl.sub_job_id
+        LEFT JOIN colors c ON sj.color_id = c.id
+        LEFT JOIN sizes s ON sj.size_id = s.id
+        WHERE sj.work_order_id = $1
+        GROUP BY sj.id, sj.product_name, sj.quantity, sj.color_id, sj.size_id, c.name, s.name, sj.sort_order
+        ORDER BY sj.sort_order
+      `, [workOrderId]);
+      
+      const progress = result.rows.map((row: any) => ({
+        id: row.id,
+        productName: row.product_name,
+        quantity: parseInt(row.quantity_total),
+        quantityCompleted: parseInt(row.quantity_completed),
+        quantityRemaining: parseInt(row.quantity_remaining),
+        progressPercentage: parseFloat(row.progress_percentage),
+        colorId: row.color_id,
+        sizeId: row.size_id,
+        colorName: row.color_name,
+        sizeName: row.size_name
+      }));
+      
+      res.json(progress);
+    } catch (error) {
+      console.error("Get sub jobs progress error:", error);
+      res.status(500).json({ message: "Failed to fetch sub jobs progress" });
+    }
+  });
+
   return httpServer;
 }
 
