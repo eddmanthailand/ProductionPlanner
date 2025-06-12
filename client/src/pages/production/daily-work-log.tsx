@@ -610,64 +610,98 @@ export default function DailyWorkLog() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {subJobs.map((subJob) => (
-                      <TableRow 
-                        key={subJob.id} 
-                        className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
-                          selectedSubJobs[subJob.id.toString()] ? 'bg-blue-50 dark:bg-blue-900/20' : ''
-                        }`}
-                        style={{ fontSize: '12px' }}
-                      >
-                        <TableCell>
-                          <Checkbox
-                            checked={selectedSubJobs[subJob.id.toString()] || false}
-                            onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
-                          />
-                        </TableCell>
-                        <TableCell>{subJob.productName}</TableCell>
-                        <TableCell>
-                          {subJob.colorId 
-                            ? colors.find(c => c.id === subJob.colorId)?.name || '-'
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell>
-                          {subJob.sizeId 
-                            ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
-                            : '-'
-                          }
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {subJob.quantity?.toLocaleString() || 0}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {subJob.completedQuantity?.toLocaleString() || 0}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {((subJob.quantity || 0) - (subJob.completedQuantity || 0)).toLocaleString()}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={subJob.status === 'completed' ? 'default' : 'secondary'}>
-                            {subJob.status === 'completed' ? 'เสร็จสิ้น' : 
-                             subJob.status === 'in_progress' ? 'กำลังดำเนินการ' : 
-                             subJob.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {selectedSubJobs[subJob.id.toString()] && (
-                            <Input
-                              type="number"
-                              placeholder="จำนวน"
-                              value={selectedQuantities[subJob.id.toString()] || ""}
-                              onChange={(e) => handleQuantityChange(subJob.id.toString(), e.target.value)}
-                              className="w-20 h-8 text-xs"
-                              min="0"
-                              max={subJob.quantity - (subJob.completedQuantity || 0)}
+                    {subJobs.map((subJob) => {
+                      const progressData = subJobsProgress.find(p => p.id === subJob.id);
+                      const quantityCompleted = progressData?.quantityCompleted || 0;
+                      const quantityRemaining = progressData?.quantityRemaining || subJob.quantity;
+                      const progressPercentage = progressData?.progressPercentage || 0;
+                      
+                      return (
+                        <TableRow 
+                          key={subJob.id} 
+                          className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                            selectedSubJobs[subJob.id.toString()] ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                          }`}
+                          style={{ fontSize: '12px' }}
+                        >
+                          <TableCell>
+                            <Checkbox
+                              checked={selectedSubJobs[subJob.id.toString()] || false}
+                              onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
                             />
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div>{subJob.productName}</div>
+                              {progressPercentage > 0 && (
+                                <div className="flex items-center gap-2">
+                                  <Progress value={progressPercentage} className="h-2 flex-1" />
+                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 min-w-[40px]">
+                                    {progressPercentage.toFixed(1)}%
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {subJob.colorId 
+                              ? colors.find(c => c.id === subJob.colorId)?.name || '-'
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell>
+                            {subJob.sizeId 
+                              ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
+                              : '-'
+                            }
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {subJob.quantity?.toLocaleString() || 0}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className={`font-medium ${quantityCompleted > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                              {quantityCompleted.toLocaleString()}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className={`font-medium ${quantityRemaining > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500'}`}>
+                              {quantityRemaining.toLocaleString()}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Circle className={`h-2 w-2 fill-current ${
+                                progressPercentage >= 100 ? 'text-green-500' : 
+                                progressPercentage > 0 ? 'text-yellow-500' : 
+                                'text-gray-400'
+                              }`} />
+                              <Badge variant={
+                                progressPercentage >= 100 ? 'default' : 
+                                progressPercentage > 0 ? 'secondary' : 
+                                'outline'
+                              } className="text-xs">
+                                {progressPercentage >= 100 ? 'เสร็จสิ้น' : 
+                                 progressPercentage > 0 ? 'กำลังดำเนินการ' : 
+                                 'รอดำเนินการ'}
+                              </Badge>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {selectedSubJobs[subJob.id.toString()] && (
+                              <Input
+                                type="number"
+                                placeholder="จำนวน"
+                                value={selectedQuantities[subJob.id.toString()] || ""}
+                                onChange={(e) => handleQuantityChange(subJob.id.toString(), e.target.value)}
+                                className="w-20 h-8 text-xs"
+                                min="0"
+                                max={quantityRemaining > 0 ? quantityRemaining : 999}
+                              />
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
