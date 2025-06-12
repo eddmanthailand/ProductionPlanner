@@ -2228,7 +2228,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const { date, teamId } = req.query;
       
+      console.log("API: Daily work logs requested with filters:", { date, teamId, tenantId });
+      
       const logs = await storage.getDailyWorkLogs(tenantId, { date, teamId });
+      console.log("API: Found daily work logs:", logs.length);
+      
       res.json(logs);
     } catch (error) {
       console.error("Get daily work logs error:", error);

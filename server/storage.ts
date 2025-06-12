@@ -1343,13 +1343,17 @@ export class DatabaseStorage implements IStorage {
   // Daily Work Logs methods
   async getDailyWorkLogs(tenantId: string, filters?: { date?: string; teamId?: string }): Promise<DailyWorkLog[]> {
     try {
+      console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
+      
       const conditions = [eq(dailyWorkLogs.tenantId, tenantId)];
 
       if (filters?.date) {
+        console.log('Storage: Adding date filter:', filters.date);
         conditions.push(eq(dailyWorkLogs.date, filters.date));
       }
 
       if (filters?.teamId && filters.teamId !== 'all') {
+        console.log('Storage: Adding team filter:', filters.teamId);
         conditions.push(eq(dailyWorkLogs.teamId, filters.teamId));
       }
 
@@ -1359,6 +1363,7 @@ export class DatabaseStorage implements IStorage {
         .where(and(...conditions))
         .orderBy(desc(dailyWorkLogs.createdAt));
       
+      console.log('Storage: Found daily work logs:', logs.length, logs.map(l => ({ id: l.id, date: l.date, teamId: l.teamId })));
       return logs;
     } catch (error) {
       console.error('Get daily work logs error:', error);
