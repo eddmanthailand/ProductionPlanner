@@ -288,7 +288,10 @@ export default function WorkQueuePlanning() {
 
   const removeFromTeamQueue = async (queueId: string, index: number) => {
     try {
-      await removeFromQueueMutation.mutateAsync(queueId);
+      console.log('Attempting to remove queue item:', queueId, 'from index:', index);
+      console.log('Team queue data:', teamQueue);
+      const result = await removeFromQueueMutation.mutateAsync(queueId);
+      console.log('Remove result:', result);
       toast({
         title: "ลบงานสำเร็จ",
         description: "งานถูกลบออกจากคิวเรียบร้อยแล้ว",
