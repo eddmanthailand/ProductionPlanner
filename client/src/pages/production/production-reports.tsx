@@ -155,6 +155,11 @@ export default function ProductionReports() {
     queryKey: ["/api/work-queues"],
   });
 
+  // Sub jobs data for calculating total quantities
+  const { data: subJobs = [] } = useQuery<any[]>({
+    queryKey: ["/api/sub-jobs/complete"],
+  });
+
   // Filter plans by team
   const filteredPlans = selectedTeam === "all" 
     ? productionPlans 
@@ -176,8 +181,9 @@ export default function ProductionReports() {
 
     filteredWorkOrders.forEach(workOrder => {
       const workOrderLogs = dailyWorkLogs.filter(log => log.workOrderId === workOrder.id);
+      const workOrderSubJobs = subJobs.filter(sj => sj.workOrderId === workOrder.id);
       
-      // Group by work step
+      // Group by work step and calculate total quantities
       const stepMap = new Map<string, {
         stepName: string;
         departmentName: string;
@@ -185,23 +191,40 @@ export default function ProductionReports() {
         completedQuantity: number;
       }>();
 
-      workOrderLogs.forEach(log => {
-        const key = `${log.workStepName}-${log.departmentName}`;
+      // Initialize steps with total quantities from sub jobs
+      workOrderSubJobs.forEach(subJob => {
+        const key = `${subJob.workStepName || 'ไม่ระบุ'}-${subJob.departmentName || 'ไม่ระบุ'}`;
         if (!stepMap.has(key)) {
           stepMap.set(key, {
-            stepName: log.workStepName,
-            departmentName: log.departmentName,
+            stepName: subJob.workStepName || 'ไม่ระบุ',
+            departmentName: subJob.departmentName || 'ไม่ระบุ',
             totalQuantity: 0,
             completedQuantity: 0
           });
         }
         const step = stepMap.get(key)!;
-        step.completedQuantity += log.quantityCompleted;
+        step.totalQuantity += subJob.quantity || 0;
+      });
+
+      // Add completed quantities from work logs
+      workOrderLogs.forEach(log => {
+        const key = `${log.workStepName || 'ไม่ระบุ'}-${log.departmentName || 'ไม่ระบุ'}`;
+        if (!stepMap.has(key)) {
+          stepMap.set(key, {
+            stepName: log.workStepName || 'ไม่ระบุ',
+            departmentName: log.departmentName || 'ไม่ระบุ',
+            totalQuantity: 0,
+            completedQuantity: 0
+          });
+        }
+        const step = stepMap.get(key)!;
+        step.completedQuantity += log.quantityCompleted || 0;
       });
 
       const workSteps = Array.from(stepMap.values()).map(step => ({
         ...step,
-        progressPercentage: step.totalQuantity > 0 ? Math.round((step.completedQuantity / step.totalQuantity) * 100) : 0,
+        progressPercentage: step.totalQuantity > 0 ? Math.round((step.completedQuantity / step.totalQuantity) * 100) : 
+                           step.completedQuantity > 0 ? 100 : 0,
         status: (step.completedQuantity === 0 ? 'pending' : 
                 step.completedQuantity >= step.totalQuantity ? 'completed' : 'in-progress') as 'pending' | 'in-progress' | 'completed'
       }));
