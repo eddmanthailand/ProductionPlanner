@@ -483,17 +483,17 @@ export default function ProductionReports() {
                                 <div className="overflow-x-auto">
                                   <Table>
                                     <TableHeader>
-                                      <TableRow>
-                                        <TableHead className="w-12">#</TableHead>
-                                        <TableHead>ขั้นตอน</TableHead>
-                                        <TableHead>สินค้า</TableHead>
-                                        <TableHead>สี</TableHead>
-                                        <TableHead>ไซส์</TableHead>
-                                        <TableHead>จำนวนสั่ง</TableHead>
-                                        <TableHead>จำนวนผลิต</TableHead>
-                                        <TableHead>ยอดคงเหลือ</TableHead>
-                                        <TableHead>ความคืบหน้า</TableHead>
-                                        <TableHead>สถานะ</TableHead>
+                                      <TableRow className="h-10">
+                                        <TableHead className="w-8 text-xs py-2">#</TableHead>
+                                        <TableHead className="text-xs py-2">ขั้นตอน</TableHead>
+                                        <TableHead className="text-xs py-2">สินค้า</TableHead>
+                                        <TableHead className="text-xs py-2">สี</TableHead>
+                                        <TableHead className="text-xs py-2">ไซส์</TableHead>
+                                        <TableHead className="text-xs py-2 text-right">จำนวนสั่ง</TableHead>
+                                        <TableHead className="text-xs py-2 text-right">จำนวนผลิต</TableHead>
+                                        <TableHead className="text-xs py-2 text-right">ยอดคงเหลือ</TableHead>
+                                        <TableHead className="text-xs py-2">ความคืบหน้า</TableHead>
+                                        <TableHead className="text-xs py-2">สถานะ</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -505,30 +505,30 @@ export default function ProductionReports() {
                                         return (
                                           <TableRow 
                                             key={subJob.id}
-                                            className={isFirstOfStep ? 'border-t-2 border-t-blue-200' : ''}
+                                            className={`h-8 ${isFirstOfStep ? 'border-t-2 border-t-blue-200' : ''}`}
                                           >
-                                            <TableCell className="font-mono text-sm text-gray-500">
+                                            <TableCell className="font-mono text-xs text-gray-500 py-1 px-2">
                                               {index + 1}
                                             </TableCell>
-                                            <TableCell className="font-medium">
+                                            <TableCell className="py-1 px-2">
                                               {isFirstOfStep ? (
-                                                <div className="bg-blue-50 px-2 py-1 rounded text-blue-800 font-semibold">
+                                                <div className="bg-blue-50 px-1 py-0.5 rounded text-xs text-blue-800 font-medium">
                                                   {subJob.stepName}
                                                 </div>
                                               ) : (
-                                                <div className="text-gray-400 text-center">↳</div>
+                                                <div className="text-gray-400 text-center text-xs">↳</div>
                                               )}
                                             </TableCell>
-                                            <TableCell>{subJob.productName}</TableCell>
-                                            <TableCell>{subJob.colorName}</TableCell>
-                                            <TableCell>{subJob.sizeName}</TableCell>
-                                            <TableCell className="text-right font-medium">
+                                            <TableCell className="text-xs py-1 px-2">{subJob.productName}</TableCell>
+                                            <TableCell className="text-xs py-1 px-2">{subJob.colorName}</TableCell>
+                                            <TableCell className="text-xs py-1 px-2">{subJob.sizeName}</TableCell>
+                                            <TableCell className="text-right text-xs font-medium py-1 px-2">
                                               {subJob.quantity}
                                             </TableCell>
-                                            <TableCell className="text-right font-medium text-blue-600">
+                                            <TableCell className="text-right text-xs font-medium text-blue-600 py-1 px-2">
                                               {subJob.completedQuantity}
                                             </TableCell>
-                                            <TableCell className="text-right font-medium">
+                                            <TableCell className="text-right text-xs font-medium py-1 px-2">
                                               <span className={
                                                 subJob.remainingQuantity === 0 ? 'text-green-600' :
                                                 subJob.remainingQuantity > 0 ? 'text-orange-600' :
@@ -538,22 +538,22 @@ export default function ProductionReports() {
                                                 {subJob.remainingQuantity < 0 && ' (เกิน)'}
                                               </span>
                                             </TableCell>
-                                            <TableCell>
-                                              <div className="flex items-center gap-2">
-                                                <Progress value={subJob.progressPercentage} className="w-16" />
-                                                <span className="text-xs w-10 text-right">
+                                            <TableCell className="py-1 px-2">
+                                              <div className="flex items-center gap-1">
+                                                <Progress value={subJob.progressPercentage} className="w-12 h-1" />
+                                                <span className="text-xs w-8 text-right">
                                                   {subJob.progressPercentage}%
                                                 </span>
                                               </div>
                                             </TableCell>
-                                            <TableCell>
+                                            <TableCell className="py-1 px-2">
                                               <Badge 
                                                 variant={subJob.status === 'completed' ? 'default' : 
                                                        subJob.status === 'in-progress' ? 'secondary' : 'outline'}
-                                                className="text-xs"
+                                                className="text-xs px-1 py-0"
                                               >
-                                                {subJob.status === 'completed' ? 'เสร็จสิ้น' :
-                                                 subJob.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
+                                                {subJob.status === 'completed' ? 'เสร็จ' :
+                                                 subJob.status === 'in-progress' ? 'ดำเนินการ' : 'รอ'}
                                               </Badge>
                                             </TableCell>
                                           </TableRow>
