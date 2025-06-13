@@ -21,6 +21,35 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
+// Sortable Item component for drag and drop
+function SortableItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={isDragging ? "opacity-50" : ""}
+    >
+      {children}
+    </TableRow>
+  );
+}
+
 export default function MasterData() {
   const { t } = useLanguage();
   const queryClient = useQueryClient();
@@ -228,58 +257,74 @@ export default function MasterData() {
     deleteWorkTypeMutation.mutate(id);
   };
 
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   // Handle drag and drop for colors
-  const handleColorDragEnd = (result: DropResult) => {
-    if (!result.destination || !colors) return;
-    
-    const items = Array.from(colors);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    // Update the sort order for all items
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      sortOrder: index + 1
-    }));
-    
-    // Update each item's sort order in the database
-    updatedItems.forEach(async (item) => {
-      try {
-        await apiRequest(`/api/colors/${item.id}`, "PATCH", { sortOrder: item.sortOrder });
-      } catch (error) {
-        console.error("Error updating color order:", error);
-      }
-    });
-    
-    // Refresh the data
-    queryClient.invalidateQueries({ queryKey: ["/api/colors"] });
+  const handleColorDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || !colors) return;
+
+    const oldIndex = colors.findIndex(item => item.id.toString() === active.id);
+    const newIndex = colors.findIndex(item => item.id.toString() === over.id);
+
+    if (oldIndex !== newIndex) {
+      const items = arrayMove(colors, oldIndex, newIndex);
+      
+      // Update the sort order for all items
+      const updatedItems = items.map((item, index) => ({
+        ...item,
+        sortOrder: index + 1
+      }));
+      
+      // Update each item's sort order in the database
+      updatedItems.forEach(async (item) => {
+        try {
+          await apiRequest(`/api/colors/${item.id}`, "PATCH", { sortOrder: item.sortOrder });
+        } catch (error) {
+          console.error("Error updating color order:", error);
+        }
+      });
+      
+      // Refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/colors"] });
+    }
   };
 
   // Handle drag and drop for sizes
-  const handleSizeDragEnd = (result: DropResult) => {
-    if (!result.destination || !sizes) return;
-    
-    const items = Array.from(sizes);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    
-    // Update the sort order for all items
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      sortOrder: index + 1
-    }));
-    
-    // Update each item's sort order in the database
-    updatedItems.forEach(async (item) => {
-      try {
-        await apiRequest(`/api/sizes/${item.id}`, "PATCH", { sortOrder: item.sortOrder });
-      } catch (error) {
-        console.error("Error updating size order:", error);
-      }
-    });
-    
-    // Refresh the data
-    queryClient.invalidateQueries({ queryKey: ["/api/sizes"] });
+  const handleSizeDragEnd = (event: any) => {
+    const { active, over } = event;
+    if (!over || !sizes) return;
+
+    const oldIndex = sizes.findIndex(item => item.id.toString() === active.id);
+    const newIndex = sizes.findIndex(item => item.id.toString() === over.id);
+
+    if (oldIndex !== newIndex) {
+      const items = arrayMove(sizes, oldIndex, newIndex);
+      
+      // Update the sort order for all items
+      const updatedItems = items.map((item, index) => ({
+        ...item,
+        sortOrder: index + 1
+      }));
+      
+      // Update each item's sort order in the database
+      updatedItems.forEach(async (item) => {
+        try {
+          await apiRequest(`/api/sizes/${item.id}`, "PATCH", { sortOrder: item.sortOrder });
+        } catch (error) {
+          console.error("Error updating size order:", error);
+        }
+      });
+      
+      // Refresh the data
+      queryClient.invalidateQueries({ queryKey: ["/api/sizes"] });
+    }
   };
 
   const handleAddNewColor = () => {
@@ -426,7 +471,11 @@ export default function MasterData() {
 
           <Card>
             <CardContent className="p-6">
-              <DragDropContext onDragEnd={handleColorDragEnd}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleColorDragEnd}
+              >
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -437,55 +486,47 @@ export default function MasterData() {
                       <TableHead>จัดการ</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <Droppable droppableId="colors">
-                    {(provided) => (
-                      <TableBody {...provided.droppableProps} ref={provided.innerRef}>
-                        {colors?.map((color, index) => (
-                          <Draggable key={color.id} draggableId={color.id.toString()} index={index}>
-                            {(provided, snapshot) => (
-                              <TableRow 
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={snapshot.isDragging ? "bg-gray-100" : ""}
+                  <SortableContext 
+                    items={colors?.map(color => color.id.toString()) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <TableBody>
+                      {colors?.map((color, index) => (
+                        <SortableItem key={color.id} id={color.id.toString()}>
+                          <TableCell className="cursor-grab">
+                            <GripVertical className="h-4 w-4 text-gray-400" />
+                          </TableCell>
+                          <TableCell className="font-medium">{color.name}</TableCell>
+                          <TableCell>{color.code || "-"}</TableCell>
+                          <TableCell>{color.description || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEditColor(color)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleDeleteColor(color.id)}
+                                className="text-red-600 hover:text-red-700"
                               >
-                                <TableCell {...provided.dragHandleProps} className="cursor-grab">
-                                  <GripVertical className="h-4 w-4 text-gray-400" />
-                                </TableCell>
-                                <TableCell className="font-medium">{color.name}</TableCell>
-                                <TableCell>{color.code || "-"}</TableCell>
-                                <TableCell>{color.description || "-"}</TableCell>
-                                <TableCell>
-                                  <div className="flex space-x-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleEditColor(color)}>
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => handleDeleteColor(color.id)}
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                        {colors?.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-gray-500">
-                              ยังไม่มีข้อมูลสี
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    )}
-                  </Droppable>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </SortableItem>
+                      ))}
+                      {colors?.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-8 text-gray-500">
+                            ยังไม่มีข้อมูลสี
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </SortableContext>
                 </Table>
-              </DragDropContext>
+              </DndContext>
             </CardContent>
           </Card>
         </TabsContent>
