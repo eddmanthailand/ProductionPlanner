@@ -707,10 +707,14 @@ export default function ProductionReports() {
                                             </div>
                                           </div>
                                           <div className="text-right">
-                                            <div className="text-lg font-bold text-gray-900">
+                                            <span className={`text-xs font-bold px-2 py-1 rounded-md ${
+                                              job.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                              job.status === 'in-progress' ? 'bg-orange-100 text-orange-800' :
+                                              'bg-gray-100 text-gray-600'
+                                            }`}>
                                               {job.progressPercentage}%
-                                            </div>
-                                            <div className="text-xs text-gray-500">
+                                            </span>
+                                            <div className="text-xs text-gray-500 mt-1">
                                               {job.completedQuantity}/{job.quantity} ชิ้น
                                             </div>
                                           </div>
@@ -727,19 +731,9 @@ export default function ProductionReports() {
                                           )}
                                         </div>
 
-                                        <div className="space-y-1">
-                                          <Progress 
-                                            value={job.progressPercentage} 
-                                            className={`h-2 ${
-                                              job.status === 'completed' ? '[&>div]:bg-green-500' :
-                                              job.status === 'in-progress' ? '[&>div]:bg-orange-500' :
-                                              '[&>div]:bg-gray-400'
-                                            }`}
-                                          />
-                                          <div className="flex justify-between text-xs text-gray-500">
-                                            <span>เริ่ม: {job.completedQuantity > 0 ? 'มีการทำงานแล้ว' : 'ยังไม่เริ่ม'}</span>
-                                            <span>คงเหลือ: {job.quantity - job.completedQuantity} ชิ้น</span>
-                                          </div>
+                                        <div className="flex justify-between text-xs text-gray-500">
+                                          <span>เริ่ม: {job.completedQuantity > 0 ? 'มีการทำงานแล้ว' : 'ยังไม่เริ่ม'}</span>
+                                          <span>คงเหลือ: {job.quantity - job.completedQuantity} ชิ้น</span>
                                         </div>
                                       </div>
                                     ))}
