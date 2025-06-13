@@ -273,23 +273,16 @@ export default function WorkQueuePlanning() {
   });
 
   // Drag and drop handlers
-  const handleDragEnd = async (result: any) => {
-    if (!result.destination) return;
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
 
-    const newTeamQueue = Array.from(teamQueue);
-    const [reorderedItem] = newTeamQueue.splice(result.source.index, 1);
-    newTeamQueue.splice(result.destination.index, 0, reorderedItem);
+    if (active.id !== over?.id) {
+      const oldIndex = teamQueue.findIndex(item => item.id.toString() === active.id);
+      const newIndex = teamQueue.findIndex(item => item.id.toString() === over.id);
 
-    setTeamQueue(newTeamQueue);
-
-    try {
-      await reorderQueueMutation.mutateAsync({
-        teamId: selectedTeam,
-        queueItems: newTeamQueue
+      setTeamQueue((items) => {
+        return arrayMove(items, oldIndex, newIndex);
       });
-    } catch (error) {
-      console.error('Failed to reorder queue:', error);
-      setTeamQueue(teamQueueData);
     }
   };
 
@@ -885,33 +878,30 @@ export default function WorkQueuePlanning() {
                             {teamQueue.map((job, index) => (
                               <SortableItem key={job.id.toString()} id={job.id.toString()}>
                                 <div className="p-3 bg-white rounded-lg border shadow-sm transition-all">
-                                      <div className="flex items-center justify-between">
-                                        <div className="flex-1">
-                                          <div className="font-medium text-gray-900">
-                                            {job.orderNumber} - {job.customerName}
-                                          </div>
-                                          <div className="text-sm text-gray-500">
-                                            {format(new Date(), "dd/MM/yyyy")} {getColorName(job.colorId)} {getSizeName(job.sizeId)} จำนวน {job.quantity}
-                                          </div>
-                                        </div>
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          onClick={() => removeFromTeamQueue((job as any).queueId || (job as any).id, index)}
-                                          className="text-red-600 hover:text-red-800"
-                                        >
-                                          <Trash2 className="h-4 w-4" />
-                                        </Button>
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <div className="font-medium text-gray-900">
+                                        {job.orderNumber} - {job.customerName}
+                                      </div>
+                                      <div className="text-sm text-gray-500">
+                                        {format(new Date(), "dd/MM/yyyy")} {getColorName(job.colorId)} {getSizeName(job.sizeId)} จำนวน {job.quantity}
                                       </div>
                                     </div>
-                                  )}
-                                </Draggable>
-                              ))
-                            )}
-                            {provided.placeholder}
-                          </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeFromTeamQueue((job as any).queueId || (job as any).id, index)}
+                                      className="text-red-600 hover:text-red-800"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              </SortableItem>
+                            ))}
+                          </SortableContext>
                         )}
-                      </Droppable>
+                      </div>
                     </div>
 
                     {/* Results Table */}
