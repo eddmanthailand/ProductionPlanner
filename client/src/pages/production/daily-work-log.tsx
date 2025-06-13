@@ -407,8 +407,6 @@ export default function DailyWorkLog() {
     }
   };
 
-
-
   const handlePreview = (log: any) => {
     setPreviewingLog(log);
   };
