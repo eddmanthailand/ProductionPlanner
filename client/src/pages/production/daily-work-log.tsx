@@ -1049,14 +1049,9 @@ export default function DailyWorkLog() {
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex flex-col items-end">
-                                  <span className="font-bold text-blue-600 dark:text-blue-400">
-                                    {subJobLog.quantityCompleted?.toLocaleString() || 0}
-                                  </span>
-                                  <span className="text-xs text-gray-500">
-                                    {format(new Date(subJobLog.createdAt || previewingLog.createdAt), 'dd/MM/yyyy')}
-                                  </span>
-                                </div>
+                                <span className="font-bold text-blue-600 dark:text-blue-400">
+                                  {subJobLog.quantityCompleted?.toLocaleString() || 0}
+                                </span>
                               </TableCell>
                               <TableCell className="text-right">
                                 {(() => {
