@@ -512,6 +512,29 @@ export default function WorkOrderForm() {
     }, 0);
   };
 
+  // Function to detect price changes
+  const detectPriceChanges = () => {
+    if (!isEditMode || originalSubJobs.length === 0) return false;
+    
+    // Check if any production cost has changed
+    for (let i = 0; i < subJobs.length; i++) {
+      const currentSubJob = subJobs[i];
+      const originalSubJob = originalSubJobs.find(osj => 
+        osj.id === currentSubJob.id || 
+        (osj.productName === currentSubJob.productName && 
+         osj.quantity === currentSubJob.quantity &&
+         osj.colorId === currentSubJob.colorId &&
+         osj.sizeId === currentSubJob.sizeId)
+      );
+      
+      if (originalSubJob && 
+          parseFloat(currentSubJob.productionCost.toString()) !== parseFloat(originalSubJob.productionCost.toString())) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const handleSubmit = () => {
     if (!formData.title || !formData.customerId) {
       toast({
@@ -522,12 +545,15 @@ export default function WorkOrderForm() {
       return;
     }
 
+    const priceChanged = detectPriceChanges();
+    
     const orderData = {
       ...formData,
       customerId: parseInt(formData.customerId),
       quotationId: formData.quotationId ? parseInt(formData.quotationId) : null,
       workTypeId: formData.workTypeId ? parseInt(formData.workTypeId) : null,
       totalAmount: calculateGrandTotal(),
+      priceChanged: priceChanged,
       items: subJobs.map((subJob, index) => ({
         ...subJob,
         sortOrder: index + 1
