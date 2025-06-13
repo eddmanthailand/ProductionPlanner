@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp } from "lucide-react";
+import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -317,6 +317,36 @@ export default function DailyWorkLog() {
       ...prev,
       [subJobId]: quantity
     }));
+  };
+
+  // Delete log mutation
+  const deleteLogMutation = useMutation({
+    mutationFn: async (logId: string) => {
+      return await apiRequest(`/api/daily-work-logs/${logId}`, {
+        method: 'DELETE',
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      toast({
+        title: "สำเร็จ",
+        description: "ลบบันทึกประจำวันเรียบร้อยแล้ว",
+      });
+      setPreviewingLog(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถลบบันทึกได้",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleDeleteLog = (log: any) => {
+    if (confirm("คุณต้องการลบบันทึกนี้หรือไม่? การลบจะไม่สามารถยกเลิกได้")) {
+      deleteLogMutation.mutate(log.id);
+    }
   };
 
   // Mutations
@@ -929,13 +959,26 @@ export default function DailyWorkLog() {
       <Dialog open={!!previewingLog} onOpenChange={() => setPreviewingLog(null)}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b pb-4">
-            <DialogTitle className="flex items-center gap-3 text-xl">
-              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-              รายละเอียดการบันทึกงาน
-            </DialogTitle>
-            <DialogDescription className="text-gray-600">
-              แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}
-            </DialogDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <DialogTitle className="flex items-center gap-3 text-xl">
+                  <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                  รายละเอียดการบันทึกงาน
+                </DialogTitle>
+                <DialogDescription className="text-gray-600">
+                  แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}
+                </DialogDescription>
+              </div>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => handleDeleteLog(previewingLog)}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                ลบบันทึก
+              </Button>
+            </div>
           </DialogHeader>
           {previewingLog && (
             <div className="space-y-6 pt-4">
@@ -1014,8 +1057,6 @@ export default function DailyWorkLog() {
                           <TableHead className="font-semibold text-right">จำนวนสั่ง</TableHead>
                           <TableHead className="font-semibold text-right">จำนวนที่ทำ</TableHead>
                           <TableHead className="font-semibold text-right">คงเหลือ</TableHead>
-                          <TableHead className="font-semibold">รายละเอียดงาน</TableHead>
-                          <TableHead className="font-semibold text-center">สถานะ</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1077,16 +1118,6 @@ export default function DailyWorkLog() {
                                     </span>
                                   );
                                 })()}
-                              </TableCell>
-                              <TableCell>
-                                <p className="text-sm text-gray-700 dark:text-gray-300">
-                                  {subJobLog.workDescription || '-'}
-                                </p>
-                              </TableCell>
-                              <TableCell className="text-center">
-                                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                  เสร็จสิ้น
-                                </Badge>
                               </TableCell>
                             </TableRow>
                           );
