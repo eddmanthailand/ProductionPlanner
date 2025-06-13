@@ -86,6 +86,7 @@ export default function WorkOrderForm() {
       totalCost: 0 
     }
   ]);
+  const [originalSubJobs, setOriginalSubJobs] = useState<SubJob[]>([]);
 
 
 
@@ -206,18 +207,32 @@ export default function WorkOrderForm() {
         return await apiRequest("/api/work-orders", "POST", data);
       }
     },
-    onSuccess: () => {
+    onSuccess: (responseData: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
       if (isEditMode && workOrderId) {
         queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
         // Force refetch data immediately
         queryClient.refetchQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
       }
-      toast({
-        title: "สำเร็จ",
-        description: isEditMode ? "แก้ไขใบสั่งงานเรียบร้อยแล้ว" : "สร้างใบสั่งงานแล้ว",
-      });
-      navigate("/production/work-orders");
+
+      // Check if prices were changed and there are queued jobs
+      if (isEditMode && responseData?.hasQueuedJobs && responseData?.priceChanged) {
+        toast({
+          title: "มีการเปลี่ยนราคา",
+          description: "กรุณากดคำนวณแผนการผลิตใหม่",
+          variant: "default",
+        });
+        // Navigate to work queue planning page
+        setTimeout(() => {
+          navigate("/production/work-queue-planning");
+        }, 2000);
+      } else {
+        toast({
+          title: "สำเร็จ",
+          description: isEditMode ? "แก้ไขใบสั่งงานเรียบร้อยแล้ว" : "สร้างใบสั่งงานแล้ว",
+        });
+        navigate("/production/work-orders");
+      }
     },
     onError: () => {
       toast({
@@ -359,6 +374,8 @@ export default function WorkOrderForm() {
           }))
           .sort((a: any, b: any) => a.sortOrder - b.sortOrder);
         setSubJobs(sortedSubJobs);
+        // Store original sub-jobs for price change detection
+        setOriginalSubJobs(JSON.parse(JSON.stringify(sortedSubJobs)));
       } else {
         // If no sub-jobs, ensure we have at least one empty sub-job for the form
         setSubJobs([{

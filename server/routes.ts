@@ -1888,15 +1888,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (newSubJobId) {
               await pool.query(
                 `INSERT INTO work_queue (
-                  id, team_id, sub_job_id, work_order_id, order_number,
+                  id, team_id, sub_job_id, order_number,
                   product_name, quantity, priority, status, tenant_id,
                   created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
                 [
                   queueEntry.id, // Keep the same queue ID
                   queueEntry.team_id,
                   newSubJobId, // Use new sub-job ID
-                  queueEntry.work_order_id,
                   queueEntry.order_number,
                   queueEntry.product_name,
                   queueEntry.quantity,
@@ -1911,7 +1910,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       console.log("API: Work order updated successfully");
-      res.json(updateResult.rows[0]);
+      
+      // Check if any updated sub-jobs have existing queue entries
+      let hasQueuedJobs = false;
+      if (updateData.items && updateData.items.length > 0) {
+        // Check if any of the updated items had queue entries
+        const queueCheckResult = await pool.query(
+          `SELECT COUNT(*) as count FROM work_queue 
+           WHERE sub_job_id IN (
+             SELECT id FROM sub_jobs WHERE work_order_id = $1
+           )`,
+          [id]
+        );
+        hasQueuedJobs = parseInt(queueCheckResult.rows[0].count) > 0;
+      }
+      
+      res.json({ 
+        ...updateResult.rows[0], 
+        hasQueuedJobs,
+        priceChanged: updateData.priceChanged || false
+      });
     } catch (error) {
       console.error("Update work order error:", error);
       res.status(500).json({ message: "Failed to update work order" });
