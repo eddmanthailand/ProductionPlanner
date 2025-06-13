@@ -29,7 +29,7 @@ interface SubJob {
   sizeId: number;
   quantity: number;
   unitPrice: number;
-  totalCost: number;
+  totalCost: string | number;
   productionCost?: number;
   status: string;
   queueId?: string;
@@ -311,7 +311,7 @@ export default function WorkQueuePlanning() {
       let remainingCapacity = dailyCapacity;
       
       for (const job of currentTeamQueue) {
-        const jobCost = job.totalCost ? parseFloat(job.totalCost) : (job.quantity * 350); // Convert string to number or use fallback calculation
+        const jobCost = job.totalCost ? parseFloat(job.totalCost.toString()) : (job.quantity * 350); // Convert string to number or use fallback calculation
         
         // If job cost exceeds remaining capacity for the day, move to next working day
         if (jobCost > remainingCapacity) {
