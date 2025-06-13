@@ -703,50 +703,50 @@ export default function ProductionReports() {
                                       {team.queueJobs.map((job, index) => (
                                         <TableRow 
                                           key={`${job.workOrderId}-${job.orderNumber}-${index}`}
-                                          className={`h-9 transition-all hover:bg-gray-50 ${
-                                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                          className={`h-7 transition-all duration-200 hover:bg-blue-50 hover:shadow-sm border-b border-gray-100 ${
+                                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
                                           }`}
                                         >
-                                          <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
+                                          <TableCell className="text-xs py-0.5 px-2 font-semibold text-gray-900 bg-gradient-to-r from-blue-50 to-transparent">
                                             {job.orderNumber}
                                           </TableCell>
-                                          <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
+                                          <TableCell className="text-xs py-0.5 px-2 font-semibold text-blue-800">
                                             {job.customerName}
                                           </TableCell>
-                                          <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
+                                          <TableCell className="text-xs py-0.5 px-2 font-medium text-gray-800">
                                             {job.productName}
                                           </TableCell>
-                                          <TableCell className="text-xs py-1 px-3 text-gray-600">
-                                            <span className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                          <TableCell className="text-xs py-0.5 px-2 text-center">
+                                            <span className="inline-block bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-0.5 rounded-full text-xs font-medium text-gray-700 shadow-sm">
                                               {job.colorName || 'ไม่ระบุ'}
                                             </span>
                                           </TableCell>
-                                          <TableCell className="text-xs py-1 px-3 text-gray-600">
-                                            <span className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                          <TableCell className="text-xs py-0.5 px-2 text-center">
+                                            <span className="inline-block bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-0.5 rounded-full text-xs font-medium text-gray-700 shadow-sm">
                                               {job.sizeName || 'ไม่ระบุ'}
                                             </span>
                                           </TableCell>
-                                          <TableCell className="text-right text-xs font-bold py-1 px-3 text-gray-800">
+                                          <TableCell className="text-right text-xs font-bold py-0.5 px-2 text-gray-900 bg-gradient-to-l from-blue-50 to-transparent">
                                             {job.quantity.toLocaleString()}
                                           </TableCell>
-                                          <TableCell className="text-right text-xs font-bold text-blue-700 py-1 px-3">
+                                          <TableCell className="text-right text-xs font-bold text-blue-700 py-0.5 px-2 bg-blue-50">
                                             {job.completedQuantity.toLocaleString()}
                                           </TableCell>
-                                          <TableCell className="text-right text-xs font-bold py-1 px-3">
-                                            <span className={`px-2 py-0.5 rounded-md font-semibold ${
-                                              (job.quantity - job.completedQuantity) === 0 ? 'bg-green-100 text-green-800' :
-                                              (job.quantity - job.completedQuantity) > 0 ? 'bg-orange-100 text-orange-800' :
-                                              'bg-green-100 text-green-800'
+                                          <TableCell className="text-right text-xs font-bold py-0.5 px-2">
+                                            <span className={`px-2 py-1 rounded-lg font-bold shadow-sm ${
+                                              (job.quantity - job.completedQuantity) === 0 ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300' :
+                                              (job.quantity - job.completedQuantity) > 0 ? 'bg-gradient-to-r from-orange-100 to-orange-200 text-orange-800 border border-orange-300' :
+                                              'bg-gradient-to-r from-green-100 to-green-200 text-green-800 border border-green-300'
                                             }`}>
                                               {(job.quantity - job.completedQuantity).toLocaleString()}
                                               {(job.quantity - job.completedQuantity) < 0 && ' (เกิน)'}
                                             </span>
                                           </TableCell>
-                                          <TableCell className="py-1 px-3 text-center">
-                                            <span className={`text-xs font-bold px-2 py-1 rounded-md ${
-                                              job.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                              job.status === 'in-progress' ? 'bg-orange-100 text-orange-800' :
-                                              'bg-gray-100 text-gray-600'
+                                          <TableCell className="py-0.5 px-2 text-center">
+                                            <span className={`text-xs font-bold px-3 py-1 rounded-lg shadow-md ${
+                                              job.status === 'completed' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' :
+                                              job.status === 'in-progress' ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white' :
+                                              'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
                                             }`}>
                                               {job.progressPercentage}%
                                             </span>
