@@ -301,6 +301,10 @@ export default function ProductionReports() {
       const teamLogs = dailyWorkLogs.filter(log => log.teamId === team.id);
 
       const queueJobs = teamQueues.map(queue => {
+        // Find the corresponding sub job for detailed info
+        const subJob = subJobs.find(sj => sj.id === queue.subJobId);
+        
+        // Calculate completed quantity from daily work logs
         const completedLogs = teamLogs.filter(log => 
           log.workOrderId === queue.workOrderId && 
           log.subJobId === queue.subJobId
@@ -314,8 +318,8 @@ export default function ProductionReports() {
           orderNumber: queue.orderNumber,
           customerName: queue.customerName,
           productName: queue.productName,
-          colorName: '',
-          sizeName: '',
+          colorName: subJob ? getColorName(subJob.colorId) : 'ไม่ระบุ',
+          sizeName: subJob ? getSizeName(subJob.sizeId) : 'ไม่ระบุ',
           quantity: queue.quantity,
           completedQuantity,
           progressPercentage,
@@ -682,6 +686,7 @@ export default function ProductionReports() {
                                   <Table>
                                     <TableHeader>
                                       <TableRow className="h-9 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                                        <TableHead className="w-28 text-xs py-2 font-semibold text-gray-700">Job No.</TableHead>
                                         <TableHead className="w-32 text-xs py-2 font-semibold text-gray-700">ลูกค้า</TableHead>
                                         <TableHead className="w-40 text-xs py-2 font-semibold text-gray-700">สินค้า</TableHead>
                                         <TableHead className="w-20 text-xs py-2 font-semibold text-gray-700">สี</TableHead>
@@ -701,6 +706,9 @@ export default function ProductionReports() {
                                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                           }`}
                                         >
+                                          <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
+                                            {job.orderNumber}
+                                          </TableCell>
                                           <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
                                             {job.customerName}
                                           </TableCell>
