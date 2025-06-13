@@ -288,19 +288,35 @@ export default function WorkQueuePlanning() {
 
   const removeFromTeamQueue = async (queueId: string, index: number) => {
     try {
-      console.log('Attempting to remove queue item:', queueId, 'from index:', index);
-      console.log('Team queue data:', teamQueue);
+      console.log('🗑️ Starting delete process...');
+      console.log('Queue ID to delete:', queueId);
+      console.log('Index:', index);
+      console.log('Current team queue:', teamQueue);
+      console.log('Selected team:', selectedTeam);
+      
+      if (!queueId) {
+        console.error('❌ No queue ID provided');
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่พบ ID ของงานที่จะลบ",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('🚀 Calling delete API...');
       const result = await removeFromQueueMutation.mutateAsync(queueId);
-      console.log('Remove result:', result);
+      console.log('✅ Delete API result:', result);
+      
       toast({
         title: "ลบงานสำเร็จ",
         description: "งานถูกลบออกจากคิวเรียบร้อยแล้ว",
       });
     } catch (error) {
-      console.error('Failed to remove job:', error);
+      console.error('❌ Failed to remove job:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถลบงานออกจากคิวได้",
+        description: "ไม่สามารถลบงานออกจากคิวได้: " + (error as any)?.message,
         variant: "destructive"
       });
     }
