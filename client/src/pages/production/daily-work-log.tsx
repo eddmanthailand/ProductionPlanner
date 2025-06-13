@@ -710,16 +710,28 @@ export default function DailyWorkLog() {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <span className={`font-medium ${
-                              quantityRemaining > 0 ? 'text-orange-600 dark:text-orange-400' : 
-                              quantityRemaining < 0 ? 'text-green-600 dark:text-green-400' : 
-                              'text-green-600 dark:text-green-400'
-                            }`}>
-                              {quantityRemaining.toLocaleString()}
-                              {quantityRemaining < 0 && (
-                                <span className="text-xs text-green-500 ml-1">(เกิน)</span>
-                              )}
-                            </span>
+                            {(() => {
+                              let colorClass = '';
+                              let label = '';
+                              
+                              if (quantityRemaining === 0) {
+                                colorClass = 'text-green-600 dark:text-green-400';
+                              } else if (quantityRemaining > 0) {
+                                colorClass = 'text-orange-600 dark:text-orange-400';
+                              } else {
+                                colorClass = 'text-green-600 dark:text-green-400';
+                                label = '(เกิน)';
+                              }
+                              
+                              return (
+                                <span className={`font-medium ${colorClass}`}>
+                                  {quantityRemaining.toLocaleString()}
+                                  {label && (
+                                    <span className="text-xs text-green-500 ml-1">{label}</span>
+                                  )}
+                                </span>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
