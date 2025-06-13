@@ -212,6 +212,16 @@ export default function DailyWorkLog() {
     }
   });
 
+  // Get all sub-jobs with complete data for preview display
+  const { data: allSubJobsComplete = [] } = useQuery<SubJob[]>({
+    queryKey: ["/api/sub-jobs/complete"],
+    queryFn: async () => {
+      const response = await fetch('/api/sub-jobs/complete');
+      if (!response.ok) throw new Error('Failed to fetch complete sub jobs');
+      return response.json();
+    }
+  });
+
   const { data: subJobsProgress = [] } = useQuery<SubJobProgress[]>({
     queryKey: ["/api/sub-jobs/progress", selectedWorkOrder],
     enabled: !!selectedWorkOrder,
@@ -1010,7 +1020,7 @@ export default function DailyWorkLog() {
                       </TableHeader>
                       <TableBody>
                         {previewingLog.subJobs.map((subJobLog: any, index: number) => {
-                          const subJob = subJobs.find(sj => sj.id === subJobLog.subJobId);
+                          const subJob = allSubJobsComplete.find(sj => sj.id === subJobLog.subJobId);
                           return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                               <TableCell className="font-medium">{subJob?.productName || '-'}</TableCell>

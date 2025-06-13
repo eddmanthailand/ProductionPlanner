@@ -2402,6 +2402,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all sub jobs with complete data including colors and sizes
+  app.get("/api/sub-jobs/complete", async (req: any, res: any) => {
+    try {
+      const tenantId = req.headers['x-tenant-id'] || '550e8400-e29b-41d4-a716-446655440000';
+      
+      const result = await pool.query(`
+        SELECT 
+          sj.id,
+          sj.work_order_id,
+          sj.product_name,
+          sj.quantity,
+          sj.unit_price,
+          sj.total_cost,
+          sj.color_id,
+          sj.size_id,
+          sj.work_step_id,
+          sj.status,
+          sj.sort_order,
+          c.name as color_name,
+          c.code as color_code,
+          s.name as size_name,
+          COALESCE(SUM(dwl.quantity_completed), 0) as completed_quantity,
+          sj.created_at,
+          sj.updated_at
+        FROM sub_jobs sj
+        LEFT JOIN colors c ON sj.color_id = c.id
+        LEFT JOIN sizes s ON sj.size_id = s.id
+        LEFT JOIN daily_work_logs dwl ON sj.id = dwl.sub_job_id
+        LEFT JOIN work_orders wo ON sj.work_order_id = wo.id
+        WHERE wo.tenant_id = $1
+        GROUP BY sj.id, sj.work_order_id, sj.product_name, sj.quantity, sj.unit_price, 
+                 sj.total_cost, sj.color_id, sj.size_id, sj.work_step_id, sj.status, 
+                 sj.sort_order, c.name, c.code, s.name, sj.created_at, sj.updated_at
+        ORDER BY sj.work_order_id, sj.sort_order
+      `, [tenantId]);
+      
+      const subJobs = result.rows.map((row: any) => ({
+        id: row.id,
+        workOrderId: row.work_order_id,
+        productName: row.product_name,
+        quantity: parseInt(row.quantity),
+        unitPrice: parseFloat(row.unit_price),
+        totalCost: row.total_cost,
+        colorId: row.color_id,
+        sizeId: row.size_id,
+        workStepId: row.work_step_id,
+        status: row.status,
+        sortOrder: row.sort_order,
+        colorName: row.color_name,
+        colorCode: row.color_code,
+        sizeName: row.size_name,
+        completedQuantity: parseInt(row.completed_quantity),
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
+      
+      res.json(subJobs);
+    } catch (error) {
+      console.error("Get complete sub jobs error:", error);
+      res.status(500).json({ message: "Failed to fetch complete sub jobs" });
+    }
+  });
+
   // Get sub jobs progress with completed quantities
   app.get("/api/sub-jobs/progress/:workOrderId", async (req: any, res: any) => {
     try {
