@@ -1806,9 +1806,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle sub-jobs (items) update
       if (updateData.items && Array.isArray(updateData.items)) {
-        // First, delete production plan items that reference sub-jobs for this work order
+        // First, get existing sub-jobs to check for work_queue references
+        const existingSubJobsResult = await pool.query(
+          `SELECT id FROM sub_jobs WHERE work_order_id = $1`,
+          [id]
+        );
+        const existingSubJobIds = existingSubJobsResult.rows.map(row => row.id);
+
+        // Store work_queue entries that reference these sub-jobs
+        let workQueueEntries = [];
+        if (existingSubJobIds.length > 0) {
+          const workQueueResult = await pool.query(
+            `SELECT * FROM work_queue WHERE sub_job_id = ANY($1)`,
+            [existingSubJobIds]
+          );
+          workQueueEntries = workQueueResult.rows;
+        }
+
+        // Delete production plan items that reference sub-jobs for this work order
         await pool.query(
           `DELETE FROM production_plan_items 
+           WHERE sub_job_id IN (
+             SELECT id FROM sub_jobs WHERE work_order_id = $1
+           )`,
+          [id]
+        );
+
+        // Delete work_queue entries that reference sub-jobs for this work order
+        await pool.query(
+          `DELETE FROM work_queue 
            WHERE sub_job_id IN (
              SELECT id FROM sub_jobs WHERE work_order_id = $1
            )`,
@@ -1821,15 +1847,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
           [id]
         );
 
-        // Insert new sub-jobs
+        // Insert new sub-jobs and map old queue entries to new sub-jobs
+        const newSubJobIdMap = new Map(); // Map old index to new sub-job id
         for (let i = 0; i < updateData.items.length; i++) {
           const item = updateData.items[i];
-          await pool.query(
+          const subJobResult = await pool.query(
             `INSERT INTO sub_jobs (
               work_order_id, product_name, department_id, work_step_id, 
               color_id, size_id, quantity, production_cost, total_cost, 
               status, sort_order, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())`,
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+            RETURNING id`,
             [
               id,
               item.productName || '',
@@ -1844,6 +1872,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
               item.sortOrder || (i + 1)
             ]
           );
+          newSubJobIdMap.set(i, subJobResult.rows[0].id);
+        }
+
+        // Recreate work_queue entries for the new sub-jobs
+        for (const queueEntry of workQueueEntries) {
+          // Find matching sub-job by product name and other attributes
+          const matchingItemIndex = updateData.items.findIndex((item: any) => 
+            item.productName === queueEntry.product_name &&
+            item.quantity === queueEntry.quantity
+          );
+
+          if (matchingItemIndex !== -1) {
+            const newSubJobId = newSubJobIdMap.get(matchingItemIndex);
+            if (newSubJobId) {
+              await pool.query(
+                `INSERT INTO work_queue (
+                  id, team_id, sub_job_id, work_order_id, order_number,
+                  product_name, quantity, priority, status, tenant_id,
+                  created_at, updated_at
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW(), NOW())`,
+                [
+                  queueEntry.id, // Keep the same queue ID
+                  queueEntry.team_id,
+                  newSubJobId, // Use new sub-job ID
+                  queueEntry.work_order_id,
+                  queueEntry.order_number,
+                  queueEntry.product_name,
+                  queueEntry.quantity,
+                  queueEntry.priority,
+                  queueEntry.status,
+                  queueEntry.tenant_id
+                ]
+              );
+            }
+          }
         }
       }
       
