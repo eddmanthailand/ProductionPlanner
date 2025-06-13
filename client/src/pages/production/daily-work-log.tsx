@@ -322,9 +322,11 @@ export default function DailyWorkLog() {
   // Delete log mutation
   const deleteLogMutation = useMutation({
     mutationFn: async (logId: string) => {
-      return await apiRequest(`/api/daily-work-logs/${logId}`, {
+      const response = await fetch(`/api/daily-work-logs/${logId}`, {
         method: 'DELETE',
       });
+      if (!response.ok) throw new Error('Failed to delete log');
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });

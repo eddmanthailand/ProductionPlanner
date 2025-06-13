@@ -247,6 +247,7 @@ export interface IStorage {
   }): Promise<DailyWorkLog[]>;
   createDailyWorkLog(log: InsertDailyWorkLog): Promise<DailyWorkLog>;
   updateDailyWorkLog(id: string, log: Partial<InsertDailyWorkLog>, tenantId: string): Promise<DailyWorkLog | undefined>;
+  deleteDailyWorkLog(id: string, tenantId: string): Promise<boolean>;
   getSubJobsByWorkOrder(workOrderId: string): Promise<SubJob[]>;
 }
 
@@ -1434,6 +1435,26 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Update daily work log error:', error);
       return undefined;
+    }
+  }
+
+  async deleteDailyWorkLog(id: string, tenantId: string): Promise<boolean> {
+    try {
+      console.log('Storage: Deleting daily work log:', { id, tenantId });
+      const [deleted] = await db
+        .delete(dailyWorkLogs)
+        .where(and(
+          eq(dailyWorkLogs.id, id),
+          eq(dailyWorkLogs.tenantId, tenantId)
+        ))
+        .returning();
+      
+      const success = !!deleted;
+      console.log('Storage: Delete result:', success);
+      return success;
+    } catch (error) {
+      console.error('Delete daily work log error:', error);
+      return false;
     }
   }
 

@@ -2391,6 +2391,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/daily-work-logs/:id", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { id } = req.params;
+      
+      console.log(`API: Deleting daily work log: ${id}`);
+      const deleted = await storage.deleteDailyWorkLog(id, tenantId);
+      
+      if (deleted) {
+        console.log(`API: Successfully deleted daily work log: ${id}`);
+        res.json({ success: true, message: "ลบบันทึกประจำวันเรียบร้อยแล้ว" });
+      } else {
+        console.log(`API: Daily work log not found: ${id}`);
+        res.status(404).json({ message: "ไม่พบบันทึกประจำวันที่ต้องการลบ" });
+      }
+    } catch (error) {
+      console.error("Delete daily work log error:", error);
+      res.status(500).json({ message: "ไม่สามารถลบบันทึกประจำวันได้" });
+    }
+  });
+
   app.get("/api/sub-jobs/by-work-order/:workOrderId", async (req: any, res: any) => {
     try {
       const { workOrderId } = req.params;
