@@ -272,6 +272,17 @@ export default function WorkQueuePlanning() {
     }
   });
 
+  const clearTeamQueueMutation = useMutation({
+    mutationFn: (teamId: string) => 
+      apiRequest(`/api/work-queues/team/${teamId}/clear`, 'DELETE'),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
+      queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/available", selectedWorkStep] });
+    }
+  });
+
   // Drag and drop handlers
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
@@ -308,6 +319,42 @@ export default function WorkQueuePlanning() {
       toast({
         title: "เกิดข้อผิดพลาด",
         description: "ไม่สามารถลบงานออกจากคิวได้",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const clearAllTeamQueue = async () => {
+    if (!selectedTeam) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "กรุณาเลือกทีมก่อน",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (teamQueue.length === 0) {
+      toast({
+        title: "ไม่มีงานในคิว",
+        description: "ไม่มีงานในคิวของทีมนี้",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      await clearTeamQueueMutation.mutateAsync(selectedTeam);
+      
+      toast({
+        title: "เคลียร์คิวสำเร็จ",
+        description: `ลบงานทั้งหมด ${teamQueue.length} รายการออกจากคิวเรียบร้อยแล้ว`,
+      });
+    } catch (error) {
+      console.error('Failed to clear team queue:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเคลียร์คิวได้",
         variant: "destructive"
       });
     }
@@ -882,7 +929,30 @@ export default function WorkQueuePlanning() {
                   <div className="space-y-6">
                     {/* Team Queue */}
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-4">คิวงานของทีม ({teamQueue.length} งาน)</h4>
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-medium text-gray-900">คิวงานของทีม ({teamQueue.length} งาน)</h4>
+                        {teamQueue.length > 0 && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={clearAllTeamQueue}
+                            disabled={clearTeamQueueMutation.isPending}
+                            className="gap-2"
+                          >
+                            {clearTeamQueueMutation.isPending ? (
+                              <>
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                กำลังเคลียร์...
+                              </>
+                            ) : (
+                              <>
+                                <Trash2 className="h-4 w-4" />
+                                เคลียร์คิว
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                       
                       <div className="space-y-2 min-h-[100px] p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
                         {teamQueue.length === 0 ? (
