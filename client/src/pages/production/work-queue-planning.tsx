@@ -289,8 +289,17 @@ export default function WorkQueuePlanning() {
   const removeFromTeamQueue = async (queueId: string, index: number) => {
     try {
       await removeFromQueueMutation.mutateAsync(queueId);
+      toast({
+        title: "ลบงานสำเร็จ",
+        description: "งานถูกลบออกจากคิวเรียบร้อยแล้ว",
+      });
     } catch (error) {
       console.error('Failed to remove job:', error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถลบงานออกจากคิวได้",
+        variant: "destructive"
+      });
     }
   };
 
@@ -890,7 +899,7 @@ export default function WorkQueuePlanning() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => removeFromTeamQueue((job as any).queueId || (job as any).id, index)}
+                                      onClick={() => removeFromTeamQueue(job.id.toString(), index)}
                                       className="text-red-600 hover:text-red-800"
                                     >
                                       <Trash2 className="h-4 w-4" />
