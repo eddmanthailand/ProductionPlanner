@@ -551,22 +551,14 @@ export default function ProductionReports() {
                                                 {subJob.remainingQuantity < 0 && ' (เกิน)'}
                                               </span>
                                             </TableCell>
-                                            <TableCell className="py-1 px-3">
-                                              <div className="flex items-center gap-2">
-                                                <div className="flex-1 bg-gray-200 rounded-full h-2 shadow-inner">
-                                                  <div 
-                                                    className={`h-2 rounded-full transition-all duration-300 ${
-                                                      subJob.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' :
-                                                      subJob.status === 'in-progress' ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
-                                                      'bg-gradient-to-r from-gray-300 to-gray-400'
-                                                    }`}
-                                                    style={{ width: `${subJob.progressPercentage}%` }}
-                                                  />
-                                                </div>
-                                                <span className="text-xs w-10 text-right font-medium text-gray-700">
-                                                  {subJob.progressPercentage}%
-                                                </span>
-                                              </div>
+                                            <TableCell className="py-1 px-3 text-center">
+                                              <span className={`text-xs font-bold px-2 py-1 rounded-md ${
+                                                subJob.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                subJob.status === 'in-progress' ? 'bg-orange-100 text-orange-800' :
+                                                'bg-gray-100 text-gray-600'
+                                              }`}>
+                                                {subJob.progressPercentage}%
+                                              </span>
                                             </TableCell>
                                             <TableCell className="py-1 px-3">
                                               <Badge 
