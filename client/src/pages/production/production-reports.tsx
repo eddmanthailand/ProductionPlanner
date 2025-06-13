@@ -682,8 +682,6 @@ export default function ProductionReports() {
                                   <Table>
                                     <TableHeader>
                                       <TableRow className="h-9 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                                        <TableHead className="w-12 text-xs py-2 font-semibold text-gray-700">#</TableHead>
-                                        <TableHead className="w-32 text-xs py-2 font-semibold text-gray-700">หมายเลขงาน</TableHead>
                                         <TableHead className="w-32 text-xs py-2 font-semibold text-gray-700">ลูกค้า</TableHead>
                                         <TableHead className="w-40 text-xs py-2 font-semibold text-gray-700">สินค้า</TableHead>
                                         <TableHead className="w-20 text-xs py-2 font-semibold text-gray-700">สี</TableHead>
@@ -703,12 +701,6 @@ export default function ProductionReports() {
                                             index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                                           }`}
                                         >
-                                          <TableCell className="font-mono text-xs text-gray-500 py-1 px-3 font-medium">
-                                            {index + 1}
-                                          </TableCell>
-                                          <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
-                                            {job.orderNumber}
-                                          </TableCell>
                                           <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
                                             {job.customerName}
                                           </TableCell>
