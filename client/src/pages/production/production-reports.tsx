@@ -74,13 +74,22 @@ interface JobProgress {
   workOrderId: string;
   orderNumber: string;
   customerName: string;
-  workSteps: {
+  subJobs: {
+    id: number;
     stepName: string;
-    departmentName: string;
-    totalQuantity: number;
+    productName: string;
+    colorName: string;
+    sizeName: string;
+    quantity: number;
     completedQuantity: number;
+    remainingQuantity: number;
     progressPercentage: number;
     status: 'pending' | 'in-progress' | 'completed';
+    dailyLogs: {
+      date: string;
+      quantityCompleted: number;
+      employeeName: string;
+    }[];
   }[];
 }
 
@@ -160,6 +169,19 @@ export default function ProductionReports() {
     queryKey: ["/api/sub-jobs/complete"],
   });
 
+  // Work steps, colors, sizes data for detailed display
+  const { data: workSteps = [] } = useQuery<any[]>({
+    queryKey: ["/api/work-steps"],
+  });
+
+  const { data: colors = [] } = useQuery<any[]>({
+    queryKey: ["/api/colors"],
+  });
+
+  const { data: sizes = [] } = useQuery<any[]>({
+    queryKey: ["/api/sizes"],
+  });
+
   // Filter plans by team
   const filteredPlans = selectedTeam === "all" 
     ? productionPlans 
@@ -168,6 +190,22 @@ export default function ProductionReports() {
   const getTeamName = (teamId: string): string => {
     const team = teams.find(t => t.id === teamId);
     return team ? team.name : 'ไม่ทราบทีม';
+  };
+
+  // Helper function to get color and size names
+  const getColorName = (colorId: number): string => {
+    const color = colors.find((c: any) => c.id === colorId);
+    return color ? color.name : 'ไม่ระบุ';
+  };
+
+  const getSizeName = (sizeId: number): string => {
+    const size = sizes.find((s: any) => s.id === sizeId);
+    return size ? size.name : 'ไม่ระบุ';
+  };
+
+  const getWorkStepName = (workStepId: string): string => {
+    const workStep = workSteps.find((ws: any) => ws.id === workStepId);
+    return workStep ? workStep.name : 'ไม่ระบุ';
   };
 
   // Generate Job Status Report Data
@@ -180,60 +218,59 @@ export default function ProductionReports() {
       : workOrders.filter(wo => wo.id === selectedWorkOrder);
 
     filteredWorkOrders.forEach(workOrder => {
-      const workOrderLogs = dailyWorkLogs.filter(log => log.workOrderId === workOrder.id);
       const workOrderSubJobs = subJobs.filter(sj => sj.workOrderId === workOrder.id);
       
-      // Group by work step and calculate total quantities
-      const stepMap = new Map<string, {
-        stepName: string;
-        departmentName: string;
-        totalQuantity: number;
-        completedQuantity: number;
-      }>();
+      const processedSubJobs = workOrderSubJobs.map(subJob => {
+        // Get daily logs for this sub job
+        const subJobLogs = dailyWorkLogs.filter(log => 
+          log.workOrderId === workOrder.id && log.subJobId === subJob.id
+        );
 
-      // Initialize steps with total quantities from sub jobs
-      workOrderSubJobs.forEach(subJob => {
-        const key = `${subJob.workStepName || 'ไม่ระบุ'}-${subJob.departmentName || 'ไม่ระบุ'}`;
-        if (!stepMap.has(key)) {
-          stepMap.set(key, {
-            stepName: subJob.workStepName || 'ไม่ระบุ',
-            departmentName: subJob.departmentName || 'ไม่ระบุ',
-            totalQuantity: 0,
-            completedQuantity: 0
-          });
-        }
-        const step = stepMap.get(key)!;
-        step.totalQuantity += subJob.quantity || 0;
+        // Group logs by date
+        const dailyLogsMap = new Map<string, { quantityCompleted: number; employeeName: string }>();
+        subJobLogs.forEach(log => {
+          const dateKey = log.date;
+          if (!dailyLogsMap.has(dateKey)) {
+            dailyLogsMap.set(dateKey, { quantityCompleted: 0, employeeName: log.employeeName });
+          }
+          const existing = dailyLogsMap.get(dateKey)!;
+          existing.quantityCompleted += log.quantityCompleted;
+          if (existing.employeeName !== log.employeeName) {
+            existing.employeeName += `, ${log.employeeName}`;
+          }
+        });
+
+        const dailyLogs = Array.from(dailyLogsMap.entries()).map(([date, data]) => ({
+          date,
+          quantityCompleted: data.quantityCompleted,
+          employeeName: data.employeeName
+        }));
+
+        const totalCompleted = subJobLogs.reduce((sum, log) => sum + log.quantityCompleted, 0);
+        const remainingQuantity = subJob.quantity - totalCompleted;
+        const progressPercentage = subJob.quantity > 0 ? Math.round((totalCompleted / subJob.quantity) * 100) : 0;
+
+        return {
+          id: subJob.id,
+          stepName: getWorkStepName(subJob.workStepId),
+          productName: subJob.productName || 'ไม่ระบุ',
+          colorName: getColorName(subJob.colorId),
+          sizeName: getSizeName(subJob.sizeId),
+          quantity: subJob.quantity,
+          completedQuantity: totalCompleted,
+          remainingQuantity,
+          progressPercentage,
+          status: (totalCompleted === 0 ? 'pending' : 
+                  totalCompleted >= subJob.quantity ? 'completed' : 'in-progress') as 'pending' | 'in-progress' | 'completed',
+          dailyLogs: dailyLogs.sort((a, b) => a.date.localeCompare(b.date))
+        };
       });
-
-      // Add completed quantities from work logs
-      workOrderLogs.forEach(log => {
-        const key = `${log.workStepName || 'ไม่ระบุ'}-${log.departmentName || 'ไม่ระบุ'}`;
-        if (!stepMap.has(key)) {
-          stepMap.set(key, {
-            stepName: log.workStepName || 'ไม่ระบุ',
-            departmentName: log.departmentName || 'ไม่ระบุ',
-            totalQuantity: 0,
-            completedQuantity: 0
-          });
-        }
-        const step = stepMap.get(key)!;
-        step.completedQuantity += log.quantityCompleted || 0;
-      });
-
-      const workSteps = Array.from(stepMap.values()).map(step => ({
-        ...step,
-        progressPercentage: step.totalQuantity > 0 ? Math.round((step.completedQuantity / step.totalQuantity) * 100) : 
-                           step.completedQuantity > 0 ? 100 : 0,
-        status: (step.completedQuantity === 0 ? 'pending' : 
-                step.completedQuantity >= step.totalQuantity ? 'completed' : 'in-progress') as 'pending' | 'in-progress' | 'completed'
-      }));
 
       jobProgressMap.set(workOrder.id, {
         workOrderId: workOrder.id,
         orderNumber: workOrder.orderNumber,
         customerName: workOrder.customerName,
-        workSteps
+        subJobs: processedSubJobs
       });
     });
 
@@ -392,13 +429,13 @@ export default function ProductionReports() {
                               {job.orderNumber} - {job.customerName}
                             </CardTitle>
                             <Badge variant="outline" className="text-xs">
-                              {job.workSteps.length} ขั้นตอน
+                              {job.subJobs.length} รายการ
                             </Badge>
                           </div>
                         </CardHeader>
                         <CardContent>
                           <div className="space-y-6">
-                            {job.workSteps.length === 0 ? (
+                            {job.subJobs.length === 0 ? (
                               <p className="text-sm text-gray-500">ยังไม่มีข้อมูลความคืบหน้า</p>
                             ) : (
                               <div className="space-y-4">
@@ -408,80 +445,92 @@ export default function ProductionReports() {
                                   <div className="grid grid-cols-3 gap-4 text-sm">
                                     <div className="text-center">
                                       <div className="text-lg font-bold text-green-600">
-                                        {job.workSteps.filter(s => s.status === 'completed').length}
+                                        {job.subJobs.filter((s: any) => s.status === 'completed').length}
                                       </div>
                                       <div className="text-gray-600">เสร็จสิ้น</div>
                                     </div>
                                     <div className="text-center">
                                       <div className="text-lg font-bold text-orange-600">
-                                        {job.workSteps.filter(s => s.status === 'in-progress').length}
+                                        {job.subJobs.filter((s: any) => s.status === 'in-progress').length}
                                       </div>
                                       <div className="text-gray-600">กำลังดำเนินการ</div>
                                     </div>
                                     <div className="text-center">
                                       <div className="text-lg font-bold text-gray-600">
-                                        {job.workSteps.filter(s => s.status === 'pending').length}
+                                        {job.subJobs.filter((s: any) => s.status === 'pending').length}
                                       </div>
                                       <div className="text-gray-600">รอดำเนินการ</div>
                                     </div>
                                   </div>
                                 </div>
 
-                                {/* Detailed Steps */}
-                                <div>
-                                  <h5 className="font-medium text-gray-900 mb-3">รายละเอียดขั้นตอน</h5>
-                                  <div className="space-y-3">
-                                    {job.workSteps.map((step, index) => (
-                                      <div key={`${step.stepName}-${step.departmentName}`} 
-                                           className={`p-4 rounded-lg border-l-4 ${
-                                             step.status === 'completed' ? 'border-l-green-500 bg-green-50' :
-                                             step.status === 'in-progress' ? 'border-l-orange-500 bg-orange-50' :
-                                             'border-l-gray-300 bg-gray-50'
-                                           }`}>
-                                        <div className="flex items-center justify-between mb-2">
-                                          <div className="flex items-center gap-3">
-                                            <div className="text-sm font-mono text-gray-500">
-                                              #{index + 1}
+                                {/* Detailed Sub Jobs Table */}
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow>
+                                        <TableHead className="w-12">#</TableHead>
+                                        <TableHead>ขั้นตอน</TableHead>
+                                        <TableHead>สินค้า</TableHead>
+                                        <TableHead>สี</TableHead>
+                                        <TableHead>ไซส์</TableHead>
+                                        <TableHead>จำนวนสั่ง</TableHead>
+                                        <TableHead>จำนวนผลิต</TableHead>
+                                        <TableHead>ยอดคงเหลือ</TableHead>
+                                        <TableHead>ความคืบหน้า</TableHead>
+                                        <TableHead>สถานะ</TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {job.subJobs.map((subJob: any, index: number) => (
+                                        <TableRow key={subJob.id}>
+                                          <TableCell className="font-mono text-sm text-gray-500">
+                                            {index + 1}
+                                          </TableCell>
+                                          <TableCell className="font-medium">
+                                            {subJob.stepName}
+                                          </TableCell>
+                                          <TableCell>{subJob.productName}</TableCell>
+                                          <TableCell>{subJob.colorName}</TableCell>
+                                          <TableCell>{subJob.sizeName}</TableCell>
+                                          <TableCell className="text-right font-medium">
+                                            {subJob.quantity}
+                                          </TableCell>
+                                          <TableCell className="text-right font-medium text-blue-600">
+                                            {subJob.completedQuantity}
+                                          </TableCell>
+                                          <TableCell className="text-right font-medium">
+                                            <span className={
+                                              subJob.remainingQuantity === 0 ? 'text-green-600' :
+                                              subJob.remainingQuantity > 0 ? 'text-orange-600' :
+                                              'text-green-600'
+                                            }>
+                                              {subJob.remainingQuantity}
+                                              {subJob.remainingQuantity < 0 && ' (เกิน)'}
+                                            </span>
+                                          </TableCell>
+                                          <TableCell>
+                                            <div className="flex items-center gap-2">
+                                              <Progress value={subJob.progressPercentage} className="w-16" />
+                                              <span className="text-xs w-10 text-right">
+                                                {subJob.progressPercentage}%
+                                              </span>
                                             </div>
+                                          </TableCell>
+                                          <TableCell>
                                             <Badge 
-                                              variant={step.status === 'completed' ? 'default' : 
-                                                     step.status === 'in-progress' ? 'secondary' : 'outline'}
+                                              variant={subJob.status === 'completed' ? 'default' : 
+                                                     subJob.status === 'in-progress' ? 'secondary' : 'outline'}
                                               className="text-xs"
                                             >
-                                              {step.status === 'completed' ? 'เสร็จสิ้น' :
-                                               step.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
+                                              {subJob.status === 'completed' ? 'เสร็จสิ้น' :
+                                               subJob.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
                                             </Badge>
-                                            <div>
-                                              <div className="font-medium text-gray-900">{step.stepName}</div>
-                                              <div className="text-sm text-gray-500">{step.departmentName}</div>
-                                            </div>
-                                          </div>
-                                          <div className="text-right">
-                                            <div className="text-lg font-bold text-gray-900">
-                                              {step.progressPercentage}%
-                                            </div>
-                                            <div className="text-xs text-gray-500">
-                                              {step.completedQuantity}/{step.totalQuantity} ชิ้น
-                                            </div>
-                                          </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                          <Progress 
-                                            value={step.progressPercentage} 
-                                            className={`h-2 ${
-                                              step.status === 'completed' ? '[&>div]:bg-green-500' :
-                                              step.status === 'in-progress' ? '[&>div]:bg-orange-500' :
-                                              '[&>div]:bg-gray-400'
-                                            }`}
-                                          />
-                                          <div className="flex justify-between text-xs text-gray-500">
-                                            <span>เริ่ม: {step.completedQuantity > 0 ? 'มีการทำงานแล้ว' : 'ยังไม่เริ่ม'}</span>
-                                            <span>คงเหลือ: {step.totalQuantity - step.completedQuantity} ชิ้น</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))}
-                                  </div>
+                                          </TableCell>
+                                        </TableRow>
+                                      ))}
+                                    </TableBody>
+                                  </Table>
                                 </div>
                               </div>
                             )}
