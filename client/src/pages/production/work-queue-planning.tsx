@@ -904,7 +904,7 @@ export default function WorkQueuePlanning() {
                                       size="sm"
                                       onClick={() => {
                                         console.log('Delete button clicked for job:', job);
-                                        removeFromTeamQueue(job.id.toString(), index);
+                                        removeFromTeamQueue((job as any).queueId || job.id.toString(), index);
                                       }}
                                       className="text-red-600 hover:text-red-800"
                                     >

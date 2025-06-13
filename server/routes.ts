@@ -2056,7 +2056,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       `, [teamId, tenantId]);
 
       const teamQueue = result.rows.map(row => ({
-        id: row.id || `wq_${Date.now()}_${Math.random()}`,
+        id: row.sub_job_id, // Use sub_job_id as the main identifier for UI
+        queueId: row.id, // Use work_queue.id for deletion operations
         workOrderId: row.work_order_id || row.id,
         orderNumber: row.order_number || row.order_number,
         customerName: row.customer_name || "ไม่ระบุลูกค้า",
