@@ -708,11 +708,25 @@ export default function WorkQueuePlanning() {
                         เลือกแล้ว: {selectedJobs.length} งาน
                       </span>
                       <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setDialogOpen(false)}
+                          disabled={batchProgress.isProcessing}
+                        >
                           ยกเลิก
                         </Button>
-                        <Button onClick={addJobsToQueue} disabled={selectedJobs.length === 0}>
-                          เพิ่มเข้าคิว ({selectedJobs.length})
+                        <Button 
+                          onClick={addJobsToQueue} 
+                          disabled={selectedJobs.length === 0 || batchProgress.isProcessing}
+                        >
+                          {batchProgress.isProcessing ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              กำลังประมวลผล...
+                            </>
+                          ) : (
+                            `เพิ่มเข้าคิว (${selectedJobs.length})`
+                          )}
                         </Button>
                       </div>
                     </div>
