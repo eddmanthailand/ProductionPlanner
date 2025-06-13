@@ -895,15 +895,11 @@ export default function WorkOrderForm() {
             {/* Sub Jobs Table */}
             <Card className="w-full shadow-lg border border-gray-200">
               <CardHeader className="py-2 px-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-b">
-                <CardTitle className="flex items-center justify-between text-base">
+                <CardTitle className="flex items-center text-base">
                   <div className="flex items-center space-x-2">
                     <Package className="h-4 w-4 text-blue-600" />
                     <span className="text-gray-800 font-medium">Sub-jobs</span>
                   </div>
-                  <Button onClick={addSubJob} size="sm" className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1 h-7">
-                    <Plus className="h-3 w-3" />
-                    <span>เพิ่ม Sub-job</span>
-                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0">
@@ -1086,8 +1082,14 @@ export default function WorkOrderForm() {
                 {/* Summary Section */}
                 <div className="bg-gradient-to-r from-gray-50 to-blue-50 border-t-2 border-blue-200 px-4 py-3">
                   <div className="flex justify-between items-center">
-                    <div className="text-xs text-gray-600">
-                      จำนวน Sub-jobs: <span className="font-semibold text-gray-800">{subJobs.length} รายการ</span>
+                    <div className="flex items-center gap-4">
+                      <Button onClick={addSubJob} size="sm" className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-xs px-3 py-1 h-7">
+                        <Plus className="h-3 w-3" />
+                        <span>เพิ่ม Sub-job</span>
+                      </Button>
+                      <div className="text-xs text-gray-600">
+                        จำนวน Sub-jobs: <span className="font-semibold text-gray-800">{subJobs.length} รายการ</span>
+                      </div>
                     </div>
                     <div className="text-sm font-bold text-blue-700 bg-white px-3 py-1 rounded-full shadow-sm border border-blue-200">
                       ยอดรวม: ฿{calculateGrandTotal().toLocaleString()}
