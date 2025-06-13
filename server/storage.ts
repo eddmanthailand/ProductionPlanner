@@ -235,7 +235,16 @@ export interface IStorage {
   deleteProductionPlanItem(id: number): Promise<boolean>;
 
   // Daily Work Logs
-  getDailyWorkLogs(tenantId: string, filters?: { date?: string; teamId?: string }): Promise<DailyWorkLog[]>;
+  getDailyWorkLogs(tenantId: string, filters?: { 
+    date?: string; 
+    teamId?: string; 
+    dateFrom?: string; 
+    dateTo?: string; 
+    workOrderId?: string; 
+    status?: string; 
+    employeeName?: string; 
+    limit?: number; 
+  }): Promise<DailyWorkLog[]>;
   createDailyWorkLog(log: InsertDailyWorkLog): Promise<DailyWorkLog>;
   updateDailyWorkLog(id: string, log: Partial<InsertDailyWorkLog>, tenantId: string): Promise<DailyWorkLog | undefined>;
   getSubJobsByWorkOrder(workOrderId: string): Promise<SubJob[]>;
@@ -1341,7 +1350,16 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Daily Work Logs methods
-  async getDailyWorkLogs(tenantId: string, filters?: { date?: string; teamId?: string }): Promise<DailyWorkLog[]> {
+  async getDailyWorkLogs(tenantId: string, filters?: { 
+    date?: string; 
+    teamId?: string; 
+    dateFrom?: string; 
+    dateTo?: string; 
+    workOrderId?: string; 
+    status?: string; 
+    employeeName?: string; 
+    limit?: number; 
+  }): Promise<DailyWorkLog[]> {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
@@ -1352,16 +1370,43 @@ export class DatabaseStorage implements IStorage {
         conditions.push(eq(dailyWorkLogs.date, filters.date));
       }
 
+      if (filters?.dateFrom) {
+        console.log('Storage: Adding dateFrom filter:', filters.dateFrom);
+        conditions.push(gte(dailyWorkLogs.date, filters.dateFrom));
+      }
+
+      if (filters?.dateTo) {
+        console.log('Storage: Adding dateTo filter:', filters.dateTo);
+        conditions.push(lte(dailyWorkLogs.date, filters.dateTo));
+      }
+
       if (filters?.teamId && filters.teamId !== 'all') {
         console.log('Storage: Adding team filter:', filters.teamId);
         conditions.push(eq(dailyWorkLogs.teamId, filters.teamId));
       }
 
-      const logs = await db
+      if (filters?.workOrderId) {
+        console.log('Storage: Adding work order filter:', filters.workOrderId);
+        conditions.push(eq(dailyWorkLogs.workOrderId, filters.workOrderId));
+      }
+
+      if (filters?.status) {
+        console.log('Storage: Adding status filter:', filters.status);
+        conditions.push(eq(dailyWorkLogs.status, filters.status));
+      }
+
+      let query = db
         .select()
         .from(dailyWorkLogs)
         .where(and(...conditions))
         .orderBy(desc(dailyWorkLogs.createdAt));
+
+      if (filters?.limit) {
+        console.log('Storage: Adding limit:', filters.limit);
+        query = query.limit(filters.limit);
+      }
+
+      const logs = await query;
       
       console.log('Storage: Found daily work logs:', logs.length, logs.map(l => ({ id: l.id, date: l.date, teamId: l.teamId })));
       return logs;

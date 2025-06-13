@@ -2226,11 +2226,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/daily-work-logs", async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
-      const { date, teamId } = req.query;
+      const { 
+        date, 
+        teamId, 
+        dateFrom, 
+        dateTo, 
+        workOrderId, 
+        status, 
+        employeeName, 
+        limit = "20" 
+      } = req.query;
       
-      console.log("API: Daily work logs requested with filters:", { date, teamId, tenantId });
+      console.log("API: Daily work logs requested with filters:", { 
+        date, teamId, dateFrom, dateTo, workOrderId, status, employeeName, limit, tenantId 
+      });
       
-      const logs = await storage.getDailyWorkLogs(tenantId, { date, teamId });
+      const logs = await storage.getDailyWorkLogs(tenantId, { 
+        date, 
+        teamId, 
+        dateFrom, 
+        dateTo, 
+        workOrderId, 
+        status, 
+        employeeName, 
+        limit: parseInt(limit) 
+      });
       console.log("API: Found daily work logs:", logs.length);
       
       res.json(logs);

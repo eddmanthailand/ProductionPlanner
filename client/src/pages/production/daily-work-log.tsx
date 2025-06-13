@@ -134,6 +134,15 @@ export default function DailyWorkLog() {
   const [notes, setNotes] = useState<string>("");
   const [editingLog, setEditingLog] = useState<DailyWorkLog | null>(null);
   const [previewingLog, setPreviewingLog] = useState<any>(null);
+  const [showSearchDialog, setShowSearchDialog] = useState(false);
+  const [searchCriteria, setSearchCriteria] = useState({
+    dateFrom: "",
+    dateTo: "",
+    teamId: "",
+    workOrderId: "",
+    status: "",
+    employeeName: ""
+  });
 
   // Data queries
   const { data: departments = [] } = useQuery<Department[]>({
@@ -205,11 +214,20 @@ export default function DailyWorkLog() {
   });
 
   const { data: dailyLogs = [] } = useQuery<DailyWorkLog[]>({
-    queryKey: ["/api/daily-work-logs", selectedDate, selectedTeam],
+    queryKey: ["/api/daily-work-logs", searchCriteria, selectedDate, selectedTeam],
     queryFn: async () => {
       const params = new URLSearchParams({
-        date: selectedDate,
-        ...(selectedTeam && { teamId: selectedTeam })
+        limit: "20",
+        ...(searchCriteria.dateFrom && { dateFrom: searchCriteria.dateFrom }),
+        ...(searchCriteria.dateTo && { dateTo: searchCriteria.dateTo }),
+        ...(searchCriteria.teamId && { teamId: searchCriteria.teamId }),
+        ...(searchCriteria.workOrderId && { workOrderId: searchCriteria.workOrderId }),
+        ...(searchCriteria.status && { status: searchCriteria.status }),
+        ...(searchCriteria.employeeName && { employeeName: searchCriteria.employeeName }),
+        ...(!Object.values(searchCriteria).some(Boolean) && { 
+          date: selectedDate,
+          ...(selectedTeam && { teamId: selectedTeam })
+        })
       });
       const response = await fetch(`/api/daily-work-logs?${params}`);
       if (!response.ok) throw new Error('Failed to fetch daily logs');
@@ -811,9 +829,15 @@ export default function DailyWorkLog() {
       {/* Daily Logs Table */}
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            รายการงานประจำวัน
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              บันทึกประจำวัน
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowSearchDialog(true)}>
+              <Search className="h-4 w-4 mr-2" />
+              ค้นหาบันทึก
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -982,6 +1006,118 @@ export default function DailyWorkLog() {
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Search Dialog */}
+      <Dialog open={showSearchDialog} onOpenChange={setShowSearchDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>ค้นหาบันทึกประจำวัน</DialogTitle>
+            <DialogDescription>
+              ใช้เงื่อนไขต่างๆ เพื่อค้นหาบันทึกที่ต้องการ
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>วันที่เริ่มต้น</Label>
+              <Input
+                type="date"
+                value={searchCriteria.dateFrom}
+                onChange={(e) => setSearchCriteria(prev => ({ ...prev, dateFrom: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>วันที่สิ้นสุด</Label>
+              <Input
+                type="date"
+                value={searchCriteria.dateTo}
+                onChange={(e) => setSearchCriteria(prev => ({ ...prev, dateTo: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>ทีม</Label>
+              <Select value={searchCriteria.teamId} onValueChange={(value) => setSearchCriteria(prev => ({ ...prev, teamId: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกทีม" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">ทุกทีม</SelectItem>
+                  {teams.map((team) => (
+                    <SelectItem key={team.id} value={team.id}>
+                      {team.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>ใบสั่งงาน</Label>
+              <Select value={searchCriteria.workOrderId} onValueChange={(value) => setSearchCriteria(prev => ({ ...prev, workOrderId: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกใบสั่งงาน" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">ทุกใบสั่งงาน</SelectItem>
+                  {workOrders.map((order) => (
+                    <SelectItem key={order.id} value={order.id}>
+                      {order.orderNumber} - {order.customerName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>สถานะ</Label>
+              <Select value={searchCriteria.status} onValueChange={(value) => setSearchCriteria(prev => ({ ...prev, status: value }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="เลือกสถานะ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">ทุกสถานะ</SelectItem>
+                  <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                  <SelectItem value="completed">เสร็จสิ้น</SelectItem>
+                  <SelectItem value="paused">หยุดชั่วคราว</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>ชื่อพนักงาน</Label>
+              <Input
+                placeholder="ค้นหาด้วยชื่อพนักงาน..."
+                value={searchCriteria.employeeName}
+                onChange={(e) => setSearchCriteria(prev => ({ ...prev, employeeName: e.target.value }))}
+              />
+            </div>
+          </div>
+          <div className="flex gap-2 pt-4">
+            <Button 
+              onClick={() => {
+                queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+                setShowSearchDialog(false);
+              }}
+              className="flex-1"
+            >
+              <Search className="h-4 w-4 mr-2" />
+              ค้นหา
+            </Button>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setSearchCriteria({
+                  dateFrom: "",
+                  dateTo: "",
+                  teamId: "",
+                  workOrderId: "",
+                  status: "",
+                  employeeName: ""
+                });
+                queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+              }}
+            >
+              ล้างค่า
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
