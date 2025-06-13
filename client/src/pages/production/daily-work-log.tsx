@@ -407,27 +407,7 @@ export default function DailyWorkLog() {
     }
   };
 
-  const handleEdit = (log: any) => {
-    // For consolidated logs, we need to handle multiple sub jobs
-    const subJobSelections: {[key: string]: boolean} = {};
-    const quantitySelections: {[key: string]: string} = {};
-    
-    log.subJobs.forEach((subJob: any) => {
-      subJobSelections[subJob.subJobId.toString()] = true;
-      quantitySelections[subJob.subJobId.toString()] = subJob.quantityCompleted.toString();
-    });
 
-    setSelectedDepartment("");
-    setSelectedTeam(log.teamId);
-    setSelectedWorkStep("");
-    setSelectedWorkOrder(log.workOrderId);
-    setSelectedSubJobs(subJobSelections);
-    setSelectedQuantities(quantitySelections);
-    setWorkDescription(log.workDescription);
-    setWorkStatus(log.status);
-    setNotes(log.notes || "");
-    setEditingLog(log);
-  };
 
   const handlePreview = (log: any) => {
     setPreviewingLog(log);
@@ -860,7 +840,7 @@ export default function DailyWorkLog() {
                   <TableHead className="w-[100px] text-center">จำนวนงาน</TableHead>
                   <TableHead className="w-[100px] text-right">จำนวนรวม</TableHead>
                   <TableHead className="w-[120px]">สถานะ</TableHead>
-                  <TableHead className="w-[120px] text-center">การดำเนินการ</TableHead>
+                  <TableHead className="w-[80px] text-center">การดำเนินการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -926,11 +906,6 @@ export default function DailyWorkLog() {
                                title="ดูรายละเอียด"
                                className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900">
                           <Eye className="h-3 w-3 text-blue-600" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleEdit(log)} 
-                               title="แก้ไข"
-                               className="h-8 w-8 p-0 hover:bg-orange-100 dark:hover:bg-orange-900">
-                          <Edit2 className="h-3 w-3 text-orange-600" />
                         </Button>
                       </div>
                     </TableCell>
@@ -1028,7 +1003,9 @@ export default function DailyWorkLog() {
                           <TableHead className="font-semibold">ชื่อสินค้า</TableHead>
                           <TableHead className="font-semibold">สี</TableHead>
                           <TableHead className="font-semibold">ไซส์</TableHead>
+                          <TableHead className="font-semibold text-right">จำนวนสั่ง</TableHead>
                           <TableHead className="font-semibold text-right">จำนวนที่ทำ</TableHead>
+                          <TableHead className="font-semibold text-right">จำนวนรวมที่ทำ</TableHead>
                           <TableHead className="font-semibold">รายละเอียดงาน</TableHead>
                           <TableHead className="font-semibold text-center">สถานะ</TableHead>
                         </TableRow>
@@ -1059,8 +1036,23 @@ export default function DailyWorkLog() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
-                                <span className="font-bold text-blue-600 dark:text-blue-400">
-                                  {subJobLog.quantityCompleted?.toLocaleString() || 0}
+                                <span className="font-medium text-gray-600 dark:text-gray-400">
+                                  {subJob?.quantity?.toLocaleString() || 0}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex flex-col items-end">
+                                  <span className="font-bold text-blue-600 dark:text-blue-400">
+                                    {subJobLog.quantityCompleted?.toLocaleString() || 0}
+                                  </span>
+                                  <span className="text-xs text-gray-500">
+                                    {format(new Date(subJobLog.createdAt || previewingLog.createdAt), 'dd/MM/yyyy')}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  {subJob?.completedQuantity?.toLocaleString() || 0}
                                 </span>
                               </TableCell>
                               <TableCell>

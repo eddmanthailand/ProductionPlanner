@@ -288,14 +288,7 @@ export default function WorkQueuePlanning() {
 
   const removeFromTeamQueue = async (queueId: string, index: number) => {
     try {
-      console.log('🗑️ Starting delete process...');
-      console.log('Queue ID to delete:', queueId);
-      console.log('Index:', index);
-      console.log('Current team queue:', teamQueue);
-      console.log('Selected team:', selectedTeam);
-      
       if (!queueId) {
-        console.error('❌ No queue ID provided');
         toast({
           title: "เกิดข้อผิดพลาด",
           description: "ไม่พบ ID ของงานที่จะลบ",
@@ -304,19 +297,17 @@ export default function WorkQueuePlanning() {
         return;
       }
 
-      console.log('🚀 Calling delete API...');
-      const result = await removeFromQueueMutation.mutateAsync(queueId);
-      console.log('✅ Delete API result:', result);
+      await removeFromQueueMutation.mutateAsync(queueId);
       
       toast({
         title: "ลบงานสำเร็จ",
         description: "งานถูกลบออกจากคิวเรียบร้อยแล้ว",
       });
     } catch (error) {
-      console.error('❌ Failed to remove job:', error);
+      console.error('Failed to remove job:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถลบงานออกจากคิวได้: " + (error as any)?.message,
+        description: "ไม่สามารถลบงานออกจากคิวได้",
         variant: "destructive"
       });
     }
@@ -925,11 +916,7 @@ export default function WorkQueuePlanning() {
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('🔴 Delete button clicked for job:', job);
-                                    console.log('🔴 queueId:', (job as any).queueId);
-                                    console.log('🔴 id:', job.id);
                                     const queueIdToUse = (job as any).queueId || job.id.toString();
-                                    console.log('🔴 Using queue ID:', queueIdToUse);
                                     removeFromTeamQueue(queueIdToUse, index);
                                   }}
                                   className="absolute top-3 right-3 text-red-600 hover:text-red-800 bg-white/80 backdrop-blur-sm"
