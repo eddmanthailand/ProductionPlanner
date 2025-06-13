@@ -2151,14 +2151,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const { subJobId, teamId, priority } = req.body;
 
-      // Get sub job details and team work step
+      // Get sub job details and check if it matches team's work step
       const subJobResult = await pool.query(
         `SELECT sj.*, wo.order_number, wo.customer_name, wo.delivery_date,
-                t.work_step_id as team_work_step_id
+                t.department_id, ws.id as team_work_step_id
          FROM sub_jobs sj 
          INNER JOIN work_orders wo ON sj.work_order_id = wo.id 
-         CROSS JOIN teams t
-         WHERE sj.id = $1 AND t.id = $2`,
+         INNER JOIN teams t ON t.id = $2
+         INNER JOIN work_steps ws ON ws.department_id = t.department_id
+         WHERE sj.id = $1`,
         [subJobId, teamId]
       );
 
@@ -2168,7 +2169,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const subJob = subJobResult.rows[0];
 
-      // Check if sub job work step matches team work step
+      // Check if sub job work step matches team's work step (by department)
       if (subJob.work_step_id !== subJob.team_work_step_id) {
         return res.status(400).json({ 
           message: "Sub job work step does not match team work step",

@@ -1,0 +1,34 @@
+Warning: Connect(Droppable): Support for defaultProps will be removed from memo components in a future major release. Use JavaScript default parameters instead.
+    at div
+    at div
+    at div
+    at _c9 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/ui/card.tsx:114:12)
+    at div
+    at _c (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/ui/card.tsx:20:11)
+    at div
+    at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c3f5524c:945:20)
+    at App (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c3f5524c:7462:25)
+    at ErrorBoundary2 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c3f5524c:1959:35)
+    at DragDropContext (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/react-beautiful-dnd.js?v=c3f5524c:7582:19)
+    at div
+    at div
+    at WorkQueuePlanning (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/work-queue-planning.tsx:37:21)
+    at main
+    at div
+    at div
+    at MainLayout (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/layout/main-layout.tsx:19:38)
+    at ProtectedRoute (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/App.tsx?v=vb0UuqYj5otOc3ReD7KWR:52:27)
+    at Route (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c3f5524c:323:16)
+    at Switch (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=c3f5524c:379:17)
+    at Router
+    at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=c3f5524c:38:15)
+    at TooltipProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=c3f5524c:61:5)
+    at QueryClientProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=c3f5524c:2805:3)
+    at App
+Failed to add jobs to queue: 
+Error {}
+message: "500: {"message":"Failed to add job to queue"}"
+stack: "Error: 500: {"message":"Failed to add job to queue"}↵ at throwIfResNotOk (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/lib/queryClient.ts:6:11)↵ at async apiRequest (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/lib/queryClient.ts:24:3)"
+get stack: ƒ ()
+set stack: ƒ ()
+[[Prototype]]: Object
