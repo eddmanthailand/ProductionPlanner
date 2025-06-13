@@ -1363,50 +1363,80 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
-      const conditions = [eq(dailyWorkLogs.tenantId, tenantId)];
+      let query = `
+        SELECT * FROM daily_work_logs 
+        WHERE tenant_id = $1
+      `;
+      const params: any[] = [tenantId];
+      let paramIndex = 2;
 
       if (filters?.date) {
         console.log('Storage: Adding date filter:', filters.date);
-        conditions.push(eq(dailyWorkLogs.date, filters.date));
+        query += ` AND date = $${paramIndex}`;
+        params.push(filters.date);
+        paramIndex++;
       }
 
       if (filters?.dateFrom) {
         console.log('Storage: Adding dateFrom filter:', filters.dateFrom);
-        conditions.push(gte(dailyWorkLogs.date, filters.dateFrom));
+        query += ` AND date >= $${paramIndex}`;
+        params.push(filters.dateFrom);
+        paramIndex++;
       }
 
       if (filters?.dateTo) {
         console.log('Storage: Adding dateTo filter:', filters.dateTo);
-        conditions.push(lte(dailyWorkLogs.date, filters.dateTo));
+        query += ` AND date <= $${paramIndex}`;
+        params.push(filters.dateTo);
+        paramIndex++;
       }
 
       if (filters?.teamId && filters.teamId !== 'all') {
         console.log('Storage: Adding team filter:', filters.teamId);
-        conditions.push(eq(dailyWorkLogs.teamId, filters.teamId));
+        query += ` AND team_id = $${paramIndex}`;
+        params.push(filters.teamId);
+        paramIndex++;
       }
 
       if (filters?.workOrderId) {
         console.log('Storage: Adding work order filter:', filters.workOrderId);
-        conditions.push(eq(dailyWorkLogs.workOrderId, filters.workOrderId));
+        query += ` AND work_order_id = $${paramIndex}`;
+        params.push(filters.workOrderId);
+        paramIndex++;
       }
 
       if (filters?.status) {
         console.log('Storage: Adding status filter:', filters.status);
-        conditions.push(eq(dailyWorkLogs.status, filters.status));
+        query += ` AND status = $${paramIndex}`;
+        params.push(filters.status);
+        paramIndex++;
       }
 
-      let query = db
-        .select()
-        .from(dailyWorkLogs)
-        .where(and(...conditions))
-        .orderBy(desc(dailyWorkLogs.createdAt));
+      query += ` ORDER BY created_at DESC`;
 
       if (filters?.limit) {
         console.log('Storage: Adding limit:', filters.limit);
-        query = query.limit(filters.limit);
+        query += ` LIMIT $${paramIndex}`;
+        params.push(filters.limit);
       }
 
-      const logs = await query;
+      const result = await db.execute(sql.raw(query, ...params));
+      const logs = result.rows.map((row: any) => ({
+        id: row.id,
+        tenantId: row.tenant_id,
+        date: row.date,
+        teamId: row.team_id,
+        employeeId: row.employee_id,
+        workOrderId: row.work_order_id,
+        subJobId: row.sub_job_id,
+        hoursWorked: parseFloat(row.hours_worked),
+        workDescription: row.work_description,
+        status: row.status,
+        notes: row.notes,
+        quantityCompleted: parseInt(row.quantity_completed),
+        createdAt: row.created_at,
+        updatedAt: row.updated_at
+      }));
       
       console.log('Storage: Found daily work logs:', logs.length, logs.map(l => ({ id: l.id, date: l.date, teamId: l.teamId })));
       return logs;
