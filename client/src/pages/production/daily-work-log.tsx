@@ -712,10 +712,13 @@ export default function DailyWorkLog() {
                           <TableCell className="text-right">
                             <span className={`font-medium ${
                               quantityRemaining > 0 ? 'text-orange-600 dark:text-orange-400' : 
-                              quantityRemaining < 0 ? 'text-red-600 dark:text-red-400' : 
-                              'text-gray-500'
+                              quantityRemaining < 0 ? 'text-green-600 dark:text-green-400' : 
+                              'text-green-600 dark:text-green-400'
                             }`}>
                               {quantityRemaining.toLocaleString()}
+                              {quantityRemaining < 0 && (
+                                <span className="text-xs text-green-500 ml-1">(เกิน)</span>
+                              )}
                             </span>
                           </TableCell>
                           <TableCell>
