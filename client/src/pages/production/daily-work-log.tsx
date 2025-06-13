@@ -1061,16 +1061,23 @@ export default function DailyWorkLog() {
                               <TableCell className="text-right">
                                 {(() => {
                                   const remaining = (subJob?.quantity || 0) - (subJob?.completedQuantity || 0);
-                                  const isNegative = remaining < 0;
+                                  let colorClass = '';
+                                  let label = '';
+                                  
+                                  if (remaining === 0) {
+                                    colorClass = 'text-green-600 dark:text-green-400';
+                                  } else if (remaining > 0) {
+                                    colorClass = 'text-orange-600 dark:text-orange-400';
+                                  } else {
+                                    colorClass = 'text-green-600 dark:text-green-400';
+                                    label = '(เกิน)';
+                                  }
+                                  
                                   return (
-                                    <span className={`font-bold ${
-                                      isNegative 
-                                        ? 'text-red-600 dark:text-red-400' 
-                                        : 'text-green-600 dark:text-green-400'
-                                    }`}>
+                                    <span className={`font-bold ${colorClass}`}>
                                       {remaining.toLocaleString()}
-                                      {isNegative && (
-                                        <span className="text-xs text-red-500 ml-1">(เกิน)</span>
+                                      {label && (
+                                        <span className="text-xs text-green-500 ml-1">{label}</span>
                                       )}
                                     </span>
                                   );
