@@ -1880,10 +1880,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Find matching sub-job by product name and other attributes
           const matchingItemIndex = updateData.items.findIndex((item: any) => 
             item.productName === queueEntry.product_name &&
-            item.quantity === queueEntry.quantity
+            parseInt(item.colorId) === queueEntry.color_id &&
+            parseInt(item.sizeId) === queueEntry.size_id
           );
 
           if (matchingItemIndex !== -1) {
+            const matchingItem = updateData.items[matchingItemIndex];
             const newSubJobId = newSubJobIdMap.get(matchingItemIndex);
             if (newSubJobId) {
               await pool.query(
@@ -1898,7 +1900,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
                   newSubJobId, // Use new sub-job ID
                   queueEntry.order_number,
                   queueEntry.product_name,
-                  queueEntry.quantity,
+                  matchingItem.quantity, // Use updated quantity
                   queueEntry.priority,
                   queueEntry.status,
                   queueEntry.tenant_id
@@ -1906,6 +1908,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               );
             }
           }
+          // If no matching item found, the sub-job was deleted, so queue entry is not recreated
         }
       }
       
@@ -1924,6 +1927,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
         hasQueuedJobs = parseInt(queueCheckResult.rows[0].count) > 0;
       }
+      
+      console.log("API: Price changed:", updateData.priceChanged, "Has queued jobs:", hasQueuedJobs);
       
       res.json({ 
         ...updateResult.rows[0], 

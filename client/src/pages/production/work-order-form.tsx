@@ -516,20 +516,34 @@ export default function WorkOrderForm() {
   const detectPriceChanges = () => {
     if (!isEditMode || originalSubJobs.length === 0) return false;
     
+    console.log("Checking price changes...");
+    console.log("Original sub-jobs:", originalSubJobs.length);
+    console.log("Current sub-jobs:", subJobs.length);
+    
     // Check if any production cost has changed
     for (let i = 0; i < subJobs.length; i++) {
       const currentSubJob = subJobs[i];
-      const originalSubJob = originalSubJobs.find(osj => 
-        osj.id === currentSubJob.id || 
-        (osj.productName === currentSubJob.productName && 
-         osj.quantity === currentSubJob.quantity &&
-         osj.colorId === currentSubJob.colorId &&
-         osj.sizeId === currentSubJob.sizeId)
-      );
+      const originalSubJob = originalSubJobs.find(osj => {
+        // Try to match by ID first, then by attributes
+        if (osj.id && currentSubJob.id && osj.id === currentSubJob.id) {
+          return true;
+        }
+        // For new items without ID, match by product attributes
+        return osj.productName === currentSubJob.productName && 
+               osj.colorId === currentSubJob.colorId &&
+               osj.sizeId === currentSubJob.sizeId;
+      });
       
-      if (originalSubJob && 
-          parseFloat(currentSubJob.productionCost.toString()) !== parseFloat(originalSubJob.productionCost.toString())) {
-        return true;
+      if (originalSubJob) {
+        const originalCost = parseFloat(originalSubJob.productionCost.toString()) || 0;
+        const currentCost = parseFloat(currentSubJob.productionCost.toString()) || 0;
+        
+        console.log(`Comparing costs for ${currentSubJob.productName}: ${originalCost} vs ${currentCost}`);
+        
+        if (originalCost !== currentCost) {
+          console.log("Price change detected!");
+          return true;
+        }
       }
     }
     return false;
