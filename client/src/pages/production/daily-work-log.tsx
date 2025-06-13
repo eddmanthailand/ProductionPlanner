@@ -1059,9 +1059,22 @@ export default function DailyWorkLog() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
-                                <span className="font-bold text-orange-600 dark:text-orange-400">
-                                  {((subJob?.quantity || 0) - (subJob?.completedQuantity || 0)).toLocaleString()}
-                                </span>
+                                {(() => {
+                                  const remaining = (subJob?.quantity || 0) - (subJob?.completedQuantity || 0);
+                                  const isNegative = remaining < 0;
+                                  return (
+                                    <span className={`font-bold ${
+                                      isNegative 
+                                        ? 'text-red-600 dark:text-red-400' 
+                                        : 'text-green-600 dark:text-green-400'
+                                    }`}>
+                                      {remaining.toLocaleString()}
+                                      {isNegative && (
+                                        <span className="text-xs text-red-500 ml-1">(เกิน)</span>
+                                      )}
+                                    </span>
+                                  );
+                                })()}
                               </TableCell>
                               <TableCell>
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
