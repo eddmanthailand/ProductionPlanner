@@ -515,16 +515,37 @@ export default function WorkQueuePlanning() {
     enabled: teams.length > 0
   });
 
-  const filteredAvailableJobs = availableJobs.filter(job => {
-    // Check if job is already in any team queue
-    const isInQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
-    if (isInQueue) return false;
-    
-    // Apply search filter
-    return job.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           job.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           job.productName.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  const filteredAvailableJobs = availableJobs
+    .filter(job => {
+      // Check if job is already in any team queue
+      const isInQueue = allTeamQueues.some(queueJob => queueJob.id === job.id);
+      if (isInQueue) return false;
+      
+      // Apply search filter
+      return job.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             job.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+             job.productName.toLowerCase().includes(searchTerm.toLowerCase());
+    })
+    .sort((a, b) => {
+      // เรียงตามหมายเลขใบสั่งก่อน
+      const orderCompare = a.orderNumber.localeCompare(b.orderNumber);
+      if (orderCompare !== 0) return orderCompare;
+      
+      // เรียงตามชื่อสินค้า
+      const productCompare = a.productName.localeCompare(b.productName);
+      if (productCompare !== 0) return productCompare;
+      
+      // เรียงตามสี (ใช้ sortOrder ของสี)
+      const colorA = colors.find(c => c.id === a.colorId);
+      const colorB = colors.find(c => c.id === b.colorId);
+      const colorCompare = (colorA?.sortOrder || 999) - (colorB?.sortOrder || 999);
+      if (colorCompare !== 0) return colorCompare;
+      
+      // เรียงตามไซส์ (ใช้ sortOrder ของไซส์)
+      const sizeA = sizes.find(s => s.id === a.sizeId);
+      const sizeB = sizes.find(s => s.id === b.sizeId);
+      return (sizeA?.sortOrder || 999) - (sizeB?.sortOrder || 999);
+    });
 
   return (
     <div className="min-h-screen bg-gray-50">
