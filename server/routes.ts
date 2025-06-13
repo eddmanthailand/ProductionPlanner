@@ -2249,6 +2249,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Clear all jobs from team queue
+  app.delete("/api/work-queues/team/:teamId/clear", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { teamId } = req.params;
+
+      // Get count of jobs to be deleted for response
+      const countResult = await pool.query(
+        `SELECT COUNT(*) as count FROM work_queue WHERE team_id = $1 AND tenant_id = $2`,
+        [teamId, tenantId]
+      );
+      const deletedCount = parseInt(countResult.rows[0].count);
+
+      // Delete all jobs from the team queue
+      await pool.query(
+        `DELETE FROM work_queue WHERE team_id = $1 AND tenant_id = $2`,
+        [teamId, tenantId]
+      );
+
+      res.json({ 
+        success: true, 
+        deletedCount,
+        message: `Cleared ${deletedCount} jobs from team queue` 
+      });
+    } catch (error) {
+      console.error("Clear team queue error:", error);
+      res.status(500).json({ message: "Failed to clear team queue" });
+    }
+  });
+
   // Production Plans routes
   app.get('/api/production-plans', async (req: any, res: any) => {
     try {
