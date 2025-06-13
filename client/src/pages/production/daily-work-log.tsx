@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -346,9 +347,7 @@ export default function DailyWorkLog() {
   });
 
   const handleDeleteLog = (log: any) => {
-    if (confirm("คุณต้องการลบบันทึกนี้หรือไม่? การลบจะไม่สามารถยกเลิกได้")) {
-      deleteLogMutation.mutate(log.id);
-    }
+    deleteLogMutation.mutate(log.id);
   };
 
   // Mutations
@@ -962,7 +961,7 @@ export default function DailyWorkLog() {
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b pb-4">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <DialogTitle className="flex items-center gap-3 text-xl">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
                   รายละเอียดการบันทึกงาน
@@ -971,15 +970,38 @@ export default function DailyWorkLog() {
                   แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}
                 </DialogDescription>
               </div>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => handleDeleteLog(previewingLog)}
-                className="flex items-center gap-2"
-              >
-                <Trash2 className="h-4 w-4" />
-                ลบบันทึก
-              </Button>
+              <div className="flex items-center gap-3">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="flex items-center gap-2"
+                      disabled={deleteLogMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      ลบบันทึก
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>ยืนยันการลบบันทึก</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        คุณต้องการลบบันทึกประจำวันนี้หรือไม่? การลบจะไม่สามารถยกเลิกได้ และข้อมูลทั้งหมดจะถูกลบออกจากระบบอย่างถาวร
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={() => handleDeleteLog(previewingLog)}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        ลบบันทึก
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
             </div>
           </DialogHeader>
           {previewingLog && (
