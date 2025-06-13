@@ -1806,109 +1806,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle sub-jobs (items) update
       if (updateData.items && Array.isArray(updateData.items)) {
-        // First, get existing sub-jobs to check for work_queue references
+        // Get existing sub-jobs with their details
         const existingSubJobsResult = await pool.query(
-          `SELECT id FROM sub_jobs WHERE work_order_id = $1`,
+          `SELECT id, product_name, department_id, work_step_id, color_id, size_id, quantity, production_cost, total_cost, sort_order 
+           FROM sub_jobs WHERE work_order_id = $1 ORDER BY sort_order`,
           [id]
         );
-        const existingSubJobIds = existingSubJobsResult.rows.map(row => row.id);
-
-        // Store work_queue entries that reference these sub-jobs
+        const existingSubJobs = existingSubJobsResult.rows;
+        
+        // Get work_queue entries that reference these sub-jobs
+        const existingSubJobIds = existingSubJobs.map(row => row.id);
         let workQueueEntries = [];
         if (existingSubJobIds.length > 0) {
           const workQueueResult = await pool.query(
-            `SELECT * FROM work_queue WHERE sub_job_id = ANY($1)`,
+            `SELECT wq.*, sj.product_name, sj.color_id, sj.size_id, sj.work_step_id, sj.department_id
+             FROM work_queue wq 
+             JOIN sub_jobs sj ON wq.sub_job_id = sj.id
+             WHERE wq.sub_job_id = ANY($1)`,
             [existingSubJobIds]
           );
           workQueueEntries = workQueueResult.rows;
         }
 
-        // Delete production plan items that reference sub-jobs for this work order
-        await pool.query(
-          `DELETE FROM production_plan_items 
-           WHERE sub_job_id IN (
-             SELECT id FROM sub_jobs WHERE work_order_id = $1
-           )`,
-          [id]
-        );
-
-        // Delete work_queue entries that reference sub-jobs for this work order
-        await pool.query(
-          `DELETE FROM work_queue 
-           WHERE sub_job_id IN (
-             SELECT id FROM sub_jobs WHERE work_order_id = $1
-           )`,
-          [id]
-        );
-
-        // Then delete existing sub-jobs for this work order
-        await pool.query(
-          `DELETE FROM sub_jobs WHERE work_order_id = $1`,
-          [id]
-        );
-
-        // Insert new sub-jobs and map old queue entries to new sub-jobs
-        const newSubJobIdMap = new Map(); // Map old index to new sub-job id
+        // Update existing sub-jobs and track which ones are kept
+        const keptSubJobIds = new Set();
         for (let i = 0; i < updateData.items.length; i++) {
           const item = updateData.items[i];
-          const subJobResult = await pool.query(
-            `INSERT INTO sub_jobs (
-              work_order_id, product_name, department_id, work_step_id, 
-              color_id, size_id, quantity, production_cost, total_cost, 
-              status, sort_order, created_at, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
-            RETURNING id`,
-            [
-              id,
-              item.productName || '',
-              item.departmentId || null,
-              item.workStepId || null,
-              item.colorId ? parseInt(item.colorId) : null,
-              item.sizeId ? parseInt(item.sizeId) : null,
-              item.quantity || 0,
-              item.productionCost || 0,
-              item.totalCost || 0,
-              'pending',
-              item.sortOrder || (i + 1)
-            ]
-          );
-          newSubJobIdMap.set(i, subJobResult.rows[0].id);
+          
+          if (item.id && existingSubJobs.find(sj => sj.id == item.id)) {
+            // Update existing sub-job
+            await pool.query(
+              `UPDATE sub_jobs SET 
+                product_name = $1, department_id = $2, work_step_id = $3,
+                color_id = $4, size_id = $5, quantity = $6, 
+                production_cost = $7, total_cost = $8, sort_order = $9,
+                updated_at = NOW()
+              WHERE id = $10 AND work_order_id = $11`,
+              [
+                item.productName || '',
+                item.departmentId || null,
+                item.workStepId || null,
+                item.colorId ? parseInt(item.colorId) : null,
+                item.sizeId ? parseInt(item.sizeId) : null,
+                item.quantity || 0,
+                item.productionCost || 0,
+                item.totalCost || 0,
+                item.sortOrder || (i + 1),
+                item.id,
+                id
+              ]
+            );
+            keptSubJobIds.add(item.id);
+            
+            // Update work_queue entries for this sub-job
+            await pool.query(
+              `UPDATE work_queue SET 
+                product_name = $1, quantity = $2, updated_at = NOW()
+              WHERE sub_job_id = $3`,
+              [item.productName || '', item.quantity || 0, item.id]
+            );
+          } else {
+            // Insert new sub-job
+            const subJobResult = await pool.query(
+              `INSERT INTO sub_jobs (
+                work_order_id, product_name, department_id, work_step_id, 
+                color_id, size_id, quantity, production_cost, total_cost, 
+                status, sort_order, created_at, updated_at
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+              RETURNING id`,
+              [
+                id,
+                item.productName || '',
+                item.departmentId || null,
+                item.workStepId || null,
+                item.colorId ? parseInt(item.colorId) : null,
+                item.sizeId ? parseInt(item.sizeId) : null,
+                item.quantity || 0,
+                item.productionCost || 0,
+                item.totalCost || 0,
+                'pending',
+                item.sortOrder || (i + 1)
+              ]
+            );
+            keptSubJobIds.add(subJobResult.rows[0].id);
+          }
         }
 
-        // Recreate work_queue entries for the new sub-jobs
-        for (const queueEntry of workQueueEntries) {
-          // Find matching sub-job by product name and other attributes
-          const matchingItemIndex = updateData.items.findIndex((item: any) => 
-            item.productName === queueEntry.product_name &&
-            parseInt(item.colorId) === queueEntry.color_id &&
-            parseInt(item.sizeId) === queueEntry.size_id
+        // Delete sub-jobs that are no longer needed
+        const subJobsToDelete = existingSubJobs.filter(sj => !keptSubJobIds.has(sj.id));
+        for (const subJob of subJobsToDelete) {
+          // Delete related work_queue entries
+          await pool.query(
+            `DELETE FROM work_queue WHERE sub_job_id = $1`,
+            [subJob.id]
           );
-
-          if (matchingItemIndex !== -1) {
-            const matchingItem = updateData.items[matchingItemIndex];
-            const newSubJobId = newSubJobIdMap.get(matchingItemIndex);
-            if (newSubJobId) {
-              await pool.query(
-                `INSERT INTO work_queue (
-                  id, team_id, sub_job_id, order_number,
-                  product_name, quantity, priority, status, tenant_id,
-                  created_at, updated_at
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
-                [
-                  queueEntry.id, // Keep the same queue ID
-                  queueEntry.team_id,
-                  newSubJobId, // Use new sub-job ID
-                  queueEntry.order_number,
-                  queueEntry.product_name,
-                  matchingItem.quantity, // Use updated quantity
-                  queueEntry.priority,
-                  queueEntry.status,
-                  queueEntry.tenant_id
-                ]
-              );
-            }
-          }
-          // If no matching item found, the sub-job was deleted, so queue entry is not recreated
+          
+          // Delete related production plan items
+          await pool.query(
+            `DELETE FROM production_plan_items WHERE sub_job_id = $1`,
+            [subJob.id]
+          );
+          
+          // Delete the sub-job
+          await pool.query(
+            `DELETE FROM sub_jobs WHERE id = $1`,
+            [subJob.id]
+          );
         }
       }
       
