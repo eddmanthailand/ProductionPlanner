@@ -7,8 +7,43 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CalendarDays, Clock, Users, Trash2, Calculator, Plus, Search, List, ChevronDown, Loader2 } from "lucide-react";
+
+// Sortable Item component for drag and drop
+function SortableItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={cn(
+        "cursor-move transition-all",
+        isDragging && "opacity-50 scale-105"
+      )}
+    >
+      {children}
+    </div>
+  );
+}
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
@@ -106,6 +141,14 @@ export default function WorkQueuePlanning() {
   const [viewingTeam, setViewingTeam] = useState<string>("");
   const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, isProcessing: false });
   const [currentProcessingJob, setCurrentProcessingJob] = useState<string>("");
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // Data queries
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
@@ -788,7 +831,11 @@ export default function WorkQueuePlanning() {
           </Card>
         </div>
 
-        <DragDropContext onDragEnd={handleDragEnd}>
+        <DndContext 
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
           <div className="grid grid-cols-1 gap-8">
             {/* Team Queue and Production Planning */}
             <Card>
@@ -824,34 +871,20 @@ export default function WorkQueuePlanning() {
                     {/* Team Queue */}
                     <div>
                       <h4 className="font-medium text-gray-900 mb-4">คิวงานของทีม ({teamQueue.length} งาน)</h4>
-                      <Droppable droppableId="team-queue">
-                        {(provided) => (
-                          <div
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="space-y-2 min-h-[100px] p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50"
+                      
+                      <div className="space-y-2 min-h-[100px] p-4 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50">
+                        {teamQueue.length === 0 ? (
+                          <div className="text-center text-gray-500 py-8">
+                            ไม่มีงานในคิว กรุณาเพิ่มงานเข้าคิว
+                          </div>
+                        ) : (
+                          <SortableContext 
+                            items={teamQueue.map(job => job.id.toString())}
+                            strategy={verticalListSortingStrategy}
                           >
-                            {teamQueue.length === 0 ? (
-                              <div className="text-center text-gray-500 py-8">
-                                ไม่มีงานในคิว กรุณาเพิ่มงานเข้าคิว
-                              </div>
-                            ) : (
-                              teamQueue.map((job, index) => (
-                                <Draggable 
-                                  key={job.id.toString()} 
-                                  draggableId={job.id.toString()} 
-                                  index={index}
-                                >
-                                  {(provided, snapshot) => (
-                                    <div
-                                      ref={provided.innerRef}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      className={cn(
-                                        "p-3 bg-white rounded-lg border shadow-sm cursor-move transition-all",
-                                        snapshot.isDragging && "shadow-lg rotate-2"
-                                      )}
-                                    >
+                            {teamQueue.map((job, index) => (
+                              <SortableItem key={job.id.toString()} id={job.id.toString()}>
+                                <div className="p-3 bg-white rounded-lg border shadow-sm transition-all">
                                       <div className="flex items-center justify-between">
                                         <div className="flex-1">
                                           <div className="font-medium text-gray-900">
@@ -958,7 +991,7 @@ export default function WorkQueuePlanning() {
               </CardContent>
             </Card>
           </div>
-        </DragDropContext>
+        </DndContext>
       </div>
     </div>
   );
