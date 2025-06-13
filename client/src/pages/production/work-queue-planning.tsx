@@ -904,31 +904,39 @@ export default function WorkQueuePlanning() {
                             strategy={verticalListSortingStrategy}
                           >
                             {teamQueue.map((job, index) => (
-                              <SortableItem key={job.id.toString()} id={job.id.toString()}>
-                                <div className="p-3 bg-white rounded-lg border shadow-sm transition-all">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex-1">
-                                      <div className="font-medium text-gray-900">
-                                        {job.orderNumber} - {job.customerName}
-                                      </div>
-                                      <div className="text-sm text-gray-500">
-                                        {format(new Date(), "dd/MM/yyyy")} {getColorName(job.colorId)} {getSizeName(job.sizeId)} จำนวน {job.quantity}
+                              <div key={job.id.toString()} className="relative">
+                                <SortableItem id={job.id.toString()}>
+                                  <div className="p-3 bg-white rounded-lg border shadow-sm transition-all">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1">
+                                        <div className="font-medium text-gray-900">
+                                          {job.orderNumber} - {job.customerName}
+                                        </div>
+                                        <div className="text-sm text-gray-500">
+                                          {format(new Date(), "dd/MM/yyyy")} {getColorName(job.colorId)} {getSizeName(job.sizeId)} จำนวน {job.quantity}
+                                        </div>
                                       </div>
                                     </div>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => {
-                                        console.log('Delete button clicked for job:', job);
-                                        removeFromTeamQueue((job as any).queueId || job.id.toString(), index);
-                                      }}
-                                      className="text-red-600 hover:text-red-800"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
                                   </div>
-                                </div>
-                              </SortableItem>
+                                </SortableItem>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('🔴 Delete button clicked for job:', job);
+                                    console.log('🔴 queueId:', (job as any).queueId);
+                                    console.log('🔴 id:', job.id);
+                                    const queueIdToUse = (job as any).queueId || job.id.toString();
+                                    console.log('🔴 Using queue ID:', queueIdToUse);
+                                    removeFromTeamQueue(queueIdToUse, index);
+                                  }}
+                                  className="absolute top-3 right-3 text-red-600 hover:text-red-800 bg-white/80 backdrop-blur-sm"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             ))}
                           </SortableContext>
                         )}
