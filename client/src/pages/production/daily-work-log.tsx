@@ -878,7 +878,7 @@ export default function DailyWorkLog() {
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                         <span className="font-medium text-sm">
-                          ทีม{allTeams.find(t => t.id === log.teamId)?.name || log.teamId}
+                          {allTeams.find(t => t.id === log.teamId)?.name || log.teamId}
                         </span>
                       </div>
                     </TableCell>
@@ -960,7 +960,7 @@ export default function DailyWorkLog() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ทีม</Label>
-                  <p className="font-medium">ทีม{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
+                  <p className="font-medium">{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ใบสั่งงาน</Label>
@@ -1054,7 +1054,7 @@ export default function DailyWorkLog() {
                   <SelectItem value="all">ทุกทีม</SelectItem>
                   {allTeams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
-                      ทีม{team.name}
+                      {team.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
