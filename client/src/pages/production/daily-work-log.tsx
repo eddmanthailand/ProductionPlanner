@@ -1042,7 +1042,7 @@ export default function DailyWorkLog() {
                   <SelectValue placeholder="เลือกทีม" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">ทุกทีม</SelectItem>
+                  <SelectItem value="all">ทุกทีม</SelectItem>
                   {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
@@ -1058,7 +1058,7 @@ export default function DailyWorkLog() {
                   <SelectValue placeholder="เลือกใบสั่งงาน" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">ทุกใบสั่งงาน</SelectItem>
+                  <SelectItem value="all">ทุกใบสั่งงาน</SelectItem>
                   {workOrders.map((order) => (
                     <SelectItem key={order.id} value={order.id}>
                       {order.orderNumber} - {order.customerName}
@@ -1074,7 +1074,7 @@ export default function DailyWorkLog() {
                   <SelectValue placeholder="เลือกสถานะ" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">ทุกสถานะ</SelectItem>
+                  <SelectItem value="all">ทุกสถานะ</SelectItem>
                   <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
                   <SelectItem value="completed">เสร็จสิ้น</SelectItem>
                   <SelectItem value="paused">หยุดชั่วคราว</SelectItem>

@@ -76,7 +76,7 @@ import {
   type InsertDailyWorkLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, asc } from "drizzle-orm";
+import { eq, and, desc, sql, asc, gte, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -1363,80 +1363,46 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
-      let query = `
-        SELECT * FROM daily_work_logs 
-        WHERE tenant_id = $1
-      `;
-      const params: any[] = [tenantId];
-      let paramIndex = 2;
+      const conditions = [eq(dailyWorkLogs.tenantId, tenantId)];
 
       if (filters?.date) {
         console.log('Storage: Adding date filter:', filters.date);
-        query += ` AND date = $${paramIndex}`;
-        params.push(filters.date);
-        paramIndex++;
+        conditions.push(eq(dailyWorkLogs.date, filters.date));
       }
 
       if (filters?.dateFrom) {
         console.log('Storage: Adding dateFrom filter:', filters.dateFrom);
-        query += ` AND date >= $${paramIndex}`;
-        params.push(filters.dateFrom);
-        paramIndex++;
+        conditions.push(gte(dailyWorkLogs.date, filters.dateFrom));
       }
 
       if (filters?.dateTo) {
         console.log('Storage: Adding dateTo filter:', filters.dateTo);
-        query += ` AND date <= $${paramIndex}`;
-        params.push(filters.dateTo);
-        paramIndex++;
+        conditions.push(lte(dailyWorkLogs.date, filters.dateTo));
       }
 
       if (filters?.teamId && filters.teamId !== 'all') {
         console.log('Storage: Adding team filter:', filters.teamId);
-        query += ` AND team_id = $${paramIndex}`;
-        params.push(filters.teamId);
-        paramIndex++;
+        conditions.push(eq(dailyWorkLogs.teamId, filters.teamId));
       }
 
       if (filters?.workOrderId) {
         console.log('Storage: Adding work order filter:', filters.workOrderId);
-        query += ` AND work_order_id = $${paramIndex}`;
-        params.push(filters.workOrderId);
-        paramIndex++;
+        conditions.push(eq(dailyWorkLogs.workOrderId, filters.workOrderId));
       }
 
       if (filters?.status) {
         console.log('Storage: Adding status filter:', filters.status);
-        query += ` AND status = $${paramIndex}`;
-        params.push(filters.status);
-        paramIndex++;
+        conditions.push(eq(dailyWorkLogs.status, filters.status));
       }
 
-      query += ` ORDER BY created_at DESC`;
+      const allLogs = await db
+        .select()
+        .from(dailyWorkLogs)
+        .where(and(...conditions))
+        .orderBy(desc(dailyWorkLogs.createdAt));
 
-      if (filters?.limit) {
-        console.log('Storage: Adding limit:', filters.limit);
-        query += ` LIMIT $${paramIndex}`;
-        params.push(filters.limit);
-      }
-
-      const result = await db.execute(sql.raw(query, ...params));
-      const logs = result.rows.map((row: any) => ({
-        id: row.id,
-        tenantId: row.tenant_id,
-        date: row.date,
-        teamId: row.team_id,
-        employeeId: row.employee_id,
-        workOrderId: row.work_order_id,
-        subJobId: row.sub_job_id,
-        hoursWorked: parseFloat(row.hours_worked),
-        workDescription: row.work_description,
-        status: row.status,
-        notes: row.notes,
-        quantityCompleted: parseInt(row.quantity_completed),
-        createdAt: row.created_at,
-        updatedAt: row.updated_at
-      }));
+      // Apply limit after fetching if specified
+      const logs = filters?.limit ? allLogs.slice(0, filters.limit) : allLogs;
       
       console.log('Storage: Found daily work logs:', logs.length, logs.map(l => ({ id: l.id, date: l.date, teamId: l.teamId })));
       return logs;
