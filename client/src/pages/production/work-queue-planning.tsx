@@ -133,12 +133,16 @@ export default function WorkQueuePlanning() {
     queryKey: ["/api/holidays"],
   });
 
-  // Get available sub jobs for selected work step
+  // Get work step of selected team by finding the work step that matches the team's department
+  const selectedTeamData = teams.find(t => t.id === selectedTeam);
+  const selectedTeamWorkStep = selectedTeamData ? workSteps.find(ws => ws.departmentId === selectedTeamData.departmentId)?.id : undefined;
+
+  // Get available sub jobs for selected team's work step
   const { data: availableJobs = [], refetch: refetchAvailableJobs } = useQuery<SubJob[]>({
-    queryKey: ["/api/sub-jobs/available", selectedWorkStep],
-    enabled: !!selectedWorkStep,
+    queryKey: ["/api/sub-jobs/available", selectedTeamWorkStep],
+    enabled: !!selectedTeamWorkStep,
     queryFn: async () => {
-      const response = await fetch(`/api/sub-jobs/available?workStepId=${selectedWorkStep}`);
+      const response = await fetch(`/api/sub-jobs/available?workStepId=${selectedTeamWorkStep}`);
       if (!response.ok) throw new Error('Failed to fetch available jobs');
       return response.json();
     }
@@ -505,64 +509,22 @@ export default function WorkQueuePlanning() {
         </div>
 
         {/* Step-by-step workflow section */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
-          {/* Step 1: Select Work Step */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Step 1: Select Team */}
           <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-blue-800 text-sm">
                 <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
-                เลือกขั้นตอนงาน
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Select value={selectedWorkStep} onValueChange={setSelectedWorkStep}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue placeholder="เลือกขั้นตอน..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {workSteps.map((step) => (
-                    <SelectItem key={step.id} value={step.id}>
-                      {step.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </CardContent>
-          </Card>
-
-          {/* Step 2: Select Team */}
-          <Card className={cn(
-            "border-2 transition-colors",
-            selectedWorkStep ? "bg-gradient-to-br from-green-50 to-green-100 border-green-200" : "bg-gray-50 border-gray-200"
-          )}>
-            <CardHeader className="pb-3">
-              <CardTitle className={cn(
-                "flex items-center gap-2 text-sm",
-                selectedWorkStep ? "text-green-800" : "text-gray-500"
-              )}>
-                <div className={cn(
-                  "w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold",
-                  selectedWorkStep ? "bg-green-600 text-white" : "bg-gray-400 text-white"
-                )}>2</div>
                 เลือกทีม
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Select 
-                value={selectedTeam} 
-                onValueChange={setSelectedTeam}
-                disabled={!selectedWorkStep}
-              >
-                <SelectTrigger className={cn(
-                  selectedWorkStep ? "bg-white" : "bg-gray-100"
-                )}>
+              <Select value={selectedTeam} onValueChange={setSelectedTeam}>
+                <SelectTrigger className="bg-white">
                   <SelectValue placeholder="เลือกทีม..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {teams.filter(team => {
-                    const step = workSteps.find(s => s.id === selectedWorkStep);
-                    return step && team.departmentId === step.departmentId;
-                  }).map((team) => (
+                  {teams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
                       {team.name}
                     </SelectItem>

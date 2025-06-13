@@ -2040,12 +2040,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sj.total_cost,
           wo.order_number,
           wo.customer_name,
-          wo.delivery_date
+          wo.delivery_date,
+          t.work_step_id as team_work_step_id
         FROM work_queue wq
-        LEFT JOIN sub_jobs sj ON wq.product_name = sj.product_name
+        LEFT JOIN sub_jobs sj ON wq.sub_job_id = sj.id
         LEFT JOIN work_orders wo ON sj.work_order_id = wo.id
+        LEFT JOIN teams t ON wq.team_id = t.id
         WHERE wq.team_id = $1 
           AND wq.tenant_id = $2
+          AND (sj.work_step_id = t.work_step_id OR sj.work_step_id IS NULL)
         ORDER BY wq.priority ASC, wq.created_at ASC
       `, [teamId, tenantId]);
 
@@ -2148,20 +2151,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const { subJobId, teamId, priority } = req.body;
 
-      // Get sub job details
+      // Get sub job details and team work step
       const subJobResult = await pool.query(
-        `SELECT sj.*, wo.order_number, wo.customer_name, wo.delivery_date 
+        `SELECT sj.*, wo.order_number, wo.customer_name, wo.delivery_date,
+                t.work_step_id as team_work_step_id
          FROM sub_jobs sj 
          INNER JOIN work_orders wo ON sj.work_order_id = wo.id 
-         WHERE sj.id = $1`,
-        [subJobId]
+         CROSS JOIN teams t
+         WHERE sj.id = $1 AND t.id = $2`,
+        [subJobId, teamId]
       );
 
       if (subJobResult.rows.length === 0) {
-        return res.status(404).json({ message: "Sub job not found" });
+        return res.status(404).json({ message: "Sub job or team not found" });
       }
 
       const subJob = subJobResult.rows[0];
+
+      // Check if sub job work step matches team work step
+      if (subJob.work_step_id !== subJob.team_work_step_id) {
+        return res.status(400).json({ 
+          message: "Sub job work step does not match team work step",
+          subJobWorkStep: subJob.work_step_id,
+          teamWorkStep: subJob.team_work_step_id
+        });
+      }
 
       // Add to work queue
       const queueResult = await pool.query(
