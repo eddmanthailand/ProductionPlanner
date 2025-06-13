@@ -320,7 +320,7 @@ export default function ProductionReports() {
           workOrderId: queue.workOrderId,
           orderNumber: workOrder?.orderNumber || queue.orderNumber,
           customerName: workOrder?.customerName || 'ไม่ระบุลูกค้า',
-          productName: subJob?.productName || workOrder?.productName || 'ไม่ระบุสินค้า',
+          productName: subJob?.productName || queue.productName || 'ไม่ระบุสินค้า',
           colorName: subJob ? getColorName(subJob.colorId) : 'ไม่ระบุ',
           sizeName: subJob ? getSizeName(subJob.sizeId) : 'ไม่ระบุ',
           quantity: queue.quantity,
