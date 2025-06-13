@@ -266,11 +266,26 @@ export default function ProductionReports() {
         };
       });
 
+      // Group sub jobs by step name and sort
+      const groupedByStep = processedSubJobs.reduce((acc, subJob) => {
+        const stepName = subJob.stepName;
+        if (!acc[stepName]) {
+          acc[stepName] = [];
+        }
+        acc[stepName].push(subJob);
+        return acc;
+      }, {} as Record<string, typeof processedSubJobs>);
+
+      // Flatten the grouped sub jobs back to array, maintaining step grouping
+      const sortedSubJobs = Object.keys(groupedByStep)
+        .sort() // Sort step names alphabetically
+        .flatMap(stepName => groupedByStep[stepName]);
+
       jobProgressMap.set(workOrder.id, {
         workOrderId: workOrder.id,
         orderNumber: workOrder.orderNumber,
         customerName: workOrder.customerName,
-        subJobs: processedSubJobs
+        subJobs: sortedSubJobs
       });
     });
 
@@ -482,53 +497,68 @@ export default function ProductionReports() {
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                      {job.subJobs.map((subJob: any, index: number) => (
-                                        <TableRow key={subJob.id}>
-                                          <TableCell className="font-mono text-sm text-gray-500">
-                                            {index + 1}
-                                          </TableCell>
-                                          <TableCell className="font-medium">
-                                            {subJob.stepName}
-                                          </TableCell>
-                                          <TableCell>{subJob.productName}</TableCell>
-                                          <TableCell>{subJob.colorName}</TableCell>
-                                          <TableCell>{subJob.sizeName}</TableCell>
-                                          <TableCell className="text-right font-medium">
-                                            {subJob.quantity}
-                                          </TableCell>
-                                          <TableCell className="text-right font-medium text-blue-600">
-                                            {subJob.completedQuantity}
-                                          </TableCell>
-                                          <TableCell className="text-right font-medium">
-                                            <span className={
-                                              subJob.remainingQuantity === 0 ? 'text-green-600' :
-                                              subJob.remainingQuantity > 0 ? 'text-orange-600' :
-                                              'text-green-600'
-                                            }>
-                                              {subJob.remainingQuantity}
-                                              {subJob.remainingQuantity < 0 && ' (เกิน)'}
-                                            </span>
-                                          </TableCell>
-                                          <TableCell>
-                                            <div className="flex items-center gap-2">
-                                              <Progress value={subJob.progressPercentage} className="w-16" />
-                                              <span className="text-xs w-10 text-right">
-                                                {subJob.progressPercentage}%
+                                      {job.subJobs.map((subJob: any, index: number) => {
+                                        const currentStepName = subJob.stepName;
+                                        const previousStepName = index > 0 ? job.subJobs[index - 1].stepName : null;
+                                        const isFirstOfStep = currentStepName !== previousStepName;
+                                        
+                                        return (
+                                          <TableRow 
+                                            key={subJob.id}
+                                            className={isFirstOfStep ? 'border-t-2 border-t-blue-200' : ''}
+                                          >
+                                            <TableCell className="font-mono text-sm text-gray-500">
+                                              {index + 1}
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                              {isFirstOfStep ? (
+                                                <div className="bg-blue-50 px-2 py-1 rounded text-blue-800 font-semibold">
+                                                  {subJob.stepName}
+                                                </div>
+                                              ) : (
+                                                <div className="text-gray-400 text-center">↳</div>
+                                              )}
+                                            </TableCell>
+                                            <TableCell>{subJob.productName}</TableCell>
+                                            <TableCell>{subJob.colorName}</TableCell>
+                                            <TableCell>{subJob.sizeName}</TableCell>
+                                            <TableCell className="text-right font-medium">
+                                              {subJob.quantity}
+                                            </TableCell>
+                                            <TableCell className="text-right font-medium text-blue-600">
+                                              {subJob.completedQuantity}
+                                            </TableCell>
+                                            <TableCell className="text-right font-medium">
+                                              <span className={
+                                                subJob.remainingQuantity === 0 ? 'text-green-600' :
+                                                subJob.remainingQuantity > 0 ? 'text-orange-600' :
+                                                'text-green-600'
+                                              }>
+                                                {subJob.remainingQuantity}
+                                                {subJob.remainingQuantity < 0 && ' (เกิน)'}
                                               </span>
-                                            </div>
-                                          </TableCell>
-                                          <TableCell>
-                                            <Badge 
-                                              variant={subJob.status === 'completed' ? 'default' : 
-                                                     subJob.status === 'in-progress' ? 'secondary' : 'outline'}
-                                              className="text-xs"
-                                            >
-                                              {subJob.status === 'completed' ? 'เสร็จสิ้น' :
-                                               subJob.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
-                                            </Badge>
-                                          </TableCell>
-                                        </TableRow>
-                                      ))}
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex items-center gap-2">
+                                                <Progress value={subJob.progressPercentage} className="w-16" />
+                                                <span className="text-xs w-10 text-right">
+                                                  {subJob.progressPercentage}%
+                                                </span>
+                                              </div>
+                                            </TableCell>
+                                            <TableCell>
+                                              <Badge 
+                                                variant={subJob.status === 'completed' ? 'default' : 
+                                                       subJob.status === 'in-progress' ? 'secondary' : 'outline'}
+                                                className="text-xs"
+                                              >
+                                                {subJob.status === 'completed' ? 'เสร็จสิ้น' :
+                                                 subJob.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
+                                              </Badge>
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      })}
                                     </TableBody>
                                   </Table>
                                 </div>
