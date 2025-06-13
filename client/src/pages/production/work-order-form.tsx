@@ -17,34 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
-// Sortable Item component for drag and drop
-function SortableSubJobItem({ id, children }: { id: string; children: React.ReactNode }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  return (
-    <TableRow
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className={isDragging ? "opacity-50" : ""}
-    >
-      {children}
-    </TableRow>
-  );
-}
 
 import type { 
   Customer, 
@@ -522,25 +495,20 @@ export default function WorkOrderForm() {
     }
   };
 
-  // Handle drag and drop for sub-jobs reordering
-  // Drag and drop sensors
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+  // Handle sub-jobs reordering with simple move up/down buttons
+  const moveSubJobUp = (index: number) => {
+    if (index > 0) {
+      const newSubJobs = [...subJobs];
+      [newSubJobs[index], newSubJobs[index - 1]] = [newSubJobs[index - 1], newSubJobs[index]];
+      setSubJobs(newSubJobs);
+    }
+  };
 
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-
-    if (active.id !== over?.id) {
-      const oldIndex = subJobs.findIndex((_, index) => index.toString() === active.id);
-      const newIndex = subJobs.findIndex((_, index) => index.toString() === over.id);
-
-      setSubJobs((items) => {
-        return arrayMove(items, oldIndex, newIndex);
-      });
+  const moveSubJobDown = (index: number) => {
+    if (index < subJobs.length - 1) {
+      const newSubJobs = [...subJobs];
+      [newSubJobs[index], newSubJobs[index + 1]] = [newSubJobs[index + 1], newSubJobs[index]];
+      setSubJobs(newSubJobs);
     }
   };
 
