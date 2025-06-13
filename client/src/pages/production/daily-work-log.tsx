@@ -224,9 +224,8 @@ export default function DailyWorkLog() {
         ...(searchCriteria.workOrderId && searchCriteria.workOrderId !== "all" && { workOrderId: searchCriteria.workOrderId }),
         ...(searchCriteria.status && searchCriteria.status !== "all" && { status: searchCriteria.status }),
         ...(searchCriteria.employeeName && { employeeName: searchCriteria.employeeName }),
-        ...(!Object.values(searchCriteria).some(Boolean) && { 
-          date: selectedDate,
-          ...(selectedTeam && { teamId: selectedTeam })
+        ...(!Object.values(searchCriteria).some(Boolean) && selectedTeam !== "all" && selectedTeam && { 
+          teamId: selectedTeam
         })
       });
       const response = await fetch(`/api/daily-work-logs?${params}`);
