@@ -902,7 +902,10 @@ export default function WorkQueuePlanning() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      onClick={() => removeFromTeamQueue(job.id.toString(), index)}
+                                      onClick={() => {
+                                        console.log('Delete button clicked for job:', job);
+                                        removeFromTeamQueue(job.id.toString(), index);
+                                      }}
                                       className="text-red-600 hover:text-red-800"
                                     >
                                       <Trash2 className="h-4 w-4" />
