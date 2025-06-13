@@ -653,32 +653,32 @@ export default function ProductionReports() {
                             ) : (
                               <div className="space-y-4">
                                 {/* Team Summary */}
-                                <div className="bg-gray-50 p-3 rounded-lg">
-                                  <h5 className="font-medium text-gray-900 mb-2">สรุปงานในคิว</h5>
-                                  <div className="grid grid-cols-4 gap-3 text-sm">
-                                    <div className="text-center">
-                                      <div className="text-lg font-bold text-blue-600">
+                                <div className="bg-gradient-to-r from-white to-gray-50 p-3 rounded-lg shadow-sm border border-gray-200">
+                                  <h5 className="font-semibold text-gray-900 mb-2 text-sm">สรุปงานในคิว</h5>
+                                  <div className="grid grid-cols-4 gap-2 text-sm">
+                                    <div className="text-center bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg p-2 shadow-sm border border-blue-200">
+                                      <div className="text-lg font-bold text-blue-700">
                                         {team.queueJobs.length}
                                       </div>
-                                      <div className="text-gray-600">งานทั้งหมด</div>
+                                      <div className="text-blue-600 text-xs font-medium">งานทั้งหมด</div>
                                     </div>
-                                    <div className="text-center">
-                                      <div className="text-lg font-bold text-green-600">
+                                    <div className="text-center bg-gradient-to-r from-green-50 to-green-100 rounded-lg p-2 shadow-sm border border-green-200">
+                                      <div className="text-lg font-bold text-green-700">
                                         {team.queueJobs.filter(j => j.status === 'completed').length}
                                       </div>
-                                      <div className="text-gray-600">เสร็จสิ้น</div>
+                                      <div className="text-green-600 text-xs font-medium">เสร็จสิ้น</div>
                                     </div>
-                                    <div className="text-center">
-                                      <div className="text-lg font-bold text-orange-600">
+                                    <div className="text-center bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg p-2 shadow-sm border border-orange-200">
+                                      <div className="text-lg font-bold text-orange-700">
                                         {team.queueJobs.filter(j => j.status === 'in-progress').length}
                                       </div>
-                                      <div className="text-gray-600">กำลังดำเนินการ</div>
+                                      <div className="text-orange-600 text-xs font-medium">กำลังดำเนินการ</div>
                                     </div>
-                                    <div className="text-center">
-                                      <div className="text-lg font-bold text-gray-600">
+                                    <div className="text-center bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg p-2 shadow-sm border border-gray-200">
+                                      <div className="text-lg font-bold text-gray-700">
                                         {team.queueJobs.filter(j => j.status === 'pending').length}
                                       </div>
-                                      <div className="text-gray-600">รอดำเนินการ</div>
+                                      <div className="text-gray-600 text-xs font-medium">รอดำเนินการ</div>
                                     </div>
                                   </div>
                                 </div>
