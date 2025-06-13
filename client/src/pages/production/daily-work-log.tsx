@@ -613,7 +613,7 @@ export default function DailyWorkLog() {
                     {subJobs.map((subJob) => {
                       const progressData = subJobsProgress.find(p => p.id === subJob.id);
                       const quantityCompleted = progressData?.quantityCompleted || 0;
-                      const quantityRemaining = Math.max(0, (progressData?.quantityRemaining || subJob.quantity));
+                      const quantityRemaining = progressData?.quantityRemaining || (subJob.quantity - quantityCompleted);
                       const progressPercentage = progressData?.progressPercentage || 0;
                       
                       return (
@@ -664,7 +664,11 @@ export default function DailyWorkLog() {
                             </span>
                           </TableCell>
                           <TableCell className="text-right">
-                            <span className={`font-medium ${quantityRemaining > 0 ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500'}`}>
+                            <span className={`font-medium ${
+                              quantityRemaining > 0 ? 'text-orange-600 dark:text-orange-400' : 
+                              quantityRemaining < 0 ? 'text-red-600 dark:text-red-400' : 
+                              'text-gray-500'
+                            }`}>
                               {quantityRemaining.toLocaleString()}
                             </span>
                           </TableCell>
