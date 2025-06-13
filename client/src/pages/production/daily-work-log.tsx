@@ -220,9 +220,9 @@ export default function DailyWorkLog() {
         limit: "20",
         ...(searchCriteria.dateFrom && { dateFrom: searchCriteria.dateFrom }),
         ...(searchCriteria.dateTo && { dateTo: searchCriteria.dateTo }),
-        ...(searchCriteria.teamId && { teamId: searchCriteria.teamId }),
-        ...(searchCriteria.workOrderId && { workOrderId: searchCriteria.workOrderId }),
-        ...(searchCriteria.status && { status: searchCriteria.status }),
+        ...(searchCriteria.teamId && searchCriteria.teamId !== "all" && { teamId: searchCriteria.teamId }),
+        ...(searchCriteria.workOrderId && searchCriteria.workOrderId !== "all" && { workOrderId: searchCriteria.workOrderId }),
+        ...(searchCriteria.status && searchCriteria.status !== "all" && { status: searchCriteria.status }),
         ...(searchCriteria.employeeName && { employeeName: searchCriteria.employeeName }),
         ...(!Object.values(searchCriteria).some(Boolean) && { 
           date: selectedDate,
