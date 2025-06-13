@@ -819,13 +819,13 @@ export default function ProductionReports() {
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>ชื่อแผน</TableHead>
-                        <TableHead>ทีม</TableHead>
-                        <TableHead>วันเริ่มต้น</TableHead>
-                        <TableHead>วันที่สร้าง</TableHead>
-                        <TableHead>สถานะ</TableHead>
-                        <TableHead>การจัดการ</TableHead>
+                      <TableRow className="h-8 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                        <TableHead className="text-xs py-1 font-semibold text-gray-700">ชื่อแผน</TableHead>
+                        <TableHead className="text-xs py-1 font-semibold text-gray-700">ทีม</TableHead>
+                        <TableHead className="text-xs py-1 text-center font-semibold text-gray-700">วันเริ่มต้น</TableHead>
+                        <TableHead className="text-xs py-1 text-center font-semibold text-gray-700">วันที่สร้าง</TableHead>
+                        <TableHead className="text-xs py-1 text-center font-semibold text-gray-700">สถานะ</TableHead>
+                        <TableHead className="text-xs py-1 text-center font-semibold text-gray-700">การจัดการ</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -836,38 +836,55 @@ export default function ProductionReports() {
                           </TableCell>
                         </TableRow>
                       ) : (
-                        filteredPlans.map((plan) => (
-                          <TableRow key={plan.id}>
-                            <TableCell className="font-medium">{plan.name}</TableCell>
-                            <TableCell>{getTeamName(plan.teamId)}</TableCell>
-                            <TableCell>
-                              {plan.startDate ? format(new Date(plan.startDate), "dd/MM/yyyy") : '-'}
+                        filteredPlans.map((plan, index) => (
+                          <TableRow 
+                            key={plan.id}
+                            className={`h-7 transition-all duration-200 hover:bg-blue-50 hover:shadow-sm border-b border-gray-100 ${
+                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                            }`}
+                          >
+                            <TableCell className="text-xs py-0.5 px-2 font-semibold text-gray-900 bg-gradient-to-r from-blue-50 to-transparent">
+                              {plan.name}
                             </TableCell>
-                            <TableCell>
-                              {format(new Date(plan.createdAt), "dd/MM/yyyy HH:mm")}
+                            <TableCell className="text-xs py-0.5 px-2 font-semibold text-blue-800">
+                              {getTeamName(plan.teamId)}
                             </TableCell>
-                            <TableCell>
-                              <Badge variant={plan.status === 'active' ? 'default' : 'secondary'}>
+                            <TableCell className="text-center text-xs py-0.5 px-2">
+                              <span className="inline-block bg-gradient-to-r from-green-100 to-green-200 px-2 py-1 rounded-lg text-green-800 font-bold shadow-sm border border-green-300">
+                                {plan.startDate ? format(new Date(plan.startDate), "dd/MM/yyyy") : '-'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center text-xs py-0.5 px-2">
+                              <span className="inline-block bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-1 rounded-lg text-gray-700 font-medium shadow-sm border border-gray-300">
+                                {format(new Date(plan.createdAt), "dd/MM/yyyy HH:mm")}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-center py-0.5 px-2">
+                              <span className={`text-xs px-2 py-1 font-bold rounded-lg shadow-md ${
+                                plan.status === 'active' ? 'bg-gradient-to-r from-green-500 to-green-600 text-white' :
+                                'bg-gradient-to-r from-gray-400 to-gray-500 text-white'
+                              }`}>
                                 {plan.status === 'active' ? 'ใช้งาน' : 'ปิดใช้งาน'}
-                              </Badge>
+                              </span>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex gap-2">
+                            <TableCell className="text-center py-0.5 px-2">
+                              <div className="flex gap-1 justify-center">
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleViewPlan(plan)}
+                                  className="h-6 px-2 text-xs bg-gradient-to-r from-blue-50 to-blue-100 border-blue-300 text-blue-700 hover:from-blue-100 hover:to-blue-200"
                                 >
-                                  <Eye className="h-4 w-4 mr-1" />
+                                  <Eye className="h-3 w-3 mr-1" />
                                   ดู
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleDeletePlan(plan.id)}
-                                  className="text-red-600 hover:text-red-800"
+                                  className="h-6 px-2 text-xs bg-gradient-to-r from-red-50 to-red-100 border-red-300 text-red-700 hover:from-red-100 hover:to-red-200"
                                 >
-                                  <Trash2 className="h-4 w-4 mr-1" />
+                                  <Trash2 className="h-3 w-3 mr-1" />
                                   ลบ
                                 </Button>
                               </div>
@@ -935,31 +952,56 @@ export default function ProductionReports() {
                   <div className="border rounded-lg overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          <TableHead className="text-xs">หมายเลขงาน</TableHead>
-                          <TableHead className="text-xs">ลูกค้า</TableHead>
-                          <TableHead className="text-xs">สินค้า</TableHead>
-                          <TableHead className="text-xs">สี</TableHead>
-                          <TableHead className="text-xs">ไซส์</TableHead>
-                          <TableHead className="text-xs">จำนวน</TableHead>
-                          <TableHead className="text-xs">วันจบงาน</TableHead>
-                          <TableHead className="text-xs">ต้นทุน (บาท)</TableHead>
+                        <TableRow className="h-8 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                          <TableHead className="text-xs py-1 font-semibold text-gray-700">หมายเลขงาน</TableHead>
+                          <TableHead className="text-xs py-1 font-semibold text-gray-700">ลูกค้า</TableHead>
+                          <TableHead className="text-xs py-1 font-semibold text-gray-700">สินค้า</TableHead>
+                          <TableHead className="text-xs py-1 font-semibold text-gray-700">สี</TableHead>
+                          <TableHead className="text-xs py-1 font-semibold text-gray-700">ไซส์</TableHead>
+                          <TableHead className="text-xs py-1 text-right font-semibold text-gray-700">จำนวน</TableHead>
+                          <TableHead className="text-xs py-1 text-center font-semibold text-gray-700">วันจบงาน</TableHead>
+                          <TableHead className="text-xs py-1 text-right font-semibold text-gray-700">ต้นทุน (บาท)</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {planItems.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="text-xs font-medium">{item.orderNumber}</TableCell>
-                            <TableCell className="text-xs">{item.customerName}</TableCell>
-                            <TableCell className="text-xs">{item.productName}</TableCell>
-                            <TableCell className="text-xs">{item.colorName}</TableCell>
-                            <TableCell className="text-xs">{item.sizeName}</TableCell>
-                            <TableCell className="text-xs">{item.quantity}</TableCell>
-                            <TableCell className="text-xs text-green-600 font-medium">
-                              {item.completionDate ? format(new Date(item.completionDate), "dd/MM/yyyy") : '-'}
+                        {planItems.map((item, index) => (
+                          <TableRow 
+                            key={item.id}
+                            className={`h-7 transition-all duration-200 hover:bg-blue-50 hover:shadow-sm border-b border-gray-100 ${
+                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'
+                            }`}
+                          >
+                            <TableCell className="text-xs py-0.5 px-2 font-semibold text-gray-900 bg-gradient-to-r from-blue-50 to-transparent">
+                              {item.orderNumber}
                             </TableCell>
-                            <TableCell className="text-xs text-blue-600 font-medium">
-                              {parseFloat(item.jobCost).toLocaleString()}
+                            <TableCell className="text-xs py-0.5 px-2 font-semibold text-blue-800">
+                              {item.customerName}
+                            </TableCell>
+                            <TableCell className="text-xs py-0.5 px-2 font-medium text-gray-800">
+                              {item.productName}
+                            </TableCell>
+                            <TableCell className="text-xs py-0.5 px-2 text-center">
+                              <span className="inline-block bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-0.5 rounded-full text-xs font-medium text-gray-700 shadow-sm">
+                                {item.colorName}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-xs py-0.5 px-2 text-center">
+                              <span className="inline-block bg-gradient-to-r from-gray-100 to-gray-200 px-2 py-0.5 rounded-full text-xs font-medium text-gray-700 shadow-sm">
+                                {item.sizeName}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right text-xs font-bold py-0.5 px-2 text-gray-900 bg-gradient-to-l from-blue-50 to-transparent">
+                              {item.quantity.toLocaleString()}
+                            </TableCell>
+                            <TableCell className="text-center text-xs py-0.5 px-2">
+                              <span className="inline-block bg-gradient-to-r from-green-100 to-green-200 px-2 py-1 rounded-lg text-green-800 font-bold shadow-sm border border-green-300">
+                                {item.completionDate ? format(new Date(item.completionDate), "dd/MM/yyyy") : '-'}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right text-xs py-0.5 px-2">
+                              <span className="inline-block bg-gradient-to-r from-blue-100 to-blue-200 px-2 py-1 rounded-lg text-blue-800 font-bold shadow-sm border border-blue-300">
+                                {parseFloat(item.jobCost).toLocaleString()}
+                              </span>
                             </TableCell>
                           </TableRow>
                         ))}
