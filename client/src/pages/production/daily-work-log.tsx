@@ -1013,7 +1013,7 @@ export default function DailyWorkLog() {
                           <TableHead className="font-semibold">ไซส์</TableHead>
                           <TableHead className="font-semibold text-right">จำนวนสั่ง</TableHead>
                           <TableHead className="font-semibold text-right">จำนวนที่ทำ</TableHead>
-                          <TableHead className="font-semibold text-right">จำนวนรวมที่ทำ</TableHead>
+                          <TableHead className="font-semibold text-right">คงเหลือ</TableHead>
                           <TableHead className="font-semibold">รายละเอียดงาน</TableHead>
                           <TableHead className="font-semibold text-center">สถานะ</TableHead>
                         </TableRow>
@@ -1059,8 +1059,8 @@ export default function DailyWorkLog() {
                                 </div>
                               </TableCell>
                               <TableCell className="text-right">
-                                <span className="font-bold text-green-600 dark:text-green-400">
-                                  {subJob?.completedQuantity?.toLocaleString() || 0}
+                                <span className="font-bold text-orange-600 dark:text-orange-400">
+                                  {((subJob?.quantity || 0) - (subJob?.completedQuantity || 0)).toLocaleString()}
                                 </span>
                               </TableCell>
                               <TableCell>
