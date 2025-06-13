@@ -590,10 +590,10 @@ export default function WorkQueuePlanning() {
       const productCompare = a.productName.localeCompare(b.productName);
       if (productCompare !== 0) return productCompare;
       
-      // เรียงตามสี (ใช้ sortOrder ของสี)
+      // เรียงตามสี (ใช้ชื่อสี)
       const colorA = colors.find(c => c.id === a.colorId);
       const colorB = colors.find(c => c.id === b.colorId);
-      const colorCompare = (colorA?.sortOrder || 999) - (colorB?.sortOrder || 999);
+      const colorCompare = (colorA?.name || '').localeCompare(colorB?.name || '');
       if (colorCompare !== 0) return colorCompare;
       
       // เรียงตามไซส์ (ใช้ sortOrder ของไซส์)
