@@ -20,6 +20,36 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+// Sortable Item component for drag and drop
+function SortableSubJobItem({ id, children }: { id: string; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className={isDragging ? "opacity-50" : ""}
+    >
+      {children}
+    </TableRow>
+  );
+}
+
 import type { 
   Customer, 
   Team, 
@@ -497,15 +527,25 @@ export default function WorkOrderForm() {
   };
 
   // Handle drag and drop for sub-jobs reordering
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
-    const items = Array.from(subJobs);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
 
-    setSubJobs(items);
-    // Note: Reordering will be saved only when user clicks Save button
+    if (active.id !== over?.id) {
+      const oldIndex = subJobs.findIndex((_, index) => index.toString() === active.id);
+      const newIndex = subJobs.findIndex((_, index) => index.toString() === over.id);
+
+      setSubJobs((items) => {
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
   };
 
   const calculateGrandTotal = () => {
@@ -979,28 +1019,21 @@ export default function WorkOrderForm() {
                         <TableHead className="text-center font-semibold text-gray-700 px-2 py-2 w-[5%] text-sm">ลบ</TableHead>
                       </TableRow>
                     </TableHeader>
-                    <DragDropContext onDragEnd={handleDragEnd}>
-                      <Droppable droppableId="sub-jobs">
-                        {(provided) => (
-                          <TableBody {...provided.droppableProps} ref={provided.innerRef}>
-                            {subJobs.map((subJob, index) => (
-                              <Draggable key={`sub-job-${index}`} draggableId={`sub-job-${index}`} index={index}>
-                                {(provided, snapshot) => (
-                                  <TableRow 
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={`hover:bg-blue-50/30 border-b border-gray-100 transition-colors ${
-                                      snapshot.isDragging ? 'bg-blue-100 shadow-lg' : ''
-                                    }`}
-                                  >
-                                    <TableCell className="px-1 py-1.5 text-center">
-                                      <div 
-                                        {...provided.dragHandleProps}
-                                        className="flex items-center justify-center cursor-grab active:cursor-grabbing hover:bg-gray-100 rounded p-1"
-                                      >
-                                        <GripVertical className="h-4 w-4 text-gray-400" />
-                                      </div>
-                                    </TableCell>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext 
+                        items={subJobs.map((_, index) => index.toString())}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <TableBody>
+                          {subJobs.map((subJob, index) => (
+                            <SortableSubJobItem key={`sub-job-${index}`} id={index.toString()}>
+                              <TableCell className="cursor-grab text-center">
+                                <GripVertical className="h-4 w-4 text-gray-400" />
+                              </TableCell>
                                     <TableCell className="px-3 py-1.5">
                                       <Input
                                         value={subJob.productName || ""}
@@ -1127,15 +1160,11 @@ export default function WorkOrderForm() {
                                         <Trash2 className="h-3 w-3" />
                                       </Button>
                                     </TableCell>
-                                  </TableRow>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                          </TableBody>
-                        )}
-                      </Droppable>
-                    </DragDropContext>
+                            </SortableSubJobItem>
+                          ))}
+                        </TableBody>
+                      </SortableContext>
+                    </DndContext>
                   </Table>
                 </div>
                 
