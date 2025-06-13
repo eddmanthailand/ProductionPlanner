@@ -982,7 +982,7 @@ export default function WorkOrderForm() {
                         ยอดรวมจากใบเสนอราคา:
                       </span>
                       <span className="text-lg font-bold text-blue-600">
-                        ฿{selectedQuotation.grandTotal}
+                        ฿{parseFloat(selectedQuotation.grandTotal).toLocaleString()}
                       </span>
                     </div>
                   </div>
@@ -1148,7 +1148,7 @@ export default function WorkOrderForm() {
                                       />
                                     </TableCell>
                                     <TableCell className="px-2 py-1.5 text-right font-medium text-gray-900 text-xs">
-                                      ฿{subJob.totalCost.toLocaleString()}
+                                      ฿{(typeof subJob.totalCost === 'string' ? parseFloat(subJob.totalCost) : subJob.totalCost).toLocaleString()}
                                     </TableCell>
                                     <TableCell className="px-2 py-1.5 text-center">
                                       <Button
