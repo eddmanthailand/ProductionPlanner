@@ -160,6 +160,16 @@ export default function DailyWorkLog() {
     }
   });
 
+  // Get all teams for display purposes
+  const { data: allTeams = [] } = useQuery<Team[]>({
+    queryKey: ["/api/teams"],
+    queryFn: async () => {
+      const response = await fetch('/api/teams');
+      if (!response.ok) throw new Error('Failed to fetch all teams');
+      return response.json();
+    }
+  });
+
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
     queryKey: ["/api/work-steps", selectedDepartment],
     enabled: !!selectedDepartment,
@@ -868,7 +878,7 @@ export default function DailyWorkLog() {
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                         <span className="font-medium text-sm">
-                          ทีม{teams.find(t => t.id === log.teamId)?.name || log.teamId}
+                          ทีม{allTeams.find(t => t.id === log.teamId)?.name || log.teamId}
                         </span>
                       </div>
                     </TableCell>
@@ -950,7 +960,7 @@ export default function DailyWorkLog() {
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ทีม</Label>
-                  <p className="font-medium">ทีม{teams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
+                  <p className="font-medium">ทีม{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
                 </div>
                 <div>
                   <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ใบสั่งงาน</Label>
@@ -1042,9 +1052,9 @@ export default function DailyWorkLog() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">ทุกทีม</SelectItem>
-                  {teams.map((team) => (
+                  {allTeams.map((team) => (
                     <SelectItem key={team.id} value={team.id}>
-                      {team.name}
+                      ทีม{team.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
