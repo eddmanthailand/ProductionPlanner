@@ -397,37 +397,93 @@ export default function ProductionReports() {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="space-y-4">
+                          <div className="space-y-6">
                             {job.workSteps.length === 0 ? (
                               <p className="text-sm text-gray-500">ยังไม่มีข้อมูลความคืบหน้า</p>
                             ) : (
-                              job.workSteps.map((step, index) => (
-                                <div key={`${step.stepName}-${step.departmentName}`} className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <Badge 
-                                        variant={step.status === 'completed' ? 'default' : 
-                                               step.status === 'in-progress' ? 'secondary' : 'outline'}
-                                        className="text-xs"
-                                      >
-                                        {step.status === 'completed' ? 'เสร็จสิ้น' :
-                                         step.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
-                                      </Badge>
-                                      <span className="font-medium">{step.stepName}</span>
-                                      <span className="text-sm text-gray-500">({step.departmentName})</span>
+                              <div className="space-y-4">
+                                {/* Summary Progress */}
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                  <h5 className="font-medium text-gray-900 mb-3">สรุปความคืบหน้า</h5>
+                                  <div className="grid grid-cols-3 gap-4 text-sm">
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-green-600">
+                                        {job.workSteps.filter(s => s.status === 'completed').length}
+                                      </div>
+                                      <div className="text-gray-600">เสร็จสิ้น</div>
                                     </div>
-                                    <div className="text-sm font-medium">
-                                      {step.progressPercentage}%
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-orange-600">
+                                        {job.workSteps.filter(s => s.status === 'in-progress').length}
+                                      </div>
+                                      <div className="text-gray-600">กำลังดำเนินการ</div>
                                     </div>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Progress value={step.progressPercentage} className="flex-1" />
-                                    <div className="text-xs text-gray-500 whitespace-nowrap">
-                                      {step.completedQuantity}/{step.totalQuantity}
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-gray-600">
+                                        {job.workSteps.filter(s => s.status === 'pending').length}
+                                      </div>
+                                      <div className="text-gray-600">รอดำเนินการ</div>
                                     </div>
                                   </div>
                                 </div>
-                              ))
+
+                                {/* Detailed Steps */}
+                                <div>
+                                  <h5 className="font-medium text-gray-900 mb-3">รายละเอียดขั้นตอน</h5>
+                                  <div className="space-y-3">
+                                    {job.workSteps.map((step, index) => (
+                                      <div key={`${step.stepName}-${step.departmentName}`} 
+                                           className={`p-4 rounded-lg border-l-4 ${
+                                             step.status === 'completed' ? 'border-l-green-500 bg-green-50' :
+                                             step.status === 'in-progress' ? 'border-l-orange-500 bg-orange-50' :
+                                             'border-l-gray-300 bg-gray-50'
+                                           }`}>
+                                        <div className="flex items-center justify-between mb-2">
+                                          <div className="flex items-center gap-3">
+                                            <div className="text-sm font-mono text-gray-500">
+                                              #{index + 1}
+                                            </div>
+                                            <Badge 
+                                              variant={step.status === 'completed' ? 'default' : 
+                                                     step.status === 'in-progress' ? 'secondary' : 'outline'}
+                                              className="text-xs"
+                                            >
+                                              {step.status === 'completed' ? 'เสร็จสิ้น' :
+                                               step.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
+                                            </Badge>
+                                            <div>
+                                              <div className="font-medium text-gray-900">{step.stepName}</div>
+                                              <div className="text-sm text-gray-500">{step.departmentName}</div>
+                                            </div>
+                                          </div>
+                                          <div className="text-right">
+                                            <div className="text-lg font-bold text-gray-900">
+                                              {step.progressPercentage}%
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                              {step.completedQuantity}/{step.totalQuantity} ชิ้น
+                                            </div>
+                                          </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                          <Progress 
+                                            value={step.progressPercentage} 
+                                            className={`h-2 ${
+                                              step.status === 'completed' ? '[&>div]:bg-green-500' :
+                                              step.status === 'in-progress' ? '[&>div]:bg-orange-500' :
+                                              '[&>div]:bg-gray-400'
+                                            }`}
+                                          />
+                                          <div className="flex justify-between text-xs text-gray-500">
+                                            <span>เริ่ม: {step.completedQuantity > 0 ? 'มีการทำงานแล้ว' : 'ยังไม่เริ่ม'}</span>
+                                            <span>คงเหลือ: {step.totalQuantity - step.completedQuantity} ชิ้น</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
                             )}
                           </div>
                         </CardContent>
@@ -488,52 +544,110 @@ export default function ProductionReports() {
                           </div>
                         </CardHeader>
                         <CardContent>
-                          <div className="space-y-4">
+                          <div className="space-y-6">
                             {team.queueJobs.length === 0 ? (
                               <p className="text-sm text-gray-500">ไม่มีงานในคิว</p>
                             ) : (
-                              <div className="overflow-x-auto">
-                                <Table>
-                                  <TableHeader>
-                                    <TableRow>
-                                      <TableHead>หมายเลขงาน</TableHead>
-                                      <TableHead>ลูกค้า</TableHead>
-                                      <TableHead>สินค้า</TableHead>
-                                      <TableHead>จำนวน</TableHead>
-                                      <TableHead>ความคืบหน้า</TableHead>
-                                      <TableHead>สถานะ</TableHead>
-                                    </TableRow>
-                                  </TableHeader>
-                                  <TableBody>
-                                    {team.queueJobs.map((job) => (
-                                      <TableRow key={`${job.workOrderId}-${job.orderNumber}`}>
-                                        <TableCell className="font-medium">{job.orderNumber}</TableCell>
-                                        <TableCell>{job.customerName}</TableCell>
-                                        <TableCell>{job.productName}</TableCell>
-                                        <TableCell>
-                                          <div className="text-sm">
-                                            <div>{job.completedQuantity}/{job.quantity}</div>
+                              <div className="space-y-4">
+                                {/* Team Summary */}
+                                <div className="bg-gray-50 p-4 rounded-lg">
+                                  <h5 className="font-medium text-gray-900 mb-3">สรุปงานในคิว</h5>
+                                  <div className="grid grid-cols-4 gap-4 text-sm">
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-blue-600">
+                                        {team.queueJobs.length}
+                                      </div>
+                                      <div className="text-gray-600">งานทั้งหมด</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-green-600">
+                                        {team.queueJobs.filter(j => j.status === 'completed').length}
+                                      </div>
+                                      <div className="text-gray-600">เสร็จสิ้น</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-orange-600">
+                                        {team.queueJobs.filter(j => j.status === 'in-progress').length}
+                                      </div>
+                                      <div className="text-gray-600">กำลังดำเนินการ</div>
+                                    </div>
+                                    <div className="text-center">
+                                      <div className="text-lg font-bold text-gray-600">
+                                        {team.queueJobs.filter(j => j.status === 'pending').length}
+                                      </div>
+                                      <div className="text-gray-600">รอดำเนินการ</div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Detailed Queue Jobs */}
+                                <div>
+                                  <h5 className="font-medium text-gray-900 mb-3">รายละเอียดงานในคิว</h5>
+                                  <div className="space-y-3">
+                                    {team.queueJobs.map((job, index) => (
+                                      <div key={`${job.workOrderId}-${job.orderNumber}`} 
+                                           className={`p-4 rounded-lg border-l-4 ${
+                                             job.status === 'completed' ? 'border-l-green-500 bg-green-50' :
+                                             job.status === 'in-progress' ? 'border-l-orange-500 bg-orange-50' :
+                                             'border-l-gray-300 bg-gray-50'
+                                           }`}>
+                                        <div className="flex items-center justify-between mb-3">
+                                          <div className="flex items-center gap-3">
+                                            <div className="text-sm font-mono text-gray-500">
+                                              #{index + 1}
+                                            </div>
+                                            <Badge 
+                                              variant={job.status === 'completed' ? 'default' : 
+                                                     job.status === 'in-progress' ? 'secondary' : 'outline'}
+                                              className="text-xs"
+                                            >
+                                              {job.status === 'completed' ? 'เสร็จสิ้น' :
+                                               job.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
+                                            </Badge>
+                                            <div>
+                                              <div className="font-medium text-gray-900">{job.orderNumber}</div>
+                                              <div className="text-sm text-gray-500">{job.customerName}</div>
+                                            </div>
                                           </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <div className="flex items-center gap-2">
-                                            <Progress value={job.progressPercentage} className="w-20" />
-                                            <span className="text-xs">{job.progressPercentage}%</span>
+                                          <div className="text-right">
+                                            <div className="text-lg font-bold text-gray-900">
+                                              {job.progressPercentage}%
+                                            </div>
+                                            <div className="text-xs text-gray-500">
+                                              {job.completedQuantity}/{job.quantity} ชิ้น
+                                            </div>
                                           </div>
-                                        </TableCell>
-                                        <TableCell>
-                                          <Badge 
-                                            variant={job.status === 'completed' ? 'default' : 
-                                                   job.status === 'in-progress' ? 'secondary' : 'outline'}
-                                          >
-                                            {job.status === 'completed' ? 'เสร็จสิ้น' :
-                                             job.status === 'in-progress' ? 'กำลังดำเนินการ' : 'รอดำเนินการ'}
-                                          </Badge>
-                                        </TableCell>
-                                      </TableRow>
+                                        </div>
+
+                                        <div className="mb-3">
+                                          <div className="text-sm font-medium text-gray-700 mb-1">
+                                            สินค้า: {job.productName}
+                                          </div>
+                                          {job.colorName && (
+                                            <div className="text-xs text-gray-500">
+                                              สี: {job.colorName} | ไซส์: {job.sizeName}
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        <div className="space-y-1">
+                                          <Progress 
+                                            value={job.progressPercentage} 
+                                            className={`h-2 ${
+                                              job.status === 'completed' ? '[&>div]:bg-green-500' :
+                                              job.status === 'in-progress' ? '[&>div]:bg-orange-500' :
+                                              '[&>div]:bg-gray-400'
+                                            }`}
+                                          />
+                                          <div className="flex justify-between text-xs text-gray-500">
+                                            <span>เริ่ม: {job.completedQuantity > 0 ? 'มีการทำงานแล้ว' : 'ยังไม่เริ่ม'}</span>
+                                            <span>คงเหลือ: {job.quantity - job.completedQuantity} ชิ้น</span>
+                                          </div>
+                                        </div>
+                                      </div>
                                     ))}
-                                  </TableBody>
-                                </Table>
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </div>
