@@ -659,7 +659,14 @@ export default function DailyWorkLog() {
                     {subJobs.map((subJob) => {
                       const progressData = subJobsProgress.find(p => p.id === subJob.id);
                       const quantityCompleted = progressData?.quantityCompleted || 0;
-                      const quantityRemaining = progressData?.quantityRemaining || (subJob.quantity - quantityCompleted);
+                      
+                      // คำนวณยอดคงเหลือ = จำนวนสั่ง - จำนวนที่ทำรวมจากทุกใบบันทึกงาน
+                      const totalCompleted = consolidatedLogs.reduce((total, log) => {
+                        const subJobInLog = log.subJobs.find((sj: any) => sj.subJobId === subJob.id);
+                        return total + (subJobInLog?.quantityCompleted || 0);
+                      }, 0);
+                      
+                      const quantityRemaining = subJob.quantity - totalCompleted;
                       const progressPercentage = progressData?.progressPercentage || 0;
                       
                       return (
@@ -1137,9 +1144,16 @@ export default function DailyWorkLog() {
                               </TableCell>
                               <TableCell className="text-right">
                                 {(() => {
-                                  // ใช้การคำนวณเดียวกันกับตารางหลัก
-                                  const progressData = subJobsProgress.find(p => p.id === subJobLog.subJobId);
-                                  const remaining = progressData?.quantityRemaining || 0;
+                                  // คำนวณยอดคงเหลือ = จำนวนสั่ง - จำนวนที่ทำรวมจากทุกใบบันทึกงาน
+                                  const subJobQuantity = subJob?.quantity || 0;
+                                  
+                                  // หาจำนวนที่ทำรวมจากทุกใบบันทึกงาน
+                                  const totalCompleted = consolidatedLogs.reduce((total, log) => {
+                                    const subJobInLog = log.subJobs.find((sj: any) => sj.subJobId === subJobLog.subJobId);
+                                    return total + (subJobInLog?.quantityCompleted || 0);
+                                  }, 0);
+                                  
+                                  const remaining = subJobQuantity - totalCompleted;
                                   
                                   let colorClass = '';
                                   let label = '';
