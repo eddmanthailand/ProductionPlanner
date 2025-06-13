@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
-import { CalendarDays, Clock, Users, Trash2, Calculator, Plus, Search, List, ChevronDown } from "lucide-react";
+import { CalendarDays, Clock, Users, Trash2, Calculator, Plus, Search, List, ChevronDown, Loader2 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -103,6 +104,8 @@ export default function WorkQueuePlanning() {
   const [selectedJobs, setSelectedJobs] = useState<number[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [viewingTeam, setViewingTeam] = useState<string>("");
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0, isProcessing: false });
+  const [currentProcessingJob, setCurrentProcessingJob] = useState<string>("");
 
   // Data queries
   const { data: workSteps = [] } = useQuery<WorkStep[]>({
@@ -427,25 +430,48 @@ export default function WorkQueuePlanning() {
     }
 
     try {
-      const promises = selectedJobs.map((jobId, index) =>
-        addToQueueMutation.mutateAsync({
-          subJobId: jobId,
-          teamId: selectedTeam,
-          priority: teamQueue.length + index + 1
-        })
-      );
+      setBatchProgress({ current: 0, total: selectedJobs.length, isProcessing: true });
+      
+      let successCount = 0;
+      const jobsToProcess = selectedJobs.map(jobId => {
+        const job = availableJobs?.find(j => j.id === jobId);
+        return { id: jobId, name: job?.productName || `งาน ${jobId}` };
+      });
 
-      await Promise.all(promises);
+      for (let i = 0; i < jobsToProcess.length; i++) {
+        const job = jobsToProcess[i];
+        setCurrentProcessingJob(job.name);
+        setBatchProgress(prev => ({ ...prev, current: i + 1 }));
+
+        try {
+          await addToQueueMutation.mutateAsync({
+            subJobId: job.id,
+            teamId: selectedTeam,
+            priority: teamQueue.length + i + 1
+          });
+          successCount++;
+        } catch (error) {
+          console.error(`Failed to add job ${job.id} to queue:`, error);
+        }
+
+        // เพิ่มความล่าช้าเล็กน้อยเพื่อให้ผู้ใช้เห็นความคืบหน้า
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+      setBatchProgress({ current: 0, total: 0, isProcessing: false });
+      setCurrentProcessingJob("");
 
       toast({
         title: "เพิ่มงานเข้าคิวสำเร็จ",
-        description: `เพิ่ม ${selectedJobs.length} งานเข้าคิวแล้ว`,
+        description: `เพิ่ม ${successCount}/${selectedJobs.length} งานเข้าคิวแล้ว`,
       });
 
       setDialogOpen(false);
       setSelectedJobs([]);
       setSearchTerm("");
     } catch (error) {
+      setBatchProgress({ current: 0, total: 0, isProcessing: false });
+      setCurrentProcessingJob("");
       console.error('Failed to add jobs to queue:', error);
       toast({
         title: "เกิดข้อผิดพลาด",
@@ -572,6 +598,27 @@ export default function WorkQueuePlanning() {
                   </DialogHeader>
                   
                   <div className="space-y-4">
+                    {/* Progress Indicator */}
+                    {batchProgress.isProcessing && (
+                      <div className="space-y-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                          <span className="text-sm font-medium text-blue-800">
+                            กำลังเพิ่มงานเข้าคิว... ({batchProgress.current}/{batchProgress.total})
+                          </span>
+                        </div>
+                        <Progress 
+                          value={(batchProgress.current / batchProgress.total) * 100} 
+                          className="w-full"
+                        />
+                        {currentProcessingJob && (
+                          <p className="text-xs text-blue-600">
+                            กำลังประมวลผล: {currentProcessingJob}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Search className="h-4 w-4 text-gray-400" />
@@ -580,6 +627,7 @@ export default function WorkQueuePlanning() {
                           value={searchTerm}
                           onChange={(e) => setSearchTerm(e.target.value)}
                           className="flex-1"
+                          disabled={batchProgress.isProcessing}
                         />
                       </div>
                       
@@ -588,7 +636,7 @@ export default function WorkQueuePlanning() {
                           variant="outline" 
                           size="sm"
                           onClick={() => setSelectedJobs(filteredAvailableJobs.map(job => job.id))}
-                          disabled={filteredAvailableJobs.length === 0}
+                          disabled={filteredAvailableJobs.length === 0 || batchProgress.isProcessing}
                         >
                           เลือกทั้งหมด ({filteredAvailableJobs.length})
                         </Button>
@@ -596,7 +644,7 @@ export default function WorkQueuePlanning() {
                           variant="outline" 
                           size="sm"
                           onClick={() => setSelectedJobs([])}
-                          disabled={selectedJobs.length === 0}
+                          disabled={selectedJobs.length === 0 || batchProgress.isProcessing}
                         >
                           ยกเลิกทั้งหมด
                         </Button>
@@ -621,15 +669,17 @@ export default function WorkQueuePlanning() {
                               key={job.id} 
                               className={cn(
                                 "cursor-pointer hover:bg-gray-50",
-                                selectedJobs.includes(job.id) && "bg-blue-50"
+                                selectedJobs.includes(job.id) && "bg-blue-50",
+                                batchProgress.isProcessing && "opacity-50 cursor-not-allowed"
                               )}
-                              onClick={() => toggleJobSelection(job.id)}
+                              onClick={() => !batchProgress.isProcessing && toggleJobSelection(job.id)}
                             >
                               <TableCell>
                                 <input
                                   type="checkbox"
                                   checked={selectedJobs.includes(job.id)}
-                                  onChange={() => toggleJobSelection(job.id)}
+                                  onChange={() => !batchProgress.isProcessing && toggleJobSelection(job.id)}
+                                  disabled={batchProgress.isProcessing}
                                   className="rounded border-gray-300"
                                 />
                               </TableCell>
