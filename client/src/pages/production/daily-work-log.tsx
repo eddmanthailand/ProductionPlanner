@@ -714,7 +714,7 @@ export default function DailyWorkLog() {
                               let colorClass = '';
                               let label = '';
                               
-                              console.log('quantityRemaining:', quantityRemaining, 'type:', typeof quantityRemaining);
+
                               
                               if (quantityRemaining === 0) {
                                 colorClass = 'text-green-600 dark:text-green-400';
@@ -1137,7 +1137,10 @@ export default function DailyWorkLog() {
                               </TableCell>
                               <TableCell className="text-right">
                                 {(() => {
-                                  const remaining = (subJob?.quantity || 0) - (subJob?.completedQuantity || 0);
+                                  // ใช้การคำนวณเดียวกันกับตารางหลัก
+                                  const progressData = subJobsProgress.find(p => p.id === subJobLog.subJobId);
+                                  const remaining = progressData?.quantityRemaining || 0;
+                                  
                                   let colorClass = '';
                                   let label = '';
                                   
