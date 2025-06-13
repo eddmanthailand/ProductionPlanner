@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle } from "lucide-react";
+import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -944,75 +944,184 @@ export default function DailyWorkLog() {
 
       {/* Preview Dialog */}
       <Dialog open={!!previewingLog} onOpenChange={() => setPreviewingLog(null)}>
-        <DialogContent className="max-w-4xl">
-          <DialogHeader>
-            <DialogTitle>รายละเอียดการบันทึกงาน</DialogTitle>
-            <DialogDescription>
-              แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="border-b pb-4">
+            <DialogTitle className="flex items-center gap-3 text-xl">
+              <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+              รายละเอียดการบันทึกงาน
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
+              แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}
             </DialogDescription>
           </DialogHeader>
           {previewingLog && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">วันที่บันทึก</Label>
-                  <p className="font-medium">{format(new Date(previewingLog.createdAt), 'dd/MM/yyyy HH:mm')}</p>
+            <div className="space-y-6 pt-4">
+              {/* Header Info Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
+                      <Calendar className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-blue-600 dark:text-blue-400">วันที่บันทึก</Label>
+                      <p className="font-bold text-blue-900 dark:text-blue-100">{format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}</p>
+                      <p className="text-xs text-blue-700 dark:text-blue-300">{format(new Date(previewingLog.createdAt), 'HH:mm น.')}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ทีม</Label>
-                  <p className="font-medium">{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
+
+                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
+                      <Users className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-green-600 dark:text-green-400">ทีมงาน</Label>
+                      <p className="font-bold text-green-900 dark:text-green-100">{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
+                      <p className="text-xs text-green-700 dark:text-green-300">แผนก{departments.find(d => d.id === allTeams.find(t => t.id === previewingLog.teamId)?.departmentId)?.name}</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">ใบสั่งงาน</Label>
-                  <p className="font-medium">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.orderNumber || previewingLog.workOrderId}</p>
+
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-purple-600 dark:text-purple-400">ใบสั่งงาน</Label>
+                      <p className="font-bold text-purple-900 dark:text-purple-100">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.orderNumber || previewingLog.workOrderId}</p>
+                      <p className="text-xs text-purple-700 dark:text-purple-300">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.customerName}</p>
+                    </div>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <Label className="text-lg font-medium mb-2 block">รายการงานที่ทำ</Label>
-                <Table>
-                  <TableHeader>
-                    <TableRow style={{ fontSize: '12px' }}>
-                      <TableHead>ชื่อสินค้า</TableHead>
-                      <TableHead>สี</TableHead>
-                      <TableHead>ไซส์</TableHead>
-                      <TableHead className="text-right">จำนวนที่ทำ</TableHead>
-                      <TableHead>รายละเอียดงาน</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {previewingLog.subJobs.map((subJobLog: any, index: number) => {
-                      const subJob = subJobs.find(sj => sj.id === subJobLog.subJobId);
-                      return (
-                        <TableRow key={index} style={{ fontSize: '12px' }}>
-                          <TableCell>{subJob?.productName || '-'}</TableCell>
-                          <TableCell>
-                            {subJob?.colorId 
-                              ? colors.find(c => c.id === subJob.colorId)?.name || '-'
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell>
-                            {subJob?.sizeId 
-                              ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell className="text-right">{subJobLog.quantityCompleted}</TableCell>
-                          <TableCell>{subJobLog.workDescription}</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-lg border border-orange-200 dark:border-orange-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
+                      <BarChart3 className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-orange-600 dark:text-orange-400">จำนวนรวม</Label>
+                      <p className="font-bold text-orange-900 dark:text-orange-100">{previewingLog.totalQuantity?.toLocaleString() || 0} ชิ้น</p>
+                      <p className="text-xs text-orange-700 dark:text-orange-300">{previewingLog.subJobs.length} รายการงาน</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
+              {/* Work Details Section */}
+              <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
+                <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <ClipboardList className="w-5 h-5 text-blue-600" />
+                    รายการงานที่ทำ
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">รายละเอียดงานทั้งหมดที่บันทึกในวันนี้</p>
+                </div>
+                <div className="p-6">
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-gray-50 dark:bg-gray-800">
+                          <TableHead className="font-semibold">ชื่อสินค้า</TableHead>
+                          <TableHead className="font-semibold">สี</TableHead>
+                          <TableHead className="font-semibold">ไซส์</TableHead>
+                          <TableHead className="font-semibold text-right">จำนวนที่ทำ</TableHead>
+                          <TableHead className="font-semibold">รายละเอียดงาน</TableHead>
+                          <TableHead className="font-semibold text-center">สถานะ</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {previewingLog.subJobs.map((subJobLog: any, index: number) => {
+                          const subJob = subJobs.find(sj => sj.id === subJobLog.subJobId);
+                          return (
+                            <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                              <TableCell className="font-medium">{subJob?.productName || '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="w-4 h-4 rounded-full border border-gray-300" style={{
+                                    backgroundColor: colors.find(c => c.id === subJob?.colorId)?.code || '#f3f4f6'
+                                  }}></div>
+                                  {subJob?.colorId 
+                                    ? colors.find(c => c.id === subJob.colorId)?.name || '-'
+                                    : '-'
+                                  }
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="text-xs">
+                                  {subJob?.sizeId 
+                                    ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
+                                    : '-'
+                                  }
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <span className="font-bold text-blue-600 dark:text-blue-400">
+                                  {subJobLog.quantityCompleted?.toLocaleString() || 0}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                  {subJobLog.workDescription || '-'}
+                                </p>
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Badge variant="default" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                  เสร็จสิ้น
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </div>
+
+              {/* Notes Section */}
               {previewingLog.notes && (
-                <div>
-                  <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">หมายเหตุ</Label>
-                  <p className="mt-1 p-3 bg-gray-50 dark:bg-gray-800 rounded-md">{previewingLog.notes}</p>
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center mt-1">
+                      <MessageSquare className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <Label className="text-sm font-semibold text-amber-800 dark:text-amber-200">หมายเหตุ</Label>
+                      <p className="mt-2 text-amber-900 dark:text-amber-100 leading-relaxed">{previewingLog.notes}</p>
+                    </div>
+                  </div>
                 </div>
               )}
+
+              {/* Summary Stats */}
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border">
+                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600" />
+                  สรุปผลงาน
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-white dark:bg-gray-900 rounded-lg border">
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewingLog.subJobs.length}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">รายการงาน</p>
+                  </div>
+                  <div className="text-center p-4 bg-white dark:bg-gray-900 rounded-lg border">
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      {previewingLog.totalQuantity?.toLocaleString() || 0}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">ชิ้นงานรวม</p>
+                  </div>
+                  <div className="text-center p-4 bg-white dark:bg-gray-900 rounded-lg border">
+                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                      {Math.round((previewingLog.totalQuantity || 0) / previewingLog.subJobs.length) || 0}
+                    </p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">เฉลี่ยต่อรายการ</p>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </DialogContent>
