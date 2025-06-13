@@ -51,19 +51,6 @@ interface WorkOrder {
   status: string;
 }
 
-interface SubJob {
-  id: number;
-  workOrderId: string;
-  productName: string;
-  quantity: number;
-  colorId: number;
-  sizeId: number;
-  departmentId: string;
-  workStepId: string;
-  status: string;
-  sortOrder: number;
-}
-
 interface DailyWorkLog {
   id: string;
   date: string;
@@ -126,26 +113,10 @@ interface WorkQueue {
   sortOrder: number;
 }
 
-interface Color {
-  id: number;
-  name: string;
-}
-
-interface Size {
-  id: number;
-  name: string;
-}
-
-interface WorkStep {
-  id: string;
-  name: string;
-  departmentId: string;
-}
-
 export default function ProductionReports() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState<string>("production-plans");
+  const [activeTab, setActiveTab] = useState<string>("job-status");
   const [selectedTeam, setSelectedTeam] = useState<string>("all");
   const [selectedWorkOrder, setSelectedWorkOrder] = useState<string>("all");
   const [selectedPlan, setSelectedPlan] = useState<ProductionPlan | null>(null);
@@ -158,18 +129,6 @@ export default function ProductionReports() {
 
   const { data: workOrders = [] } = useQuery<WorkOrder[]>({
     queryKey: ["/api/work-orders"],
-  });
-
-  const { data: colors = [] } = useQuery<Color[]>({
-    queryKey: ["/api/colors"],
-  });
-
-  const { data: sizes = [] } = useQuery<Size[]>({
-    queryKey: ["/api/sizes"],
-  });
-
-  const { data: workSteps = [] } = useQuery<WorkStep[]>({
-    queryKey: ["/api/work-steps"],
   });
 
   const { data: dailyWorkLogs = [] } = useQuery<DailyWorkLog[]>({
@@ -204,21 +163,6 @@ export default function ProductionReports() {
   const getTeamName = (teamId: string): string => {
     const team = teams.find(t => t.id === teamId);
     return team ? team.name : 'ไม่ทราบทีม';
-  };
-
-  const getColorName = (colorId: number): string => {
-    const color = colors.find(c => c.id === colorId);
-    return color ? color.name : '';
-  };
-
-  const getSizeName = (sizeId: number): string => {
-    const size = sizes.find(s => s.id === sizeId);
-    return size ? size.name : '';
-  };
-
-  const getWorkStepName = (workStepId: string): string => {
-    const workStep = workSteps.find(ws => ws.id === workStepId);
-    return workStep ? workStep.name : '';
   };
 
   // Generate Job Status Report Data
