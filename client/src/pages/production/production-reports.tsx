@@ -438,12 +438,12 @@ export default function ProductionReports() {
                   ) : (
                     jobStatusData.map((job) => (
                       <Card key={job.workOrderId} className="border-l-4 border-l-blue-500">
-                        <CardHeader className="pb-3">
+                        <CardHeader className="pb-2 pt-3">
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg">
+                            <CardTitle className="text-base font-semibold text-gray-800">
                               {job.orderNumber} - {job.customerName}
                             </CardTitle>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
                               {job.subJobs.length} รายการ
                             </Badge>
                           </div>
@@ -455,45 +455,45 @@ export default function ProductionReports() {
                             ) : (
                               <div className="space-y-4">
                                 {/* Summary Progress */}
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h5 className="font-medium text-gray-900 mb-3">สรุปความคืบหน้า</h5>
-                                  <div className="grid grid-cols-3 gap-4 text-sm">
-                                    <div className="text-center">
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-3 rounded-lg border border-blue-100">
+                                  <h5 className="font-medium text-gray-900 mb-2 text-sm">สรุปความคืบหน้า</h5>
+                                  <div className="grid grid-cols-3 gap-3 text-sm">
+                                    <div className="text-center bg-white p-2 rounded shadow-sm">
                                       <div className="text-lg font-bold text-green-600">
                                         {job.subJobs.filter((s: any) => s.status === 'completed').length}
                                       </div>
-                                      <div className="text-gray-600">เสร็จสิ้น</div>
+                                      <div className="text-xs text-gray-600">เสร็จสิ้น</div>
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-center bg-white p-2 rounded shadow-sm">
                                       <div className="text-lg font-bold text-orange-600">
                                         {job.subJobs.filter((s: any) => s.status === 'in-progress').length}
                                       </div>
-                                      <div className="text-gray-600">กำลังดำเนินการ</div>
+                                      <div className="text-xs text-gray-600">กำลังดำเนินการ</div>
                                     </div>
-                                    <div className="text-center">
+                                    <div className="text-center bg-white p-2 rounded shadow-sm">
                                       <div className="text-lg font-bold text-gray-600">
                                         {job.subJobs.filter((s: any) => s.status === 'pending').length}
                                       </div>
-                                      <div className="text-gray-600">รอดำเนินการ</div>
+                                      <div className="text-xs text-gray-600">รอดำเนินการ</div>
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* Detailed Sub Jobs Table */}
-                                <div className="overflow-x-auto">
+                                <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
                                   <Table>
                                     <TableHeader>
-                                      <TableRow className="h-10">
-                                        <TableHead className="w-8 text-xs py-2">#</TableHead>
-                                        <TableHead className="text-xs py-2">ขั้นตอน</TableHead>
-                                        <TableHead className="text-xs py-2">สินค้า</TableHead>
-                                        <TableHead className="text-xs py-2">สี</TableHead>
-                                        <TableHead className="text-xs py-2">ไซส์</TableHead>
-                                        <TableHead className="text-xs py-2 text-right">จำนวนสั่ง</TableHead>
-                                        <TableHead className="text-xs py-2 text-right">จำนวนผลิต</TableHead>
-                                        <TableHead className="text-xs py-2 text-right">ยอดคงเหลือ</TableHead>
-                                        <TableHead className="text-xs py-2">ความคืบหน้า</TableHead>
-                                        <TableHead className="text-xs py-2">สถานะ</TableHead>
+                                      <TableRow className="h-9 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                                        <TableHead className="w-12 text-xs py-2 font-semibold text-gray-700">#</TableHead>
+                                        <TableHead className="w-32 text-xs py-2 font-semibold text-gray-700">ขั้นตอน</TableHead>
+                                        <TableHead className="w-40 text-xs py-2 font-semibold text-gray-700">สินค้า</TableHead>
+                                        <TableHead className="w-20 text-xs py-2 font-semibold text-gray-700">สี</TableHead>
+                                        <TableHead className="w-16 text-xs py-2 font-semibold text-gray-700">ไซส์</TableHead>
+                                        <TableHead className="w-20 text-xs py-2 text-right font-semibold text-gray-700">จำนวนสั่ง</TableHead>
+                                        <TableHead className="w-20 text-xs py-2 text-right font-semibold text-gray-700">จำนวนผลิต</TableHead>
+                                        <TableHead className="w-20 text-xs py-2 text-right font-semibold text-gray-700">ยอดคงเหลือ</TableHead>
+                                        <TableHead className="w-24 text-xs py-2 font-semibold text-gray-700">ความคืบหน้า</TableHead>
+                                        <TableHead className="w-20 text-xs py-2 font-semibold text-gray-700">สถานะ</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -505,52 +505,78 @@ export default function ProductionReports() {
                                         return (
                                           <TableRow 
                                             key={subJob.id}
-                                            className={`h-8 ${isFirstOfStep ? 'border-t-2 border-t-blue-200' : ''}`}
+                                            className={`h-9 transition-all hover:bg-gray-50 ${
+                                              isFirstOfStep ? 'border-t-2 border-t-blue-300 bg-blue-50/30' : 
+                                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                                            }`}
                                           >
-                                            <TableCell className="font-mono text-xs text-gray-500 py-1 px-2">
+                                            <TableCell className="font-mono text-xs text-gray-500 py-1 px-3 font-medium">
                                               {index + 1}
                                             </TableCell>
-                                            <TableCell className="py-1 px-2">
+                                            <TableCell className="py-1 px-3">
                                               {isFirstOfStep ? (
-                                                <div className="bg-blue-50 px-1 py-0.5 rounded text-xs text-blue-800 font-medium">
+                                                <div className="bg-gradient-to-r from-blue-100 to-blue-200 px-2 py-1 rounded-md text-xs text-blue-900 font-semibold shadow-sm border border-blue-300">
                                                   {subJob.stepName}
                                                 </div>
                                               ) : (
-                                                <div className="text-gray-400 text-center text-xs">↳</div>
+                                                <div className="text-gray-400 text-center text-xs font-medium">↳</div>
                                               )}
                                             </TableCell>
-                                            <TableCell className="text-xs py-1 px-2">{subJob.productName}</TableCell>
-                                            <TableCell className="text-xs py-1 px-2">{subJob.colorName}</TableCell>
-                                            <TableCell className="text-xs py-1 px-2">{subJob.sizeName}</TableCell>
-                                            <TableCell className="text-right text-xs font-medium py-1 px-2">
-                                              {subJob.quantity}
+                                            <TableCell className="text-xs py-1 px-3 font-medium text-gray-800">
+                                              {subJob.productName}
                                             </TableCell>
-                                            <TableCell className="text-right text-xs font-medium text-blue-600 py-1 px-2">
-                                              {subJob.completedQuantity}
+                                            <TableCell className="text-xs py-1 px-3 text-gray-600">
+                                              <span className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                                {subJob.colorName}
+                                              </span>
                                             </TableCell>
-                                            <TableCell className="text-right text-xs font-medium py-1 px-2">
-                                              <span className={
-                                                subJob.remainingQuantity === 0 ? 'text-green-600' :
-                                                subJob.remainingQuantity > 0 ? 'text-orange-600' :
-                                                'text-green-600'
-                                              }>
-                                                {subJob.remainingQuantity}
+                                            <TableCell className="text-xs py-1 px-3 text-gray-600">
+                                              <span className="inline-block bg-gray-100 px-2 py-0.5 rounded text-xs">
+                                                {subJob.sizeName}
+                                              </span>
+                                            </TableCell>
+                                            <TableCell className="text-right text-xs font-bold py-1 px-3 text-gray-800">
+                                              {subJob.quantity.toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="text-right text-xs font-bold text-blue-700 py-1 px-3">
+                                              {subJob.completedQuantity.toLocaleString()}
+                                            </TableCell>
+                                            <TableCell className="text-right text-xs font-bold py-1 px-3">
+                                              <span className={`px-2 py-0.5 rounded-md font-semibold ${
+                                                subJob.remainingQuantity === 0 ? 'bg-green-100 text-green-800' :
+                                                subJob.remainingQuantity > 0 ? 'bg-orange-100 text-orange-800' :
+                                                'bg-green-100 text-green-800'
+                                              }`}>
+                                                {subJob.remainingQuantity.toLocaleString()}
                                                 {subJob.remainingQuantity < 0 && ' (เกิน)'}
                                               </span>
                                             </TableCell>
-                                            <TableCell className="py-1 px-2">
-                                              <div className="flex items-center gap-1">
-                                                <Progress value={subJob.progressPercentage} className="w-12 h-1" />
-                                                <span className="text-xs w-8 text-right">
+                                            <TableCell className="py-1 px-3">
+                                              <div className="flex items-center gap-2">
+                                                <div className="flex-1 bg-gray-200 rounded-full h-2 shadow-inner">
+                                                  <div 
+                                                    className={`h-2 rounded-full transition-all duration-300 ${
+                                                      subJob.status === 'completed' ? 'bg-gradient-to-r from-green-400 to-green-600' :
+                                                      subJob.status === 'in-progress' ? 'bg-gradient-to-r from-orange-400 to-orange-600' :
+                                                      'bg-gradient-to-r from-gray-300 to-gray-400'
+                                                    }`}
+                                                    style={{ width: `${subJob.progressPercentage}%` }}
+                                                  />
+                                                </div>
+                                                <span className="text-xs w-10 text-right font-medium text-gray-700">
                                                   {subJob.progressPercentage}%
                                                 </span>
                                               </div>
                                             </TableCell>
-                                            <TableCell className="py-1 px-2">
+                                            <TableCell className="py-1 px-3">
                                               <Badge 
                                                 variant={subJob.status === 'completed' ? 'default' : 
                                                        subJob.status === 'in-progress' ? 'secondary' : 'outline'}
-                                                className="text-xs px-1 py-0"
+                                                className={`text-xs px-2 py-1 font-medium shadow-sm ${
+                                                  subJob.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
+                                                  subJob.status === 'in-progress' ? 'bg-orange-100 text-orange-800 border-orange-300' :
+                                                  'bg-gray-100 text-gray-600 border-gray-300'
+                                                }`}
                                               >
                                                 {subJob.status === 'completed' ? 'เสร็จ' :
                                                  subJob.status === 'in-progress' ? 'ดำเนินการ' : 'รอ'}
