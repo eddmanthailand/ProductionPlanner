@@ -653,9 +653,9 @@ export default function ProductionReports() {
                             ) : (
                               <div className="space-y-4">
                                 {/* Team Summary */}
-                                <div className="bg-gray-50 p-4 rounded-lg">
-                                  <h5 className="font-medium text-gray-900 mb-3">สรุปงานในคิว</h5>
-                                  <div className="grid grid-cols-4 gap-4 text-sm">
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                  <h5 className="font-medium text-gray-900 mb-2">สรุปงานในคิว</h5>
+                                  <div className="grid grid-cols-4 gap-3 text-sm">
                                     <div className="text-center">
                                       <div className="text-lg font-bold text-blue-600">
                                         {team.queueJobs.length}
@@ -687,17 +687,16 @@ export default function ProductionReports() {
                                 <div className="overflow-x-auto bg-white rounded-lg shadow-sm border border-gray-200">
                                   <Table>
                                     <TableHeader>
-                                      <TableRow className="h-9 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                                        <TableHead className="w-28 text-xs py-2 font-semibold text-gray-700">Job No.</TableHead>
-                                        <TableHead className="w-32 text-xs py-2 font-semibold text-gray-700">ลูกค้า</TableHead>
-                                        <TableHead className="w-40 text-xs py-2 font-semibold text-gray-700">สินค้า</TableHead>
-                                        <TableHead className="w-20 text-xs py-2 font-semibold text-gray-700">สี</TableHead>
-                                        <TableHead className="w-16 text-xs py-2 font-semibold text-gray-700">ไซส์</TableHead>
-                                        <TableHead className="w-20 text-xs py-2 text-right font-semibold text-gray-700">จำนวนสั่ง</TableHead>
-                                        <TableHead className="w-20 text-xs py-2 text-right font-semibold text-gray-700">จำนวนผลิต</TableHead>
-                                        <TableHead className="w-20 text-xs py-2 text-right font-semibold text-gray-700">ยอดคงเหลือ</TableHead>
-                                        <TableHead className="w-24 text-xs py-2 font-semibold text-gray-700">ความคืบหน้า</TableHead>
-                                        <TableHead className="w-20 text-xs py-2 font-semibold text-gray-700">สถานะ</TableHead>
+                                      <TableRow className="h-8 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                                        <TableHead className="w-32 text-xs py-1 font-semibold text-gray-700">Job No.</TableHead>
+                                        <TableHead className="w-24 text-xs py-1 font-semibold text-gray-700">ลูกค้า</TableHead>
+                                        <TableHead className="w-32 text-xs py-1 font-semibold text-gray-700">สินค้า</TableHead>
+                                        <TableHead className="w-20 text-xs py-1 font-semibold text-gray-700">สี</TableHead>
+                                        <TableHead className="w-16 text-xs py-1 font-semibold text-gray-700">ไซส์</TableHead>
+                                        <TableHead className="w-24 text-xs py-1 text-right font-semibold text-gray-700">จำนวนสั่ง</TableHead>
+                                        <TableHead className="w-24 text-xs py-1 text-right font-semibold text-gray-700">จำนวนผลิต</TableHead>
+                                        <TableHead className="w-24 text-xs py-1 text-right font-semibold text-gray-700">ยอดคงเหลือ</TableHead>
+                                        <TableHead className="w-28 text-xs py-1 text-center font-semibold text-gray-700">ความคืบหน้า</TableHead>
                                       </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -751,20 +750,6 @@ export default function ProductionReports() {
                                             }`}>
                                               {job.progressPercentage}%
                                             </span>
-                                          </TableCell>
-                                          <TableCell className="py-1 px-3">
-                                            <Badge 
-                                              variant={job.status === 'completed' ? 'default' : 
-                                                     job.status === 'in-progress' ? 'secondary' : 'outline'}
-                                              className={`text-xs px-2 py-1 font-medium shadow-sm ${
-                                                job.status === 'completed' ? 'bg-green-100 text-green-800 border-green-300' :
-                                                job.status === 'in-progress' ? 'bg-orange-100 text-orange-800 border-orange-300' :
-                                                'bg-gray-100 text-gray-600 border-gray-300'
-                                              }`}
-                                            >
-                                              {job.status === 'completed' ? 'เสร็จ' :
-                                               job.status === 'in-progress' ? 'ดำเนินการ' : 'รอ'}
-                                            </Badge>
                                           </TableCell>
                                         </TableRow>
                                       ))}
