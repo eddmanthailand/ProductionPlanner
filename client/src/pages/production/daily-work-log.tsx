@@ -960,7 +960,7 @@ export default function DailyWorkLog() {
       <Dialog open={!!previewingLog} onOpenChange={() => setPreviewingLog(null)}>
         <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader className="border-b pb-4">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center">
               <div className="flex-1">
                 <DialogTitle className="flex items-center gap-3 text-xl">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
@@ -970,7 +970,7 @@ export default function DailyWorkLog() {
                   แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}
                 </DialogDescription>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="mr-[10%]">
                 <AlertDialog>
                   <AlertDialogTrigger asChild>
                     <Button
