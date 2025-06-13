@@ -85,7 +85,7 @@ export default function Sidebar() {
     { name: t("nav.inventory"), href: "/inventory", icon: Package },
     { name: t("nav.customers"), href: "/customers", icon: Users },
     { name: t("nav.master_data"), href: "/master-data", icon: Settings },
-    { name: t("nav.reports"), href: "/reports", icon: FileText },
+    { name: t("nav.reports"), href: "/production/production-reports", icon: FileText },
     { name: t("nav.users"), href: "/users", icon: Users },
   ];
 
