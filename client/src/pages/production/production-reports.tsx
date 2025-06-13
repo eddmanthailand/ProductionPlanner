@@ -304,8 +304,8 @@ export default function ProductionReports() {
         // Find the corresponding sub job for detailed info
         const subJob = subJobs.find(sj => sj.id === queue.subJobId);
         
-        // Find the work order for customer name and product details
-        const workOrder = workOrders.find(wo => wo.id === queue.workOrderId);
+        // Find the work order using Job No. from queue
+        const workOrder = workOrders.find(wo => wo.orderNumber === queue.orderNumber);
         
         // Calculate completed quantity from daily work logs for this specific sub job
         const completedLogs = dailyWorkLogs.filter(log => 
@@ -315,14 +315,10 @@ export default function ProductionReports() {
         const completedQuantity = completedLogs.reduce((sum, log) => sum + log.quantityCompleted, 0);
         const progressPercentage = queue.quantity > 0 ? Math.round((completedQuantity / queue.quantity) * 100) : 0;
         
-        // Use work order data as primary source for customer info
-        const customerName = workOrder?.customerName || 'ไม่ระบุลูกค้า';
-        const orderNumber = workOrder?.orderNumber || queue.orderNumber;
-        
         return {
           workOrderId: queue.workOrderId,
-          orderNumber,
-          customerName,
+          orderNumber: queue.orderNumber,
+          customerName: workOrder?.customerName || 'ไม่ระบุลูกค้า',
           productName: subJob?.productName || queue.productName || 'ไม่ระบุสินค้า',
           colorName: subJob ? getColorName(subJob.colorId) : 'ไม่ระบุ',
           sizeName: subJob ? getSizeName(subJob.sizeId) : 'ไม่ระบุ',
