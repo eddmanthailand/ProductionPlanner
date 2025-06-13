@@ -714,6 +714,8 @@ export default function DailyWorkLog() {
                               let colorClass = '';
                               let label = '';
                               
+                              console.log('quantityRemaining:', quantityRemaining, 'type:', typeof quantityRemaining);
+                              
                               if (quantityRemaining === 0) {
                                 colorClass = 'text-green-600 dark:text-green-400';
                               } else if (quantityRemaining > 0) {
@@ -724,7 +726,7 @@ export default function DailyWorkLog() {
                               }
                               
                               return (
-                                <span className={`font-medium ${colorClass}`}>
+                                <span className={`font-bold ${colorClass}`}>
                                   {quantityRemaining.toLocaleString()}
                                   {label && (
                                     <span className="text-xs text-green-500 ml-1">{label}</span>
