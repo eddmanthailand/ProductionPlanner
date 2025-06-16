@@ -13,8 +13,8 @@ export default function Login() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
-    password: ""
+    username: "admin",
+    password: "admin123"
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -118,6 +118,29 @@ export default function Login() {
               )}
             </Button>
           </form>
+          
+          {/* Demo Users */}
+          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">ผู้ใช้ตัวอย่าง:</h3>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span className="font-mono">admin</span>
+                <span className="text-gray-500">admin123 (ผู้ดูแลระบบ)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono">manager</span>
+                <span className="text-gray-500">admin123 (ผู้จัดการ)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono">user_cut_a</span>
+                <span className="text-gray-500">admin123 (พนักงานตัด A)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-mono">user_sew_a</span>
+                <span className="text-gray-500">admin123 (พนักงานเย็บ A)</span>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>
