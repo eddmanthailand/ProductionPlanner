@@ -232,7 +232,7 @@ function App() {
               </ProtectedRoute>
             </Route>
             
-            <Route path="/production/queue-planning">
+            <Route path="/production/work-queue-planning">
               <ProtectedRoute>
                 <WorkQueuePlanning />
               </ProtectedRoute>
