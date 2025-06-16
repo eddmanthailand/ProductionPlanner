@@ -473,18 +473,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { username, email, first_name, last_name, role } = req.body;
+      const { username, email, first_name, last_name, role, password } = req.body;
 
       if (!username || !first_name || !last_name) {
         return res.status(400).json({ message: "Username, first name, and last name are required" });
       }
 
-      const result = await pool.query(`
+      let query = `
         UPDATE users 
         SET username = $1, email = $2, first_name = $3, last_name = $4, role = $5, updated_at = CURRENT_TIMESTAMP
         WHERE id = $6 
         RETURNING id, username, email, first_name, last_name, role, is_active, created_at, updated_at
-      `, [username, email, first_name, last_name, role, id]);
+      `;
+      let params = [username, email, first_name, last_name, role, id];
+
+      // If password is provided, update it as well
+      if (password && password.trim() !== "") {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        query = `
+          UPDATE users 
+          SET username = $1, email = $2, first_name = $3, last_name = $4, role = $5, password = $6, updated_at = CURRENT_TIMESTAMP
+          WHERE id = $7 
+          RETURNING id, username, email, first_name, last_name, role, is_active, created_at, updated_at
+        `;
+        params = [username, email, first_name, last_name, role, hashedPassword, id];
+      }
+
+      const result = await pool.query(query, params);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });

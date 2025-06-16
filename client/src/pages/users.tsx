@@ -49,8 +49,12 @@ export default function Users() {
     email: "",
     first_name: "",
     last_name: "",
-    role: "accountant"
+    role: "accountant",
+    password: "",
+    confirmPassword: ""
   });
+  const [showEditPassword, setShowEditPassword] = useState(false);
+  const [showEditConfirmPassword, setShowEditConfirmPassword] = useState(false);
 
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"]
@@ -139,6 +143,17 @@ export default function Users() {
 
   const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate password confirmation if password is provided
+    if (editFormData.password && editFormData.password !== editFormData.confirmPassword) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (editingUser) {
       updateUserMutation.mutate({ id: editingUser.id, data: editFormData });
     }
@@ -151,7 +166,9 @@ export default function Users() {
       email: user.email || "",
       first_name: user.first_name,
       last_name: user.last_name,
-      role: user.role
+      role: user.role,
+      password: "",
+      confirmPassword: ""
     });
     setEditOpen(true);
   };
@@ -447,6 +464,58 @@ export default function Users() {
                   <SelectItem value="accountant">เจ้าหน้าที่บัญชี</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-password">รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)</Label>
+              <div className="relative">
+                <Input
+                  id="edit-password"
+                  type={showEditPassword ? "text" : "password"}
+                  value={editFormData.password}
+                  onChange={(e) => handleEditInputChange("password", e.target.value)}
+                  placeholder="กรอกรหัสผ่านใหม่"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowEditPassword(!showEditPassword)}
+                >
+                  {showEditPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400" />
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="edit-confirmPassword">ยืนยันรหัสผ่านใหม่</Label>
+              <div className="relative">
+                <Input
+                  id="edit-confirmPassword"
+                  type={showEditConfirmPassword ? "text" : "password"}
+                  value={editFormData.confirmPassword}
+                  onChange={(e) => handleEditInputChange("confirmPassword", e.target.value)}
+                  placeholder="กรอกรหัสผ่านใหม่อีกครั้ง"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() => setShowEditConfirmPassword(!showEditConfirmPassword)}
+                >
+                  {showEditConfirmPassword ? (
+                    <EyeOff className="h-4 w-4 text-gray-400" />
+                  ) : (
+                    <Eye className="h-4 w-4 text-gray-400" />
+                  )}
+                </Button>
+              </div>
             </div>
             
             <div className="flex justify-end space-x-2 pt-4">
