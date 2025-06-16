@@ -72,6 +72,12 @@ export function useAuth() {
     window.location.href = "/login";
   };
 
+  const clearAuth = () => {
+    localStorage.clear();
+    setUser(null);
+    window.location.href = "/login";
+  };
+
   const hasRole = (role: string) => {
     return user?.role === role;
   };
@@ -90,6 +96,7 @@ export function useAuth() {
     loading,
     isAuthenticated: !!user,
     logout,
+    clearAuth,
     hasRole,
     hasTeamAccess,
     canAccessAllTeams
