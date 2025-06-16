@@ -21,7 +21,8 @@ import {
   ClipboardList,
   GanttChart,
   BarChart3,
-  Shield
+  Shield,
+  UserCog
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -32,6 +33,7 @@ export default function Sidebar() {
   const { t } = useLanguage();
   const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
   const [expandedProduction, setExpandedProduction] = useState(location.startsWith("/production"));
+  const [expandedSystem, setExpandedSystem] = useState(location.startsWith("/users") || location.startsWith("/permissions"));
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   // Auto-expand menus when user navigates to respective pages
@@ -41,6 +43,9 @@ export default function Sidebar() {
     }
     if (location.startsWith("/production")) {
       setExpandedProduction(true);
+    }
+    if (location.startsWith("/users") || location.startsWith("/permissions")) {
+      setExpandedSystem(true);
     }
   }, [location]);
 
@@ -56,11 +61,18 @@ export default function Sidebar() {
     }
   };
 
+  const toggleSystemMenu = () => {
+    if (!isCollapsed) {
+      setExpandedSystem(!expandedSystem);
+    }
+  };
+
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
     if (!isCollapsed) {
       setExpandedSales(false); // Close menus when collapsing
       setExpandedProduction(false);
+      setExpandedSystem(false);
     }
   };
 
@@ -79,6 +91,11 @@ export default function Sidebar() {
     { name: "บันทึกงานประจำวัน", href: "/production/daily-work-log", icon: FileText },
   ];
 
+  const systemSubMenu = [
+    { name: "จัดการผู้ใช้", href: "/users", icon: Users },
+    { name: "จัดการสิทธิ์", href: "/permissions", icon: Shield },
+  ];
+
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: ChartLine },
     { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
@@ -86,8 +103,6 @@ export default function Sidebar() {
     { name: t("nav.customers"), href: "/customers", icon: Users },
     { name: t("nav.master_data"), href: "/master-data", icon: Settings },
     { name: t("nav.reports"), href: "/production/production-reports", icon: FileText },
-    { name: t("nav.users"), href: "/users", icon: Users },
-    { name: "จัดการสิทธิ์", href: "/permissions", icon: Shield },
   ];
 
   const handleLogout = () => {
@@ -218,6 +233,51 @@ export default function Sidebar() {
                       <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
                         isSubActive 
                           ? "bg-green-100 text-green-700" 
+                          : "text-gray-600 hover:bg-gray-100"
+                      }`}>
+                        <SubIcon className="w-4 h-4" />
+                        <span className="font-medium">{subItem.name}</span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </li>
+
+          {/* System & Users Menu with Submenu */}
+          <li>
+            <button
+              onClick={toggleSystemMenu}
+              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
+                location.startsWith("/users") || location.startsWith("/permissions") 
+                  ? "bg-primary text-white" 
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+              title={isCollapsed ? "ระบบและผู้ใช้" : undefined}
+            >
+              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
+                <UserCog className="w-5 h-5" />
+                {!isCollapsed && <span className="font-medium">ระบบและผู้ใช้</span>}
+              </div>
+              {!isCollapsed && (expandedSystem ? (
+                <ChevronDown className="w-4 h-4" />
+              ) : (
+                <ChevronRight className="w-4 h-4" />
+              ))}
+            </button>
+            
+            {expandedSystem && !isCollapsed && (
+              <ul className="mt-2 ml-8 space-y-1">
+                {systemSubMenu.map((subItem) => {
+                  const isSubActive = location === subItem.href;
+                  const SubIcon = subItem.icon;
+                  
+                  return (
+                    <li key={subItem.name}>
+                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                        isSubActive 
+                          ? "bg-purple-100 text-purple-700" 
                           : "text-gray-600 hover:bg-gray-100"
                       }`}>
                         <SubIcon className="w-4 h-4" />
