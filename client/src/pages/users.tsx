@@ -329,8 +329,8 @@ export default function Users() {
                 <Settings className="w-5 h-5 text-orange-600" />
               </div>
               <div>
-                <p className="text-sm text-gray-600">ผู้จัดการ</p>
-                <p className="text-2xl font-bold text-orange-600">{managerUsers}</p>
+                <p className="text-sm text-gray-600">ผู้บริหาร</p>
+                <p className="text-2xl font-bold text-orange-600">{managementUsers}</p>
               </div>
             </div>
           </CardContent>
