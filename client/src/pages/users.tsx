@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, User, Shield, Settings, Edit, Trash2, Mail, Phone } from "lucide-react";
+import { Plus, User, Shield, Settings, Edit, Trash2, Mail, Phone, Eye, EyeOff } from "lucide-react";
 
 interface User {
   id: number;
@@ -33,12 +33,15 @@ export default function Users() {
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     firstName: "",
     lastName: "",
     password: "",
+    confirmPassword: "",
     role: "accountant"
   });
   const [editFormData, setEditFormData] = useState({
@@ -62,7 +65,14 @@ export default function Users() {
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof formData) => {
-      const res = await apiRequest("/api/users", "POST", userData);
+      // Check password confirmation
+      if (userData.password !== userData.confirmPassword) {
+        throw new Error("รหัสผ่านไม่ตรงกัน");
+      }
+      
+      // Remove confirmPassword before sending to API
+      const { confirmPassword, ...apiData } = userData;
+      const res = await apiRequest("/api/users", "POST", apiData);
       return res;
     },
     onSuccess: () => {
@@ -74,6 +84,7 @@ export default function Users() {
         firstName: "",
         lastName: "",
         password: "",
+        confirmPassword: "",
         role: "accountant"
       });
       toast({
@@ -287,14 +298,56 @@ export default function Users() {
               
               <div className="space-y-2">
                 <Label htmlFor="password">รหัสผ่าน *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => handleInputChange("password", e.target.value)}
-                  placeholder="กรอกรหัสผ่าน"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(e) => handleInputChange("password", e.target.value)}
+                    placeholder="กรอกรหัสผ่าน"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">ยืนยันรหัสผ่าน *</Label>
+                <div className="relative">
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+                    placeholder="กรอกรหัสผ่านอีกครั้ง"
+                    required
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4 text-gray-400" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-gray-400" />
+                    )}
+                  </Button>
+                </div>
               </div>
               
               <div className="space-y-2">
@@ -433,11 +486,9 @@ export default function Users() {
                   <TableRow key={user.id} className="hover:bg-blue-50/50 transition-all duration-200 border-b border-gray-100">
                     <TableCell className="py-4">
                       <div className="flex items-center space-x-3">
-                        <Avatar className="w-12 h-12 border-2 border-blue-200 shadow-md">
-                          <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-semibold text-sm">
-                            {getInitials(user.firstName, user.lastName)}
-                          </AvatarFallback>
-                        </Avatar>
+                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-blue-200 shadow-md">
+                          {getInitials(user.firstName, user.lastName)}
+                        </div>
                         <div>
                           <div className="font-semibold text-gray-900 text-base">{user.firstName} {user.lastName}</div>
                           <div className="text-sm text-gray-500 flex items-center mt-1">
