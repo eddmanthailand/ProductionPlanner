@@ -20,7 +20,8 @@ import {
   Network,
   ClipboardList,
   GanttChart,
-  BarChart3
+  BarChart3,
+  Shield
 } from "lucide-react";
 import { logout } from "@/lib/auth";
 import { useState, useEffect } from "react";
@@ -86,6 +87,7 @@ export default function Sidebar() {
     { name: t("nav.master_data"), href: "/master-data", icon: Settings },
     { name: t("nav.reports"), href: "/production/production-reports", icon: FileText },
     { name: t("nav.users"), href: "/users", icon: Users },
+    { name: "จัดการสิทธิ์", href: "/permissions", icon: Shield },
   ];
 
   const handleLogout = () => {
