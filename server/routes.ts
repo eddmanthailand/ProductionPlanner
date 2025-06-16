@@ -27,6 +27,88 @@ function authenticateToken(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication routes
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { username, password } = req.body;
+
+      if (!username || !password) {
+        return res.status(400).json({ message: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' });
+      }
+
+      const user = await storage.getUserByUsername(username);
+      if (!user) {
+        return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+      }
+
+      if (!user.isActive) {
+        return res.status(401).json({ message: 'บัญชีผู้ใช้ถูกปิดใช้งาน' });
+      }
+
+      const token = jwt.sign(
+        {
+          id: user.id,
+          username: user.username,
+          role: user.role,
+          teamId: user.teamId,
+          tenantId: user.tenantId
+        },
+        JWT_SECRET,
+        { expiresIn: '24h' }
+      );
+
+      const userResponse = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        teamId: user.teamId,
+        tenantId: user.tenantId
+      };
+
+      res.json({ user: userResponse, token });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ message: 'เกิดข้อผิดพลาดในระบบ' });
+    }
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    res.json({ message: 'ออกจากระบบสำเร็จ' });
+  });
+
+  app.get('/api/auth/me', authenticateToken, async (req: any, res) => {
+    try {
+      const user = await storage.getUser(req.user.id);
+      if (!user) {
+        return res.status(404).json({ message: 'ไม่พบผู้ใช้' });
+      }
+
+      const userResponse = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        role: user.role,
+        teamId: user.teamId,
+        tenantId: user.tenantId
+      };
+
+      res.json(userResponse);
+    } catch (error) {
+      console.error('Get user error:', error);
+      res.status(500).json({ message: 'เกิดข้อผิดพลาดในระบบ' });
+    }
+  });
+
   // Test database connection
   try {
     await pool.query('SELECT 1');

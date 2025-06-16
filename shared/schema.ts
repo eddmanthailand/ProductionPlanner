@@ -23,7 +23,8 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  role: text("role").notNull().default("user"),
+  role: text("role").notNull().default("user"), // admin, manager, user
+  teamId: text("team_id"), // เชื่อมโยงกับ team
   tenantId: uuid("tenant_id").references(() => tenants.id),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
