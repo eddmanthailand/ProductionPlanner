@@ -86,9 +86,11 @@ export default function Sidebar() {
   const productionSubMenu = [
     { name: "ปฏิทินการทำงาน", href: "/production/calendar", icon: Calendar },
     { name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network },
-    { name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: Calendar },
-    { name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList },
-    { name: "บันทึกงานประจำวัน", href: "/production/daily-work-log", icon: FileText },
+    { name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: GanttChart },
+    { name: "คิวงาน", href: "/production/work-queue", icon: ClipboardList },
+    { name: "ใบสั่งงาน", href: "/production/work-orders", icon: FileText },
+    { name: "บันทึกงานประจำวัน", href: "/production/daily-work-log", icon: Calendar },
+    { name: "รายงานการผลิต", href: "/production/reports", icon: BarChart3 },
   ];
 
   const systemSubMenu = [
