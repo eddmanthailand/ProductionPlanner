@@ -22,7 +22,8 @@ export default function Login() {
     setLoading(true);
 
     try {
-      const response: any = await apiRequest("/api/auth/login", "POST", formData);
+      const res = await apiRequest("/api/auth/login", "POST", formData);
+      const response = await res.json();
       
       if (response && response.user) {
         // Store user data in localStorage
