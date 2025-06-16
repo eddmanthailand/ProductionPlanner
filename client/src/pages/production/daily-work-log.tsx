@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,6 +122,7 @@ interface SubJobProgress {
 export default function DailyWorkLog() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
@@ -399,20 +401,18 @@ export default function DailyWorkLog() {
       return;
     }
 
-    // Get team data and find first employee in the team
+    // Get team data
     const selectedTeamData = teams.find(t => t.id === selectedTeam);
     if (!selectedTeamData) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลทีม", variant: "destructive" });
       return;
     }
 
-    // Use the first employee in the team as the recorder
-    const teamEmployees = await fetch(`/api/employees/by-team/${selectedTeam}`).then(res => res.json());
-    if (!teamEmployees || teamEmployees.length === 0) {
-      toast({ title: "ข้อผิดพลาด", description: "ไม่พบพนักงานในทีม", variant: "destructive" });
+    // Use current logged-in user as the recorder
+    if (!user?.id) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลผู้ใช้ที่ล็อกอิน", variant: "destructive" });
       return;
     }
-    const employeeId = teamEmployees[0].id;
 
     try {
       // Create log entries for selected sub jobs
@@ -819,13 +819,13 @@ export default function DailyWorkLog() {
                   <div className="h-11 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800 flex items-center">
                     <UserCheck className="h-4 w-4 mr-2 text-green-600" />
                     <span className="text-sm font-medium">
-                      {selectedTeam && teams.find(t => t.id === selectedTeam)?.name 
-                        ? `ทีม ${teams.find(t => t.id === selectedTeam)?.name}` 
-                        : 'กรุณาเลือกทีมก่อน'
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName} ${user.lastName}` 
+                        : user?.username || 'ไม่พบข้อมูลผู้ใช้'
                       }
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">ระบบจะใช้สมาชิกในทีมเป็นผู้บันทึกอัตโนมัติ</p>
+                  <p className="text-xs text-gray-500">ผู้ใช้ที่ล็อกอินในขณะนี้</p>
                 </div>
 
                 <div className="space-y-2">
