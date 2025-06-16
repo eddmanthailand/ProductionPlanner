@@ -81,8 +81,8 @@ export default function Users() {
       setFormData({
         username: "",
         email: "",
-        firstName: "",
-        lastName: "",
+        first_name: "",
+        last_name: "",
         password: "",
         confirmPassword: "",
         role: "accountant"
@@ -266,8 +266,8 @@ export default function Users() {
                   <Label htmlFor="lastName">นามสกุล *</Label>
                   <Input
                     id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    value={formData.last_name}
+                    onChange={(e) => handleInputChange("last_name", e.target.value)}
                     placeholder="กรอกนามสกุล"
                     required
                   />
@@ -390,10 +390,10 @@ export default function Users() {
                 <div className="font-medium text-blue-800 mb-1">ข้อมูลปัจจุบัน:</div>
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs">
-                    {getInitials(editingUser.firstName, editingUser.lastName)}
+                    {getInitials(editingUser.first_name, editingUser.last_name)}
                   </div>
                   <div>
-                    <div className="font-semibold text-gray-900">{editingUser.firstName} {editingUser.lastName}</div>
+                    <div className="font-semibold text-gray-900">{editingUser.first_name} {editingUser.last_name}</div>
                     <div className="text-xs text-gray-500">@{editingUser.username} • {getRoleLabel(editingUser.role)}</div>
                   </div>
                 </div>
@@ -406,9 +406,9 @@ export default function Users() {
                 <Label htmlFor="edit-firstName">ชื่อ *</Label>
                 <Input
                   id="edit-firstName"
-                  value={editFormData.firstName}
-                  onChange={(e) => handleEditInputChange("firstName", e.target.value)}
-                  placeholder={editingUser ? `เดิม: ${editingUser.firstName}` : "กรอกชื่อ"}
+                  value={editFormData.first_name}
+                  onChange={(e) => handleEditInputChange("first_name", e.target.value)}
+                  placeholder={editingUser ? `เดิม: ${editingUser.first_name}` : "กรอกชื่อ"}
                   required
                 />
               </div>
@@ -416,9 +416,9 @@ export default function Users() {
                 <Label htmlFor="edit-lastName">นามสกุล *</Label>
                 <Input
                   id="edit-lastName"
-                  value={editFormData.lastName}
-                  onChange={(e) => handleEditInputChange("lastName", e.target.value)}
-                  placeholder={editingUser ? `เดิม: ${editingUser.lastName}` : "กรอกนามสกุล"}
+                  value={editFormData.last_name}
+                  onChange={(e) => handleEditInputChange("last_name", e.target.value)}
+                  placeholder={editingUser ? `เดิม: ${editingUser.last_name}` : "กรอกนามสกุล"}
                   required
                 />
               </div>
@@ -501,10 +501,10 @@ export default function Users() {
                     <TableCell className="py-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-blue-200 shadow-md">
-                          {getInitials(user.firstName, user.lastName)}
+                          {getInitials(user.first_name, user.last_name)}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900 text-base">{user.firstName} {user.lastName}</div>
+                          <div className="font-semibold text-gray-900 text-base">{user.first_name} {user.last_name}</div>
                           <div className="text-sm text-gray-500 flex items-center mt-1">
                             <User className="w-3 h-3 mr-1" />
                             @{user.username}
