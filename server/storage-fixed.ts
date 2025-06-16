@@ -160,7 +160,15 @@ export class DatabaseStorage implements IStorage {
   // Department methods - using actual columns: id, name, tenant_id, is_active, created_at, updated_at, type
   async getDepartments(tenantId: string): Promise<Department[]> {
     return await db
-      .select()
+      .select({
+        id: departments.id,
+        name: departments.name,
+        tenantId: departments.tenantId,
+        isActive: departments.isActive,
+        createdAt: departments.createdAt,
+        updatedAt: departments.updatedAt,
+        type: departments.type
+      })
       .from(departments)
       .where(eq(departments.tenantId, tenantId));
   }
