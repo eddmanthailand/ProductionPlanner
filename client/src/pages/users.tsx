@@ -385,20 +385,6 @@ export default function Users() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
-            {editingUser && (
-              <div className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <div className="font-medium text-blue-800 mb-1">ข้อมูลปัจจุบัน:</div>
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs">
-                    {getInitials(editingUser.first_name, editingUser.last_name)}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-gray-900">{editingUser.first_name} {editingUser.last_name}</div>
-                    <div className="text-xs text-gray-500">@{editingUser.username} • {getRoleLabel(editingUser.role)}</div>
-                  </div>
-                </div>
-              </div>
-            )}
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
