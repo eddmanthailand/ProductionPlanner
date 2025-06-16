@@ -32,6 +32,7 @@ import Customers from "@/pages/customers";
 import MasterData from "@/pages/master-data";
 import Reports from "@/pages/reports";
 import Users from "@/pages/users";
+import Permissions from "@/pages/permissions";
 import MainLayout from "@/components/layout/main-layout";
 
 // Unauthorized page
@@ -276,6 +277,12 @@ function App() {
             <Route path="/users">
               <ProtectedRoute>
                 <Users />
+              </ProtectedRoute>
+            </Route>
+            
+            <Route path="/permissions">
+              <ProtectedRoute>
+                <Permissions />
               </ProtectedRoute>
             </Route>
 

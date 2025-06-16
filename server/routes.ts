@@ -463,6 +463,67 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Permissions routes
+  app.get("/api/permissions", async (req: any, res) => {
+    try {
+      const result = await pool.query('SELECT * FROM permissions ORDER BY module, action');
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Get permissions error:', error);
+      res.status(500).json({ message: "Failed to fetch permissions" });
+    }
+  });
+
+  app.get("/api/role-permissions", async (req: any, res) => {
+    try {
+      const result = await pool.query(`
+        SELECT rp.*, p.name, p.description, p.module, p.action 
+        FROM role_permissions rp 
+        JOIN permissions p ON rp.permission_id = p.id 
+        ORDER BY rp.role, p.module, p.action
+      `);
+      
+      const rolePermissions = result.rows.map(row => ({
+        id: row.id,
+        role: row.role,
+        permission_id: row.permission_id,
+        granted: row.granted,
+        permission: {
+          id: row.permission_id,
+          name: row.name,
+          description: row.description,
+          module: row.module,
+          action: row.action
+        }
+      }));
+      
+      res.json(rolePermissions);
+    } catch (error) {
+      console.error('Get role permissions error:', error);
+      res.status(500).json({ message: "Failed to fetch role permissions" });
+    }
+  });
+
+  app.put("/api/role-permissions/:role/:permissionId", async (req: any, res) => {
+    try {
+      const { role, permissionId } = req.params;
+      const { granted } = req.body;
+
+      const result = await pool.query(`
+        INSERT INTO role_permissions (role, permission_id, granted) 
+        VALUES ($1, $2, $3) 
+        ON CONFLICT (role, permission_id) 
+        DO UPDATE SET granted = $3, created_at = CURRENT_TIMESTAMP
+        RETURNING *
+      `, [role, permissionId, granted]);
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Update role permission error:', error);
+      res.status(500).json({ message: "Failed to update role permission" });
+    }
+  });
+
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');
