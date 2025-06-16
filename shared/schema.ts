@@ -297,51 +297,50 @@ export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
 // Organization tables
 export const departments = pgTable("departments", {
   id: text("id").primaryKey(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   name: text("name").notNull(),
-  type: text("type").notNull(),
-  manager: text("manager"),
-  location: text("location").notNull(),
-  status: text("status").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  tenantId: text("tenant_id").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  type: text("type"),
 });
 
 export const teams = pgTable("teams", {
   id: text("id").primaryKey(),
-  departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
+  departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
+  tenantId: text("tenant_id").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
   leader: text("leader"),
-  costPerDay: decimal("cost_per_day", { precision: 10, scale: 2 }).notNull().default("0.00"), // ต้นทุนต่อวัน (บาท) = กำลังการผลิต
-  status: text("status").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const employees = pgTable("employees", {
-  id: text("id").primaryKey(),
-  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
-  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
-  count: integer("count").notNull(), // จำนวนพนักงาน
-  averageWage: decimal("average_wage", { precision: 10, scale: 2 }).notNull(), // ค่าแรงเฉลี่ย/คน
-  overheadPercentage: decimal("overhead_percentage", { precision: 5, scale: 2 }).notNull(), // %overhead
-  managementPercentage: decimal("management_percentage", { precision: 5, scale: 2 }).notNull(), // %management
-  description: text("description"), // คำอธิบายประเภทพนักงาน เช่น "ช่างตัด", "ช่างเย็บ"
-  status: text("status").notNull().default("active"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  id: serial("id").primaryKey(),
+  userId: integer("user_id"),
+  employeeCode: text("employee_code"),
+  position: text("position"),
+  departmentId: text("department_id"),
+  teamId: text("team_id"),
+  hireDate: date("hire_date"),
+  salary: decimal("salary", { precision: 10, scale: 2 }),
+  tenantId: text("tenant_id").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const workSteps = pgTable("work_steps", {
   id: text("id").primaryKey(),
-  departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
-  description: text("description").notNull(),
-  duration: integer("duration").notNull(),
-  requiredSkills: text("required_skills").array().notNull(),
-  order: integer("order").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  description: text("description"),
+  tenantId: text("tenant_id").notNull(),
+  orderNumber: integer("order_number"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  departmentId: text("department_id"),
 });
 
 // Production Capacity table

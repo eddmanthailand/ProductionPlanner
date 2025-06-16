@@ -195,21 +195,30 @@ export class DatabaseStorage implements IStorage {
   // Team methods - using actual columns: id, name, department_id, tenant_id, is_active, created_at, updated_at, leader
   async getTeams(tenantId: string): Promise<any[]> {
     const rows = await db
-      .select()
+      .select({
+        id: teams.id,
+        name: teams.name,
+        departmentId: teams.departmentId,
+        leader: teams.leader,
+        isActive: teams.isActive,
+        createdAt: teams.createdAt,
+        updatedAt: teams.updatedAt,
+        departmentName: departments.name
+      })
       .from(teams)
       .innerJoin(departments, eq(teams.departmentId, departments.id))
-      .where(eq(departments.tenantId, tenantId));
+      .where(eq(teams.tenantId, tenantId));
     
     return rows.map(row => ({
-      id: row.teams.id,
-      name: row.teams.name,
-      departmentId: row.teams.departmentId,
-      leader: row.teams.leader,
-      departmentName: row.departments.name,
-      status: 'active',
+      id: row.id,
+      name: row.name,
+      departmentId: row.departmentId,
+      leader: row.leader,
+      departmentName: row.departmentName,
+      status: row.isActive ? 'active' : 'inactive',
       costPerDay: '0',
-      createdAt: row.teams.createdAt,
-      updatedAt: row.teams.updatedAt
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt
     }));
   }
 
