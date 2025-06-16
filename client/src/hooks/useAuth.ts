@@ -16,18 +16,47 @@ export function useAuth() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         const token = localStorage.getItem("token");
         const userData = localStorage.getItem("user");
         
+        console.log("Auth check - token exists:", !!token, "user data exists:", !!userData);
+        
         if (token && userData) {
-          setUser(JSON.parse(userData));
+          // Verify token with server
+          try {
+            const response = await fetch("/api/auth/me", {
+              headers: {
+                "Authorization": `Bearer ${token}`
+              }
+            });
+            
+            if (response.ok) {
+              const serverUser = await response.json();
+              setUser(serverUser);
+              console.log("Auth verified with server:", serverUser.username);
+            } else {
+              console.log("Token invalid, clearing auth data");
+              localStorage.removeItem("token");
+              localStorage.removeItem("user");
+              setUser(null);
+            }
+          } catch (err) {
+            console.log("Server verification failed, clearing auth data");
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            setUser(null);
+          }
+        } else {
+          console.log("No auth data found");
+          setUser(null);
         }
       } catch (error) {
         console.error("Auth check error:", error);
         localStorage.removeItem("token");
         localStorage.removeItem("user");
+        setUser(null);
       } finally {
         setLoading(false);
       }
