@@ -385,6 +385,20 @@ export default function Users() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
+            {editingUser && (
+              <div className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                <div className="font-medium text-blue-800 mb-1">ข้อมูลปัจจุบัน:</div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-xs">
+                    {getInitials(editingUser.firstName, editingUser.lastName)}
+                  </div>
+                  <div>
+                    <div className="font-semibold text-gray-900">{editingUser.firstName} {editingUser.lastName}</div>
+                    <div className="text-xs text-gray-500">@{editingUser.username} • {getRoleLabel(editingUser.role)}</div>
+                  </div>
+                </div>
+              </div>
+            )}
           </DialogHeader>
           <form onSubmit={handleEditSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -394,7 +408,7 @@ export default function Users() {
                   id="edit-firstName"
                   value={editFormData.firstName}
                   onChange={(e) => handleEditInputChange("firstName", e.target.value)}
-                  placeholder="กรอกชื่อ"
+                  placeholder={editingUser ? `เดิม: ${editingUser.firstName}` : "กรอกชื่อ"}
                   required
                 />
               </div>
@@ -404,7 +418,7 @@ export default function Users() {
                   id="edit-lastName"
                   value={editFormData.lastName}
                   onChange={(e) => handleEditInputChange("lastName", e.target.value)}
-                  placeholder="กรอกนามสกุล"
+                  placeholder={editingUser ? `เดิม: ${editingUser.lastName}` : "กรอกนามสกุล"}
                   required
                 />
               </div>
@@ -416,7 +430,7 @@ export default function Users() {
                 id="edit-username"
                 value={editFormData.username}
                 onChange={(e) => handleEditInputChange("username", e.target.value)}
-                placeholder="กรอกชื่อผู้ใช้"
+                placeholder={editingUser ? `เดิม: ${editingUser.username}` : "กรอกชื่อผู้ใช้"}
                 required
               />
             </div>
@@ -428,7 +442,7 @@ export default function Users() {
                 type="email"
                 value={editFormData.email}
                 onChange={(e) => handleEditInputChange("email", e.target.value)}
-                placeholder="กรอกอีเมล (ไม่บังคับ)"
+                placeholder={editingUser ? (editingUser.email ? `เดิม: ${editingUser.email}` : "ไม่ได้ระบุ") : "กรอกอีเมล (ไม่บังคับ)"}
               />
             </div>
             
