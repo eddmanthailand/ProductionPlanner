@@ -18,12 +18,12 @@ interface User {
   id: number;
   username: string;
   email: string | null;
-  firstName: string;
-  lastName: string;
+  first_name: string;
+  last_name: string;
   role: string;
-  isActive?: boolean;
-  teamId?: string | null;
-  tenantId?: string | null;
+  is_active?: boolean;
+  team_id?: string | null;
+  tenant_id?: string | null;
 }
 
 export default function Users() {
@@ -38,8 +38,8 @@ export default function Users() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     password: "",
     confirmPassword: "",
     role: "accountant"
@@ -47,8 +47,8 @@ export default function Users() {
   const [editFormData, setEditFormData] = useState({
     username: "",
     email: "",
-    firstName: "",
-    lastName: "",
+    first_name: "",
+    last_name: "",
     role: "accountant"
   });
 
@@ -149,8 +149,8 @@ export default function Users() {
     setEditFormData({
       username: user.username,
       email: user.email || "",
-      firstName: user.firstName,
-      lastName: user.lastName,
+      first_name: user.first_name,
+      last_name: user.last_name,
       role: user.role
     });
     setEditOpen(true);
@@ -256,8 +256,8 @@ export default function Users() {
                   <Label htmlFor="firstName">ชื่อ *</Label>
                   <Input
                     id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    value={formData.first_name}
+                    onChange={(e) => handleInputChange("first_name", e.target.value)}
                     placeholder="กรอกชื่อ"
                     required
                   />
