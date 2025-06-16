@@ -790,10 +790,8 @@ export class DatabaseStorage implements IStorage {
     return await db
       .select()
       .from(workSteps)
-      .innerJoin(departments, eq(workSteps.departmentId, departments.id))
-      .where(eq(departments.tenantId, tenantId))
-      .orderBy(asc(workSteps.order))
-      .then(rows => rows.map(row => row.work_steps));
+      .where(eq(workSteps.tenantId, tenantId))
+      .orderBy(asc(workSteps.orderNumber));
   }
 
   async getWorkStepsByDepartment(departmentId: string, tenantId: string): Promise<WorkStep[]> {
@@ -869,7 +867,7 @@ export class DatabaseStorage implements IStorage {
       .orderBy(employees.createdAt);
   }
 
-  async getEmployee(id: string, tenantId: string): Promise<Employee | undefined> {
+  async getEmployee(id: number, tenantId: string): Promise<Employee | undefined> {
     const [result] = await db
       .select()
       .from(employees)
@@ -880,15 +878,12 @@ export class DatabaseStorage implements IStorage {
   async createEmployee(insertEmployee: InsertEmployee): Promise<Employee> {
     const [employee] = await db
       .insert(employees)
-      .values({
-        ...insertEmployee,
-        id: nanoid()
-      })
+      .values(insertEmployee)
       .returning();
     return employee;
   }
 
-  async updateEmployee(id: string, updateData: Partial<InsertEmployee>, tenantId: string): Promise<Employee | undefined> {
+  async updateEmployee(id: number, updateData: Partial<InsertEmployee>, tenantId: string): Promise<Employee | undefined> {
     const [result] = await db
       .update(employees)
       .set({
@@ -900,7 +895,7 @@ export class DatabaseStorage implements IStorage {
     return result || undefined;
   }
 
-  async deleteEmployee(id: string, tenantId: string): Promise<boolean> {
+  async deleteEmployee(id: number, tenantId: string): Promise<boolean> {
     const result = await db
       .delete(employees)
       .where(and(eq(employees.id, id), eq(employees.tenantId, tenantId)));
