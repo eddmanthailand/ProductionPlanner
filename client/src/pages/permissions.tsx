@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Shield, Users, Settings, Eye, Plus, Edit, Trash2, FileText } from "lucide-react";
@@ -91,8 +91,11 @@ export default function Permissions() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin': return <Shield className="w-4 h-4" />;
-      case 'manager': return <Settings className="w-4 h-4" />;
-      case 'user': return <Users className="w-4 h-4" />;
+      case 'managing_director': return <Settings className="w-4 h-4" />;
+      case 'factory_manager': return <Settings className="w-4 h-4" />;
+      case 'accounting_manager': return <Settings className="w-4 h-4" />;
+      case 'production_leader': return <Users className="w-4 h-4" />;
+      case 'accountant': return <Users className="w-4 h-4" />;
       default: return <Users className="w-4 h-4" />;
     }
   };
@@ -100,8 +103,11 @@ export default function Permissions() {
   const getRoleText = (role: string) => {
     switch (role) {
       case 'admin': return 'ผู้ดูแลระบบ';
-      case 'manager': return 'ผู้จัดการ';
-      case 'user': return 'ผู้ใช้งาน';
+      case 'managing_director': return 'Managing Director';
+      case 'factory_manager': return 'Factory Manager';
+      case 'accounting_manager': return 'Accounting Manager';
+      case 'production_leader': return 'Production Team Leader';
+      case 'accountant': return 'Accountant';
       default: return role;
     }
   };
@@ -147,7 +153,7 @@ export default function Permissions() {
     permissionsByModule[permission.module].push(permission);
   });
 
-  const roles = ['admin', 'manager', 'user'];
+  const roles = ['admin', 'managing_director', 'factory_manager', 'accounting_manager', 'production_leader', 'accountant'];
 
   return (
     <div className="space-y-6">
@@ -160,27 +166,27 @@ export default function Permissions() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {roles.map(role => {
           const rolePerms = permissionsByRole[role] || [];
           const grantedCount = rolePerms.filter(rp => rp.granted).length;
           const totalCount = rolePerms.length;
           
           return (
-            <Card key={role}>
+            <Card key={role} className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CardTitle className="text-xs font-medium flex items-center gap-2">
                   {getRoleIcon(role)}
-                  {getRoleText(role)}
+                  <span className="truncate">{getRoleText(role)}</span>
                 </CardTitle>
-                <Badge variant="outline">
+                <Badge variant="outline" className="text-xs">
                   {grantedCount}/{totalCount}
                 </Badge>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{grantedCount}</div>
+                <div className="text-xl font-bold">{grantedCount}</div>
                 <p className="text-xs text-muted-foreground">
-                  สิทธิ์ที่ได้รับจากทั้งหมด {totalCount} สิทธิ์
+                  สิทธิ์ที่ได้รับ
                 </p>
               </CardContent>
             </Card>
@@ -194,76 +200,84 @@ export default function Permissions() {
           <CardTitle>ตารางสิทธิ์การใช้งาน</CardTitle>
         </CardHeader>
         <CardContent>
-          <Tabs value={selectedRole} onValueChange={setSelectedRole}>
-            <TabsList className="grid w-full grid-cols-3">
-              {roles.map(role => (
-                <TabsTrigger key={role} value={role} className="flex items-center gap-2">
-                  {getRoleIcon(role)}
-                  {getRoleText(role)}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-
-            {roles.map(role => (
-              <TabsContent key={role} value={role} className="mt-6">
-                <div className="space-y-6">
-                  {Object.entries(permissionsByModule).map(([module, modulePermissions]) => (
-                    <div key={module} className="space-y-4">
-                      <h3 className="text-lg font-semibold capitalize">
-                        {module.replace('_', ' ')}
-                      </h3>
-                      
-                      <div className="border rounded-lg">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>การดำเนินการ</TableHead>
-                              <TableHead>คำอธิบาย</TableHead>
-                              <TableHead className="text-center">สิทธิ์</TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {modulePermissions.map(permission => {
-                              const rolePermission = permissionsByRole[role]?.find(
-                                rp => rp.permission_id === permission.id
-                              );
-                              const isGranted = rolePermission?.granted || false;
-
-                              return (
-                                <TableRow key={permission.id}>
-                                  <TableCell>
-                                    <div className="flex items-center gap-2">
-                                      <Badge 
-                                        variant="outline" 
-                                        className={`${getActionColor(permission.action)} border-0`}
-                                      >
-                                        {getActionIcon(permission.action)}
-                                        <span className="ml-1 capitalize">{permission.action}</span>
-                                      </Badge>
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>{permission.description}</TableCell>
-                                  <TableCell className="text-center">
-                                    <Switch
-                                      checked={isGranted}
-                                      onCheckedChange={(checked) => 
-                                        handlePermissionToggle(role, permission.id, checked)
-                                      }
-                                      disabled={updatePermissionMutation.isPending}
-                                    />
-                                  </TableCell>
-                                </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+          <div className="space-y-6">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium">เลือกบทบาท:</label>
+              <Select value={selectedRole} onValueChange={setSelectedRole}>
+                <SelectTrigger className="w-64">
+                  <SelectValue placeholder="เลือกบทบาทที่ต้องการจัดการ" />
+                </SelectTrigger>
+                <SelectContent>
+                  {roles.map(role => (
+                    <SelectItem key={role} value={role}>
+                      <div className="flex items-center gap-2">
+                        {getRoleIcon(role)}
+                        {getRoleText(role)}
                       </div>
-                    </div>
+                    </SelectItem>
                   ))}
-                </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedRole && (
+              <div className="space-y-6">
+                {Object.entries(permissionsByModule).map(([module, modulePermissions]) => (
+                  <div key={module} className="space-y-4">
+                    <h3 className="text-lg font-semibold capitalize">
+                      {module.replace('_', ' ')}
+                    </h3>
+                    
+                    <div className="border rounded-lg">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>การดำเนินการ</TableHead>
+                            <TableHead>คำอธิบาย</TableHead>
+                            <TableHead className="text-center">สิทธิ์</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {modulePermissions.map(permission => {
+                            const rolePermission = permissionsByRole[selectedRole]?.find(
+                              rp => rp.permission_id === permission.id
+                            );
+                            const isGranted = rolePermission?.granted || false;
+
+                            return (
+                              <TableRow key={permission.id}>
+                                <TableCell>
+                                  <div className="flex items-center gap-2">
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`${getActionColor(permission.action)} border-0`}
+                                    >
+                                      {getActionIcon(permission.action)}
+                                      <span className="ml-1 capitalize">{permission.action}</span>
+                                    </Badge>
+                                  </div>
+                                </TableCell>
+                                <TableCell>{permission.description}</TableCell>
+                                <TableCell className="text-center">
+                                  <Switch
+                                    checked={isGranted}
+                                    onCheckedChange={(checked) => 
+                                      handlePermissionToggle(selectedRole, permission.id, checked)
+                                    }
+                                    disabled={updatePermissionMutation.isPending}
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
