@@ -426,9 +426,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/users", async (req: any, res) => {
     try {
-      const { username, email, firstName, lastName, password, role } = req.body;
+      const { username, email, first_name, last_name, password, role } = req.body;
       
-      if (!username || !firstName || !lastName || !password) {
+      if (!username || !first_name || !last_name || !password) {
         return res.status(400).json({ message: "กรุณากรอกข้อมูลที่จำเป็น" });
       }
 
@@ -451,8 +451,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = {
         username,
         email: email || null,
-        first_name: firstName,
-        last_name: lastName,
+        first_name: first_name,
+        last_name: last_name,
         password: hashedPassword,
         role: role || 'user',
         tenant_id: '550e8400-e29b-41d4-a716-446655440000',
