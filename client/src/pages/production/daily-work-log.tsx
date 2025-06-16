@@ -422,7 +422,7 @@ export default function DailyWorkLog() {
         const logData = {
           date: selectedDate,
           teamId: selectedTeam,
-          employeeId: employeeId, // Use first employee in team
+          employeeId: user.id, // Use current logged-in user
           workOrderId: selectedWorkOrder,
           subJobId: parseInt(subJobId),
           hoursWorked: 8, // Default 8 hours - auto calculated
@@ -441,7 +441,8 @@ export default function DailyWorkLog() {
 
       await Promise.all(logPromises);
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
-      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ทีม: ${selectedTeamData.name})` });
+      const userName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username;
+      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ผู้บันทึก: ${userName})` });
       resetForm();
     } catch (error) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
