@@ -139,12 +139,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const tenant = user.tenantId ? await storage.getTenant(user.tenantId) : null;
+      const tenant = user.tenant_id ? await storage.getTenant(user.tenant_id) : null;
 
       const token = jwt.sign(
         { 
           userId: user.id, 
-          tenantId: user.tenantId,
+          tenantId: user.tenant_id,
           role: user.role 
         },
         JWT_SECRET,
@@ -157,8 +157,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id,
           username: user.username,
           email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
+          firstName: user.first_name,
+          lastName: user.last_name,
           role: user.role
         },
         tenant 
@@ -170,15 +170,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const validatedData = insertUserSchema.parse(req.body);
-      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
+      const { username, email, first_name, last_name, password: userPassword, role } = req.body;
+      const hashedPassword = await bcrypt.hash(userPassword, 10);
 
       const user = await storage.createUser({
-        ...validatedData,
-        password: hashedPassword
+        username,
+        email,
+        first_name,
+        last_name,
+        password: hashedPassword,
+        role: role || 'user',
+        tenant_id: '550e8400-e29b-41d4-a716-446655440000',
+        is_active: true
       });
 
-      const { password, ...userWithoutPassword } = user;
+      const { password: _, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
       res.status(400).json({ message: "Registration failed", error });

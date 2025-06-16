@@ -10,9 +10,9 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   plan: text("plan").notNull().default("basic"),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
+  is_active: boolean("is_active").notNull().default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
 });
 
 // Users table with tenant association
@@ -470,20 +470,20 @@ export const dailyWorkLogs = pgTable("daily_work_logs", {
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 
