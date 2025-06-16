@@ -292,12 +292,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTenants(): Promise<Tenant[]> {
-    return await db.select().from(tenants).where(eq(tenants.isActive, true));
+    return await db.select().from(tenants).where(eq(tenants.is_active, true));
   }
 
   async getProducts(tenantId: string): Promise<Product[]> {
     return await db.select().from(products)
-      .where(and(eq(products.tenantId, tenantId), eq(products.isActive, true)));
+      .where(and(eq(products.tenant_id, tenantId), eq(products.is_active, true)));
   }
 
   async getProduct(id: number, tenantId: string): Promise<Product | undefined> {
