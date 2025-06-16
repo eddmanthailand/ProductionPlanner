@@ -136,6 +136,12 @@ function App() {
               </ProtectedRoute>
             </Route>
             
+            <Route path="/dashboard">
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            </Route>
+            
             <Route path="/sales">
               <ProtectedRoute>
                 <Sales />
