@@ -473,9 +473,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.put("/api/users/:id", async (req: any, res) => {
     try {
       const { id } = req.params;
-      const { username, email, firstName, lastName, role } = req.body;
+      const { username, email, first_name, last_name, role } = req.body;
 
-      if (!username || !firstName || !lastName) {
+      if (!username || !first_name || !last_name) {
         return res.status(400).json({ message: "Username, first name, and last name are required" });
       }
 
@@ -483,8 +483,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         UPDATE users 
         SET username = $1, email = $2, first_name = $3, last_name = $4, role = $5, updated_at = CURRENT_TIMESTAMP
         WHERE id = $6 
-        RETURNING id, username, email, first_name as "firstName", last_name as "lastName", role, is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
-      `, [username, email, firstName, lastName, role, id]);
+        RETURNING id, username, email, first_name, last_name, role, is_active, created_at, updated_at
+      `, [username, email, first_name, last_name, role, id]);
 
       if (result.rows.length === 0) {
         return res.status(404).json({ message: "User not found" });
