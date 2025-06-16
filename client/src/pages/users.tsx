@@ -499,16 +499,11 @@ export default function Users() {
                 {users?.map((user) => (
                   <TableRow key={user.id} className="hover:bg-blue-50/50 transition-all duration-200 border-b border-gray-100">
                     <TableCell className="py-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold text-sm border-2 border-blue-200 shadow-md">
-                          {getInitials(user.first_name, user.last_name)}
-                        </div>
-                        <div>
-                          <div className="font-semibold text-gray-900 text-base">{user.first_name} {user.last_name}</div>
-                          <div className="text-sm text-gray-500 flex items-center mt-1">
-                            <User className="w-3 h-3 mr-1" />
-                            @{user.username}
-                          </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 text-base">{user.first_name} {user.last_name}</div>
+                        <div className="text-sm text-gray-500 flex items-center mt-1">
+                          <User className="w-3 h-3 mr-1" />
+                          @{user.username}
                         </div>
                       </div>
                     </TableCell>
