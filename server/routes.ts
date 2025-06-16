@@ -1,6 +1,6 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage-fixed";
+import { storage } from "./storage";
 import { pool } from "./db";
 import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
@@ -27,94 +27,6 @@ function authenticateToken(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Authentication routes
-  app.post('/api/auth/login', async (req, res) => {
-    try {
-      const { username, password } = req.body;
-      console.log('Login attempt:', { username, passwordLength: password?.length });
-
-      if (!username || !password) {
-        return res.status(400).json({ message: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' });
-      }
-
-      const user = await storage.getUserByUsername(username);
-      console.log('User found:', user ? { id: user.id, username: user.username, active: user.is_active } : 'null');
-      
-      if (!user) {
-        return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
-      }
-
-      const isValidPassword = await bcrypt.compare(password, user.password);
-      console.log('Password valid:', isValidPassword);
-      
-      if (!isValidPassword) {
-        return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
-      }
-
-      if (!user.is_active) {
-        return res.status(401).json({ message: 'บัญชีผู้ใช้ถูกปิดใช้งาน' });
-      }
-
-      const token = jwt.sign(
-        {
-          id: user.id,
-          username: user.username,
-          role: user.role,
-          teamId: user.team_id,
-          tenantId: user.tenant_id
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
-
-      const userResponse = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
-        teamId: user.team_id,
-        tenantId: user.tenant_id
-      };
-
-      console.log('Login successful for user:', userResponse.username);
-      res.json({ user: userResponse, token });
-    } catch (error) {
-      console.error('Login error:', error);
-      res.status(500).json({ message: 'เกิดข้อผิดพลาดในระบบ' });
-    }
-  });
-
-  app.post('/api/auth/logout', (req, res) => {
-    res.json({ message: 'ออกจากระบบสำเร็จ' });
-  });
-
-  app.get('/api/auth/me', authenticateToken, async (req: any, res) => {
-    try {
-      const user = await storage.getUser(req.user.id);
-      if (!user) {
-        return res.status(404).json({ message: 'ไม่พบผู้ใช้' });
-      }
-
-      const userResponse = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.first_name,
-        lastName: user.last_name,
-        role: user.role,
-        teamId: user.team_id,
-        tenantId: user.tenant_id
-      };
-
-      res.json(userResponse);
-    } catch (error) {
-      console.error('Get user error:', error);
-      res.status(500).json({ message: 'เกิดข้อผิดพลาดในระบบ' });
-    }
-  });
-
   // Test database connection
   try {
     await pool.query('SELECT 1');
@@ -139,12 +51,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
-      const tenant = user.tenant_id ? await storage.getTenant(user.tenant_id) : null;
+      const tenant = user.tenantId ? await storage.getTenant(user.tenantId) : null;
 
       const token = jwt.sign(
         { 
           userId: user.id, 
-          tenantId: user.tenant_id,
+          tenantId: user.tenantId,
           role: user.role 
         },
         JWT_SECRET,
@@ -157,8 +69,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id,
           username: user.username,
           email: user.email,
-          firstName: user.first_name,
-          lastName: user.last_name,
+          firstName: user.firstName,
+          lastName: user.lastName,
           role: user.role
         },
         tenant 
@@ -170,21 +82,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { username, email, first_name, last_name, password: userPassword, role } = req.body;
-      const hashedPassword = await bcrypt.hash(userPassword, 10);
+      const validatedData = insertUserSchema.parse(req.body);
+      const hashedPassword = await bcrypt.hash(validatedData.password, 10);
 
       const user = await storage.createUser({
-        username,
-        email,
-        first_name,
-        last_name,
-        password: hashedPassword,
-        role: role || 'user',
-        tenant_id: '550e8400-e29b-41d4-a716-446655440000',
-        is_active: true
+        ...validatedData,
+        password: hashedPassword
       });
 
-      const { password: _, ...userWithoutPassword } = user;
+      const { password, ...userWithoutPassword } = user;
       res.status(201).json(userWithoutPassword);
     } catch (error) {
       res.status(400).json({ message: "Registration failed", error });
@@ -421,155 +327,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(usersWithoutPasswords);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch users" });
-    }
-  });
-
-  app.post("/api/users", async (req: any, res) => {
-    try {
-      const { username, email, first_name, last_name, password, role } = req.body;
-      
-      if (!username || !first_name || !last_name || !password) {
-        return res.status(400).json({ message: "กรุณากรอกข้อมูลที่จำเป็น" });
-      }
-
-      // ตรวจสอบชื่อผู้ใช้ซ้ำ
-      const existingUser = await storage.getUserByUsername(username);
-      if (existingUser) {
-        return res.status(400).json({ message: "ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว" });
-      }
-
-      // ตรวจสอบอีเมลซ้ำ (ถ้ามี)
-      if (email) {
-        const existingEmailUser = await storage.getUserByEmail(email);
-        if (existingEmailUser) {
-          return res.status(400).json({ message: "อีเมลนี้มีอยู่ในระบบแล้ว" });
-        }
-      }
-
-      const hashedPassword = await bcrypt.hash(password, 10);
-      
-      const userData = {
-        username,
-        email: email || null,
-        first_name: first_name,
-        last_name: last_name,
-        password: hashedPassword,
-        role: role || 'user',
-        tenant_id: '550e8400-e29b-41d4-a716-446655440000',
-        is_active: true
-      };
-
-      const user = await storage.createUser(userData);
-      const { password: _, ...userWithoutPassword } = user;
-      
-      res.status(201).json(userWithoutPassword);
-    } catch (error) {
-      console.error('Create user error:', error);
-      res.status(500).json({ message: "Failed to create user" });
-    }
-  });
-
-  // Update user route
-  app.put("/api/users/:id", async (req: any, res) => {
-    try {
-      const { id } = req.params;
-      const { username, email, first_name, last_name, role, password } = req.body;
-
-      if (!username || !first_name || !last_name) {
-        return res.status(400).json({ message: "Username, first name, and last name are required" });
-      }
-
-      let query = `
-        UPDATE users 
-        SET username = $1, email = $2, first_name = $3, last_name = $4, role = $5, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $6 
-        RETURNING id, username, email, first_name, last_name, role, is_active, created_at, updated_at
-      `;
-      let params = [username, email, first_name, last_name, role, id];
-
-      // If password is provided, update it as well
-      if (password && password.trim() !== "") {
-        const hashedPassword = await bcrypt.hash(password, 10);
-        query = `
-          UPDATE users 
-          SET username = $1, email = $2, first_name = $3, last_name = $4, role = $5, password = $6, updated_at = CURRENT_TIMESTAMP
-          WHERE id = $7 
-          RETURNING id, username, email, first_name, last_name, role, is_active, created_at, updated_at
-        `;
-        params = [username, email, first_name, last_name, role, hashedPassword, id];
-      }
-
-      const result = await pool.query(query, params);
-
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: "User not found" });
-      }
-
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error('Update user error:', error);
-      res.status(500).json({ message: "Failed to update user" });
-    }
-  });
-
-  // Permissions routes
-  app.get("/api/permissions", async (req: any, res) => {
-    try {
-      const result = await pool.query('SELECT * FROM permissions ORDER BY module, action');
-      res.json(result.rows);
-    } catch (error) {
-      console.error('Get permissions error:', error);
-      res.status(500).json({ message: "Failed to fetch permissions" });
-    }
-  });
-
-  app.get("/api/role-permissions", async (req: any, res) => {
-    try {
-      const result = await pool.query(`
-        SELECT rp.*, p.name, p.description, p.module, p.action 
-        FROM role_permissions rp 
-        JOIN permissions p ON rp.permission_id = p.id 
-        ORDER BY rp.role, p.module, p.action
-      `);
-      
-      const rolePermissions = result.rows.map(row => ({
-        id: row.id,
-        role: row.role,
-        permission_id: row.permission_id,
-        granted: row.granted,
-        permission: {
-          id: row.permission_id,
-          name: row.name,
-          description: row.description,
-          module: row.module,
-          action: row.action
-        }
-      }));
-      
-      res.json(rolePermissions);
-    } catch (error) {
-      console.error('Get role permissions error:', error);
-      res.status(500).json({ message: "Failed to fetch role permissions" });
-    }
-  });
-
-  app.put("/api/role-permissions/:role/:permissionId", async (req: any, res) => {
-    try {
-      const { role, permissionId } = req.params;
-      const { granted } = req.body;
-
-      const result = await pool.query(`
-        INSERT INTO role_permissions (role, permission_id, granted) 
-        VALUES ($1, $2, $3) 
-        ON CONFLICT (role, permission_id) 
-        DO UPDATE SET granted = $3, created_at = CURRENT_TIMESTAMP
-        RETURNING *
-      `, [role, permissionId, granted]);
-
-      res.json(result.rows[0]);
-    } catch (error) {
-      console.error('Update role permission error:', error);
-      res.status(500).json({ message: "Failed to update role permission" });
     }
   });
 

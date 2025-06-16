@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
-import { useAuth } from "@/hooks/use-auth";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,7 +121,6 @@ interface SubJobProgress {
 export default function DailyWorkLog() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
@@ -401,18 +399,20 @@ export default function DailyWorkLog() {
       return;
     }
 
-    // Get team data
+    // Get team data and find first employee in the team
     const selectedTeamData = teams.find(t => t.id === selectedTeam);
     if (!selectedTeamData) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลทีม", variant: "destructive" });
       return;
     }
 
-    // Use current logged-in user as the recorder
-    if (!user?.id) {
-      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลผู้ใช้ที่ล็อกอิน", variant: "destructive" });
+    // Use the first employee in the team as the recorder
+    const teamEmployees = await fetch(`/api/employees/by-team/${selectedTeam}`).then(res => res.json());
+    if (!teamEmployees || teamEmployees.length === 0) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่พบพนักงานในทีม", variant: "destructive" });
       return;
     }
+    const employeeId = teamEmployees[0].id;
 
     try {
       // Create log entries for selected sub jobs
@@ -422,7 +422,7 @@ export default function DailyWorkLog() {
         const logData = {
           date: selectedDate,
           teamId: selectedTeam,
-          employeeId: user.id, // Use current logged-in user
+          employeeId: employeeId, // Use first employee in team
           workOrderId: selectedWorkOrder,
           subJobId: parseInt(subJobId),
           hoursWorked: 8, // Default 8 hours - auto calculated
@@ -441,8 +441,7 @@ export default function DailyWorkLog() {
 
       await Promise.all(logPromises);
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
-      const userName = user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username;
-      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ผู้บันทึก: ${userName})` });
+      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ทีม: ${selectedTeamData.name})` });
       resetForm();
     } catch (error) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
@@ -820,13 +819,13 @@ export default function DailyWorkLog() {
                   <div className="h-11 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800 flex items-center">
                     <UserCheck className="h-4 w-4 mr-2 text-green-600" />
                     <span className="text-sm font-medium">
-                      {user?.firstName && user?.lastName 
-                        ? `${user.firstName} ${user.lastName}` 
-                        : user?.username || 'ไม่พบข้อมูลผู้ใช้'
+                      {selectedTeam && teams.find(t => t.id === selectedTeam)?.name 
+                        ? `ทีม ${teams.find(t => t.id === selectedTeam)?.name}` 
+                        : 'กรุณาเลือกทีมก่อน'
                       }
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">ผู้ใช้ที่ล็อกอินในขณะนี้</p>
+                  <p className="text-xs text-gray-500">ระบบจะใช้สมาชิกในทีมเป็นผู้บันทึกอัตโนมัติ</p>
                 </div>
 
                 <div className="space-y-2">

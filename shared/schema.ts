@@ -10,25 +10,24 @@ export const tenants = pgTable("tenants", {
   name: text("name").notNull(),
   slug: text("slug").notNull().unique(),
   plan: text("plan").notNull().default("basic"),
-  is_active: boolean("is_active").notNull().default(true),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Users table with tenant association
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email"),
+  email: text("email").notNull(),
   password: text("password").notNull(),
-  first_name: text("first_name").notNull(),
-  last_name: text("last_name").notNull(),
-  role: text("role").notNull().default("user"), // admin, manager, user
-  team_id: text("team_id"), // เชื่อมโยงกับ team
-  tenant_id: uuid("tenant_id").references(() => tenants.id),
-  is_active: boolean("is_active").notNull().default(true),
-  created_at: timestamp("created_at").defaultNow(),
-  updated_at: timestamp("updated_at").defaultNow()
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  role: text("role").notNull().default("user"),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Products and Services table
@@ -198,7 +197,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, {
-    fields: [users.tenant_id],
+    fields: [users.tenantId],
     references: [tenants.id]
   }),
   activities: many(activities)
@@ -297,50 +296,51 @@ export const quotationItemsRelations = relations(quotationItems, ({ one }) => ({
 // Organization tables
 export const departments = pgTable("departments", {
   id: text("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   name: text("name").notNull(),
-  tenantId: text("tenant_id").notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  type: text("type"),
+  type: text("type").notNull(),
+  manager: text("manager"),
+  location: text("location").notNull(),
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const teams = pgTable("teams", {
   id: text("id").primaryKey(),
-  name: text("name").notNull(),
   departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
-  tenantId: text("tenant_id").notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  name: text("name").notNull(),
   leader: text("leader"),
+  costPerDay: decimal("cost_per_day", { precision: 10, scale: 2 }).notNull().default("0.00"), // ต้นทุนต่อวัน (บาท) = กำลังการผลิต
+  status: text("status").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const employees = pgTable("employees", {
-  id: serial("id").primaryKey(),
-  userId: integer("user_id"),
-  employeeCode: text("employee_code"),
-  position: text("position"),
-  departmentId: text("department_id"),
-  teamId: text("team_id"),
-  hireDate: date("hire_date"),
-  salary: decimal("salary", { precision: 10, scale: 2 }),
-  tenantId: text("tenant_id").notNull(),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  id: text("id").primaryKey(),
+  teamId: text("team_id").references(() => teams.id, { onDelete: "cascade" }).notNull(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  count: integer("count").notNull(), // จำนวนพนักงาน
+  averageWage: decimal("average_wage", { precision: 10, scale: 2 }).notNull(), // ค่าแรงเฉลี่ย/คน
+  overheadPercentage: decimal("overhead_percentage", { precision: 5, scale: 2 }).notNull(), // %overhead
+  managementPercentage: decimal("management_percentage", { precision: 5, scale: 2 }).notNull(), // %management
+  description: text("description"), // คำอธิบายประเภทพนักงาน เช่น "ช่างตัด", "ช่างเย็บ"
+  status: text("status").notNull().default("active"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export const workSteps = pgTable("work_steps", {
   id: text("id").primaryKey(),
+  departmentId: text("department_id").references(() => departments.id, { onDelete: "cascade" }).notNull(),
   name: text("name").notNull(),
-  description: text("description"),
-  tenantId: text("tenant_id").notNull(),
-  orderNumber: integer("order_number"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-  departmentId: text("department_id"),
+  description: text("description").notNull(),
+  duration: integer("duration").notNull(),
+  requiredSkills: text("required_skills").array().notNull(),
+  order: integer("order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Production Capacity table
@@ -469,67 +469,67 @@ export const dailyWorkLogs = pgTable("daily_work_logs", {
 // Insert schemas
 export const insertTenantSchema = createInsertSchema(tenants).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 
 
 export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({
   id: true,
-  created_at: true
+  createdAt: true
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
-  created_at: true
+  createdAt: true
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertColorSchema = createInsertSchema(colors).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertSizeSchema = createInsertSchema(sizes).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertQuotationSchema = createInsertSchema(quotations).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit({
   id: true,
-  created_at: true
+  createdAt: true
 });
 
 // Organization relations
@@ -624,60 +624,60 @@ export const insertDepartmentSchema = createInsertSchema(departments).omit({
 
 export const insertTeamSchema = createInsertSchema(teams).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertWorkStepSchema = createInsertSchema(workSteps).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertProductionCapacitySchema = createInsertSchema(productionCapacity).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertWorkQueueSchema = createInsertSchema(workQueue).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertHolidaySchema = createInsertSchema(holidays).omit({
   id: true,
-  created_at: true
+  createdAt: true
 });
 
 export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertSubJobSchema = createInsertSchema(subJobs).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit({
   id: true,
-  created_at: true
+  createdAt: true
 });
 
 export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
   id: true,
-  created_at: true,
-  updated_at: true
+  createdAt: true,
+  updatedAt: true
 });
 
 // Types

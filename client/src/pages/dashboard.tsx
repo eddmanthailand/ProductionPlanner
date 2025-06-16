@@ -1,23 +1,9 @@
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-
 export default function Dashboard() {
-  const { clearAuth } = useAuth();
-
   return (
     <div className="p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">แดชบอร์ด</h1>
-          <p className="text-gray-600">ยินดีต้อนรับ! นี่คือสถานการณ์การดำเนินงานในวันนี้</p>
-        </div>
-        <Button 
-          onClick={clearAuth}
-          variant="outline"
-          className="text-red-600 border-red-300 hover:bg-red-50"
-        >
-          ทดสอบหน้า Login
-        </Button>
+      <div>
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">แดชบอร์ด</h1>
+        <p className="text-gray-600">ยินดีต้อนรับ! นี่คือสถานการณ์การดำเนินงานในวันนี้</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
