@@ -463,6 +463,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user route
+  app.put("/api/users/:id", async (req: any, res) => {
+    try {
+      const { id } = req.params;
+      const { username, email, firstName, lastName, role } = req.body;
+
+      if (!username || !firstName || !lastName) {
+        return res.status(400).json({ message: "Username, first name, and last name are required" });
+      }
+
+      const result = await pool.query(`
+        UPDATE users 
+        SET username = $1, email = $2, "firstName" = $3, "lastName" = $4, role = $5, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE id = $6 
+        RETURNING id, username, email, "firstName", "lastName", role, "isActive", "createdAt", "updatedAt"
+      `, [username, email, firstName, lastName, role, id]);
+
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(result.rows[0]);
+    } catch (error) {
+      console.error('Update user error:', error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Permissions routes
   app.get("/api/permissions", async (req: any, res) => {
     try {

@@ -27,12 +27,21 @@ export default function Users() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     firstName: "",
     lastName: "",
     password: "",
+    role: "accountant"
+  });
+  const [editFormData, setEditFormData] = useState({
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
     role: "accountant"
   });
 
@@ -70,6 +79,29 @@ export default function Users() {
     }
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: async ({ id, userData }: { id: number; userData: typeof editFormData }) => {
+      const res = await apiRequest(`/api/users/${id}`, "PUT", userData);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setEditOpen(false);
+      setEditingUser(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถอัปเดตข้อมูลผู้ใช้ได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.username || !formData.password || !formData.firstName || !formData.lastName) {
@@ -85,6 +117,37 @@ export default function Users() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditInputChange = (field: string, value: string) => {
+    setEditFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editFormData.username || !editFormData.firstName || !editFormData.lastName) {
+      toast({
+        title: "กรุณากรอกข้อมูลให้ครบถ้วน",
+        description: "ชื่อผู้ใช้ ชื่อ และนามสกุลเป็นข้อมูลที่จำเป็น",
+        variant: "destructive"
+      });
+      return;
+    }
+    if (editingUser) {
+      updateUserMutation.mutate({ id: editingUser.id, userData: editFormData });
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setEditFormData({
+      username: user.username,
+      email: user.email || "",
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.role
+    });
+    setEditOpen(true);
   };
 
   const getRoleColor = (role: string) => {
@@ -276,6 +339,87 @@ export default function Users() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* Edit User Dialog */}
+        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-firstName">ชื่อ *</Label>
+                  <Input
+                    id="edit-firstName"
+                    value={editFormData.firstName}
+                    onChange={(e) => handleEditInputChange("firstName", e.target.value)}
+                    placeholder="กรอกชื่อ"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-lastName">นามสกุล *</Label>
+                  <Input
+                    id="edit-lastName"
+                    value={editFormData.lastName}
+                    onChange={(e) => handleEditInputChange("lastName", e.target.value)}
+                    placeholder="กรอกนามสกุล"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-username">ชื่อผู้ใช้ *</Label>
+                <Input
+                  id="edit-username"
+                  value={editFormData.username}
+                  onChange={(e) => handleEditInputChange("username", e.target.value)}
+                  placeholder="กรอกชื่อผู้ใช้"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-email">อีเมล</Label>
+                <Input
+                  id="edit-email"
+                  type="email"
+                  value={editFormData.email}
+                  onChange={(e) => handleEditInputChange("email", e.target.value)}
+                  placeholder="กรอกอีเมล"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-role">บทบาท</Label>
+                <Select value={editFormData.role} onValueChange={(value) => handleEditInputChange("role", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกบทบาท" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
+                    <SelectItem value="managing_director">Managing Director</SelectItem>
+                    <SelectItem value="factory_manager">Factory Manager</SelectItem>
+                    <SelectItem value="accounting_manager">Accounting Manager</SelectItem>
+                    <SelectItem value="production_leader">Production Team Leader</SelectItem>
+                    <SelectItem value="accountant">Accountant</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button type="submit" disabled={updateUserMutation.isPending}>
+                  {updateUserMutation.isPending ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
@@ -380,7 +524,7 @@ export default function Users() {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
                         แก้ไข
                       </Button>
                       <Button 
