@@ -8,7 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Shield, Users, Settings, Eye, Plus, Edit, Trash2, FileText } from "lucide-react";
+import { Shield, Users, Settings, Eye, Plus, Edit, Trash2, FileText, Building, UserCog } from "lucide-react";
 
 interface Permission {
   id: number;
@@ -91,9 +91,9 @@ export default function Permissions() {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin': return <Shield className="w-4 h-4" />;
-      case 'managing_director': return <Settings className="w-4 h-4" />;
+      case 'managing_director': return <Building className="w-4 h-4" />;
       case 'factory_manager': return <Settings className="w-4 h-4" />;
-      case 'accounting_manager': return <Settings className="w-4 h-4" />;
+      case 'accounting_manager': return <UserCog className="w-4 h-4" />;
       case 'production_leader': return <Users className="w-4 h-4" />;
       case 'accountant': return <Users className="w-4 h-4" />;
       default: return <Users className="w-4 h-4" />;
