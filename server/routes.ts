@@ -38,7 +38,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const user = await storage.getUserByUsername(username);
-      console.log('User found:', user ? { id: user.id, username: user.username, active: user.isActive } : 'null');
+      console.log('User found:', user ? { id: user.id, username: user.username, active: user.is_active } : 'null');
       
       if (!user) {
         return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
@@ -51,7 +51,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
       }
 
-      if (!user.isActive) {
+      if (!user.is_active) {
         return res.status(401).json({ message: 'บัญชีผู้ใช้ถูกปิดใช้งาน' });
       }
 
@@ -60,8 +60,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           id: user.id,
           username: user.username,
           role: user.role,
-          teamId: user.teamId,
-          tenantId: user.tenantId
+          teamId: user.team_id,
+          tenantId: user.tenant_id
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -71,11 +71,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.first_name,
+        lastName: user.last_name,
         role: user.role,
-        teamId: user.teamId,
-        tenantId: user.tenantId
+        teamId: user.team_id,
+        tenantId: user.tenant_id
       };
 
       console.log('Login successful for user:', userResponse.username);
@@ -101,11 +101,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         id: user.id,
         username: user.username,
         email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        firstName: user.first_name,
+        lastName: user.last_name,
         role: user.role,
-        teamId: user.teamId,
-        tenantId: user.tenantId
+        teamId: user.team_id,
+        tenantId: user.tenant_id
       };
 
       res.json(userResponse);
@@ -445,12 +445,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userData = {
         username,
         email: email || null,
-        firstName,
-        lastName,
+        first_name: firstName,
+        last_name: lastName,
         password: hashedPassword,
         role: role || 'user',
-        tenantId: '550e8400-e29b-41d4-a716-446655440000',
-        isActive: true
+        tenant_id: '550e8400-e29b-41d4-a716-446655440000',
+        is_active: true
       };
 
       const user = await storage.createUser(userData);
@@ -475,9 +475,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await pool.query(`
         UPDATE users 
-        SET username = $1, email = $2, "firstName" = $3, "lastName" = $4, role = $5, "updatedAt" = CURRENT_TIMESTAMP
+        SET username = $1, email = $2, first_name = $3, last_name = $4, role = $5, updated_at = CURRENT_TIMESTAMP
         WHERE id = $6 
-        RETURNING id, username, email, "firstName", "lastName", role, "isActive", "createdAt", "updatedAt"
+        RETURNING id, username, email, first_name as "firstName", last_name as "lastName", role, is_active as "isActive", created_at as "createdAt", updated_at as "updatedAt"
       `, [username, email, firstName, lastName, role, id]);
 
       if (result.rows.length === 0) {

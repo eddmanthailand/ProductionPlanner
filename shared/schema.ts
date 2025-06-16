@@ -19,16 +19,16 @@ export const tenants = pgTable("tenants", {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
-  email: text("email").notNull(),
+  email: text("email"),
   password: text("password").notNull(),
-  firstName: text("first_name").notNull(),
-  lastName: text("last_name").notNull(),
+  first_name: text("first_name").notNull(),
+  last_name: text("last_name").notNull(),
   role: text("role").notNull().default("user"), // admin, manager, user
-  teamId: text("team_id"), // เชื่อมโยงกับ team
-  tenantId: uuid("tenant_id").references(() => tenants.id),
-  isActive: boolean("is_active").notNull().default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow()
+  team_id: text("team_id"), // เชื่อมโยงกับ team
+  tenant_id: uuid("tenant_id").references(() => tenants.id),
+  is_active: boolean("is_active").notNull().default(true),
+  created_at: timestamp("created_at").defaultNow(),
+  updated_at: timestamp("updated_at").defaultNow()
 });
 
 // Products and Services table
@@ -198,7 +198,7 @@ export const tenantsRelations = relations(tenants, ({ many }) => ({
 
 export const usersRelations = relations(users, ({ one, many }) => ({
   tenant: one(tenants, {
-    fields: [users.tenantId],
+    fields: [users.tenant_id],
     references: [tenants.id]
   }),
   activities: many(activities)
