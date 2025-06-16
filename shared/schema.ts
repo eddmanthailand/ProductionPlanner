@@ -15,6 +15,44 @@ export const tenants = pgTable("tenants", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
+// Roles table
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  displayName: text("display_name").notNull(),
+  description: text("description"),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Permissions table
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  resource: text("resource").notNull(), // e.g., 'work_orders', 'teams', 'reports'
+  action: text("action").notNull(), // e.g., 'create', 'read', 'update', 'delete'
+  description: text("description"),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// Role permissions mapping
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").references(() => roles.id),
+  permissionId: integer("permission_id").references(() => permissions.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+// User sessions table
+export const userSessions = pgTable("user_sessions", {
+  id: text("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
 // Users table with tenant association
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -23,9 +61,10 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
-  role: text("role").notNull().default("user"),
+  roleId: integer("role_id").references(() => roles.id),
   tenantId: uuid("tenant_id").references(() => tenants.id),
   isActive: boolean("is_active").notNull().default(true),
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
