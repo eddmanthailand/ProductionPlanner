@@ -33,7 +33,7 @@ export default function Users() {
     firstName: "",
     lastName: "",
     password: "",
-    role: "user"
+    role: "accountant"
   });
 
   const { data: users, isLoading } = useQuery<User[]>({
@@ -58,7 +58,7 @@ export default function Users() {
         firstName: "",
         lastName: "",
         password: "",
-        role: "user"
+        role: "accountant"
       });
     },
     onError: (error: any) => {
@@ -91,10 +91,16 @@ export default function Users() {
     switch (role) {
       case "admin":
         return "bg-red-100 text-red-800";
-      case "manager":
+      case "managing_director":
+        return "bg-purple-100 text-purple-800";
+      case "factory_manager":
         return "bg-blue-100 text-blue-800";
-      case "user":
+      case "accounting_manager":
+        return "bg-yellow-100 text-yellow-800";
+      case "production_leader":
         return "bg-green-100 text-green-800";
+      case "accountant":
+        return "bg-gray-100 text-gray-800";
       default:
         return "bg-gray-100 text-gray-800";
     }
@@ -104,10 +110,16 @@ export default function Users() {
     switch (role) {
       case "admin":
         return "ผู้ดูแลระบบ";
-      case "manager":
-        return "ผู้จัดการ";
-      case "user":
-        return "ผู้ใช้งาน";
+      case "managing_director":
+        return "Managing Director";
+      case "factory_manager":
+        return "Factory Manager";
+      case "accounting_manager":
+        return "Accounting Manager";
+      case "production_leader":
+        return "Production Team Leader";
+      case "accountant":
+        return "Accountant";
       default:
         return role;
     }
@@ -117,8 +129,13 @@ export default function Users() {
     switch (role) {
       case "admin":
         return <Shield className="w-4 h-4" />;
-      case "manager":
+      case "managing_director":
+      case "factory_manager":
+      case "accounting_manager":
         return <Settings className="w-4 h-4" />;
+      case "production_leader":
+      case "accountant":
+        return <User className="w-4 h-4" />;
       default:
         return <User className="w-4 h-4" />;
     }
@@ -148,7 +165,11 @@ export default function Users() {
   const totalUsers = users?.length || 0;
   const activeUsers = users?.filter(u => u.isActive).length || 0;
   const adminUsers = users?.filter(u => u.role === "admin").length || 0;
-  const managerUsers = users?.filter(u => u.role === "manager").length || 0;
+  const managementUsers = users?.filter(u => 
+    u.role === "managing_director" || 
+    u.role === "factory_manager" || 
+    u.role === "accounting_manager"
+  ).length || 0;
 
   return (
     <div className="space-y-6">
@@ -234,9 +255,12 @@ export default function Users() {
                     <SelectValue placeholder="เลือกบทบาท" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="user">ผู้ใช้งาน</SelectItem>
-                    <SelectItem value="manager">ผู้จัดการ</SelectItem>
                     <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
+                    <SelectItem value="managing_director">Managing Director</SelectItem>
+                    <SelectItem value="factory_manager">Factory Manager</SelectItem>
+                    <SelectItem value="accounting_manager">Accounting Manager</SelectItem>
+                    <SelectItem value="production_leader">Production Team Leader</SelectItem>
+                    <SelectItem value="accountant">Accountant</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
