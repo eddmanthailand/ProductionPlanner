@@ -726,7 +726,7 @@ export class DatabaseStorage implements IStorage {
       .where(eq(departments.tenantId, tenantId))
       .then(rows => rows.map(row => ({
         ...row.teams,
-        cost_per_day: row.teams.costPerDay
+        departmentName: row.departments.name
       })));
   }
 
