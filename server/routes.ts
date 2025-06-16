@@ -418,6 +418,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users", async (req: any, res) => {
+    try {
+      const { username, email, firstName, lastName, password, role } = req.body;
+      
+      if (!username || !firstName || !lastName || !password) {
+        return res.status(400).json({ message: "กรุณากรอกข้อมูลที่จำเป็น" });
+      }
+
+      // ตรวจสอบชื่อผู้ใช้ซ้ำ
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "ชื่อผู้ใช้นี้มีอยู่ในระบบแล้ว" });
+      }
+
+      // ตรวจสอบอีเมลซ้ำ (ถ้ามี)
+      if (email) {
+        const existingEmailUser = await storage.getUserByEmail(email);
+        if (existingEmailUser) {
+          return res.status(400).json({ message: "อีเมลนี้มีอยู่ในระบบแล้ว" });
+        }
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      
+      const userData = {
+        username,
+        email: email || null,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        role: role || 'user',
+        tenantId: '550e8400-e29b-41d4-a716-446655440000',
+        isActive: true
+      };
+
+      const user = await storage.createUser(userData);
+      const { password: _, ...userWithoutPassword } = user;
+      
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error('Create user error:', error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');

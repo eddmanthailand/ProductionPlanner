@@ -1,8 +1,15 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Plus, User, Shield, Settings } from "lucide-react";
 
 interface User {
@@ -17,9 +24,68 @@ interface User {
 
 export default function Users() {
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    firstName: "",
+    lastName: "",
+    password: "",
+    role: "user"
+  });
+
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"]
   });
+
+  const createUserMutation = useMutation({
+    mutationFn: async (userData: typeof formData) => {
+      const res = await apiRequest("/api/users", "POST", userData);
+      return res.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "เพิ่มผู้ใช้ใหม่เรียบร้อยแล้ว",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setOpen(false);
+      setFormData({
+        username: "",
+        email: "",
+        firstName: "",
+        lastName: "",
+        password: "",
+        role: "user"
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถเพิ่มผู้ใช้ได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.username || !formData.password || !formData.firstName || !formData.lastName) {
+      toast({
+        title: "กรุณากรอกข้อมูลให้ครบถ้วน",
+        description: "ชื่อผู้ใช้ รหัสผ่าน ชื่อ และนามสกุลเป็นข้อมูลที่จำเป็น",
+        variant: "destructive"
+      });
+      return;
+    }
+    createUserMutation.mutate(formData);
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -92,10 +158,100 @@ export default function Users() {
           <h1 className="text-2xl font-bold text-gray-900">จัดการผู้ใช้</h1>
           <p className="text-gray-600">จัดการสิทธิ์การเข้าใช้งานและบทบาทของผู้ใช้</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
-          <Plus className="w-4 h-4 mr-2" />
-          เพิ่มผู้ใช้ใหม่
-        </Button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogTrigger asChild>
+            <Button className="bg-primary hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-2" />
+              เพิ่มผู้ใช้ใหม่
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">ชื่อ *</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => handleInputChange("firstName", e.target.value)}
+                    placeholder="กรอกชื่อ"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">นามสกุล *</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => handleInputChange("lastName", e.target.value)}
+                    placeholder="กรอกนามสกุล"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="username">ชื่อผู้ใช้ *</Label>
+                <Input
+                  id="username"
+                  value={formData.username}
+                  onChange={(e) => handleInputChange("username", e.target.value)}
+                  placeholder="กรอกชื่อผู้ใช้"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="email">อีเมล</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  placeholder="กรอกอีเมล"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="password">รหัสผ่าน *</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange("password", e.target.value)}
+                  placeholder="กรอกรหัสผ่าน"
+                  required
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="role">บทบาท</Label>
+                <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกบทบาท" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="user">ผู้ใช้งาน</SelectItem>
+                    <SelectItem value="manager">ผู้จัดการ</SelectItem>
+                    <SelectItem value="admin">ผู้ดูแลระบบ</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button type="submit" disabled={createUserMutation.isPending}>
+                  {createUserMutation.isPending ? "กำลังเพิ่ม..." : "เพิ่มผู้ใช้"}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Stats Cards */}
