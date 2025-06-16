@@ -490,47 +490,47 @@ export const insertProductSchema = createInsertSchema(products).omit({
 
 export const insertStockMovementSchema = createInsertSchema(stockMovements).omit({
   id: true,
-  createdAt: true
+  created_at: true
 });
 
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertActivitySchema = createInsertSchema(activities).omit({
   id: true,
-  createdAt: true
+  created_at: true
 });
 
 export const insertCustomerSchema = createInsertSchema(customers).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertColorSchema = createInsertSchema(colors).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertSizeSchema = createInsertSchema(sizes).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertQuotationSchema = createInsertSchema(quotations).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit({
   id: true,
-  createdAt: true
+  created_at: true
 });
 
 // Organization relations
@@ -625,60 +625,60 @@ export const insertDepartmentSchema = createInsertSchema(departments).omit({
 
 export const insertTeamSchema = createInsertSchema(teams).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertEmployeeSchema = createInsertSchema(employees).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertWorkStepSchema = createInsertSchema(workSteps).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertProductionCapacitySchema = createInsertSchema(productionCapacity).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertWorkQueueSchema = createInsertSchema(workQueue).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertHolidaySchema = createInsertSchema(holidays).omit({
   id: true,
-  createdAt: true
+  created_at: true
 });
 
 export const insertWorkOrderSchema = createInsertSchema(workOrders).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertSubJobSchema = createInsertSchema(subJobs).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit({
   id: true,
-  createdAt: true
+  created_at: true
 });
 
 export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
   id: true,
-  createdAt: true,
-  updatedAt: true
+  created_at: true,
+  updated_at: true
 });
 
 // Types
