@@ -31,17 +31,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/auth/login', async (req, res) => {
     try {
       const { username, password } = req.body;
+      console.log('Login attempt:', { username, passwordLength: password?.length });
 
       if (!username || !password) {
         return res.status(400).json({ message: 'กรุณากรอกชื่อผู้ใช้และรหัสผ่าน' });
       }
 
       const user = await storage.getUserByUsername(username);
+      console.log('User found:', user ? { id: user.id, username: user.username, active: user.isActive } : 'null');
+      
       if (!user) {
         return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log('Password valid:', isValidPassword);
+      
       if (!isValidPassword) {
         return res.status(401).json({ message: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
       }
@@ -73,6 +78,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: user.tenantId
       };
 
+      console.log('Login successful for user:', userResponse.username);
       res.json({ user: userResponse, token });
     } catch (error) {
       console.error('Login error:', error);

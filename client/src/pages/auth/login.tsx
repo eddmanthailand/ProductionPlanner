@@ -24,20 +24,20 @@ export default function Login() {
     try {
       const response: any = await apiRequest("/api/auth/login", "POST", formData);
       
-      // Store user data in localStorage
-      localStorage.setItem("user", JSON.stringify(response.user));
-      localStorage.setItem("token", response.token);
-      
-      toast({
-        title: "เข้าสู่ระบบสำเร็จ",
-        description: `ยินดีต้อนรับ ${response.user.firstName} ${response.user.lastName}`,
-      });
-      
-      // Redirect based on role
-      if (response.user.role === 'admin') {
-        setLocation("/admin");
+      if (response && response.user) {
+        // Store user data in localStorage
+        localStorage.setItem("user", JSON.stringify(response.user));
+        localStorage.setItem("token", response.token);
+        
+        toast({
+          title: "เข้าสู่ระบบสำเร็จ",
+          description: `ยินดีต้อนรับ ${response.user.firstName || response.user.username}`,
+        });
+        
+        // Force page reload to update auth state
+        window.location.href = "/";
       } else {
-        setLocation("/");
+        throw new Error("Invalid response from server");
       }
     } catch (error: any) {
       toast({
@@ -119,16 +119,7 @@ export default function Login() {
             </Button>
           </form>
           
-          {/* Demo Users */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">ข้อมูลการเข้าสู่ระบบ:</h3>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="font-mono">admin</span>
-                <span className="text-gray-500">A0971-exp11 (ผู้ดูแลระบบ)</span>
-              </div>
-            </div>
-          </div>
+
         </CardContent>
       </Card>
     </div>
