@@ -13,10 +13,15 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Install PostgreSQL client
+    - name: Install PostgreSQL 17 client
       run: |
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client
+        # Download and install PostgreSQL 17 binaries
+        wget -q https://ftp.postgresql.org/pub/binary/v17.2/linux/postgresql-17.2-1-linux-x64-binaries.tar.gz
+        tar -xzf postgresql-17.2-1-linux-x64-binaries.tar.gz
+        sudo mv pgsql /usr/local/
+        sudo ln -sf /usr/local/pgsql/bin/pg_dump /usr/local/bin/pg_dump
+        export PATH="/usr/local/pgsql/bin:$PATH"
+        pg_dump --version
         
     - name: Create backup directory
       run: mkdir -p backups
@@ -24,21 +29,13 @@ jobs:
     - name: Create database backup
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        PATH: /usr/local/pgsql/bin:$PATH
       run: |
         BACKUP_DATE=$(date +'%Y%m%d_%H%M%S')
         BACKUP_FILE="backups/backup_${BACKUP_DATE}.sql"
         
-        # Extract connection components from DATABASE_URL
-        # Format: postgresql://user:password@host:port/database
-        DB_USER=$(echo "$DATABASE_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
-        DB_PASSWORD=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
-        DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
-        DB_PORT=$(echo "$DATABASE_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
-        DB_NAME=$(echo "$DATABASE_URL" | sed -n 's|.*/\([^?]*\).*|\1|p')
-        
-        echo "Connecting to: $DB_HOST:$DB_PORT/$DB_NAME"
-        
-        PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" --verbose > "$BACKUP_FILE"
+        # Use PostgreSQL 17 pg_dump
+        /usr/local/pgsql/bin/pg_dump "$DATABASE_URL" > "$BACKUP_FILE"
         gzip "$BACKUP_FILE"
         
         echo "Backup created: ${BACKUP_FILE}.gz"
