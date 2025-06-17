@@ -2,9 +2,8 @@ name: Database Backup
 
 on:
   schedule:
-    # รันทุกวันเวลา 02:00 UTC (09:00 เวลาไทย)
     - cron: '0 2 * * *'
-  workflow_dispatch: # อนุญาตให้รันด้วยตนเองได้
+  workflow_dispatch:
 
 jobs:
   backup:
@@ -26,14 +25,10 @@ jobs:
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
       run: |
-        # สร้างชื่อไฟล์ backup ตามวันที่
         BACKUP_DATE=$(date +'%Y%m%d_%H%M%S')
         BACKUP_FILE="backups/backup_${BACKUP_DATE}.sql"
         
-        # Export database
         pg_dump "$DATABASE_URL" > "$BACKUP_FILE"
-        
-        # บีบอัดไฟล์เพื่อประหยัดพื้นที่
         gzip "$BACKUP_FILE"
         
         echo "Backup created: ${BACKUP_FILE}.gz"
@@ -43,7 +38,7 @@ jobs:
       with:
         name: database-backup-${{ github.run_number }}
         path: backups/*.gz
-        retention-days: 30 # เก็บไฟล์ 30 วัน
+        retention-days: 30
         
     - name: List current backups
       run: |
@@ -52,5 +47,4 @@ jobs:
         
     - name: Cleanup old local backups
       run: |
-        # ลบไฟล์ที่เก่ากว่า 7 วัน (ถ้ามี)
         find backups -name "*.gz" -mtime +7 -delete || true
