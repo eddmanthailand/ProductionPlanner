@@ -13,14 +13,13 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Install PostgreSQL client
+    - name: Setup PostgreSQL 17 client
       run: |
-        sudo apt-get update
-        sudo apt-get install -y wget ca-certificates
-        wget --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo apt-key add -
-        echo "deb http://apt.postgresql.org/pub/repos/apt/ $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
-        sudo apt-get update
-        sudo apt-get install -y postgresql-client-17
+        docker pull postgres:17
+        echo '#!/bin/bash' > /tmp/pg_dump
+        echo 'docker run --rm -e PGPASSWORD="$PGPASSWORD" postgres:17 pg_dump "$@"' >> /tmp/pg_dump
+        chmod +x /tmp/pg_dump
+        sudo mv /tmp/pg_dump /usr/local/bin/pg_dump
         
     - name: Create backup directory
       run: mkdir -p backups
