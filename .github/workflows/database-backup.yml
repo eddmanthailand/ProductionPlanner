@@ -13,13 +13,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
-    - name: Setup PostgreSQL 17 client
+    - name: Install PostgreSQL client
       run: |
-        docker pull postgres:17
-        echo '#!/bin/bash' > /tmp/pg_dump
-        echo 'docker run --rm -e PGPASSWORD="$PGPASSWORD" postgres:17 pg_dump "$@"' >> /tmp/pg_dump
-        chmod +x /tmp/pg_dump
-        sudo mv /tmp/pg_dump /usr/local/bin/pg_dump
+        sudo apt-get update
+        sudo apt-get install -y postgresql-client
         
     - name: Create backup directory
       run: mkdir -p backups
@@ -31,7 +28,7 @@ jobs:
         BACKUP_DATE=$(date +'%Y%m%d_%H%M%S')
         BACKUP_FILE="backups/backup_${BACKUP_DATE}.sql"
         
-        pg_dump "$DATABASE_URL" > "$BACKUP_FILE"
+        pg_dump --no-sync --verbose "$DATABASE_URL" > "$BACKUP_FILE"
         gzip "$BACKUP_FILE"
         
         echo "Backup created: ${BACKUP_FILE}.gz"
