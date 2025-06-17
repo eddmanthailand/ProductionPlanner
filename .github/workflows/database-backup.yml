@@ -28,7 +28,17 @@ jobs:
         BACKUP_DATE=$(date +'%Y%m%d_%H%M%S')
         BACKUP_FILE="backups/backup_${BACKUP_DATE}.sql"
         
-        pg_dump --no-sync --verbose "$DATABASE_URL" > "$BACKUP_FILE"
+        # Extract connection components from DATABASE_URL
+        # Format: postgresql://user:password@host:port/database
+        DB_USER=$(echo "$DATABASE_URL" | sed -n 's|.*://\([^:]*\):.*|\1|p')
+        DB_PASSWORD=$(echo "$DATABASE_URL" | sed -n 's|.*://[^:]*:\([^@]*\)@.*|\1|p')
+        DB_HOST=$(echo "$DATABASE_URL" | sed -n 's|.*@\([^:]*\):.*|\1|p')
+        DB_PORT=$(echo "$DATABASE_URL" | sed -n 's|.*:\([0-9]*\)/.*|\1|p')
+        DB_NAME=$(echo "$DATABASE_URL" | sed -n 's|.*/\([^?]*\).*|\1|p')
+        
+        echo "Connecting to: $DB_HOST:$DB_PORT/$DB_NAME"
+        
+        PGPASSWORD="$DB_PASSWORD" pg_dump -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" --verbose > "$BACKUP_FILE"
         gzip "$BACKUP_FILE"
         
         echo "Backup created: ${BACKUP_FILE}.gz"
