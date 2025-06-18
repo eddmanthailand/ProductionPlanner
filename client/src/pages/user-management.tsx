@@ -61,26 +61,7 @@ export default function UserManagement() {
     enabled: true
   });
 
-  // Initialize predefined roles
-  const initializeRolesMutation = useMutation({
-    mutationFn: async () => {
-      return await apiRequest("/api/roles/initialize", "POST");
-    },
-    onSuccess: () => {
-      toast({
-        title: "สำเร็จ",
-        description: "เริ่มต้นบทบาทเรียบร้อยแล้ว"
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถเริ่มต้นบทบาทได้",
-        variant: "destructive"
-      });
-    }
-  });
+
 
   // Create user form
   const createForm = useForm<CreateUserFormData>({
@@ -259,18 +240,6 @@ export default function UserManagement() {
           <p className="text-muted-foreground">จัดการผู้ใช้ในระบบและกำหนดบทบาทตามสิทธิ์ 8 ระดับ</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            onClick={() => initializeRolesMutation.mutate()}
-            disabled={initializeRolesMutation.isPending}
-            variant="outline"
-          >
-            {initializeRolesMutation.isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Shield className="w-4 h-4 mr-2" />
-            )}
-            เริ่มต้นบทบาท
-          </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
