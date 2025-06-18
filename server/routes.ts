@@ -73,7 +73,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { 
           userId: user.id, 
           tenantId: user.tenantId,
-          role: user.role 
+          roleId: user.roleId 
         },
         JWT_SECRET,
         { expiresIn: '24h' }
@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          role: user.role
+          roleId: user.roleId
         },
         tenant 
       });
@@ -692,7 +692,79 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
+  // =================== ROLES AND PERMISSIONS API ===================
+  
+  // Get all roles for tenant
+  app.get("/api/roles", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const roles = await storage.getRoles(tenantId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Get roles error:", error);
+      res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  // Initialize predefined roles for tenant
+  app.post("/api/roles/initialize", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const roles = await storage.initializePredefinedRoles(tenantId);
+      res.json({ message: "Predefined roles initialized", roles });
+    } catch (error) {
+      console.error("Initialize roles error:", error);
+      res.status(500).json({ message: "Failed to initialize roles" });
+    }
+  });
+
+  // Get users with roles
+  app.get("/api/users-with-roles", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const users = await storage.getUsersWithRoles(tenantId);
+      res.json(users);
+    } catch (error) {
+      console.error("Get users with roles error:", error);
+      res.status(500).json({ message: "Failed to fetch users with roles" });
+    }
+  });
+
+  // Update user role
+  app.put("/api/users/:userId/role", authenticateToken, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId;
+      const { userId } = req.params;
+      const { roleId } = req.body;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      const user = await storage.updateUser(parseInt(userId), { roleId }, tenantId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Update user role error:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
   // Company Name Search endpoint
   app.post("/api/search-company", async (req: any, res: any) => {
     try {
