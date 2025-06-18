@@ -33,6 +33,7 @@ import Customers from "@/pages/customers";
 import MasterData from "@/pages/master-data";
 import Reports from "@/pages/reports";
 import Users from "@/pages/users";
+import UserManagement from "@/pages/user-management";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();

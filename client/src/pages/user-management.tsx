@@ -1,0 +1,457 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, UserPlus, Shield, Edit, Users } from "lucide-react";
+import type { UserWithRole, Role } from "@shared/schema";
+
+const createUserSchema = z.object({
+  username: z.string().min(3, "ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  firstName: z.string().min(2, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร"),
+  lastName: z.string().min(2, "นามสกุลต้องมีอย่างน้อย 2 ตัวอักษร"),
+  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+  roleId: z.number().min(1, "กรุณาเลือกบทบาท")
+});
+
+type CreateUserFormData = z.infer<typeof createUserSchema>;
+
+export default function UserManagement() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+
+  // Fetch users with roles
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ["/api/users-with-roles"],
+    enabled: true
+  });
+
+  // Fetch roles
+  const { data: roles = [], isLoading: rolesLoading } = useQuery({
+    queryKey: ["/api/roles"],
+    enabled: true
+  });
+
+  // Initialize predefined roles
+  const initializeRolesMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/roles/initialize", "POST");
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "เริ่มต้นบทบาทเรียบร้อยแล้ว"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเริ่มต้นบทบาทได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Create user form
+  const createForm = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      roleId: 0
+    }
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: async (data: CreateUserFormData) => {
+      return await apiRequest("/api/auth/register", {
+        method: "POST",
+        body: JSON.stringify(data)
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างผู้ใช้ใหม่เรียบร้อยแล้ว"
+      });
+      setIsCreateDialogOpen(false);
+      createForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถสร้างผู้ใช้ได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Update user role mutation
+  const updateRoleMutation = useMutation({
+    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
+      return await apiRequest(`/api/users/${userId}/role`, {
+        method: "PUT",
+        body: JSON.stringify({ roleId })
+      });
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "อัปเดตบทบาทผู้ใช้เรียบร้อยแล้ว"
+      });
+      setIsRoleDialogOpen(false);
+      setSelectedUser(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถอัปเดตบทบาทได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleCreateUser = (data: CreateUserFormData) => {
+    createUserMutation.mutate(data);
+  };
+
+  const handleUpdateRole = (roleId: number) => {
+    if (selectedUser) {
+      updateRoleMutation.mutate({ userId: selectedUser.id, roleId });
+    }
+  };
+
+  const getRoleBadgeColor = (level: number) => {
+    if (level <= 2) return "bg-red-100 text-red-800";
+    if (level <= 4) return "bg-orange-100 text-orange-800";
+    if (level <= 6) return "bg-blue-100 text-blue-800";
+    return "bg-green-100 text-green-800";
+  };
+
+  return (
+    <div className="container mx-auto p-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold">จัดการผู้ใช้และสิทธิ์</h1>
+          <p className="text-muted-foreground">จัดการผู้ใช้ในระบบและกำหนดบทบาทตามสิทธิ์ 8 ระดับ</p>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => initializeRolesMutation.mutate()}
+            disabled={initializeRolesMutation.isPending}
+            variant="outline"
+          >
+            {initializeRolesMutation.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+            ) : (
+              <Shield className="w-4 h-4 mr-2" />
+            )}
+            เริ่มต้นบทบาท
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus className="w-4 h-4 mr-2" />
+                เพิ่มผู้ใช้ใหม่
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
+                <DialogDescription>
+                  กรอกข้อมูลผู้ใช้ใหม่และเลือกบทบาทที่เหมาะสม
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...createForm}>
+                <form onSubmit={createForm.handleSubmit(handleCreateUser)} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={createForm.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ชื่อ</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ชื่อ" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>นามสกุล</FormLabel>
+                          <FormControl>
+                            <Input placeholder="นามสกุล" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  <FormField
+                    control={createForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ชื่อผู้ใช้</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ชื่อผู้ใช้" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>อีเมล</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="อีเมล" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>รหัสผ่าน</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="รหัสผ่าน" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={createForm.control}
+                    name="roleId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>บทบาท</FormLabel>
+                        <Select 
+                          onValueChange={(value) => field.onChange(parseInt(value))} 
+                          value={field.value?.toString()}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="เลือกบทบาท" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {roles.map((role: Role) => (
+                              <SelectItem key={role.id} value={role.id.toString()}>
+                                <div className="flex items-center gap-2">
+                                  <Badge className={getRoleBadgeColor(role.level)}>
+                                    ระดับ {role.level}
+                                  </Badge>
+                                  {role.displayName}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                      ยกเลิก
+                    </Button>
+                    <Button type="submit" disabled={createUserMutation.isPending}>
+                      {createUserMutation.isPending ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <UserPlus className="w-4 h-4 mr-2" />
+                      )}
+                      สร้างผู้ใช้
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Roles Overview */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Shield className="w-5 h-5" />
+            บทบาทในระบบ (8 ระดับ)
+          </CardTitle>
+          <CardDescription>
+            ระบบจัดการสิทธิ์แบบลำดับชั้น จากระดับสูงสุด (1) ไปยังระดับต่ำสุด (8)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {rolesLoading ? (
+              <div className="col-span-full flex justify-center py-8">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : (
+              roles.map((role: Role) => (
+                <Card key={role.id} className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <Badge className={getRoleBadgeColor(role.level)}>
+                      ระดับ {role.level}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">
+                      {users.filter((u: UserWithRole) => u.role?.id === role.id).length} คน
+                    </span>
+                  </div>
+                  <h3 className="font-semibold">{role.displayName}</h3>
+                  <p className="text-sm text-muted-foreground">{role.description}</p>
+                </Card>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Users Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="w-5 h-5" />
+            รายชื่อผู้ใช้
+          </CardTitle>
+          <CardDescription>
+            จัดการผู้ใช้ทั้งหมดในระบบและกำหนดบทบาท
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {usersLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ผู้ใช้</TableHead>
+                  <TableHead>อีเมล</TableHead>
+                  <TableHead>บทบาท</TableHead>
+                  <TableHead>สถานะ</TableHead>
+                  <TableHead>การจัดการ</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {users.map((user: UserWithRole) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">
+                          {user.firstName} {user.lastName}
+                        </div>
+                        <div className="text-sm text-muted-foreground">@{user.username}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      {user.role ? (
+                        <div className="flex items-center gap-2">
+                          <Badge className={getRoleBadgeColor(user.role.level)}>
+                            ระดับ {user.role.level}
+                          </Badge>
+                          <span>{user.role.displayName}</span>
+                        </div>
+                      ) : (
+                        <Badge variant="outline">ไม่มีบทบาท</Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={user.isActive ? "default" : "secondary"}>
+                        {user.isActive ? "ใช้งานได้" : "ปิดใช้งาน"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setSelectedUser(user);
+                          setIsRoleDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        แก้ไขบทบาท
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Role Assignment Dialog */}
+      <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>แก้ไขบทบาทผู้ใช้</DialogTitle>
+            <DialogDescription>
+              เลือกบทบาทใหม่สำหรับ {selectedUser?.firstName} {selectedUser?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-2">
+              {roles.map((role: Role) => (
+                <Button
+                  key={role.id}
+                  variant={selectedUser?.role?.id === role.id ? "default" : "outline"}
+                  className="justify-start h-auto p-4"
+                  onClick={() => handleUpdateRole(role.id)}
+                  disabled={updateRoleMutation.isPending}
+                >
+                  <div className="flex items-center gap-3 w-full">
+                    <Badge className={getRoleBadgeColor(role.level)}>
+                      ระดับ {role.level}
+                    </Badge>
+                    <div className="text-left">
+                      <div className="font-medium">{role.displayName}</div>
+                      <div className="text-sm text-muted-foreground">{role.description}</div>
+                    </div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
