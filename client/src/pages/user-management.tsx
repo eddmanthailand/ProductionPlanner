@@ -39,9 +39,7 @@ type EditUserFormData = z.infer<typeof editUserSchema>;
 export default function UserManagement() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
 
@@ -125,28 +123,7 @@ export default function UserManagement() {
     }
   });
 
-  // Update user role mutation
-  const updateRoleMutation = useMutation({
-    mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
-      return await apiRequest(`/api/users/${userId}/role`, "PUT", { roleId });
-    },
-    onSuccess: () => {
-      toast({
-        title: "สำเร็จ",
-        description: "อัปเดตบทบาทผู้ใช้เรียบร้อยแล้ว"
-      });
-      setIsRoleDialogOpen(false);
-      setSelectedUser(null);
-      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
-    },
-    onError: (error) => {
-      toast({
-        title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถอัปเดตบทบาทได้",
-        variant: "destructive"
-      });
-    }
-  });
+
 
   // Edit user mutation
   const editUserMutation = useMutation({
@@ -177,11 +154,7 @@ export default function UserManagement() {
     createUserMutation.mutate(data);
   };
 
-  const handleUpdateRole = (roleId: number) => {
-    if (selectedUser) {
-      updateRoleMutation.mutate({ userId: selectedUser.id, roleId });
-    }
-  };
+
 
   const handleEditUser = (user: UserWithRole) => {
     setEditingUser(user);
@@ -457,27 +430,14 @@ export default function UserManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEditUser(user)}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          แก้ไข
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedUser(user);
-                            setIsRoleDialogOpen(true);
-                          }}
-                        >
-                          <Shield className="w-4 h-4 mr-2" />
-                          บทบาท
-                        </Button>
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditUser(user)}
+                      >
+                        <Edit className="w-4 h-4 mr-2" />
+                        แก้ไข
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -487,40 +447,7 @@ export default function UserManagement() {
         </CardContent>
       </Card>
 
-      {/* Role Assignment Dialog */}
-      <Dialog open={isRoleDialogOpen} onOpenChange={setIsRoleDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>แก้ไขบทบาทผู้ใช้</DialogTitle>
-            <DialogDescription>
-              เลือกบทบาทใหม่สำหรับ {selectedUser?.firstName} {selectedUser?.lastName}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 gap-2">
-              {roles.map((role) => (
-                <Button
-                  key={role.id}
-                  variant={selectedUser?.role?.id === role.id ? "default" : "outline"}
-                  className="justify-start h-auto p-4"
-                  onClick={() => handleUpdateRole(role.id)}
-                  disabled={updateRoleMutation.isPending}
-                >
-                  <div className="flex items-center gap-3 w-full">
-                    <Badge className={getRoleBadgeColor(role.level)}>
-                      ระดับ {role.level}
-                    </Badge>
-                    <div className="text-left">
-                      <div className="font-medium">{role.displayName}</div>
-                      <div className="text-sm text-muted-foreground">{role.description}</div>
-                    </div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
