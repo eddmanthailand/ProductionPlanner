@@ -9,6 +9,7 @@ import MainLayout from "@/components/layout/main-layout";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
+import Dashboard from "@/pages/dashboard";
 import Sales from "@/pages/sales-new";
 import Quotations from "@/pages/sales/quotations";
 import QuotationsNew from "@/pages/sales/quotations-new";
@@ -49,7 +50,10 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/">
+        <MainLayout><Dashboard /></MainLayout>
+      </Route>
+      <Route path="/home" component={Home} />
       
       {/* Protected routes with MainLayout */}
       <Route path="/sales">
