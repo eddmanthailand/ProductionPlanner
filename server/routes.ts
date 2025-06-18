@@ -694,7 +694,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // =================== ROLES AND PERMISSIONS API ===================
   
-  // Get all roles for tenant
+  // Get all roles for tenant (accessible to authenticated Replit users)
   app.get("/api/roles", isAuthenticated, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
@@ -718,7 +718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get users with roles
+  // Get users with roles (accessible to authenticated Replit users)
   app.get("/api/users-with-roles", isAuthenticated, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
@@ -733,13 +733,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Update user role
   app.put("/api/users/:userId/role", isAuthenticated, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const { userId } = req.params;
       const { roleId } = req.body;
-      
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
 
       const user = await storage.updateUser(parseInt(userId), { roleId }, tenantId);
       if (!user) {
