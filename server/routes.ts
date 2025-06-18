@@ -765,6 +765,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Register new user (for admin/management use)
+  app.post("/api/auth/register", authenticateToken, async (req: any, res: any) => {
+    try {
+      const { username, email, firstName, lastName, password, roleId } = req.body;
+      const tenantId = req.user.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user = await storage.createUser({
+        username,
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        roleId: roleId || null,
+        tenantId,
+        isActive: true
+      });
+
+      res.status(201).json({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roleId: user.roleId,
+        tenantId: user.tenantId,
+        isActive: user.isActive
+      });
+    } catch (error) {
+      console.error("Register user error:", error);
+      res.status(500).json({ message: "Failed to register user" });
+    }
+  });
+
   // Company Name Search endpoint
   app.post("/api/search-company", async (req: any, res: any) => {
     try {

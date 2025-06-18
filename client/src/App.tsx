@@ -129,6 +129,9 @@ function Router() {
       <Route path="/users">
         <MainLayout><Users /></MainLayout>
       </Route>
+      <Route path="/user-management">
+        <MainLayout><UserManagement /></MainLayout>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
