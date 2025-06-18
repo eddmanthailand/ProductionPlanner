@@ -771,6 +771,7 @@ export type UpsertReplitAuthUser = typeof replitAuthUsers.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
+export type UpdateUser = Partial<InsertUser & { deletedAt?: Date | null }>;
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = z.infer<typeof insertProductSchema>;

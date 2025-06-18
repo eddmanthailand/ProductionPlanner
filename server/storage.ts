@@ -30,6 +30,7 @@ import {
   rolePermissions,
   type User,
   type InsertUser,
+  type UpdateUser,
   type Role,
   type InsertRole,
   type Permission,
@@ -100,7 +101,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<InsertUser & { deletedAt?: Date | null }>, tenantId: string): Promise<User | undefined>;
+  updateUser(id: number, user: UpdateUser, tenantId: string): Promise<User | undefined>;
   deleteUser(id: number, tenantId: string): Promise<boolean>;
   getUsersByTenant(tenantId: string): Promise<User[]>;
   getUsersWithRoles(tenantId: string): Promise<UserWithRole[]>;
@@ -331,7 +332,7 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(users).where(eq(users.tenantId, tenantId));
   }
 
-  async updateUser(id: number, updateData: Partial<InsertUser>, tenantId: string): Promise<User | undefined> {
+  async updateUser(id: number, updateData: UpdateUser, tenantId: string): Promise<User | undefined> {
     const [user] = await db.update(users)
       .set({ ...updateData, updatedAt: new Date() })
       .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
