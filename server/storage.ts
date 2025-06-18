@@ -100,7 +100,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<InsertUser>, tenantId: string): Promise<User | undefined>;
+  updateUser(id: number, user: Partial<InsertUser & { deletedAt?: Date | null }>, tenantId: string): Promise<User | undefined>;
   deleteUser(id: number, tenantId: string): Promise<boolean>;
   getUsersByTenant(tenantId: string): Promise<User[]>;
   getUsersWithRoles(tenantId: string): Promise<UserWithRole[]>;

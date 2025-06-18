@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck, Trash2, AlertTriangle } from "lucide-react";
+import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck, Trash2, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import type { UserWithRole, Role } from "@shared/schema";
 
 const createUserSchema = z.object({
@@ -46,6 +46,8 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [deletingUser, setDeletingUser] = useState<UserWithRole | null>(null);
+  const [showCreatePassword, setShowCreatePassword] = useState(false);
+  const [showEditPassword, setShowEditPassword] = useState(false);
 
   // Fetch users with roles
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRole[]>({
@@ -346,7 +348,27 @@ export default function UserManagement() {
                       <FormItem>
                         <FormLabel>รหัสผ่าน</FormLabel>
                         <FormControl>
-                          <Input type="password" placeholder="รหัสผ่าน" {...field} />
+                          <div className="relative">
+                            <Input 
+                              type={showCreatePassword ? "text" : "password"} 
+                              placeholder="รหัสผ่าน" 
+                              {...field} 
+                              className="pr-10"
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                              onClick={() => setShowCreatePassword(!showCreatePassword)}
+                            >
+                              {showCreatePassword ? (
+                                <EyeOff className="h-4 w-4" />
+                              ) : (
+                                <Eye className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -615,7 +637,27 @@ export default function UserManagement() {
                   <FormItem>
                     <FormLabel>รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="รหัสผ่านใหม่" {...field} />
+                      <div className="relative">
+                        <Input 
+                          type={showEditPassword ? "text" : "password"} 
+                          placeholder="รหัสผ่านใหม่" 
+                          {...field} 
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          onClick={() => setShowEditPassword(!showEditPassword)}
+                        >
+                          {showEditPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
