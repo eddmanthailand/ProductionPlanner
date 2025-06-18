@@ -718,6 +718,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Create new role
+  app.post("/api/roles", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { name, displayName, description, level } = req.body;
+      
+      // Validate required fields
+      if (!name || !displayName || !level) {
+        return res.status(400).json({ message: "Name, displayName, and level are required" });
+      }
+
+      // Check if level already exists
+      const existingRoles = await storage.getRoles(tenantId);
+      const levelExists = existingRoles.some(role => role.level === level);
+      if (levelExists) {
+        return res.status(400).json({ message: "Role level already exists" });
+      }
+
+      const role = await storage.createRole({
+        name,
+        displayName, 
+        description: description || "",
+        level,
+        tenantId,
+        isActive: true
+      });
+
+      res.status(201).json(role);
+    } catch (error) {
+      console.error("Create role error:", error);
+      res.status(500).json({ message: "Failed to create role" });
+    }
+  });
+
+  // Delete role
+  app.delete("/api/roles/:roleId", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { roleId } = req.params;
+
+      // Check if role has users
+      const users = await storage.getUsersWithRoles(tenantId);
+      const roleHasUsers = users.some(user => user.role?.id === parseInt(roleId));
+      
+      if (roleHasUsers) {
+        return res.status(400).json({ 
+          message: "Cannot delete role that has assigned users. Please reassign users to other roles first." 
+        });
+      }
+
+      const success = await storage.deleteRole(parseInt(roleId), tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      res.json({ message: "Role deleted successfully" });
+    } catch (error) {
+      console.error("Delete role error:", error);
+      res.status(500).json({ message: "Failed to delete role" });
+    }
+  });
+
   // Get users with roles (accessible to authenticated Replit users)
   app.get("/api/users-with-roles", isAuthenticated, async (req: any, res: any) => {
     try {

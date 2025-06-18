@@ -14,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck, Trash2, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck, Trash2, AlertTriangle, Eye, EyeOff, Plus, X } from "lucide-react";
 import type { UserWithRole, Role } from "@shared/schema";
 
 const createUserSchema = z.object({
@@ -35,8 +35,16 @@ const editUserSchema = z.object({
   roleId: z.number().min(1, "กรุณาเลือกบทบาท")
 });
 
+const createRoleSchema = z.object({
+  name: z.string().min(2, "ชื่อบทบาทต้องมีอย่างน้อย 2 ตัวอักษร"),
+  displayName: z.string().min(2, "ชื่อแสดงต้องมีอย่างน้อย 2 ตัวอักษร"),
+  description: z.string().optional(),
+  level: z.number().min(1, "ระดับต้องมากกว่า 0").max(100, "ระดับต้องไม่เกิน 100")
+});
+
 type CreateUserFormData = z.infer<typeof createUserSchema>;
 type EditUserFormData = z.infer<typeof editUserSchema>;
+type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 
 export default function UserManagement() {
   const { toast } = useToast();
@@ -48,6 +56,9 @@ export default function UserManagement() {
   const [deletingUser, setDeletingUser] = useState<UserWithRole | null>(null);
   const [showCreatePassword, setShowCreatePassword] = useState(false);
   const [showEditPassword, setShowEditPassword] = useState(false);
+  const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
+  const [isDeleteRoleDialogOpen, setIsDeleteRoleDialogOpen] = useState(false);
+  const [deletingRole, setDeletingRole] = useState<Role | null>(null);
 
   // Fetch users with roles
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRole[]>({
@@ -61,7 +72,62 @@ export default function UserManagement() {
     enabled: true
   });
 
+  // Create role form
+  const createRoleForm = useForm<CreateRoleFormData>({
+    resolver: zodResolver(createRoleSchema),
+    defaultValues: {
+      name: "",
+      displayName: "",
+      description: "",
+      level: 1
+    }
+  });
 
+  // Create role mutation
+  const createRoleMutation = useMutation({
+    mutationFn: async (data: CreateRoleFormData) => {
+      return await apiRequest("/api/roles", "POST", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างบทบาทใหม่เรียบร้อยแล้ว"
+      });
+      setIsCreateRoleDialogOpen(false);
+      createRoleForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถสร้างบทบาทได้",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Delete role mutation
+  const deleteRoleMutation = useMutation({
+    mutationFn: async (roleId: number) => {
+      return await apiRequest(`/api/roles/${roleId}`, "DELETE");
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "ลบบทบาทเรียบร้อยแล้ว"
+      });
+      setIsDeleteRoleDialogOpen(false);
+      setDeletingRole(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถลบบทบาทได้",
+        variant: "destructive"
+      });
+    }
+  });
 
   // Create user form
   const createForm = useForm<CreateUserFormData>({
@@ -186,7 +252,31 @@ export default function UserManagement() {
     createUserMutation.mutate(data);
   };
 
+  const handleCreateRole = (data: CreateRoleFormData) => {
+    createRoleMutation.mutate(data);
+  };
 
+  const handleDeleteRole = (role: Role) => {
+    // Check if role has users
+    const roleHasUsers = users.some(user => user.role?.id === role.id);
+    if (roleHasUsers) {
+      toast({
+        title: "ไม่สามารถลบได้",
+        description: "บทบาทนี้มีผู้ใช้ที่ได้รับมอบหมายอยู่ กรุณาย้ายผู้ใช้ไปยังบทบาทอื่นก่อน",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setDeletingRole(role);
+    setIsDeleteRoleDialogOpen(true);
+  };
+
+  const confirmDeleteRole = () => {
+    if (deletingRole) {
+      deleteRoleMutation.mutate(deletingRole.id);
+    }
+  };
 
   const handleEditUser = (user: UserWithRole) => {
     setEditingUser(user);
