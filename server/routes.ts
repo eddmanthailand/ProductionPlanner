@@ -753,11 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/auth/register", isAuthenticated, async (req: any, res: any) => {
     try {
       const { username, email, firstName, lastName, password, roleId } = req.body;
-      const tenantId = req.user.tenantId;
-      
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
 
       // Check if user already exists
       const existingUser = await storage.getUserByUsername(username);
