@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck } from "lucide-react";
+import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck, Trash2, AlertTriangle } from "lucide-react";
 import type { UserWithRole, Role } from "@shared/schema";
 
 const createUserSchema = z.object({
@@ -43,6 +44,8 @@ export default function UserManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deletingUser, setDeletingUser] = useState<UserWithRole | null>(null);
 
   // Fetch users with roles
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRole[]>({
@@ -173,6 +176,29 @@ export default function UserManagement() {
     }
   });
 
+  // Delete user mutation (soft delete)
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      return await apiRequest(`/api/users/${userId}`, "DELETE", {});
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "ลบผู้ใช้เรียบร้อยแล้ว"
+      });
+      setIsDeleteDialogOpen(false);
+      setDeletingUser(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถลบผู้ใช้ได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleCreateUser = (data: CreateUserFormData) => {
     createUserMutation.mutate(data);
   };
@@ -197,6 +223,17 @@ export default function UserManagement() {
       userId: user.id, 
       isActive: !user.isActive 
     });
+  };
+
+  const handleDeleteUser = (user: UserWithRole) => {
+    setDeletingUser(user);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteUser = () => {
+    if (deletingUser) {
+      deleteUserMutation.mutate(deletingUser.id);
+    }
   };
 
   const handleSubmitEdit = (data: EditUserFormData) => {
@@ -488,6 +525,14 @@ export default function UserManagement() {
                             </>
                           )}
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteUser(user)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          ลบ
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -622,6 +667,46 @@ export default function UserManagement() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              ยืนยันการลบผู้ใช้
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณแน่ใจหรือไม่ที่จะลบผู้ใช้ <strong>{deletingUser?.firstName} {deletingUser?.lastName}</strong> (@{deletingUser?.username})?
+              <br /><br />
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mt-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-yellow-600 mt-0.5" />
+                  <div className="text-sm text-yellow-800">
+                    <strong>หมายเหตุ:</strong> การลบนี้เป็นการลบแบบปลอดภัย ข้อมูลงานที่ผู้ใช้เคยทำจะยังคงอยู่ในระบบ 
+                    แต่ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้อีก
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteUser}
+              disabled={deleteUserMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteUserMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              ลบผู้ใช้
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
