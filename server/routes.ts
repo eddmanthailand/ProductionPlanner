@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
+import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
@@ -36,7 +37,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Continue anyway - let individual routes handle connection errors
   }
 
-  // Authentication routes
+  // Setup Replit Auth (disabled by default - will be enabled in later step)
+  // await setupAuth(app);
+
+  // Replit Auth routes (commented out until enabled)
+  // app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  //   try {
+  //     const userId = req.user.claims.sub;
+  //     const user = await storage.getReplitAuthUser(userId);
+  //     res.json(user);
+  //   } catch (error) {
+  //     console.error("Error fetching user:", error);
+  //     res.status(500).json({ message: "Failed to fetch user" });
+  //   }
+  // });
+
+  // Current authentication routes (JWT-based system)
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
