@@ -5,10 +5,13 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/use-auth";
+// import { useAuth } from "@/hooks/useAuth"; // Replit Auth hook (for future use)
 import MainLayout from "@/components/layout/main-layout";
 import NotFound from "@/pages/not-found";
 import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
+// import Landing from "@/pages/landing"; // Replit Auth landing page
+// import Home from "@/pages/home"; // Replit Auth home page
 import Sales from "@/pages/sales-new";
 import Quotations from "@/pages/sales/quotations";
 import QuotationsNew from "@/pages/sales/quotations-new";
@@ -67,6 +70,24 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  // Replit Auth Router (commented out - for future use)
+  // const { isAuthenticated, isLoading } = useAuth();
+  // 
+  // return (
+  //   <Switch>
+  //     {isLoading || !isAuthenticated ? (
+  //       <Route path="/" component={Landing} />
+  //     ) : (
+  //       <>
+  //         <Route path="/" component={Home} />
+  //         {/* All protected routes here */}
+  //       </>
+  //     )}
+  //     <Route component={NotFound} />
+  //   </Switch>
+  // );
+
+  // Current Router (JWT-based authentication)
   return (
     <Switch>
       {/* Public routes */}
