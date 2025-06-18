@@ -598,51 +598,43 @@ export default function MasterData() {
                       <TableHead>จัดการ</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <Droppable droppableId="sizes">
-                    {(provided) => (
-                      <TableBody {...provided.droppableProps} ref={provided.innerRef}>
-                        {sizes?.map((size, index) => (
-                          <Draggable key={size.id} draggableId={size.id.toString()} index={index}>
-                            {(provided, snapshot) => (
-                              <TableRow 
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={snapshot.isDragging ? "bg-gray-100" : ""}
+                  <SortableContext 
+                    items={sizes?.map(size => size.id.toString()) || []}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <TableBody>
+                      {sizes?.map((size) => (
+                        <SortableItem key={size.id} id={size.id.toString()}>
+                          <TableCell className="cursor-grab">
+                            <GripVertical className="h-4 w-4 text-gray-400" />
+                          </TableCell>
+                          <TableCell className="font-medium">{size.name}</TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button variant="outline" size="sm" onClick={() => handleEditSize(size)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => handleDeleteSize(size.id)}
+                                className="text-red-600 hover:text-red-700"
                               >
-                                <TableCell {...provided.dragHandleProps} className="cursor-grab">
-                                  <GripVertical className="h-4 w-4 text-gray-400" />
-                                </TableCell>
-                                <TableCell className="font-medium">{size.name}</TableCell>
-                                <TableCell>
-                                  <div className="flex space-x-2">
-                                    <Button variant="outline" size="sm" onClick={() => handleEditSize(size)}>
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                    <Button 
-                                      variant="outline" 
-                                      size="sm" 
-                                      onClick={() => handleDeleteSize(size.id)}
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                        {sizes?.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={3} className="text-center py-8 text-gray-500">
-                              ยังไม่มีข้อมูลไซส์
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    )}
-                  </Droppable>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </SortableItem>
+                      ))}
+                      {sizes?.length === 0 && (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center py-8 text-gray-500">
+                            ยังไม่มีข้อมูลไซส์
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </SortableContext>
                 </Table>
               </DndContext>
             </CardContent>
