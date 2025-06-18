@@ -25,8 +25,16 @@ import {
   productionPlanItems,
   dailyWorkLogs,
   replitAuthUsers,
+  roles,
+  permissions,
+  rolePermissions,
   type User,
   type InsertUser,
+  type Role,
+  type InsertRole,
+  type Permission,
+  type InsertPermission,
+  type UserWithRole,
   type Tenant,
   type InsertTenant,
   type ReplitAuthUser,
@@ -92,7 +100,25 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>, tenantId: string): Promise<User | undefined>;
+  deleteUser(id: number, tenantId: string): Promise<boolean>;
   getUsersByTenant(tenantId: string): Promise<User[]>;
+  getUsersWithRoles(tenantId: string): Promise<UserWithRole[]>;
+
+  // Roles and Permissions
+  getRoles(tenantId: string): Promise<Role[]>;
+  getRole(id: number, tenantId: string): Promise<Role | undefined>;
+  createRole(role: InsertRole): Promise<Role>;
+  updateRole(id: number, role: Partial<InsertRole>, tenantId: string): Promise<Role | undefined>;
+  deleteRole(id: number, tenantId: string): Promise<boolean>;
+  initializePredefinedRoles(tenantId: string): Promise<Role[]>;
+  
+  getPermissions(): Promise<Permission[]>;
+  getUserPermissions(userId: number): Promise<Permission[]>;
+  checkUserPermission(userId: number, resource: string, action: string): Promise<boolean>;
+  getRolePermissions(roleId: number): Promise<Permission[]>;
+  assignPermissionToRole(roleId: number, permissionId: number): Promise<void>;
+  removePermissionFromRole(roleId: number, permissionId: number): Promise<void>;
 
   // Tenants
   getTenant(id: string): Promise<Tenant | undefined>;
@@ -303,6 +329,186 @@ export class DatabaseStorage implements IStorage {
 
   async getUsersByTenant(tenantId: string): Promise<User[]> {
     return await db.select().from(users).where(eq(users.tenantId, tenantId));
+  }
+
+  async updateUser(id: number, updateData: Partial<InsertUser>, tenantId: string): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
+      .returning();
+    return user || undefined;
+  }
+
+  async deleteUser(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.update(users)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async getUsersWithRoles(tenantId: string): Promise<UserWithRole[]> {
+    const result = await db.select({
+      id: users.id,
+      username: users.username,
+      email: users.email,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      roleId: users.roleId,
+      tenantId: users.tenantId,
+      isActive: users.isActive,
+      lastLoginAt: users.lastLoginAt,
+      createdAt: users.createdAt,
+      updatedAt: users.updatedAt,
+      role: {
+        id: roles.id,
+        name: roles.name,
+        displayName: roles.displayName,
+        description: roles.description,
+        level: roles.level,
+        tenantId: roles.tenantId,
+        isActive: roles.isActive,
+        createdAt: roles.createdAt,
+        updatedAt: roles.updatedAt
+      }
+    })
+    .from(users)
+    .leftJoin(roles, eq(users.roleId, roles.id))
+    .where(eq(users.tenantId, tenantId));
+    
+    return result.map(row => ({
+      ...row,
+      password: '', // Don't expose password
+      role: row.role.id ? row.role : undefined
+    }));
+  }
+
+  // Roles and Permissions implementation
+  async getRoles(tenantId: string): Promise<Role[]> {
+    return await db.select().from(roles)
+      .where(and(eq(roles.tenantId, tenantId), eq(roles.isActive, true)))
+      .orderBy(roles.level);
+  }
+
+  async getRole(id: number, tenantId: string): Promise<Role | undefined> {
+    const [role] = await db.select().from(roles)
+      .where(and(eq(roles.id, id), eq(roles.tenantId, tenantId)));
+    return role || undefined;
+  }
+
+  async createRole(insertRole: InsertRole): Promise<Role> {
+    const [role] = await db.insert(roles).values(insertRole).returning();
+    return role;
+  }
+
+  async updateRole(id: number, updateData: Partial<InsertRole>, tenantId: string): Promise<Role | undefined> {
+    const [role] = await db.update(roles)
+      .set({ ...updateData, updatedAt: new Date() })
+      .where(and(eq(roles.id, id), eq(roles.tenantId, tenantId)))
+      .returning();
+    return role || undefined;
+  }
+
+  async deleteRole(id: number, tenantId: string): Promise<boolean> {
+    const result = await db.update(roles)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(and(eq(roles.id, id), eq(roles.tenantId, tenantId)));
+    return (result.rowCount ?? 0) > 0;
+  }
+
+  async initializePredefinedRoles(tenantId: string): Promise<Role[]> {
+    const { PREDEFINED_ROLES } = await import("@shared/schema");
+    const createdRoles: Role[] = [];
+    
+    for (const predefinedRole of PREDEFINED_ROLES) {
+      try {
+        const [existingRole] = await db.select().from(roles)
+          .where(and(eq(roles.name, predefinedRole.name), eq(roles.tenantId, tenantId)));
+          
+        if (!existingRole) {
+          const [role] = await db.insert(roles).values({
+            name: predefinedRole.name,
+            displayName: predefinedRole.displayName,
+            description: predefinedRole.description,
+            level: predefinedRole.level,
+            tenantId: tenantId,
+            isActive: true
+          }).returning();
+          createdRoles.push(role);
+        }
+      } catch (error) {
+        console.error(`Failed to create role ${predefinedRole.name}:`, error);
+      }
+    }
+    
+    return createdRoles;
+  }
+
+  async getPermissions(): Promise<Permission[]> {
+    return await db.select().from(permissions).orderBy(permissions.resource, permissions.action);
+  }
+
+  async getUserPermissions(userId: number): Promise<Permission[]> {
+    const result = await db.select({
+      id: permissions.id,
+      name: permissions.name,
+      resource: permissions.resource,
+      action: permissions.action,
+      description: permissions.description,
+      createdAt: permissions.createdAt
+    })
+    .from(permissions)
+    .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+    .innerJoin(roles, eq(rolePermissions.roleId, roles.id))
+    .innerJoin(users, eq(roles.id, users.roleId))
+    .where(eq(users.id, userId));
+    
+    return result;
+  }
+
+  async checkUserPermission(userId: number, resource: string, action: string): Promise<boolean> {
+    const result = await db.select({ count: sql<number>`count(*)` })
+    .from(permissions)
+    .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+    .innerJoin(roles, eq(rolePermissions.roleId, roles.id))
+    .innerJoin(users, eq(roles.id, users.roleId))
+    .where(and(
+      eq(users.id, userId),
+      eq(permissions.resource, resource),
+      eq(permissions.action, action)
+    ));
+    
+    return (result[0]?.count ?? 0) > 0;
+  }
+
+  async getRolePermissions(roleId: number): Promise<Permission[]> {
+    const result = await db.select({
+      id: permissions.id,
+      name: permissions.name,
+      resource: permissions.resource,
+      action: permissions.action,
+      description: permissions.description,
+      createdAt: permissions.createdAt
+    })
+    .from(permissions)
+    .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
+    .where(eq(rolePermissions.roleId, roleId));
+    
+    return result;
+  }
+
+  async assignPermissionToRole(roleId: number, permissionId: number): Promise<void> {
+    await db.insert(rolePermissions).values({
+      roleId,
+      permissionId
+    });
+  }
+
+  async removePermissionFromRole(roleId: number, permissionId: number): Promise<void> {
+    await db.delete(rolePermissions)
+      .where(and(
+        eq(rolePermissions.roleId, roleId),
+        eq(rolePermissions.permissionId, permissionId)
+      ));
   }
 
   async getTenant(id: string): Promise<Tenant | undefined> {

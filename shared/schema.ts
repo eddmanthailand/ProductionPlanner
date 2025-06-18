@@ -42,17 +42,30 @@ export const tenants = pgTable("tenants", {
   updatedAt: timestamp("updated_at").defaultNow()
 });
 
-// Roles table
+// Roles table with predefined hierarchy levels
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  displayName: text("display_name").notNull(),
+  name: text("name").notNull(), // e.g., 'ADMIN', 'GENERAL_MANAGER'
+  displayName: text("display_name").notNull(), // e.g., 'ADMIN', 'กรรมการผู้จัดการ'
   description: text("description"),
+  level: integer("level").notNull(), // 1=ADMIN, 2=กรรมการผู้จัดการ, etc.
   tenantId: uuid("tenant_id").references(() => tenants.id),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
+
+// Predefined role levels constant
+export const ROLE_LEVELS = {
+  ADMIN: 1,
+  GENERAL_MANAGER: 2,
+  FACTORY_MANAGER: 3,
+  SUPERVISOR: 4,
+  ACCOUNTING_MANAGER: 5,
+  ACCOUNTANT: 6,
+  MARKETING_MANAGER: 7,
+  MARKETING_TEAM_LEAD: 8
+} as const;
 
 // Permissions table
 export const permissions = pgTable("permissions", {
@@ -872,3 +885,56 @@ export type InsertProductionPlan = z.infer<typeof insertProductionPlanSchema>;
 
 export type ProductionPlanItem = typeof productionPlanItems.$inferSelect;
 export type InsertProductionPlanItem = z.infer<typeof insertProductionPlanItemSchema>;
+
+// Role and Permission Types
+export type Role = typeof roles.$inferSelect;
+export type InsertRole = typeof roles.$inferInsert;
+export type Permission = typeof permissions.$inferSelect;
+export type InsertPermission = typeof permissions.$inferInsert;
+export type RolePermission = typeof rolePermissions.$inferSelect;
+
+// User with Role information
+export type UserWithRole = typeof users.$inferSelect & {
+  role?: Role;
+};
+
+// Permission check utility type
+export type PermissionCheck = {
+  resource: string;
+  action: string;
+};
+
+// Predefined role hierarchy with Thai names
+export const PREDEFINED_ROLES = [
+  { name: 'ADMIN', displayName: 'ADMIN', level: 1, description: 'ผู้ดูแลระบบสูงสุด' },
+  { name: 'GENERAL_MANAGER', displayName: 'กรรมการผู้จัดการ', level: 2, description: 'กรรมการผู้จัดการ' },
+  { name: 'FACTORY_MANAGER', displayName: 'ผู้จัดการโรงงาน', level: 3, description: 'ผู้จัดการโรงงาน' },
+  { name: 'SUPERVISOR', displayName: 'ซูเปอร์ไวเซอร์', level: 4, description: 'ซูเปอร์ไวเซอร์' },
+  { name: 'ACCOUNTING_MANAGER', displayName: 'ผู้จัดการฝ่ายบัญชี', level: 5, description: 'ผู้จัดการฝ่ายบัญชี' },
+  { name: 'ACCOUNTANT', displayName: 'Junior/Senior Accountant', level: 6, description: 'นักบัญชี' },
+  { name: 'MARKETING_MANAGER', displayName: 'ผู้จัดการฝ่ายการตลาด', level: 7, description: 'ผู้จัดการฝ่ายการตลาด' },
+  { name: 'MARKETING_TEAM_LEAD', displayName: 'หัวหน้าทีมการตลาด', level: 8, description: 'หัวหน้าทีมการตลาด' }
+] as const;
+
+// Permission resources and actions
+export const RESOURCES = {
+  USERS: 'users',
+  ROLES: 'roles',
+  SALES: 'sales',
+  QUOTATIONS: 'quotations',
+  PRODUCTION: 'production',
+  WORK_ORDERS: 'work_orders',
+  INVENTORY: 'inventory',
+  CUSTOMERS: 'customers',
+  ACCOUNTING: 'accounting',
+  REPORTS: 'reports',
+  MASTER_DATA: 'master_data'
+} as const;
+
+export const ACTIONS = {
+  CREATE: 'create',
+  READ: 'read',
+  UPDATE: 'update',
+  DELETE: 'delete',
+  MANAGE: 'manage'
+} as const;
