@@ -8,9 +8,29 @@ import { Plus, Calendar, Clock, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient } from "@/lib/queryClient";
 
+interface ProductionOrder {
+  id: number;
+  orderNumber: string;
+  status: string;
+  priority: string;
+  quantity: number;
+  startDate: string;
+  endDate: string;
+  notes?: string;
+}
+
 export default function Production() {
   const { t } = useLanguage();
   const { toast } = useToast();
+  
+  // Fetch production orders from API
+  const { data: orders = [], isLoading } = useQuery<ProductionOrder[]>({
+    queryKey: ["/api/production-orders"],
+    queryFn: async () => {
+      // Return empty array for now since API endpoint doesn't exist yet
+      return [];
+    }
+  });
 
   const getStatusColor = (status: string) => {
     switch (status) {

@@ -3,8 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
+interface AuthUser {
+  id: string;
+  email?: string;
+  firstName?: string;
+  lastName?: string;
+  profileImageUrl?: string;
+}
+
 export default function Home() {
-  const { user } = useAuth();
+  const { user } = useAuth() as { user: AuthUser | null };
 
   const handleLogout = () => {
     window.location.href = "/api/logout";
@@ -20,7 +28,7 @@ export default function Home() {
               ระบบจัดการธุรกิจ
             </h1>
             <p className="text-gray-600 dark:text-gray-300">
-              ยินดีต้อนรับ {user?.firstName} {user?.lastName}
+              ยินดีต้อนรับ {user?.firstName || user?.email?.split('@')[0] || 'ผู้ใช้งาน'}
             </p>
           </div>
           <div className="flex items-center gap-4">

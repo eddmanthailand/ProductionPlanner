@@ -585,7 +585,11 @@ export default function MasterData() {
 
           <Card>
             <CardContent className="p-6">
-              <DragDropContext onDragEnd={handleSizeDragEnd}>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleSizeDragEnd}
+              >
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -640,7 +644,7 @@ export default function MasterData() {
                     )}
                   </Droppable>
                 </Table>
-              </DragDropContext>
+              </DndContext>
             </CardContent>
           </Card>
         </TabsContent>
