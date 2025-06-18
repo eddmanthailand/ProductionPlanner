@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { queryClient } from "@/lib/queryClient";
 
 interface AuthUser {
   id: string;
@@ -14,7 +15,15 @@ interface AuthUser {
 export default function Home() {
   const { user } = useAuth() as { user: AuthUser | null };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Clear React Query cache
+    await queryClient.clear();
+    
+    // Clear browser storage
+    localStorage.clear();
+    sessionStorage.clear();
+    
+    // Force redirect to logout endpoint
     window.location.href = "/api/logout";
   };
 

@@ -34,11 +34,14 @@ import Reports from "@/pages/reports";
 import Users from "@/pages/users";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, error } = useAuth();
+  
+  // Show landing page if loading, not authenticated, or error occurred
+  const showLanding = isLoading || !isAuthenticated || error;
   
   return (
     <Switch>
-      {isLoading || !isAuthenticated ? (
+      {showLanding ? (
         <Route path="/" component={Landing} />
       ) : (
         <>
