@@ -754,9 +754,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const { userId } = req.params;
-      const { email, firstName, lastName, password, roleId } = req.body;
+      const { username, email, firstName, lastName, password, roleId } = req.body;
+      
+      // Check if username already exists (for other users)
+      if (username) {
+        const existingUser = await storage.getUserByUsername(username);
+        if (existingUser && existingUser.id !== parseInt(userId)) {
+          return res.status(400).json({ message: "Username already exists" });
+        }
+      }
       
       const updateData: any = {
+        username,
         email,
         firstName,
         lastName,
@@ -781,6 +790,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update user error:", error);
       res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Update user status (activate/deactivate)
+  app.put("/api/users/:userId/status", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
+      const { userId } = req.params;
+      const { isActive } = req.body;
+
+      const user = await storage.updateUser(parseInt(userId), { 
+        isActive, 
+        updatedAt: new Date() 
+      }, tenantId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return password in response
+      const { password: _, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Update user status error:", error);
+      res.status(500).json({ message: "Failed to update user status" });
     }
   });
 

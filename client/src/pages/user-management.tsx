@@ -13,7 +13,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Shield, Edit, Users } from "lucide-react";
+import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck } from "lucide-react";
 import type { UserWithRole, Role } from "@shared/schema";
 
 const createUserSchema = z.object({
@@ -26,6 +26,7 @@ const createUserSchema = z.object({
 });
 
 const editUserSchema = z.object({
+  username: z.string().min(3, "ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร"),
   email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
   firstName: z.string().min(2, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร"),
   lastName: z.string().min(2, "นามสกุลต้องมีอย่างน้อย 2 ตัวอักษร"),
@@ -92,6 +93,7 @@ export default function UserManagement() {
   const editForm = useForm<EditUserFormData>({
     resolver: zodResolver(editUserSchema),
     defaultValues: {
+      username: "",
       email: "",
       firstName: "",
       lastName: "",
@@ -150,6 +152,27 @@ export default function UserManagement() {
     }
   });
 
+  // Toggle user status mutation
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: number, isActive: boolean }) => {
+      return await apiRequest(`/api/users/${userId}/status`, "PUT", { isActive });
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว"
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถเปลี่ยนสถานะผู้ใช้ได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleCreateUser = (data: CreateUserFormData) => {
     createUserMutation.mutate(data);
   };
@@ -159,6 +182,7 @@ export default function UserManagement() {
   const handleEditUser = (user: UserWithRole) => {
     setEditingUser(user);
     editForm.reset({
+      username: user.username || "",
       email: user.email || "",
       firstName: user.firstName || "",
       lastName: user.lastName || "",
@@ -166,6 +190,13 @@ export default function UserManagement() {
       roleId: user.roleId || 0
     });
     setIsEditDialogOpen(true);
+  };
+
+  const handleToggleUserStatus = (user: UserWithRole) => {
+    toggleUserStatusMutation.mutate({ 
+      userId: user.id, 
+      isActive: !user.isActive 
+    });
   };
 
   const handleSubmitEdit = (data: EditUserFormData) => {
@@ -430,14 +461,34 @@ export default function UserManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEditUser(user)}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        แก้ไข
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          แก้ไข
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={user.isActive ? "destructive" : "default"}
+                          onClick={() => handleToggleUserStatus(user)}
+                          disabled={toggleUserStatusMutation.isPending}
+                        >
+                          {user.isActive ? (
+                            <>
+                              <UserX className="w-4 h-4 mr-2" />
+                              ระงับ
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              เปิดใช้งาน
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -460,6 +511,19 @@ export default function UserManagement() {
           </DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(handleSubmitEdit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อผู้ใช้</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ชื่อผู้ใช้" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={editForm.control}
                 name="firstName"
