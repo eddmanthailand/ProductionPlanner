@@ -39,89 +39,91 @@ function Router() {
   // Show landing page if loading, not authenticated, or error occurred
   const showLanding = isLoading || !isAuthenticated || error;
   
+  if (showLanding) {
+    return (
+      <Switch>
+        <Route component={Landing} />
+      </Switch>
+    );
+  }
+
   return (
     <Switch>
-      {showLanding ? (
-        <Route path="/" component={Landing} />
-      ) : (
-        <>
-          <Route path="/" component={Home} />
-          
-          {/* Protected routes with MainLayout */}
-          <Route path="/sales">
-            <MainLayout><Sales /></MainLayout>
-          </Route>
-          <Route path="/sales/quotations">
-            <MainLayout><Quotations /></MainLayout>
-          </Route>
-          <Route path="/sales/quotations/new">
-            <MainLayout><QuotationsNew /></MainLayout>
-          </Route>
-          <Route path="/sales/quotations/edit/:id">
-            <MainLayout><QuotationsEdit /></MainLayout>
-          </Route>
-          <Route path="/sales/invoices">
-            <MainLayout><Invoices /></MainLayout>
-          </Route>
-          <Route path="/sales/tax-invoices">
-            <MainLayout><TaxInvoices /></MainLayout>
-          </Route>
-          <Route path="/sales/receipts">
-            <MainLayout><Receipts /></MainLayout>
-          </Route>
-          <Route path="/production">
-            <MainLayout><Production /></MainLayout>
-          </Route>
-          <Route path="/production/calendar">
-            <MainLayout><ProductionCalendar /></MainLayout>
-          </Route>
-          <Route path="/production/organization">
-            <MainLayout><OrganizationChart /></MainLayout>
-          </Route>
-          <Route path="/production/work-queue">
-            <MainLayout><WorkQueue /></MainLayout>
-          </Route>
-          <Route path="/production/work-queue-planning">
-            <MainLayout><WorkQueuePlanning /></MainLayout>
-          </Route>
-          <Route path="/production/work-steps">
-            <MainLayout><WorkSteps /></MainLayout>
-          </Route>
-          <Route path="/production/work-orders">
-            <MainLayout><WorkOrders /></MainLayout>
-          </Route>
-          <Route path="/production/work-orders/new">
-            <MainLayout><WorkOrderForm /></MainLayout>
-          </Route>
-          <Route path="/production/work-orders/edit/:id">
-            <MainLayout><WorkOrderForm /></MainLayout>
-          </Route>
-          <Route path="/production/production-reports">
-            <MainLayout><ProductionReports /></MainLayout>
-          </Route>
-          <Route path="/production/daily-work-log">
-            <MainLayout><DailyWorkLog /></MainLayout>
-          </Route>
-          <Route path="/accounting">
-            <MainLayout><Accounting /></MainLayout>
-          </Route>
-          <Route path="/inventory">
-            <MainLayout><Inventory /></MainLayout>
-          </Route>
-          <Route path="/customers">
-            <MainLayout><Customers /></MainLayout>
-          </Route>
-          <Route path="/master-data">
-            <MainLayout><MasterData /></MainLayout>
-          </Route>
-          <Route path="/reports">
-            <MainLayout><Reports /></MainLayout>
-          </Route>
-          <Route path="/users">
-            <MainLayout><Users /></MainLayout>
-          </Route>
-        </>
-      )}
+      <Route path="/" component={Home} />
+      
+      {/* Protected routes with MainLayout */}
+      <Route path="/sales">
+        <MainLayout><Sales /></MainLayout>
+      </Route>
+      <Route path="/sales/quotations">
+        <MainLayout><Quotations /></MainLayout>
+      </Route>
+      <Route path="/sales/quotations/new">
+        <MainLayout><QuotationsNew /></MainLayout>
+      </Route>
+      <Route path="/sales/quotations/edit/:id">
+        <MainLayout><QuotationsEdit /></MainLayout>
+      </Route>
+      <Route path="/sales/invoices">
+        <MainLayout><Invoices /></MainLayout>
+      </Route>
+      <Route path="/sales/tax-invoices">
+        <MainLayout><TaxInvoices /></MainLayout>
+      </Route>
+      <Route path="/sales/receipts">
+        <MainLayout><Receipts /></MainLayout>
+      </Route>
+      <Route path="/production">
+        <MainLayout><Production /></MainLayout>
+      </Route>
+      <Route path="/production/calendar">
+        <MainLayout><ProductionCalendar /></MainLayout>
+      </Route>
+      <Route path="/production/organization">
+        <MainLayout><OrganizationChart /></MainLayout>
+      </Route>
+      <Route path="/production/work-queue">
+        <MainLayout><WorkQueue /></MainLayout>
+      </Route>
+      <Route path="/production/work-queue-planning">
+        <MainLayout><WorkQueuePlanning /></MainLayout>
+      </Route>
+      <Route path="/production/work-steps">
+        <MainLayout><WorkSteps /></MainLayout>
+      </Route>
+      <Route path="/production/work-orders">
+        <MainLayout><WorkOrders /></MainLayout>
+      </Route>
+      <Route path="/production/work-orders/new">
+        <MainLayout><WorkOrderForm /></MainLayout>
+      </Route>
+      <Route path="/production/work-orders/edit/:id">
+        <MainLayout><WorkOrderForm /></MainLayout>
+      </Route>
+      <Route path="/production/production-reports">
+        <MainLayout><ProductionReports /></MainLayout>
+      </Route>
+      <Route path="/production/daily-work-log">
+        <MainLayout><DailyWorkLog /></MainLayout>
+      </Route>
+      <Route path="/accounting">
+        <MainLayout><Accounting /></MainLayout>
+      </Route>
+      <Route path="/inventory">
+        <MainLayout><Inventory /></MainLayout>
+      </Route>
+      <Route path="/customers">
+        <MainLayout><Customers /></MainLayout>
+      </Route>
+      <Route path="/master-data">
+        <MainLayout><MasterData /></MainLayout>
+      </Route>
+      <Route path="/reports">
+        <MainLayout><Reports /></MainLayout>
+      </Route>
+      <Route path="/users">
+        <MainLayout><Users /></MainLayout>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
