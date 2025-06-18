@@ -695,13 +695,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =================== ROLES AND PERMISSIONS API ===================
   
   // Get all roles for tenant
-  app.get("/api/roles", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/roles", isAuthenticated, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
-
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const roles = await storage.getRoles(tenantId);
       res.json(roles);
     } catch (error) {
@@ -711,13 +707,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Initialize predefined roles for tenant
-  app.post("/api/roles/initialize", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/roles/initialize", isAuthenticated, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
-
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const roles = await storage.initializePredefinedRoles(tenantId);
       res.json({ message: "Predefined roles initialized", roles });
     } catch (error) {
@@ -727,13 +719,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get users with roles
-  app.get("/api/users-with-roles", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/users-with-roles", isAuthenticated, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId;
-      if (!tenantId) {
-        return res.status(400).json({ message: "Tenant ID is required" });
-      }
-
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const users = await storage.getUsersWithRoles(tenantId);
       res.json(users);
     } catch (error) {
@@ -743,7 +731,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user role
-  app.put("/api/users/:userId/role", authenticateToken, async (req: any, res: any) => {
+  app.put("/api/users/:userId/role", isAuthenticated, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { userId } = req.params;
@@ -766,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Register new user (for admin/management use)
-  app.post("/api/auth/register", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/auth/register", isAuthenticated, async (req: any, res: any) => {
     try {
       const { username, email, firstName, lastName, password, roleId } = req.body;
       const tenantId = req.user.tenantId;
