@@ -86,7 +86,6 @@ export default function Sidebar() {
     { name: t("nav.customers"), href: "/customers", icon: Users },
     { name: t("nav.master_data"), href: "/master-data", icon: Settings },
     { name: t("nav.reports"), href: "/production/production-reports", icon: FileText },
-    { name: t("nav.users"), href: "/users", icon: Users },
     { name: "จัดการผู้ใช้และสิทธิ์", href: "/user-management", icon: Shield },
   ];
 
