@@ -87,7 +87,7 @@ import {
   type InsertDailyWorkLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, asc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -347,38 +347,35 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsersWithRoles(tenantId: string): Promise<UserWithRole[]> {
-    const result = await db.select({
-      id: users.id,
-      username: users.username,
-      email: users.email,
-      firstName: users.firstName,
-      lastName: users.lastName,
-      roleId: users.roleId,
-      tenantId: users.tenantId,
-      isActive: users.isActive,
-      lastLoginAt: users.lastLoginAt,
-      createdAt: users.createdAt,
-      updatedAt: users.updatedAt,
-      role: {
-        id: roles.id,
-        name: roles.name,
-        displayName: roles.displayName,
-        description: roles.description,
-        level: roles.level,
-        tenantId: roles.tenantId,
-        isActive: roles.isActive,
-        createdAt: roles.createdAt,
-        updatedAt: roles.updatedAt
-      }
-    })
-    .from(users)
-    .leftJoin(roles, eq(users.roleId, roles.id))
-    .where(eq(users.tenantId, tenantId));
+    const result = await db.select()
+      .from(users)
+      .leftJoin(roles, eq(users.roleId, roles.id))
+      .where(eq(users.tenantId, tenantId));
     
     return result.map(row => ({
-      ...row,
+      id: row.users.id,
+      username: row.users.username,
+      email: row.users.email,
+      firstName: row.users.firstName,
+      lastName: row.users.lastName,
       password: '', // Don't expose password
-      role: row.role.id ? row.role : undefined
+      roleId: row.users.roleId,
+      tenantId: row.users.tenantId,
+      isActive: row.users.isActive,
+      lastLoginAt: row.users.lastLoginAt,
+      createdAt: row.users.createdAt,
+      updatedAt: row.users.updatedAt,
+      role: row.roles ? {
+        id: row.roles.id,
+        name: row.roles.name,
+        displayName: row.roles.displayName,
+        description: row.roles.description,
+        level: row.roles.level,
+        tenantId: row.roles.tenantId,
+        isActive: row.roles.isActive,
+        createdAt: row.roles.createdAt,
+        updatedAt: row.roles.updatedAt
+      } : undefined
     }));
   }
 
