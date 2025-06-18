@@ -488,13 +488,109 @@ export default function UserManagement() {
       {/* Roles Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            บทบาทในระบบ (8 ระดับ)
-          </CardTitle>
-          <CardDescription>
-            ระบบจัดการสิทธิ์แบบลำดับชั้น จากระดับสูงสุด (1) ไปยังระดับต่ำสุด (8)
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="w-5 h-5" />
+                บทบาทในระบบ ({roles.length} บทบาท)
+              </CardTitle>
+              <CardDescription>
+                ระบบจัดการสิทธิ์แบบลำดับชั้น จากระดับสูงสุด (1) ไปยังระดับต่ำสุด
+              </CardDescription>
+            </div>
+            <Dialog open={isCreateRoleDialogOpen} onOpenChange={setIsCreateRoleDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Plus className="w-4 h-4 mr-2" />
+                  เพิ่มบทบาท
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>เพิ่มบทบาทใหม่</DialogTitle>
+                  <DialogDescription>
+                    สร้างบทบาทใหม่สำหรับจัดการสิทธิ์ผู้ใช้
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...createRoleForm}>
+                  <form onSubmit={createRoleForm.handleSubmit(handleCreateRole)} className="space-y-4">
+                    <FormField
+                      control={createRoleForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ชื่อบทบาท (ภาษาอังกฤษ)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="MANAGER" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createRoleForm.control}
+                      name="displayName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ชื่อแสดง</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ผู้จัดการ" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createRoleForm.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>คำอธิบาย (ไม่บังคับ)</FormLabel>
+                          <FormControl>
+                            <Input placeholder="อธิบายหน้าที่ของบทบาทนี้" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createRoleForm.control}
+                      name="level"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ระดับสิทธิ์</FormLabel>
+                          <FormControl>
+                            <Input 
+                              type="number" 
+                              min="1" 
+                              max="100" 
+                              placeholder="9" 
+                              {...field} 
+                              onChange={(e) => field.onChange(parseInt(e.target.value) || 1)}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setIsCreateRoleDialogOpen(false)}>
+                        ยกเลิก
+                      </Button>
+                      <Button type="submit" disabled={createRoleMutation.isPending}>
+                        {createRoleMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <Plus className="w-4 h-4 mr-2" />
+                        )}
+                        สร้างบทบาท
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -503,20 +599,35 @@ export default function UserManagement() {
                 <Loader2 className="w-8 h-8 animate-spin" />
               </div>
             ) : (
-              roles.map((role) => (
-                <Card key={role.id} className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <Badge className={getRoleBadgeColor(role.level)}>
-                      ระดับ {role.level}
-                    </Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {users.filter((u) => u.role?.id === role.id).length} คน
-                    </span>
-                  </div>
-                  <h3 className="font-semibold">{role.displayName}</h3>
-                  <p className="text-sm text-muted-foreground">{role.description}</p>
-                </Card>
-              ))
+              roles.map((role) => {
+                const userCount = users.filter((u) => u.role?.id === role.id).length;
+                return (
+                  <Card key={role.id} className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge className={getRoleBadgeColor(role.level)}>
+                        ระดับ {role.level}
+                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          {userCount} คน
+                        </span>
+                        {userCount === 0 && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleDeleteRole(role)}
+                            className="h-6 w-6 p-0 text-red-500 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                    <h3 className="font-semibold">{role.displayName}</h3>
+                    <p className="text-sm text-muted-foreground">{role.description}</p>
+                  </Card>
+                );
+              })
             )}
           </div>
         </CardContent>
@@ -804,6 +915,45 @@ export default function UserManagement() {
                 <Trash2 className="w-4 h-4 mr-2" />
               )}
               ลบผู้ใช้
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Role Confirmation Dialog */}
+      <AlertDialog open={isDeleteRoleDialogOpen} onOpenChange={setIsDeleteRoleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              ยืนยันการลบบทบาท
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณแน่ใจหรือไม่ที่จะลบบทบาท <strong>{deletingRole?.displayName}</strong> (ระดับ {deletingRole?.level})?
+              <br /><br />
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 mt-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-600 mt-0.5" />
+                  <div className="text-sm text-red-800">
+                    <strong>คำเตือน:</strong> การลบบทบาทจะไม่สามารถกู้คืนได้ กรุณาตรวจสอบให้แน่ใจว่าไม่มีผู้ใช้ใดใช้บทบาทนี้อยู่
+                  </div>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmDeleteRole}
+              disabled={deleteRoleMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteRoleMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Trash2 className="w-4 h-4 mr-2" />
+              )}
+              ลบบทบาท
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
