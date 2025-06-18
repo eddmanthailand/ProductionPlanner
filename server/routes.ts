@@ -37,20 +37,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Continue anyway - let individual routes handle connection errors
   }
 
-  // Setup Replit Auth (disabled by default - will be enabled in later step)
-  // await setupAuth(app);
+  // Setup Replit Auth
+  await setupAuth(app);
 
-  // Replit Auth routes (commented out until enabled)
-  // app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
-  //   try {
-  //     const userId = req.user.claims.sub;
-  //     const user = await storage.getReplitAuthUser(userId);
-  //     res.json(user);
-  //   } catch (error) {
-  //     console.error("Error fetching user:", error);
-  //     res.status(500).json({ message: "Failed to fetch user" });
-  //   }
-  // });
+  // Replit Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getReplitAuthUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
 
   // Current authentication routes (JWT-based system)
   app.post("/api/auth/login", async (req, res) => {

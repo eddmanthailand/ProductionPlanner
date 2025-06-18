@@ -1,17 +1,14 @@
 import React from "react";
-import { Switch, Route, useLocation } from "wouter";
+import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { useAuth } from "@/hooks/use-auth";
-// import { useAuth } from "@/hooks/useAuth"; // Replit Auth hook (for future use)
+import { useAuth } from "@/hooks/useAuth";
 import MainLayout from "@/components/layout/main-layout";
 import NotFound from "@/pages/not-found";
-import Login from "@/pages/login";
-import Dashboard from "@/pages/dashboard";
-// import Landing from "@/pages/landing"; // Replit Auth landing page
-// import Home from "@/pages/home"; // Replit Auth home page
+import Landing from "@/pages/landing";
+import Home from "@/pages/home";
 import Sales from "@/pages/sales-new";
 import Quotations from "@/pages/sales/quotations";
 import QuotationsNew from "@/pages/sales/quotations-new";
@@ -36,226 +33,93 @@ import MasterData from "@/pages/master-data";
 import Reports from "@/pages/reports";
 import Users from "@/pages/users";
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  // Always bypass authentication for development
-  return <MainLayout>{children}</MainLayout>;
-}
-
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [, navigate] = useLocation();
-
-  React.useEffect(() => {
-    if (isAuthenticated && !isLoading) {
-      navigate("/");
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">กำลังโหลด...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (isAuthenticated) {
-    return null;
-  }
-
-  return <>{children}</>;
-}
-
 function Router() {
-  // Replit Auth Router (commented out - for future use)
-  // const { isAuthenticated, isLoading } = useAuth();
-  // 
-  // return (
-  //   <Switch>
-  //     {isLoading || !isAuthenticated ? (
-  //       <Route path="/" component={Landing} />
-  //     ) : (
-  //       <>
-  //         <Route path="/" component={Home} />
-  //         {/* All protected routes here */}
-  //       </>
-  //     )}
-  //     <Route component={NotFound} />
-  //   </Switch>
-  // );
-
-  // Current Router (JWT-based authentication)
+  const { isAuthenticated, isLoading } = useAuth();
+  
   return (
     <Switch>
-      {/* Public routes */}
-      <Route path="/login">
-        <PublicRoute>
-          <Login />
-        </PublicRoute>
-      </Route>
-
-      {/* Protected routes */}
-      <Route path="/">
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales">
-        <ProtectedRoute>
-          <Sales />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales/quotations">
-        <ProtectedRoute>
-          <Quotations />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales/quotations/new">
-        <ProtectedRoute>
-          <QuotationsNew />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales/quotations/edit/:id">
-        <ProtectedRoute>
-          <QuotationsEdit />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales/invoices">
-        <ProtectedRoute>
-          <Invoices />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales/tax-invoices">
-        <ProtectedRoute>
-          <TaxInvoices />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/sales/receipts">
-        <ProtectedRoute>
-          <Receipts />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production">
-        <ProtectedRoute>
-          <Production />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/calendar">
-        <ProtectedRoute>
-          <ProductionCalendar />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/organization">
-        <ProtectedRoute>
-          <OrganizationChart />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/work-queue">
-        <ProtectedRoute>
-          <WorkQueue />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/work-queue-planning">
-        <ProtectedRoute>
-          <WorkQueuePlanning />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/work-steps">
-        <ProtectedRoute>
-          <WorkSteps />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/work-orders">
-        <ProtectedRoute>
-          <WorkOrders />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/work-orders/new">
-        <ProtectedRoute>
-          <WorkOrderForm />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/work-orders/edit/:id">
-        <ProtectedRoute>
-          <WorkOrderForm />
-        </ProtectedRoute>
-      </Route>
-
-
-
-      <Route path="/production/production-reports">
-        <ProtectedRoute>
-          <ProductionReports />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/production/daily-work-log">
-        <ProtectedRoute>
-          <DailyWorkLog />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/accounting">
-        <ProtectedRoute>
-          <Accounting />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/inventory">
-        <ProtectedRoute>
-          <Inventory />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/customers">
-        <ProtectedRoute>
-          <Customers />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/master-data">
-        <ProtectedRoute>
-          <MasterData />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/reports">
-        <ProtectedRoute>
-          <Reports />
-        </ProtectedRoute>
-      </Route>
-
-      <Route path="/users">
-        <ProtectedRoute>
-          <Users />
-        </ProtectedRoute>
-      </Route>
-
-      {/* Fallback to 404 */}
-      <Route>
-        <ProtectedRoute>
-          <NotFound />
-        </ProtectedRoute>
-      </Route>
+      {isLoading || !isAuthenticated ? (
+        <Route path="/" component={Landing} />
+      ) : (
+        <>
+          <Route path="/" component={Home} />
+          
+          {/* Protected routes with MainLayout */}
+          <Route path="/sales">
+            <MainLayout><Sales /></MainLayout>
+          </Route>
+          <Route path="/sales/quotations">
+            <MainLayout><Quotations /></MainLayout>
+          </Route>
+          <Route path="/sales/quotations/new">
+            <MainLayout><QuotationsNew /></MainLayout>
+          </Route>
+          <Route path="/sales/quotations/edit/:id">
+            <MainLayout><QuotationsEdit /></MainLayout>
+          </Route>
+          <Route path="/sales/invoices">
+            <MainLayout><Invoices /></MainLayout>
+          </Route>
+          <Route path="/sales/tax-invoices">
+            <MainLayout><TaxInvoices /></MainLayout>
+          </Route>
+          <Route path="/sales/receipts">
+            <MainLayout><Receipts /></MainLayout>
+          </Route>
+          <Route path="/production">
+            <MainLayout><Production /></MainLayout>
+          </Route>
+          <Route path="/production/calendar">
+            <MainLayout><ProductionCalendar /></MainLayout>
+          </Route>
+          <Route path="/production/organization">
+            <MainLayout><OrganizationChart /></MainLayout>
+          </Route>
+          <Route path="/production/work-queue">
+            <MainLayout><WorkQueue /></MainLayout>
+          </Route>
+          <Route path="/production/work-queue-planning">
+            <MainLayout><WorkQueuePlanning /></MainLayout>
+          </Route>
+          <Route path="/production/work-steps">
+            <MainLayout><WorkSteps /></MainLayout>
+          </Route>
+          <Route path="/production/work-orders">
+            <MainLayout><WorkOrders /></MainLayout>
+          </Route>
+          <Route path="/production/work-orders/new">
+            <MainLayout><WorkOrderForm /></MainLayout>
+          </Route>
+          <Route path="/production/work-orders/edit/:id">
+            <MainLayout><WorkOrderForm /></MainLayout>
+          </Route>
+          <Route path="/production/production-reports">
+            <MainLayout><ProductionReports /></MainLayout>
+          </Route>
+          <Route path="/production/daily-work-log">
+            <MainLayout><DailyWorkLog /></MainLayout>
+          </Route>
+          <Route path="/accounting">
+            <MainLayout><Accounting /></MainLayout>
+          </Route>
+          <Route path="/inventory">
+            <MainLayout><Inventory /></MainLayout>
+          </Route>
+          <Route path="/customers">
+            <MainLayout><Customers /></MainLayout>
+          </Route>
+          <Route path="/master-data">
+            <MainLayout><MasterData /></MainLayout>
+          </Route>
+          <Route path="/reports">
+            <MainLayout><Reports /></MainLayout>
+          </Route>
+          <Route path="/users">
+            <MainLayout><Users /></MainLayout>
+          </Route>
+        </>
+      )}
+      <Route component={NotFound} />
     </Switch>
   );
 }
