@@ -1,9 +1,36 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { nanoid } from "nanoid";
 
+// ===== REPLIT AUTH TABLES =====
+// Session storage table for Replit Auth (required)
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Replit Auth Users table (separate from internal users)
+export const replitAuthUsers = pgTable("replit_auth_users", {
+  id: varchar("id").primaryKey().notNull(), // Replit user ID (string)
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  // Link to internal user system
+  internalUserId: integer("internal_user_id").references(() => users.id),
+  tenantId: uuid("tenant_id").references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ===== INTERNAL SYSTEM TABLES =====
 // Tenants table
 export const tenants = pgTable("tenants", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -722,6 +749,10 @@ export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
 // Types
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
+
+// Replit Auth Types
+export type ReplitAuthUser = typeof replitAuthUsers.$inferSelect;
+export type UpsertReplitAuthUser = typeof replitAuthUsers.$inferInsert;
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;

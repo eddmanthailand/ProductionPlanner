@@ -24,10 +24,13 @@ import {
   productionPlans,
   productionPlanItems,
   dailyWorkLogs,
+  replitAuthUsers,
   type User,
   type InsertUser,
   type Tenant,
   type InsertTenant,
+  type ReplitAuthUser,
+  type UpsertReplitAuthUser,
   type Product,
   type InsertProduct,
   type StockMovement,
@@ -80,7 +83,11 @@ import { eq, and, desc, sql, asc, gte, lte } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
-  // Users
+  // Replit Auth Users (required for Replit Auth)
+  getReplitAuthUser(id: string): Promise<ReplitAuthUser | undefined>;
+  upsertReplitAuthUser(user: UpsertReplitAuthUser): Promise<ReplitAuthUser>;
+
+  // Internal Users
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
@@ -252,6 +259,28 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Replit Auth Users implementation
+  async getReplitAuthUser(id: string): Promise<ReplitAuthUser | undefined> {
+    const [user] = await db.select().from(replitAuthUsers).where(eq(replitAuthUsers.id, id));
+    return user || undefined;
+  }
+
+  async upsertReplitAuthUser(userData: UpsertReplitAuthUser): Promise<ReplitAuthUser> {
+    const [user] = await db
+      .insert(replitAuthUsers)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: replitAuthUsers.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Internal Users implementation
   async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
