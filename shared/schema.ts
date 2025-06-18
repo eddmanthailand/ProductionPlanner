@@ -556,7 +556,8 @@ export const insertTenantSchema = createInsertSchema(tenants).omit({
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  deletedAt: true
 });
 
 export const insertProductSchema = createInsertSchema(products).omit({

@@ -801,8 +801,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { isActive } = req.body;
 
       const user = await storage.updateUser(parseInt(userId), { 
-        isActive, 
-        updatedAt: new Date() 
+        isActive
       }, tenantId);
       
       if (!user) {
