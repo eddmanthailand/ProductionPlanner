@@ -749,6 +749,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user data
+  app.put("/api/users/:userId", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
+      const { userId } = req.params;
+      const { email, firstName, lastName, password, roleId } = req.body;
+      
+      const updateData: any = {
+        email,
+        firstName,
+        lastName,
+        roleId,
+        updatedAt: new Date()
+      };
+      
+      // Only update password if provided
+      if (password && password.trim() !== "") {
+        const bcrypt = await import('bcrypt');
+        updateData.password = await bcrypt.hash(password, 10);
+      }
+
+      const user = await storage.updateUser(parseInt(userId), updateData, tenantId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      // Don't return password in response
+      const { password: _, ...userResponse } = user;
+      res.json(userResponse);
+    } catch (error) {
+      console.error("Update user error:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Register new user (for admin/management use)
   app.post("/api/auth/register", isAuthenticated, async (req: any, res: any) => {
     try {

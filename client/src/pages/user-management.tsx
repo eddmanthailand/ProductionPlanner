@@ -25,7 +25,16 @@ const createUserSchema = z.object({
   roleId: z.number().min(1, "กรุณาเลือกบทบาท")
 });
 
+const editUserSchema = z.object({
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  firstName: z.string().min(2, "ชื่อต้องมีอย่างน้อย 2 ตัวอักษร"),
+  lastName: z.string().min(2, "นามสกุลต้องมีอย่างน้อย 2 ตัวอักษร"),
+  password: z.string().optional().refine(val => !val || val.length >= 6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+  roleId: z.number().min(1, "กรุณาเลือกบทบาท")
+});
+
 type CreateUserFormData = z.infer<typeof createUserSchema>;
+type EditUserFormData = z.infer<typeof editUserSchema>;
 
 export default function UserManagement() {
   const { toast } = useToast();
@@ -33,6 +42,8 @@ export default function UserManagement() {
   const [selectedUser, setSelectedUser] = useState<UserWithRole | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
 
   // Fetch users with roles
   const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRole[]>({
@@ -72,6 +83,17 @@ export default function UserManagement() {
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      roleId: 0
+    }
+  });
+
+  const editForm = useForm<EditUserFormData>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: {
       email: "",
       firstName: "",
       lastName: "",
@@ -126,6 +148,31 @@ export default function UserManagement() {
     }
   });
 
+  // Edit user mutation
+  const editUserMutation = useMutation({
+    mutationFn: async (data: EditUserFormData & { userId: number }) => {
+      const { userId, ...updateData } = data;
+      return await apiRequest(`/api/users/${userId}`, "PUT", updateData);
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว"
+      });
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      editForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถอัปเดตข้อมูลผู้ใช้ได้",
+        variant: "destructive"
+      });
+    }
+  });
+
   const handleCreateUser = (data: CreateUserFormData) => {
     createUserMutation.mutate(data);
   };
@@ -133,6 +180,24 @@ export default function UserManagement() {
   const handleUpdateRole = (roleId: number) => {
     if (selectedUser) {
       updateRoleMutation.mutate({ userId: selectedUser.id, roleId });
+    }
+  };
+
+  const handleEditUser = (user: UserWithRole) => {
+    setEditingUser(user);
+    editForm.reset({
+      email: user.email || "",
+      firstName: user.firstName || "",
+      lastName: user.lastName || "",
+      password: "",
+      roleId: user.roleId || 0
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleSubmitEdit = (data: EditUserFormData) => {
+    if (editingUser) {
+      editUserMutation.mutate({ ...data, userId: editingUser.id });
     }
   };
 
@@ -392,17 +457,27 @@ export default function UserManagement() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setIsRoleDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        แก้ไขบทบาท
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleEditUser(user)}
+                        >
+                          <Edit className="w-4 h-4 mr-2" />
+                          แก้ไข
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setIsRoleDialogOpen(true);
+                          }}
+                        >
+                          <Shield className="w-4 h-4 mr-2" />
+                          บทบาท
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -444,6 +519,116 @@ export default function UserManagement() {
               ))}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
+            <DialogDescription>
+              แก้ไขข้อมูลของ {editingUser?.firstName} {editingUser?.lastName}
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(handleSubmitEdit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อ</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ชื่อ" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>นามสกุล</FormLabel>
+                    <FormControl>
+                      <Input placeholder="นามสกุล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อีเมล</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="อีเมล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>รหัสผ่านใหม่ (เว้นว่างหากไม่ต้องการเปลี่ยน)</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="รหัสผ่านใหม่" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="roleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>บทบาท</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกบทบาท" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles.map((role) => (
+                          <SelectItem key={role.id} value={role.id.toString()}>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getRoleBadgeColor(role.level)}>
+                                ระดับ {role.level}
+                              </Badge>
+                              {role.displayName}
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  ยกเลิก
+                </Button>
+                <Button type="submit" disabled={editUserMutation.isPending}>
+                  {editUserMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Edit className="w-4 h-4 mr-2" />
+                  )}
+                  บันทึกการแก้ไข
+                </Button>
+              </div>
+            </form>
+          </Form>
         </DialogContent>
       </Dialog>
     </div>
