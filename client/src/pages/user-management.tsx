@@ -35,13 +35,13 @@ export default function UserManagement() {
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false);
 
   // Fetch users with roles
-  const { data: users = [], isLoading: usersLoading } = useQuery({
+  const { data: users = [], isLoading: usersLoading } = useQuery<UserWithRole[]>({
     queryKey: ["/api/users-with-roles"],
     enabled: true
   });
 
   // Fetch roles
-  const { data: roles = [], isLoading: rolesLoading } = useQuery({
+  const { data: roles = [], isLoading: rolesLoading } = useQuery<Role[]>({
     queryKey: ["/api/roles"],
     enabled: true
   });
@@ -83,10 +83,7 @@ export default function UserManagement() {
   // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserFormData) => {
-      return await apiRequest("/api/auth/register", {
-        method: "POST",
-        body: JSON.stringify(data)
-      });
+      return await apiRequest("/api/auth/register", "POST", data);
     },
     onSuccess: () => {
       toast({
@@ -109,10 +106,7 @@ export default function UserManagement() {
   // Update user role mutation
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, roleId }: { userId: number; roleId: number }) => {
-      return await apiRequest(`/api/users/${userId}/role`, {
-        method: "PUT",
-        body: JSON.stringify({ roleId })
-      });
+      return await apiRequest(`/api/users/${userId}/role`, "PUT", { roleId });
     },
     onSuccess: () => {
       toast({
@@ -268,7 +262,7 @@ export default function UserManagement() {
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {roles.map((role: Role) => (
+                            {roles.map((role) => (
                               <SelectItem key={role.id} value={role.id.toString()}>
                                 <div className="flex items-center gap-2">
                                   <Badge className={getRoleBadgeColor(role.level)}>
@@ -322,14 +316,14 @@ export default function UserManagement() {
                 <Loader2 className="w-8 h-8 animate-spin" />
               </div>
             ) : (
-              roles.map((role: Role) => (
+              roles.map((role) => (
                 <Card key={role.id} className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <Badge className={getRoleBadgeColor(role.level)}>
                       ระดับ {role.level}
                     </Badge>
                     <span className="text-sm text-muted-foreground">
-                      {users.filter((u: UserWithRole) => u.role?.id === role.id).length} คน
+                      {users.filter((u) => u.role?.id === role.id).length} คน
                     </span>
                   </div>
                   <h3 className="font-semibold">{role.displayName}</h3>
@@ -369,7 +363,7 @@ export default function UserManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user: UserWithRole) => (
+                {users.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div>
@@ -429,7 +423,7 @@ export default function UserManagement() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-2">
-              {roles.map((role: Role) => (
+              {roles.map((role) => (
                 <Button
                   key={role.id}
                   variant={selectedUser?.role?.id === role.id ? "default" : "outline"}
