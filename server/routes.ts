@@ -818,6 +818,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delete user (soft delete)
+  app.delete("/api/users/:userId", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
+      const { userId } = req.params;
+
+      const user = await storage.updateUser(parseInt(userId), { 
+        deletedAt: new Date() 
+      }, tenantId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      
+      res.json({ message: "User deleted successfully" });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ message: "Failed to delete user" });
+    }
+  });
+
   // Register new user (for admin/management use)
   app.post("/api/auth/register", isAuthenticated, async (req: any, res: any) => {
     try {

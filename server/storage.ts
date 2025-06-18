@@ -87,7 +87,7 @@ import {
   type InsertDailyWorkLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike } from "drizzle-orm";
+import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -350,7 +350,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select()
       .from(users)
       .leftJoin(roles, eq(users.roleId, roles.id))
-      .where(eq(users.tenantId, tenantId));
+      .where(and(eq(users.tenantId, tenantId), isNull(users.deletedAt)));
     
     return result.map(row => ({
       id: row.users.id,
@@ -363,6 +363,7 @@ export class DatabaseStorage implements IStorage {
       tenantId: row.users.tenantId,
       isActive: row.users.isActive,
       lastLoginAt: row.users.lastLoginAt,
+      deletedAt: row.users.deletedAt,
       createdAt: row.users.createdAt,
       updatedAt: row.users.updatedAt,
       role: row.roles ? {

@@ -105,6 +105,7 @@ export const users = pgTable("users", {
   tenantId: uuid("tenant_id").references(() => tenants.id),
   isActive: boolean("is_active").notNull().default(true),
   lastLoginAt: timestamp("last_login_at"),
+  deletedAt: timestamp("deleted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 });
