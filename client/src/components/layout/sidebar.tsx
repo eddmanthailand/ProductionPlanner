@@ -1,6 +1,7 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/use-language";
+import { usePermissions } from "@/hooks/usePermissions";
 import TenantSelector from "@/components/tenant/tenant-selector";
 import { 
   ChartLine, 
@@ -30,6 +31,7 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
+  const { canAccess } = usePermissions();
   
   console.log("Sidebar user data:", user);
   const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
