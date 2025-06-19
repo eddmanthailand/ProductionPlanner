@@ -97,7 +97,7 @@ export const pageAccess = pgTable("page_access", {
   roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
   pageName: varchar("page_name", { length: 255 }).notNull(),
   pageUrl: varchar("page_url", { length: 500 }).notNull(),
-  hasAccess: boolean("has_access").default(false),
+  accessLevel: varchar("access_level", { length: 50 }).notNull().default("none"), // 'none', 'read', 'edit', 'create'
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow()
 }, (table) => ({

@@ -584,7 +584,7 @@ export class DatabaseStorage implements IStorage {
       .onConflictDoUpdate({
         target: [pageAccess.roleId, pageAccess.pageUrl],
         set: {
-          hasAccess: pageAccessData.hasAccess,
+          accessLevel: pageAccessData.accessLevel,
           updatedAt: new Date()
         }
       })

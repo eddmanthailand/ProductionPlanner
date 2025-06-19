@@ -1041,13 +1041,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/roles/:roleId/page-access", isAuthenticated, async (req: any, res: any) => {
     try {
       const { roleId } = req.params;
-      const { pageName, pageUrl, hasAccess } = req.body;
+      const { pageName, pageUrl, accessLevel } = req.body;
       
       const pageAccess = await storage.upsertPageAccess({
         roleId: parseInt(roleId),
         pageName,
         pageUrl,
-        hasAccess
+        accessLevel
       });
       
       res.json(pageAccess);

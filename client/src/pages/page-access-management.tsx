@@ -57,7 +57,7 @@ interface PageAccess {
   roleId: number;
   pageName: string;
   pageUrl: string;
-  hasAccess: boolean;
+  accessLevel: 'none' | 'read' | 'edit' | 'create';
 }
 
 interface Page {
