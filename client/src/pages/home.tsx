@@ -16,11 +16,15 @@ export default function Home() {
   const { user } = useAuth() as { user: AuthUser | null };
 
   const handleLogout = async () => {
+    // Clear JWT tokens first (auto-clear)
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("tenant");
+    
     // Clear React Query cache
     await queryClient.clear();
     
-    // Clear browser storage
-    localStorage.clear();
+    // Clear remaining browser storage
     sessionStorage.clear();
     
     // Force redirect to logout endpoint

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -40,6 +40,25 @@ import AccessDemo from "@/pages/access-demo";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();
+  
+  // Auto-clear JWT when window is about to unload
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Clear JWT tokens when user closes the browser/tab
+      const token = localStorage.getItem("token");
+      if (token) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        localStorage.removeItem("tenant");
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, []);
   
   // If loading, show loading state
   if (isLoading) {

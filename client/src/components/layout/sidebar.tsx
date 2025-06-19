@@ -95,9 +95,18 @@ export default function Sidebar() {
     ...(canAccess("user_management", "read") ? [{ name: "ทดสอบระบบสิทธิ์", href: "/access-demo", icon: Shield }] : []),
   ];
 
-  const handleLogout = () => {
-    logout();
-    window.location.href = "/login";
+  const handleLogout = async () => {
+    // Clear JWT tokens first (auto-clear)
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("tenant");
+    
+    // Then use logout function for Replit Auth
+    try {
+      await logout();
+    } catch (error) {
+      console.log("Logout completed");
+    }
   };
 
   return (
