@@ -17,7 +17,6 @@ export interface Tenant {
 }
 
 export interface AuthResponse {
-  token: string;
   user: User;
   tenant: Tenant | null;
 }
@@ -26,13 +25,8 @@ export async function login(username: string, password: string): Promise<AuthRes
   const response = await apiRequest("POST", "/api/auth/login", { username, password });
   const data = await response.json();
   
-  if (data.token) {
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("user", JSON.stringify(data.user));
-    if (data.tenant) {
-      localStorage.setItem("tenant", JSON.stringify(data.tenant));
-    }
-  }
+  // Session-based auth - browser handles cookies automatically
+  console.log("Login successful:", data.user.username);
   
   return data;
 }
@@ -51,34 +45,13 @@ export async function register(userData: {
 
 export async function logout(): Promise<void> {
   try {
-    // Call the server logout endpoint
+    // Call the server logout endpoint to destroy session
     await apiRequest("POST", "/api/auth/logout");
+    console.log("Session logout successful");
   } catch (error) {
-    console.log("Server logout failed, continuing with client logout");
+    console.log("Server logout failed:", error);
   } finally {
-    // Always clear local storage regardless of server response
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("tenant");
-    // Force redirect to login page
+    // Redirect to login page
     window.location.href = '/login';
   }
-}
-
-export function getToken(): string | null {
-  return localStorage.getItem("token");
-}
-
-export function getStoredUser(): User | null {
-  const userStr = localStorage.getItem("user");
-  return userStr ? JSON.parse(userStr) : null;
-}
-
-export function getStoredTenant(): Tenant | null {
-  const tenantStr = localStorage.getItem("tenant");
-  return tenantStr ? JSON.parse(tenantStr) : null;
-}
-
-export function isAuthenticated(): boolean {
-  return !!getToken();
 }

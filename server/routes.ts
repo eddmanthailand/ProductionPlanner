@@ -1684,7 +1684,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/departments/:departmentId/teams", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/departments/:departmentId/teams", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { departmentId } = req.params;
@@ -1697,7 +1697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/teams", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/teams", requireAuth, async (req: any, res: any) => {
     try {
       const validatedData = insertTeamSchema.parse(req.body);
       const team = await storage.createTeam(validatedData);
@@ -1708,7 +1708,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/teams/:id", authenticateToken, async (req: any, res: any) => {
+  app.put("/api/teams/:id", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { id } = req.params;
@@ -1727,7 +1727,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/teams/:id", authenticateToken, async (req: any, res: any) => {
+  app.delete("/api/teams/:id", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { id } = req.params;
@@ -1854,7 +1854,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/teams/:teamId/employees", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/teams/:teamId/employees", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { teamId } = req.params;
@@ -1867,7 +1867,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/employees", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/employees", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       if (!tenantId) {
@@ -1887,7 +1887,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/employees/:id", authenticateToken, async (req: any, res: any) => {
+  app.put("/api/employees/:id", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { id } = req.params;
@@ -1906,7 +1906,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/employees/:id", authenticateToken, async (req: any, res: any) => {
+  app.delete("/api/employees/:id", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { id } = req.params;
@@ -1951,7 +1951,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/work-queues", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/work-queues", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       if (!tenantId) {
@@ -1971,7 +1971,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/work-queues/:id", authenticateToken, async (req: any, res: any) => {
+  app.put("/api/work-queues/:id", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { id } = req.params;
@@ -2032,7 +2032,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Production Capacity routes
-  app.get("/api/production-capacity", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/production-capacity", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       if (!tenantId) {
@@ -2047,7 +2047,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/production-capacity/team/:teamId", authenticateToken, async (req: any, res: any) => {
+  app.get("/api/production-capacity/team/:teamId", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       const { teamId } = req.params;
@@ -2060,7 +2060,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/production-capacity", authenticateToken, async (req: any, res: any) => {
+  app.post("/api/production-capacity", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = req.user.tenantId;
       if (!tenantId) {

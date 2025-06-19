@@ -25,7 +25,7 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { logout, getToken } from "@/lib/auth";
+import { logout } from "@/lib/auth";
 import { Loader2, LogIn, Building2, LogOut } from "lucide-react";
 
 const loginSchema = z.object({
@@ -39,7 +39,7 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
-  const [hasJwtToken, setHasJwtToken] = useState(!!getToken());
+  const [hasJwtToken, setHasJwtToken] = useState(false);
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -55,17 +55,13 @@ export default function LoginPage() {
       return res.json();
     },
     onSuccess: (data) => {
-      // Store token if returned
-      if (data.token) {
-        localStorage.setItem("auth_token", data.token);
-      }
-      
+      // Session-based auth - no token storage needed
       // Invalidate auth queries to refresh user data
       queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       
       toast({
         title: "เข้าสู่ระบบสำเร็จ",
-        description: "ยินดีต้อนรับเข้าสู่ระบบ",
+        description: `ยินดีต้อนรับ ${data.user.firstName}`,
       });
       
       // Redirect to dashboard
