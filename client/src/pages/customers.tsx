@@ -693,17 +693,21 @@ export default function Customers() {
                     )}
                   </div>
                   <div className="flex space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(customer)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDelete(customer.id)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canAccess("customers", "update") && (
+                      <Button variant="outline" size="sm" onClick={() => handleEdit(customer)}>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canAccess("customers", "delete") && (
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => handleDelete(customer.id)}
+                        className="text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
