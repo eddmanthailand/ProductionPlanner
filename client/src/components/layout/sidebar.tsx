@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ChartLine, Calculator, Package, Users, Settings, Shield, ChevronRight, ChevronDown, ShoppingCart, Settings2, Network, Calendar, ClipboardList, FileText, UserCheck, X } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePageNavigation } from "@/hooks/usePageNavigation";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 
@@ -25,7 +25,7 @@ interface SidebarProps {
 export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useLanguage();
-  const { canAccess } = usePermissions();
+  const { canAccessCategory, getPagesByCategory, canAccessPage } = usePageNavigation();
   const [expandedSales, setExpandedSales] = useState(false);
   const [expandedProduction, setExpandedProduction] = useState(false);
 
@@ -76,31 +76,17 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
     }
   };
 
-  const salesSubMenu = [
-    ...(canAccess("quotations", "read") ? [{ name: "ใบเสนอราคา", href: "/sales/quotations", icon: FileText }] : []),
-    ...(canAccess("invoices", "read") ? [{ name: "ใบส่งสินค้า/ใบแจ้งหนี้", href: "/sales/invoices", icon: FileText }] : []),
-    ...(canAccess("tax_invoices", "read") ? [{ name: "ใบกำกับภาษี", href: "/sales/tax-invoices", icon: FileText }] : []),
-    ...(canAccess("receipts", "read") ? [{ name: "ใบเสร็จรับเงิน", href: "/sales/receipts", icon: FileText }] : []),
-  ];
-
-  const productionSubMenu = [
-    ...(canAccess("production_calendar", "read") ? [{ name: "ปฏิทินการทำงาน", href: "/production/calendar", icon: Calendar }] : []),
-    ...(canAccess("organization", "read") ? [{ name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network }] : []),
-    ...(canAccess("work_queue_planning", "read") ? [{ name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: Calendar }] : []),
-    ...(canAccess("work_orders", "read") ? [{ name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList }] : []),
-    ...(canAccess("daily_work_log", "read") ? [{ name: "บันทึกงานประจำวัน", href: "/production/daily-work-log", icon: FileText }] : []),
-  ];
+  const salesSubMenu = getPagesByCategory("sales");
+  const productionSubMenu = getPagesByCategory("production");
 
   const navigation = [
-    { name: t("nav.dashboard"), href: "/", icon: ChartLine },
-    ...(canAccess("accounting", "read") ? [{ name: t("nav.accounting"), href: "/accounting", icon: Calculator }] : []),
-    ...(canAccess("inventory", "read") ? [{ name: t("nav.inventory"), href: "/inventory", icon: Package }] : []),
-    ...(canAccess("customers", "read") ? [{ name: t("nav.customers"), href: "/customers", icon: Users }] : []),
-    ...(canAccess("master_data", "read") ? [{ name: t("nav.master_data"), href: "/master-data", icon: Settings }] : []),
-    ...(canAccess("production_reports", "read") ? [{ name: t("nav.reports"), href: "/production/production-reports", icon: FileText }] : []),
-    ...(canAccess("user_management", "read") ? [{ name: "จัดการผู้ใช้และสิทธิ์", href: "/user-management", icon: Shield }] : []),
-    ...(canAccess("user_management", "read") ? [{ name: "จัดการสิทธิ์เข้าถึงหน้า", href: "/page-access-management", icon: Settings }] : []),
-    ...(canAccess("user_management", "read") ? [{ name: "ทดสอบระบบสิทธิ์", href: "/access-demo", icon: Shield }] : []),
+    ...(canAccessPage("/dashboard") ? [{ name: t("nav.dashboard"), href: "/dashboard", icon: ChartLine }] : []),
+    ...(canAccessPage("/accounting") ? [{ name: t("nav.accounting"), href: "/accounting", icon: Calculator }] : []),
+    ...(canAccessPage("/inventory") ? [{ name: t("nav.inventory"), href: "/inventory", icon: Package }] : []),
+    ...(canAccessPage("/customers") ? [{ name: t("nav.customers"), href: "/customers", icon: Users }] : []),
+    ...(canAccessPage("/master-data") ? [{ name: t("nav.master_data"), href: "/master-data", icon: Settings }] : []),
+    ...(canAccessPage("/reports/production") ? [{ name: t("nav.reports"), href: "/reports/production", icon: FileText }] : []),
+    ...(canAccessPage("/users") ? [{ name: "จัดการผู้ใช้และสิทธิ์", href: "/users", icon: Shield }] : []),
   ];
 
   const handleLogout = async () => {
