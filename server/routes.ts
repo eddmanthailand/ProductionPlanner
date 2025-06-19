@@ -494,7 +494,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.patch("/api/users/:id", async (req: any, res) => {
     try {
       const userId = parseInt(req.params.id);
-      const { username, email, firstName, lastName, roleId, isActive } = req.body;
+      const { username, email, firstName, lastName, roleId, isActive, password } = req.body;
 
       // Check if user exists
       const existingUser = await storage.getUser(userId);
@@ -518,15 +518,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Update user
-      const updatedUser = await storage.updateUser(userId, {
+      // Prepare update data
+      const updateData: any = {
         username: username || existingUser.username,
         email: email !== undefined ? email : existingUser.email,
         firstName: firstName || existingUser.firstName,
         lastName: lastName || existingUser.lastName,
         roleId: roleId !== undefined ? roleId : existingUser.roleId,
         isActive: isActive !== undefined ? isActive : existingUser.isActive
-      }, existingUser.tenantId ?? '550e8400-e29b-41d4-a716-446655440000');
+      };
+
+      // Hash password if provided
+      if (password && password.trim() !== '') {
+        const saltRounds = 10;
+        updateData.password = await bcrypt.hash(password, saltRounds);
+      }
+
+      // Update user
+      const updatedUser = await storage.updateUser(userId, updateData, existingUser.tenantId ?? '550e8400-e29b-41d4-a716-446655440000');
 
       if (!updatedUser) {
         return res.status(404).json({ message: "User not found after update" });

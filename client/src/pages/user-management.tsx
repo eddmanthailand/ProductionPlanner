@@ -75,6 +75,7 @@ const createUserSchema = insertUserSchema.extend({
 
 const editUserSchema = insertUserSchema.partial().extend({
   id: z.number(),
+  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร").optional(),
 });
 
 const createRoleSchema = insertRoleSchema;
@@ -309,6 +310,7 @@ function UserManagement() {
       lastName: user.lastName || "",
       roleId: user.roleId,
       isActive: user.isActive,
+      password: "", // เคลียร์ฟิลด์รหัสผ่าน
     });
     setIsEditDialogOpen(true);
   };
@@ -801,6 +803,23 @@ function UserManagement() {
                     <FormLabel>อีเมล</FormLabel>
                     <FormControl>
                       <Input type="email" placeholder="อีเมล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>รหัสผ่านใหม่ (เว้นว่างไว้หากไม่ต้องการเปลี่ยน)</FormLabel>
+                    <FormControl>
+                      <PasswordInput 
+                        placeholder="รหัสผ่านใหม่" 
+                        {...field} 
+                        value={field.value || ""} 
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
