@@ -137,7 +137,7 @@ export default function WorkQueueManager() {
   const updateWorkMutation = useMutation({
     mutationFn: async (data: any) => {
       const { id, ...updateData } = data;
-      return await apiRequest(`/api/work-queues/${id}`, "PUT", updateData);
+      return await apiRequest("PUT", `/api/work-queues/${id}`, updateData);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues"] });

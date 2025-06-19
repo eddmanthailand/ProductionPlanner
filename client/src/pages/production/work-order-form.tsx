@@ -107,7 +107,7 @@ export default function WorkOrderForm() {
   useEffect(() => {
     const autoLogin = async () => {
       try {
-        await apiRequest("/api/auth/login", "POST", {
+        await apiRequest("POST", "/api/auth/login", {
           username: "demo",
           password: "demo"
         });

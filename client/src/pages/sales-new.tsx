@@ -247,7 +247,7 @@ export default function Sales() {
   // Mutations
   const quotationMutation = useMutation({
     mutationFn: async (data: QuotationFormData) => {
-      const response = await apiRequest('/api/quotations', 'POST', data);
+      const response = await apiRequest('POST', '/api/quotations', data);
       return response;
     },
     onSuccess: () => {

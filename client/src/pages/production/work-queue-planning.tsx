@@ -244,7 +244,7 @@ export default function WorkQueuePlanning() {
   // Mutations
   const addToQueueMutation = useMutation({
     mutationFn: (data: { subJobId: number; teamId: string; priority: number }) => 
-      apiRequest('/api/work-queues/add-job', 'POST', data),
+      apiRequest('POST', '/api/work-queues/add-job', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/team", selectedTeam] });
       queryClient.invalidateQueries({ queryKey: ["/api/work-queues/all"] });
