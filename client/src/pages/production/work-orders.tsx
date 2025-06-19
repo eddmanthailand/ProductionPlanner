@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { ClipboardList, Plus, Edit2, Trash2, FileText, Users, Calendar, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -72,6 +73,7 @@ interface Team {
 
 export default function WorkOrders() {
   const { toast } = useToast();
+  const { canAccess } = usePermissions();
   const queryClient = useQueryClient();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -360,13 +362,15 @@ export default function WorkOrders() {
               </h1>
               <p className="text-lg text-gray-600 mt-3">จัดการใบสั่งงานการผลิต สร้างจากใบเสนอราคาหรือสร้างใหม่</p>
             </div>
-            <Button
-              onClick={() => window.location.href = "/production/work-orders/new"}
-              className="flex items-center gap-3 px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700"
-            >
-              <Plus className="h-6 w-6" />
-              สร้างใบสั่งงาน
-            </Button>
+            {canAccess("work_orders", "create") && (
+              <Button
+                onClick={() => window.location.href = "/production/work-orders/new"}
+                className="flex items-center gap-3 px-8 py-4 text-lg bg-blue-600 hover:bg-blue-700"
+              >
+                <Plus className="h-6 w-6" />
+                สร้างใบสั่งงาน
+              </Button>
+            )}
           </div>
         </div>
 
@@ -552,17 +556,32 @@ export default function WorkOrders() {
                       </TableCell>
                       <TableCell className="px-1 py-1.5 text-left">
                         <div className="flex items-center space-x-0.5">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteWorkOrder(order.id);
-                            }}
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 h-5 w-5 p-0 transition-all"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
+                          {canAccess("work_orders", "update") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEditWorkOrder(order);
+                              }}
+                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 h-5 w-5 p-0 transition-all"
+                            >
+                              <Edit2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                          {canAccess("work_orders", "delete") && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteWorkOrder(order.id);
+                              }}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50 h-5 w-5 p-0 transition-all"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
