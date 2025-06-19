@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Calendar as CalendarIcon, Plus, Edit2, Trash2, Save, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,7 @@ interface Holiday {
 
 export default function ProductionCalendar() {
   const { toast } = useToast();
+  const { canAccess } = usePermissions();
   const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [holidayName, setHolidayName] = useState("");
@@ -447,26 +449,30 @@ export default function ProductionCalendar() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        setEditingHoliday(holiday);
-                        setHolidayName(holiday.name);
-                        setHolidayType(holiday.type);
-                        setSelectedDate(holiday.date);
-                        setIsDialogOpen(true);
-                      }}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteHoliday(holiday.id)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    {canAccess("production", "update") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingHoliday(holiday);
+                          setHolidayName(holiday.name);
+                          setHolidayType(holiday.type);
+                          setSelectedDate(holiday.date);
+                          setIsDialogOpen(true);
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                    {canAccess("production", "delete") && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteHoliday(holiday.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -525,7 +531,7 @@ export default function ProductionCalendar() {
                 <X className="w-4 h-4 mr-2" />
                 ยกเลิก
               </Button>
-              {editingHoliday && (
+              {editingHoliday && canAccess("production", "delete") && (
                 <Button 
                   variant="destructive" 
                   onClick={() => deleteHoliday(editingHoliday.id)}

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Network, Users, Settings, Plus, Edit2, Save, X, Trash2, UserPlus, DollarSign, Clock, CheckCircle } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +62,7 @@ interface WorkStep {
 
 export default function OrganizationChart() {
   const { toast } = useToast();
+  const { canAccess } = usePermissions();
   const queryClient = useQueryClient();
   const [isAddDepartmentOpen, setIsAddDepartmentOpen] = useState(false);
   const [isAddTeamOpen, setIsAddTeamOpen] = useState(false);
@@ -848,21 +850,25 @@ export default function OrganizationChart() {
           <p className="text-gray-600 mt-2">จัดการแผนก ทีม และพนักงานในองค์กร</p>
         </div>
         <div className="flex gap-2">
-          <Button
-            onClick={() => setIsAddDepartmentOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            เพิ่มแผนก
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setIsAddTeamOpen(true)}
-            className="flex items-center gap-2"
-          >
-            <Users className="h-4 w-4" />
-            เพิ่มทีม
-          </Button>
+          {canAccess("organization", "create") && (
+            <Button
+              onClick={() => setIsAddDepartmentOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              เพิ่มแผนก
+            </Button>
+          )}
+          {canAccess("organization", "create") && (
+            <Button
+              variant="outline"
+              onClick={() => setIsAddTeamOpen(true)}
+              className="flex items-center gap-2"
+            >
+              <Users className="h-4 w-4" />
+              เพิ่มทีม
+            </Button>
+          )}
         </div>
       </div>
 
