@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import MainLayout from "@/components/layout/main-layout";
 import NotFound from "@/pages/not-found";
 import Landing from "@/pages/landing";
+import LoginPage from "@/pages/login";
 import Home from "@/pages/home";
 import Dashboard from "@/pages/dashboard";
 import Sales from "@/pages/sales-new";
@@ -38,12 +39,20 @@ import UserManagement from "@/pages/user-management";
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();
   
-  // Show landing page if loading, not authenticated, or error occurred
-  const showLanding = isLoading || !isAuthenticated || error;
+  // If loading, show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">กำลังตรวจสอบการเข้าสู่ระบบ...</div>
+      </div>
+    );
+  }
   
-  if (showLanding) {
+  // If not authenticated, show login or landing options
+  if (!isAuthenticated || error) {
     return (
       <Switch>
+        <Route path="/login" component={LoginPage} />
         <Route component={Landing} />
       </Switch>
     );
@@ -54,6 +63,7 @@ function Router() {
       <Route path="/">
         <MainLayout><Dashboard /></MainLayout>
       </Route>
+      <Route path="/login" component={LoginPage} />
       <Route path="/home" component={Home} />
       
       {/* Protected routes with MainLayout */}

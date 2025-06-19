@@ -1,107 +1,216 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
-import { useLanguage } from "@/hooks/use-language";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
-import { login } from "@/lib/auth";
-import { Settings2 } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Loader2, LogIn, Building2 } from "lucide-react";
 
-export default function Login() {
-  const { t } = useLanguage();
-  const [, navigate] = useLocation();
+const loginSchema = z.object({
+  username: z.string().min(1, "กรุณากรอกชื่อผู้ใช้"),
+  password: z.string().min(1, "กรุณากรอกรหัสผ่าน"),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export default function LoginPage() {
+  const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [formData, setFormData] = useState({
-    username: "",
-    password: ""
+  const [error, setError] = useState<string | null>(null);
+
+  const form = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      username: "",
+      password: "",
+    },
   });
 
   const loginMutation = useMutation({
-    mutationFn: ({ username, password }: { username: string; password: string }) => 
-      login(username, password),
-    onSuccess: () => {
+    mutationFn: async (data: LoginFormData) => {
+      const res = await apiRequest("POST", "/api/auth/login", data);
+      return res.json();
+    },
+    onSuccess: (data) => {
+      // Store token if returned
+      if (data.token) {
+        localStorage.setItem("auth_token", data.token);
+      }
+      
+      // Invalidate auth queries to refresh user data
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      
       toast({
         title: "เข้าสู่ระบบสำเร็จ",
-        description: "ยินดีต้อนรับเข้าสู่ ProductionPro"
+        description: "ยินดีต้อนรับเข้าสู่ระบบ",
       });
-      navigate("/");
+      
+      // Redirect to dashboard
+      setLocation("/");
     },
-    onError: () => {
+    onError: (error: Error) => {
+      setError(error.message);
       toast({
-        title: "เข้าสู่ระบบไม่สำเร็จ",
-        description: "กรุณาตรวจสอบชื่อผู้ใช้และรหัสผ่าน",
-        variant: "destructive"
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
       });
-    }
+    },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    loginMutation.mutate(formData);
+  const handleLogin = (data: LoginFormData) => {
+    setError(null);
+    loginMutation.mutate(data);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
+  const handleReplitLogin = () => {
+    // Redirect to Replit Auth
+    window.location.href = "/api/login";
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <div className="w-full max-w-md space-y-6">
+        {/* Header */}
+        <div className="text-center space-y-2">
+          <div className="flex justify-center">
             <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center">
-              <Settings2 className="w-6 h-6 text-white" />
+              <Building2 className="w-6 h-6 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-inter font-bold">ProductionPro</CardTitle>
-          <p className="text-gray-600">เข้าสู่ระบบเพื่อจัดการการผลิตและบัญชี</p>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <Label htmlFor="username">ชื่อผู้ใช้</Label>
-              <Input
-                id="username"
-                name="username"
-                type="text"
-                required
-                value={formData.username}
-                onChange={handleChange}
-                placeholder="กรอกชื่อผู้ใช้"
-                className="mt-1"
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="password">รหัสผ่าน</Label>
-              <Input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="กรอกรหัสผ่าน"
-                className="mt-1"
-              />
+          <h1 className="text-2xl font-bold">เข้าสู่ระบบ</h1>
+          <p className="text-muted-foreground">
+            ระบบจัดการธุรกิจแบบครบวงจร
+          </p>
+        </div>
+
+        {/* Login Form */}
+        <Card>
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-xl">เข้าสู่ระบบด้วยบัญชีผู้ใช้</CardTitle>
+            <CardDescription>
+              กรอกชื่อผู้ใช้และรหัสผ่านเพื่อเข้าสู่ระบบ
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {error && (
+              <Alert variant="destructive">
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(handleLogin)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อผู้ใช้</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="กรอกชื่อผู้ใช้"
+                          {...field}
+                          disabled={loginMutation.isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>รหัสผ่าน</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="กรอกรหัสผ่าน"
+                          {...field}
+                          disabled={loginMutation.isPending}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loginMutation.isPending}
+                >
+                  {loginMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      กำลังเข้าสู่ระบบ...
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4 mr-2" />
+                      เข้าสู่ระบบ
+                    </>
+                  )}
+                </Button>
+              </form>
+            </Form>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  หรือ
+                </span>
+              </div>
             </div>
 
             <Button 
-              type="submit" 
-              className="w-full bg-primary hover:bg-primary/90"
+              variant="outline" 
+              className="w-full" 
+              onClick={handleReplitLogin}
               disabled={loginMutation.isPending}
             >
-              {loginMutation.isPending ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+              เข้าสู่ระบบด้วย Replit
             </Button>
-          </form>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+
+        {/* Demo Credentials */}
+        <Card className="bg-muted/50">
+          <CardContent className="pt-6">
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium">ข้อมูลทดสอบ</p>
+              <div className="text-xs text-muted-foreground space-y-1">
+                <p>ชื่อผู้ใช้: <code className="bg-background px-1 rounded">demo</code></p>
+                <p>รหัสผ่าน: <code className="bg-background px-1 rounded">password</code></p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

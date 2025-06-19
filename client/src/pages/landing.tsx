@@ -1,9 +1,10 @@
+import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building2, Users, BarChart3, Calendar } from "lucide-react";
 
 export default function Landing() {
-  const handleLogin = () => {
+  const handleReplitLogin = () => {
     window.location.href = "/api/login";
   };
 
@@ -18,13 +19,21 @@ export default function Landing() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-3xl mx-auto">
             ระบบจัดการธุรกิจครบวงจร สำหรับการขาย การผลิต การวางแผน และการบัญชี
           </p>
-          <Button 
-            onClick={handleLogin} 
-            size="lg" 
-            className="text-lg px-8 py-3"
-          >
-            เข้าสู่ระบบ
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/login">
+              <Button size="lg" className="text-lg px-8 py-3">
+                เข้าสู่ระบบด้วยบัญชีผู้ใช้
+              </Button>
+            </Link>
+            <Button 
+              onClick={handleReplitLogin} 
+              variant="outline"
+              size="lg" 
+              className="text-lg px-8 py-3"
+            >
+              เข้าสู่ระบบด้วย Replit
+            </Button>
+          </div>
         </div>
 
         {/* Features */}
