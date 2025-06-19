@@ -25,7 +25,8 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import { Loader2, LogIn, Building2 } from "lucide-react";
+import { logout, getToken } from "@/lib/auth";
+import { Loader2, LogIn, Building2, LogOut } from "lucide-react";
 
 const loginSchema = z.object({
   username: z.string().min(1, "กรุณากรอกชื่อผู้ใช้"),
@@ -38,6 +39,7 @@ export default function LoginPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const [error, setError] = useState<string | null>(null);
+  const [hasJwtToken, setHasJwtToken] = useState(!!getToken());
 
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),

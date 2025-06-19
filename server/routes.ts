@@ -120,41 +120,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup Replit Auth
   await setupAuth(app);
 
-  // Replit Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  // Combined auth route that handles both JWT and Replit Auth
+  app.get('/api/auth/user', async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      console.log("Fetching user for Replit ID:", userId);
-      
-      const replitUser = await storage.getReplitAuthUser(userId);
-      console.log("Replit user found:", replitUser);
-      
-      if (replitUser && replitUser.internalUserId) {
-        // Get the internal user with full permissions
-        const internalUser = await storage.getUser(replitUser.internalUserId);
-        console.log("Internal user found:", internalUser);
-        
-        if (internalUser) {
-          const { password, ...userWithoutPassword } = internalUser;
-          // Force refresh by setting cache headers
-          res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-          res.set('Pragma', 'no-cache');
-          res.set('Expires', '0');
-          res.json(userWithoutPassword);
-          return;
+      // Check for JWT token first
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET) as any;
+          const user = await storage.getUser(decoded.userId);
+          if (user) {
+            const { password, ...userWithoutPassword } = user;
+            console.log("JWT user authenticated:", userWithoutPassword.username);
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.json(userWithoutPassword);
+            return;
+          }
+        } catch (jwtError) {
+          console.log("JWT verification failed, falling back to Replit Auth");
         }
       }
-      
-      // Fallback to Replit user data if no internal user found
-      console.log("Falling back to Replit user data");
-      res.json(replitUser);
+
+      // Fallback to Replit Auth if no valid JWT
+      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
+        const userId = req.user.claims.sub;
+        console.log("Fetching user for Replit ID:", userId);
+        
+        const replitUser = await storage.getReplitAuthUser(userId);
+        console.log("Replit user found:", replitUser);
+        
+        if (replitUser && replitUser.internalUserId) {
+          const internalUser = await storage.getUser(replitUser.internalUserId);
+          console.log("Internal user found:", internalUser);
+          
+          if (internalUser) {
+            const { password, ...userWithoutPassword } = internalUser;
+            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.json(userWithoutPassword);
+            return;
+          }
+        }
+        
+        console.log("Falling back to Replit user data");
+        res.json(replitUser);
+        return;
+      }
+
+      res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
   });
 
-  // Current authentication routes (JWT-based system)
+  // JWT authentication routes
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -181,6 +201,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { expiresIn: '24h' }
       );
 
+      console.log("JWT login successful for user:", user.username);
+
       res.json({ 
         token, 
         user: {
@@ -196,6 +218,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       res.status(500).json({ message: "Login failed" });
     }
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    console.log("JWT logout requested");
+    // For JWT, we just need to tell the client to remove the token
+    // The client should clear localStorage/sessionStorage
+    res.json({ message: "Logged out successfully" });
   });
 
   app.post("/api/auth/register", async (req, res) => {

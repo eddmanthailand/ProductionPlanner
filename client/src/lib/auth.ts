@@ -49,10 +49,20 @@ export async function register(userData: {
   return await response.json();
 }
 
-export function logout(): void {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
-  localStorage.removeItem("tenant");
+export async function logout(): Promise<void> {
+  try {
+    // Call the server logout endpoint
+    await apiRequest("POST", "/api/auth/logout");
+  } catch (error) {
+    console.log("Server logout failed, continuing with client logout");
+  } finally {
+    // Always clear local storage regardless of server response
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    localStorage.removeItem("tenant");
+    // Force page reload to clear any cached state
+    window.location.href = '/';
+  }
 }
 
 export function getToken(): string | null {
