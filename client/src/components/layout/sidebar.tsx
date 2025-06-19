@@ -42,232 +42,254 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isCollapsed) return;
-
+      
       const sidebar = document.getElementById('sidebar');
-      if (sidebar && !sidebar.contains(event.target as Node)) {
-        setExpandedSales(false);
-        setExpandedProduction(false);
+      const target = event.target as Element;
+      
+      if (sidebar && !sidebar.contains(target)) {
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          setIsCollapsed(true);
+        }
       }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isCollapsed]);
-
-  const toggleSalesMenu = () => {
-    if (isCollapsed) return;
-    setExpandedSales(!expandedSales);
-    setExpandedProduction(false);
-  };
-
-  const toggleProductionMenu = () => {
-    if (isCollapsed) return;
-    setExpandedProduction(!expandedProduction);
-    setExpandedSales(false);
-  };
-
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
-    if (!isCollapsed) {
-      setExpandedSales(false);
-      setExpandedProduction(false);
-    }
-  };
-
-  const salesSubMenu = getPagesByCategory("sales");
-  const productionSubMenu = getPagesByCategory("production");
-
-  const navigation = [
-    ...(canAccessPage("/dashboard") ? [{ name: t("nav.dashboard"), href: "/dashboard", icon: ChartLine }] : []),
-    ...(canAccessPage("/accounting") ? [{ name: t("nav.accounting"), href: "/accounting", icon: Calculator }] : []),
-    ...(canAccessPage("/inventory") ? [{ name: t("nav.inventory"), href: "/inventory", icon: Package }] : []),
-    ...(canAccessPage("/customers") ? [{ name: t("nav.customers"), href: "/customers", icon: Users }] : []),
-    ...(canAccessPage("/master-data") ? [{ name: t("nav.master_data"), href: "/master-data", icon: Settings }] : []),
-    ...(canAccessPage("/reports/production") ? [{ name: t("nav.reports"), href: "/reports/production", icon: FileText }] : []),
-    ...(canAccessPage("/users") ? [{ name: "จัดการผู้ใช้และสิทธิ์", href: "/users", icon: Shield }] : []),
-  ];
-
-  const handleLogout = async () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("tenant");
-    window.location.href = "/login";
-  };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isCollapsed, setIsCollapsed]);
 
   return (
-    <aside id="sidebar" className={`${isCollapsed ? 'w-16' : 'w-64'} bg-white shadow-lg border-r border-gray-200 flex flex-col transition-all duration-300`}>
-      <div className="p-4 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Settings2 className="w-4 h-4 text-white" />
+    <>
+      {/* Mobile backdrop */}
+      {!isCollapsed && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+          onClick={() => setIsCollapsed(true)}
+        />
+      )}
+      
+      <div
+        id="sidebar"
+        className={`${
+          isCollapsed ? '-translate-x-full md:translate-x-0 md:w-16' : 'translate-x-0 w-64'
+        } fixed top-0 left-0 h-full bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-lg transition-all duration-300 ease-in-out z-50 md:static md:z-auto flex flex-col`}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+          {!isCollapsed && (
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <ChartLine className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  {currentTenant?.companyName || "บริษัท"}
+                </h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {currentTenant?.name || "ระบบจัดการ"}
+                </p>
+              </div>
             </div>
-            {!isCollapsed && (
-              <span className="font-inter font-semibold text-lg text-gray-900">ProductionPro</span>
-            )}
-          </div>
+          )}
+          
           <button
-            onClick={toggleSidebar}
-            className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-            title={isCollapsed ? "ขยายเมนู" : "ย่อเมนู"}
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
           >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <X className="w-4 h-4" />}
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <X className="w-4 h-4 md:hidden" />}
           </button>
         </div>
-        
-        {!isCollapsed && currentTenant && (
-          <div className="bg-blue-50 rounded-lg p-3">
-            <p className="text-xs text-blue-600 font-medium">องค์กร</p>
-            <p className="text-sm font-semibold text-blue-900">{currentTenant.companyName}</p>
-          </div>
-        )}
-      </div>
 
-      <nav className="flex-1 p-4">
-        <ul className="space-y-2">
-          {navigation.map((item) => {
-            const isActive = location === item.href;
-            const Icon = item.icon;
-            
-            return (
-              <li key={item.name}>
-                <Link href={item.href} className={`flex items-center ${isCollapsed ? 'justify-center' : 'space-x-3'} px-3 py-2 rounded-lg transition-colors ${
-                  isActive 
-                    ? "bg-primary text-white" 
-                    : "text-gray-600 hover:bg-gray-100"
-                }`} title={isCollapsed ? item.name : undefined}>
-                  <Icon className="w-5 h-5" />
-                  {!isCollapsed && <span className="font-medium">{item.name}</span>}
-                </Link>
-              </li>
-            );
-          })}
-          
-          {/* Sales Menu - Always visible */}
-          <li>
-            <button
-              onClick={toggleSalesMenu}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
-                location.startsWith("/sales") 
-                  ? "bg-primary text-white" 
-                  : "text-gray-600 hover:bg-gray-100"
+        {/* Navigation */}
+        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+          {/* Dashboard - แสดงเสมอ */}
+          {canAccessPage('/dashboard') && (
+            <Link
+              href="/dashboard"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location === '/dashboard' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
               }`}
-              title={isCollapsed ? t("nav.sales") : undefined}
             >
-              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
-                <ShoppingCart className="w-5 h-5" />
-                {!isCollapsed && <span className="font-medium">{t("nav.sales")}</span>}
-              </div>
-              {!isCollapsed && (expandedSales ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              ))}
-            </button>
-          
-            {expandedSales && !isCollapsed && salesSubMenu.length > 0 && (
-              <ul className="mt-2 ml-8 space-y-1">
-                {salesSubMenu.map((subItem) => {
-                  const isSubActive = location === subItem.href;
-                  const SubIcon = subItem.icon;
-                  
-                  return (
-                    <li key={subItem.name}>
-                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        isSubActive 
-                          ? "bg-blue-100 text-blue-700" 
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}>
-                        <SubIcon className="w-4 h-4" />
-                        <span className="font-medium">{subItem.name}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </li>
+              <ChartLine className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.dashboard")}</span>}
+            </Link>
+          )}
 
-          {/* Production Menu - Always visible */}
-          <li>
-            <button
-              onClick={toggleProductionMenu}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
-                location.startsWith("/production") 
-                  ? "bg-primary text-white" 
-                  : "text-gray-600 hover:bg-gray-100"
+          {/* Sales Menu - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึงหน้าในหมวดนี้ */}
+          {canAccessCategory("sales") && (
+            <div className="space-y-1">
+              <button
+                onClick={() => setExpandedSales(!expandedSales)}
+                className={`w-full text-left flex items-center justify-between py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                  location.startsWith('/sales') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                }`}
+              >
+                <div className="flex items-center">
+                  <ShoppingCart className="w-5 h-5 mr-3" />
+                  {!isCollapsed && <span>{t("nav.sales")}</span>}
+                </div>
+                {!isCollapsed && (expandedSales ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
+              </button>
+
+              {/* Sales submenu - แสดงเฉพาะหน้าที่มีสิทธิ์เข้าถึง */}
+              {expandedSales && !isCollapsed && (
+                <div className="ml-8 space-y-1">
+                  {getPagesByCategory("sales").map(page => (
+                    <Link
+                      key={page.url}
+                      href={page.url}
+                      className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                        location === page.url ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                      }`}
+                    >
+                      {page.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Production Menu - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึงหน้าในหมวดนี้ */}
+          {canAccessCategory("production") && (
+            <div className="space-y-1">
+              <button
+                onClick={() => setExpandedProduction(!expandedProduction)}
+                className={`w-full text-left flex items-center justify-between py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                  location.startsWith('/production') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                }`}
+              >
+                <div className="flex items-center">
+                  <Settings2 className="w-5 h-5 mr-3" />
+                  {!isCollapsed && <span>{t("nav.production")}</span>}
+                </div>
+                {!isCollapsed && (expandedProduction ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
+              </button>
+
+              {/* Production submenu - แสดงเฉพาะหน้าที่มีสิทธิ์เข้าถึง */}
+              {expandedProduction && !isCollapsed && (
+                <div className="ml-8 space-y-1">
+                  {getPagesByCategory("production").map(page => (
+                    <Link
+                      key={page.url}
+                      href={page.url}
+                      className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                        location === page.url ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                      }`}
+                    >
+                      {page.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Accounting - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessPage('/accounting') && (
+            <Link
+              href="/accounting"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location === '/accounting' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
               }`}
-              title={isCollapsed ? "วางแผนการผลิต" : undefined}
             >
-              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
-                <Settings2 className="w-5 h-5" />
-                {!isCollapsed && <span className="font-medium">วางแผนการผลิต</span>}
-              </div>
-              {!isCollapsed && (expandedProduction ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              ))}
-            </button>
-            
-            {expandedProduction && !isCollapsed && productionSubMenu.length > 0 && (
-              <ul className="mt-2 ml-8 space-y-1">
-                {productionSubMenu.map((subItem) => {
-                  const isSubActive = location === subItem.href;
-                  const SubIcon = subItem.icon;
-                  
-                  return (
-                    <li key={subItem.name}>
-                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        isSubActive 
-                          ? "bg-green-100 text-green-700" 
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}>
-                        <SubIcon className="w-4 h-4" />
-                        <span className="font-medium">{subItem.name}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </li>
-        </ul>
-      </nav>
+              <Calculator className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.accounting")}</span>}
+            </Link>
+          )}
 
-      <div className="p-4 border-t border-gray-200">
-        {!isCollapsed ? (
-          <>
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                <UserCheck className="w-4 h-4 text-gray-600" />
-              </div>
+          {/* Inventory - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessPage('/inventory') && (
+            <Link
+              href="/inventory"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location === '/inventory' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+              }`}
+            >
+              <Package className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.inventory")}</span>}
+            </Link>
+          )}
+
+          {/* Customers - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessPage('/customers') && (
+            <Link
+              href="/customers"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location === '/customers' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.customers")}</span>}
+            </Link>
+          )}
+
+          {/* Master Data - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessPage('/master-data') && (
+            <Link
+              href="/master-data"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location === '/master-data' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+              }`}
+            >
+              <Network className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.master_data")}</span>}
+            </Link>
+          )}
+
+          {/* Reports - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessCategory("reports") && (
+            <Link
+              href="/reports/production"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location.startsWith('/reports') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+              }`}
+            >
+              <FileText className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.reports")}</span>}
+            </Link>
+          )}
+
+          {/* User Management - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessPage('/users') && (
+            <Link
+              href="/users"
+              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                location === '/users' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+              }`}
+            >
+              <Shield className="w-5 h-5" />
+              {!isCollapsed && <span className="ml-3">{t("nav.users")}</span>}
+            </Link>
+          )}
+        </nav>
+
+        {/* User Profile */}
+        <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
+              <UserCheck className="w-4 h-4 text-gray-600" />
+            </div>
+            {!isCollapsed && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {user?.firstName || ''} {user?.lastName || ''}
                 </p>
                 <p className="text-xs text-gray-500 truncate">{user?.username || ''}</p>
               </div>
-            </div>
+            )}
+          </div>
+          
+          {!isCollapsed && (
             <button
-              onClick={handleLogout}
-              className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              onClick={() => window.location.href = '/api/logout'}
+              className="w-full mt-3 flex items-center py-2 px-3 text-sm text-red-600 rounded-lg hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
             >
-              ออกจากระบบ
+              <span>{t("nav.logout")}</span>
             </button>
-          </>
-        ) : (
-          <button
-            onClick={handleLogout}
-            className="w-full p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-            title="ออกจากระบบ"
-          >
-            <UserCheck className="w-5 h-5 mx-auto" />
-          </button>
-        )}
+          )}
+        </div>
       </div>
-    </aside>
+    </>
   );
 }
