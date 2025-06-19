@@ -124,19 +124,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
+      console.log("Fetching user for Replit ID:", userId);
+      
       const replitUser = await storage.getReplitAuthUser(userId);
+      console.log("Replit user found:", replitUser);
       
       if (replitUser && replitUser.internalUserId) {
         // Get the internal user with full permissions
         const internalUser = await storage.getUser(replitUser.internalUserId);
+        console.log("Internal user found:", internalUser);
+        
         if (internalUser) {
           const { password, ...userWithoutPassword } = internalUser;
+          // Force refresh by setting cache headers
+          res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.set('Pragma', 'no-cache');
+          res.set('Expires', '0');
           res.json(userWithoutPassword);
           return;
         }
       }
       
       // Fallback to Replit user data if no internal user found
+      console.log("Falling back to Replit user data");
       res.json(replitUser);
     } catch (error) {
       console.error("Error fetching user:", error);
