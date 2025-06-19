@@ -91,6 +91,23 @@ export default function LoginPage() {
     window.location.href = "/api/login";
   };
 
+  const handleJwtLogout = async () => {
+    try {
+      await logout();
+      setHasJwtToken(false);
+      toast({
+        title: "ออกจากระบบ JWT สำเร็จ",
+        description: "ตอนนี้คุณสามารถเข้าสู่ระบบด้วยบัญชีอื่นได้",
+      });
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถออกจากระบบได้",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="w-full max-w-md space-y-6">
@@ -197,6 +214,17 @@ export default function LoginPage() {
             >
               เข้าสู่ระบบด้วย Replit
             </Button>
+
+            {hasJwtToken && (
+              <Button 
+                variant="destructive" 
+                className="w-full" 
+                onClick={handleJwtLogout}
+              >
+                <LogOut className="w-4 h-4 mr-2" />
+                ออกจากระบบ JWT เพื่อเปลี่ยนบัญชี
+              </Button>
+            )}
           </CardContent>
         </Card>
 
