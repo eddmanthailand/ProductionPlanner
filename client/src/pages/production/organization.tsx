@@ -966,22 +966,26 @@ export default function OrganizationChart() {
                     >
                       <Settings className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditDepartment(department)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteDepartment(department.id)}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    {canAccess("organization", "update") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditDepartment(department)}
+                        className="h-8 w-8 p-0"
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {canAccess("organization", "delete") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeleteDepartment(department.id)}
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -994,18 +998,20 @@ export default function OrganizationChart() {
                       <Settings className="h-4 w-4" />
                       ขั้นตอนการทำงาน ({getWorkStepsForDepartment(department.id).length})
                     </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setNewWorkStep({ ...newWorkStep, department_id: department.id });
-                        setIsAddWorkStepOpen(true);
-                      }}
-                      className="h-7 px-3 text-blue-600 border-blue-300 hover:bg-blue-50"
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      เพิ่มขั้นตอน
-                    </Button>
+                    {canAccess("organization", "create") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setNewWorkStep({ ...newWorkStep, department_id: department.id });
+                          setIsAddWorkStepOpen(true);
+                        }}
+                        className="h-7 px-3 text-blue-600 border-blue-300 hover:bg-blue-50"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        เพิ่มขั้นตอน
+                      </Button>
+                    )}
                   </div>
 
                   {getWorkStepsForDepartment(department.id).length > 0 ? (
@@ -1018,30 +1024,34 @@ export default function OrganizationChart() {
                           <div className="flex justify-between items-start mb-3">
                             <h4 className="font-medium text-gray-900">{workStep.name}</h4>
                             <div className="flex space-x-1">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setEditingWorkStep(workStep);
-                                  setIsEditWorkStepOpen(true);
-                                }}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Edit2 className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setDeleteType('workstep');
-                                  setDeleteTarget(workStep.id);
-                                  setDeleteTargetName(workStep.name);
-                                  setDeleteConfirmOpen(true);
+                              {canAccess("organization", "update") && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setEditingWorkStep(workStep);
+                                    setIsEditWorkStepOpen(true);
+                                  }}
+                                  className="h-6 w-6 p-0"
+                                >
+                                  <Edit2 className="h-3 w-3" />
+                                </Button>
+                              )}
+                              {canAccess("organization", "delete") && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    setDeleteType('workstep');
+                                    setDeleteTarget(workStep.id);
+                                    setDeleteTargetName(workStep.name);
+                                    setDeleteConfirmOpen(true);
                                 }}
                                 className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
+                              )}
                             </div>
                           </div>
 
