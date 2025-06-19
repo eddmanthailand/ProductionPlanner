@@ -41,13 +41,20 @@ export function usePermissions() {
       return false;
     }
     
+    // If user has roleId 1 (ADMIN), grant access to everything
+    if (user.roleId === 1) {
+      console.log(`canAccess: Admin user granted access to ${resource}:${action}`);
+      return true;
+    }
+    
     const hasPermission = userPermissions.some((permission: Permission) => 
       permission.resource === resource && permission.action === action && permission.isActive
     );
     
     console.log(`canAccess check: resource=${resource}, action=${action}, hasPermission=${hasPermission}`, {
       userPermissions,
-      userId: user.id
+      userId: user.id,
+      roleId: user.roleId
     });
     
     return hasPermission;

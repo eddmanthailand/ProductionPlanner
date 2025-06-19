@@ -489,18 +489,18 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(permissions).orderBy(permissions.resource, permissions.action);
   }
 
-  async getUserPermissions(userId: number): Promise<Permission[]> {
+  async getUserPermissions(userId: number): Promise<any[]> {
     const result = await db.select({
       id: permissions.id,
       name: permissions.name,
-      displayName: permissions.displayName,
+      displayName: permissions.name,
       description: permissions.description,
-      module: permissions.module,
+      module: sql<string>`''`.as('module'),
       action: permissions.action,
       resource: permissions.resource,
-      isActive: permissions.isActive,
+      isActive: sql<boolean>`true`.as('isActive'),
       createdAt: permissions.createdAt,
-      updatedAt: permissions.updatedAt
+      updatedAt: sql<Date | null>`null`.as('updatedAt')
     })
     .from(permissions)
     .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))

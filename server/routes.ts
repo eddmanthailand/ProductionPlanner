@@ -812,8 +812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all permissions
   app.get("/api/permissions", async (req: any, res: any) => {
     try {
-      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
-      const permissions = await storage.getPermissions(tenantId);
+      const permissions = await storage.getPermissions();
       res.json(permissions);
     } catch (error) {
       console.error("Get permissions error:", error);
