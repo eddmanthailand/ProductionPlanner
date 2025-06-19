@@ -28,6 +28,7 @@ import {
   roles,
   permissions,
   rolePermissions,
+  pageAccess,
   type User,
   type InsertUser,
   type UpdateUser,
@@ -36,6 +37,8 @@ import {
   type Permission,
   type InsertPermission,
   type UserWithRole,
+  type PageAccess,
+  type InsertPageAccess,
   type Tenant,
   type InsertTenant,
   type ReplitAuthUser,
@@ -120,6 +123,10 @@ export interface IStorage {
   getRolePermissions(roleId: number): Promise<Permission[]>;
   assignPermissionToRole(roleId: number, permissionId: number): Promise<void>;
   removePermissionFromRole(roleId: number, permissionId: number): Promise<void>;
+
+  // Page access management
+  getPageAccessByRole(roleId: number): Promise<PageAccess[]>;
+  upsertPageAccess(pageAccess: InsertPageAccess): Promise<PageAccess>;
 
   // Tenants
   getTenant(id: string): Promise<Tenant | undefined>;
@@ -559,6 +566,30 @@ export class DatabaseStorage implements IStorage {
         eq(rolePermissions.roleId, roleId),
         eq(rolePermissions.permissionId, permissionId)
       ));
+  }
+
+  // Page access management
+  async getPageAccessByRole(roleId: number): Promise<PageAccess[]> {
+    return await db.select().from(pageAccess)
+      .where(eq(pageAccess.roleId, roleId))
+      .orderBy(pageAccess.pageName);
+  }
+
+  async upsertPageAccess(pageAccessData: InsertPageAccess): Promise<PageAccess> {
+    const [result] = await db.insert(pageAccess)
+      .values({
+        ...pageAccessData,
+        updatedAt: new Date()
+      })
+      .onConflictDoUpdate({
+        target: [pageAccess.roleId, pageAccess.pageUrl],
+        set: {
+          hasAccess: pageAccessData.hasAccess,
+          updatedAt: new Date()
+        }
+      })
+      .returning();
+    return result;
   }
 
   async getTenant(id: string): Promise<Tenant | undefined> {
