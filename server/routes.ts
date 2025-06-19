@@ -3,11 +3,91 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, permissions } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+
+// Initialize default permissions for all pages in the system
+async function initializeDefaultPermissions() {
+  const defaultPermissions = [
+    // Dashboard permissions
+    { name: "dashboard_read", displayName: "ดูแดชบอร์ด", module: "dashboard", action: "read", resource: "dashboard", description: "สามารถดูหน้าแดชบอร์ดหลัก" },
+    
+    // Sales permissions
+    { name: "sales_read", displayName: "ดูข้อมูลการขาย", module: "sales", action: "read", resource: "sales", description: "สามารถดูหน้าการขายหลัก" },
+    { name: "quotations_read", displayName: "ดูใบเสนอราคา", module: "sales", action: "read", resource: "quotations", description: "สามารถดูรายการใบเสนอราคา" },
+    { name: "quotations_write", displayName: "สร้าง/แก้ไขใบเสนอราคา", module: "sales", action: "write", resource: "quotations", description: "สามารถสร้างและแก้ไขใบเสนอราคา" },
+    { name: "quotations_delete", displayName: "ลบใบเสนอราคา", module: "sales", action: "delete", resource: "quotations", description: "สามารถลบใบเสนอราคา" },
+    { name: "invoices_read", displayName: "ดูใบแจ้งหนี้", module: "sales", action: "read", resource: "invoices", description: "สามารถดูรายการใบแจ้งหนี้" },
+    { name: "invoices_write", displayName: "สร้าง/แก้ไขใบแจ้งหนี้", module: "sales", action: "write", resource: "invoices", description: "สามารถสร้างและแก้ไขใบแจ้งหนี้" },
+    { name: "tax_invoices_read", displayName: "ดูใบกำกับภาษี", module: "sales", action: "read", resource: "tax_invoices", description: "สามารถดูรายการใบกำกับภาษี" },
+    { name: "tax_invoices_write", displayName: "สร้าง/แก้ไขใบกำกับภาษี", module: "sales", action: "write", resource: "tax_invoices", description: "สามารถสร้างและแก้ไขใบกำกับภาษี" },
+    { name: "receipts_read", displayName: "ดูใบเส็จรับเงิน", module: "sales", action: "read", resource: "receipts", description: "สามารถดูรายการใบเส็จรับเงิน" },
+    { name: "receipts_write", displayName: "สร้าง/แก้ไขใบเส็จรับเงิน", module: "sales", action: "write", resource: "receipts", description: "สามารถสร้างและแก้ไขใบเส็จรับเงิน" },
+    
+    // Production permissions
+    { name: "production_read", displayName: "ดูข้อมูลการผลิต", module: "production", action: "read", resource: "production", description: "สามารถดูหน้าการผลิตหลัก" },
+    { name: "production_calendar_read", displayName: "ดูปฏิทินการผลิต", module: "production", action: "read", resource: "production_calendar", description: "สามารถดูปฏิทินการผลิต" },
+    { name: "organization_chart_read", displayName: "ดูแผนภูมิองค์กร", module: "production", action: "read", resource: "organization_chart", description: "สามารถดูแผนภูมิองค์กร" },
+    { name: "organization_chart_write", displayName: "แก้ไขแผนภูมิองค์กร", module: "production", action: "write", resource: "organization_chart", description: "สามารถแก้ไขแผนภูมิองค์กร" },
+    { name: "work_queue_read", displayName: "ดูคิวงาน", module: "production", action: "read", resource: "work_queue", description: "สามารถดูคิวงาน" },
+    { name: "work_queue_write", displayName: "จัดการคิวงาน", module: "production", action: "write", resource: "work_queue", description: "สามารถจัดการและวางแผนคิวงาน" },
+    { name: "work_steps_read", displayName: "ดูขั้นตอนการทำงาน", module: "production", action: "read", resource: "work_steps", description: "สามารถดูขั้นตอนการทำงาน" },
+    { name: "work_steps_write", displayName: "แก้ไขขั้นตอนการทำงาน", module: "production", action: "write", resource: "work_steps", description: "สามารถแก้ไขขั้นตอนการทำงาน" },
+    { name: "work_orders_read", displayName: "ดูใบสั่งงาน", module: "production", action: "read", resource: "work_orders", description: "สามารถดูรายการใบสั่งงาน" },
+    { name: "work_orders_write", displayName: "สร้าง/แก้ไขใบสั่งงาน", module: "production", action: "write", resource: "work_orders", description: "สามารถสร้างและแก้ไขใบสั่งงาน" },
+    { name: "work_orders_delete", displayName: "ลบใบสั่งงาน", module: "production", action: "delete", resource: "work_orders", description: "สามารถลบใบสั่งงาน" },
+    { name: "production_reports_read", displayName: "ดูรายงานการผลิต", module: "production", action: "read", resource: "production_reports", description: "สามารถดูรายงานการผลิต" },
+    { name: "daily_work_log_read", displayName: "ดูบันทึกงานรายวัน", module: "production", action: "read", resource: "daily_work_log", description: "สามารถดูบันทึกงานรายวัน" },
+    { name: "daily_work_log_write", displayName: "บันทึกงานรายวัน", module: "production", action: "write", resource: "daily_work_log", description: "สามารถบันทึกงานรายวัน" },
+    
+    // Accounting permissions
+    { name: "accounting_read", displayName: "ดูข้อมูลบัญชี", module: "accounting", action: "read", resource: "accounting", description: "สามารถดูหน้าบัญชี" },
+    { name: "accounting_write", displayName: "จัดการข้อมูลบัญชี", module: "accounting", action: "write", resource: "accounting", description: "สามารถจัดการข้อมูลบัญชี" },
+    
+    // Inventory permissions
+    { name: "inventory_read", displayName: "ดูคลังสินค้า", module: "inventory", action: "read", resource: "inventory", description: "สามารถดูข้อมูลคลังสินค้า" },
+    { name: "inventory_write", displayName: "จัดการคลังสินค้า", module: "inventory", action: "write", resource: "inventory", description: "สามารถจัดการคลังสินค้า" },
+    
+    // Customers permissions
+    { name: "customers_read", displayName: "ดูข้อมูลลูกค้า", module: "customers", action: "read", resource: "customers", description: "สามารถดูข้อมูลลูกค้า" },
+    { name: "customers_write", displayName: "จัดการข้อมูลลูกค้า", module: "customers", action: "write", resource: "customers", description: "สามารถเพิ่ม แก้ไข ลบข้อมูลลูกค้า" },
+    
+    // Master Data permissions
+    { name: "master_data_read", displayName: "ดูข้อมูลหลัก", module: "master_data", action: "read", resource: "master_data", description: "สามารถดูข้อมูลหลัก" },
+    { name: "master_data_write", displayName: "จัดการข้อมูลหลัก", module: "master_data", action: "write", resource: "master_data", description: "สามารถจัดการข้อมูลหลัก" },
+    
+    // Reports permissions
+    { name: "reports_read", displayName: "ดูรายงาน", module: "reports", action: "read", resource: "reports", description: "สามารถดูรายงานต่างๆ" },
+    
+    // User Management permissions
+    { name: "user_management_read", displayName: "ดูการจัดการผู้ใช้", module: "user_management", action: "read", resource: "user_management", description: "สามารถดูข้อมูลผู้ใช้และบทบาท" },
+    { name: "user_management_write", displayName: "จัดการผู้ใช้", module: "user_management", action: "write", resource: "user_management", description: "สามารถเพิ่ม แก้ไข ลบผู้ใช้" },
+    { name: "roles_management", displayName: "จัดการบทบาท", module: "user_management", action: "manage", resource: "roles", description: "สามารถจัดการบทบาทและสิทธิ์" }
+  ];
+
+  for (const permission of defaultPermissions) {
+    try {
+      // Check if permission already exists
+      const [existing] = await db.select().from(permissions)
+        .where(eq(permissions.name, permission.name));
+      
+      if (!existing) {
+        await db.insert(permissions).values({
+          ...permission,
+          isActive: true
+        });
+        console.log(`Created permission: ${permission.name}`);
+      }
+    } catch (error) {
+      console.error(`Failed to create permission ${permission.name}:`, error);
+    }
+  }
+}
 
 // Middleware to verify JWT token and extract tenant
 function authenticateToken(req: any, res: any, next: any) {
