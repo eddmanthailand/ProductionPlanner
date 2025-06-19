@@ -144,7 +144,13 @@ function UserManagement() {
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserFormData) => {
       const res = await apiRequest("POST", "/api/users", data);
-      return res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse JSON response:", text);
+        throw new Error("Invalid response from server");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
