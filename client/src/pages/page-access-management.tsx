@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Switch } from "@/components/ui/switch";
+
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import {
@@ -118,11 +118,11 @@ export default function PageAccessManagement() {
 
   // Mutation to update page access
   const updatePageAccessMutation = useMutation({
-    mutationFn: async ({ roleId, pageName, pageUrl, hasAccess }: { roleId: number, pageName: string, pageUrl: string, hasAccess: boolean }) => {
+    mutationFn: async ({ roleId, pageName, pageUrl, accessLevel }: { roleId: number, pageName: string, pageUrl: string, accessLevel: string }) => {
       await apiRequest(`/api/roles/${roleId}/page-access`, "POST", {
         pageName,
         pageUrl,
-        hasAccess
+        accessLevel
       });
     },
     onSuccess: () => {
@@ -141,20 +141,20 @@ export default function PageAccessManagement() {
     },
   });
 
-  const handlePageAccessToggle = (page: Page, hasAccess: boolean) => {
+  const handlePageAccessChange = (page: Page, accessLevel: 'none' | 'read' | 'edit' | 'create') => {
     if (!selectedRoleId) return;
     
     updatePageAccessMutation.mutate({
       roleId: selectedRoleId,
       pageName: page.name,
       pageUrl: page.url,
-      hasAccess
+      accessLevel
     });
   };
 
-  const getPageAccess = (pageUrl: string): boolean => {
+  const getPageAccessLevel = (pageUrl: string): 'none' | 'read' | 'edit' | 'create' => {
     const access = pageAccesses.find(pa => pa.pageUrl === pageUrl);
-    return access ? access.hasAccess : false;
+    return access ? access.accessLevel : 'none';
   };
 
   const getRoleLevelColor = (level: number) => {
@@ -266,7 +266,7 @@ export default function PageAccessManagement() {
         <Card>
           <CardHeader>
             <CardTitle>สิทธิ์การเข้าถึงหน้า</CardTitle>
-            <CardDescription>เปิด/ปิดสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบ</CardDescription>
+            <CardDescription>กำหนดระดับสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบ (ดู, แก้ไข, สร้าง/ลบ)</CardDescription>
           </CardHeader>
           <CardContent>
             {accessLoading ? (
@@ -280,12 +280,12 @@ export default function PageAccessManagement() {
                       <TableHead>URL</TableHead>
                       <TableHead>โมดูล</TableHead>
                       <TableHead>คำอธิบาย</TableHead>
-                      <TableHead className="text-center">สิทธิ์เข้าถึง</TableHead>
+                      <TableHead className="text-center">ระดับสิทธิ์</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {availablePages.map((page) => {
-                      const hasAccess = getPageAccess(page.url);
+                      const accessLevel = getPageAccessLevel(page.url);
                       const PageIcon = page.icon;
                       
                       return (
@@ -308,11 +308,21 @@ export default function PageAccessManagement() {
                             <span className="text-sm text-gray-600">{page.description}</span>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Switch
-                              checked={hasAccess}
-                              onCheckedChange={(checked) => handlePageAccessToggle(page, checked)}
+                            <Select 
+                              value={accessLevel} 
+                              onValueChange={(value) => handlePageAccessChange(page, value as 'none' | 'read' | 'edit' | 'create')}
                               disabled={updatePageAccessMutation.isPending}
-                            />
+                            >
+                              <SelectTrigger className="w-32">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">ไม่มีสิทธิ์</SelectItem>
+                                <SelectItem value="read">ดู</SelectItem>
+                                <SelectItem value="edit">แก้ไข</SelectItem>
+                                <SelectItem value="create">สร้าง/ลบ</SelectItem>
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                         </TableRow>
                       );
