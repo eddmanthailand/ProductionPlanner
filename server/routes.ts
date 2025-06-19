@@ -1159,10 +1159,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Page Access Management Routes
-  app.get("/api/roles/:roleId/page-access", requireAuth, async (req: any, res: any) => {
+  app.get("/api/roles/:roleId/page-access", async (req: any, res: any) => {
     try {
+      // Check if user is authenticated
+      if (!req.session || !req.session.userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
       const { roleId } = req.params;
-      const pageAccesses = await storage.getPageAccessByRole(parseInt(roleId));
+      const requestedRoleId = parseInt(roleId);
+      
+      // Get current user
+      const currentUser = await storage.getUser(req.session.userId);
+      if (!currentUser) {
+        return res.status(401).json({ message: "User not found" });
+      }
+
+      // Allow users to access their own role's page access or if they are admin
+      if (currentUser.roleId !== requestedRoleId && currentUser.roleId !== 1) {
+        return res.status(403).json({ message: "Access denied" });
+      }
+
+      const pageAccesses = await storage.getPageAccessByRole(requestedRoleId);
       res.json(pageAccesses);
     } catch (error) {
       console.error("Get page access error:", error);

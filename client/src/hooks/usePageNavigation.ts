@@ -23,25 +23,28 @@ export function hasPermission(userAccessLevel: AccessLevel, requiredLevel: Acces
   return hierarchy[userAccessLevel] >= hierarchy[requiredLevel];
 }
 
-// รายการหน้าทั้งหมดในระบบ
-export const allPages = [
-  { url: '/dashboard', name: 'แดชบอร์ด', category: 'main' },
-  { url: '/sales/quotations', name: 'ใบเสนอราคา', category: 'sales' },
-  { url: '/sales/invoices', name: 'ใบแจ้งหนี้', category: 'sales' },
-  { url: '/sales/tax-invoices', name: 'ใบกำกับภาษี', category: 'sales' },
-  { url: '/sales/receipts', name: 'ใบเสร็จรับเงิน', category: 'sales' },
-  { url: '/production/calendar', name: 'ปฏิทินการผลิต', category: 'production' },
-  { url: '/production/organization', name: 'โครงสร้างองค์กร', category: 'production' },
-  { url: '/production/work-queue-planning', name: 'วางแผนคิวงาน', category: 'production' },
-  { url: '/production/work-orders', name: 'ใบสั่งงาน', category: 'production' },
-  { url: '/production/daily-work-log', name: 'บันทึกการทำงานรายวัน', category: 'production' },
-  { url: '/accounting', name: 'ระบบบัญชี', category: 'accounting' },
-  { url: '/inventory', name: 'สินค้าและบริการ', category: 'inventory' },
-  { url: '/customers', name: 'ลูกค้า', category: 'customers' },
-  { url: '/master-data', name: 'ข้อมูลหลัก', category: 'master_data' },
-  { url: '/reports/production', name: 'รายงานการผลิต', category: 'reports' },
-  { url: '/users', name: 'จัดการผู้ใช้', category: 'users' },
-];
+// การจัดกลุ่มหน้าตามหมวดหมู่
+const pageCategories = {
+  'sales': [
+    '/sales/quotations',
+    '/sales/invoices', 
+    '/sales/tax-invoices',
+    '/sales/receipts'
+  ],
+  'production': [
+    '/production/calendar',
+    '/production/organization',
+    '/production/work-queue-planning', 
+    '/production/work-orders',
+    '/production/daily-work-log'
+  ],
+  'accounting': ['/accounting'],
+  'inventory': ['/inventory'],
+  'customers': ['/customers'],
+  'master_data': ['/master-data'],
+  'reports': ['/reports/production'],
+  'users': ['/users']
+};
 
 export function usePageNavigation() {
   const { user } = useAuth();
@@ -49,6 +52,18 @@ export function usePageNavigation() {
   const { data: pageAccesses = [] } = useQuery<PageAccess[]>({
     queryKey: ["/api/roles", user?.roleId, "page-access"],
     enabled: !!user?.roleId,
+    queryFn: async () => {
+      console.log("Fetching page access for role:", user?.roleId);
+      const res = await fetch(`/api/roles/${user?.roleId}/page-access`, {
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch page access: ${res.status}`);
+      }
+      const data = await res.json();
+      console.log("Page access data:", data);
+      return data;
+    }
   });
 
   // ฟังก์ชันตรวจสอบสิทธิ์การเข้าถึงหน้า
@@ -81,21 +96,35 @@ export function usePageNavigation() {
     };
   };
 
-  // ฟังก์ชันสำหรับแสดงเมนูที่สามารถเข้าถึงได้
-  const getAccessiblePages = () => {
-    return allPages.filter(page => canAccessPage(page.url));
-  };
-
-  // ฟังก์ชันจัดกลุ่มหน้าตามหมวดหมู่
-  const getPagesByCategory = (category: string) => {
-    return allPages.filter(page => 
-      page.category === category && canAccessPage(page.url)
-    );
+  // ฟังก์ชันจัดกลุ่มหน้าตามหมวดหมู่ - ใช้ข้อมูลจาก database
+  const getPagesByCategory = (category: string): Array<{url: string, name: string, category: string, accessLevel: AccessLevel}> => {
+    const categoryPages = pageCategories[category as keyof typeof pageCategories] || [];
+    
+    return pageAccesses
+      .filter(pa => categoryPages.includes(pa.pageUrl))
+      .filter(pa => hasPermission(pa.accessLevel, 'read'))
+      .map(pa => ({
+        url: pa.pageUrl,
+        name: pa.pageName,
+        category: category,
+        accessLevel: pa.accessLevel
+      }));
   };
 
   // ฟังก์ชันตรวจสอบว่ามีสิทธิ์เข้าถึงหมวดหมู่หรือไม่
   const canAccessCategory = (category: string): boolean => {
     return getPagesByCategory(category).length > 0;
+  };
+
+  // ฟังก์ชันสำหรับแสดงเมนูที่สามารถเข้าถึงได้
+  const getAccessiblePages = (): Array<{url: string, name: string, accessLevel: AccessLevel}> => {
+    return pageAccesses
+      .filter(pa => hasPermission(pa.accessLevel, 'read'))
+      .map(pa => ({
+        url: pa.pageUrl,
+        name: pa.pageName,
+        accessLevel: pa.accessLevel
+      }));
   };
 
   return {
@@ -105,6 +134,6 @@ export function usePageNavigation() {
     getAccessiblePages,
     getPagesByCategory,
     canAccessCategory,
-    allPages
+    pageAccesses
   };
 }
