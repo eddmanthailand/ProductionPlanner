@@ -63,7 +63,7 @@ export function useUserPermissions(userId?: number) {
 }
 
 export function useRolePermissions(roleId: number) {
-  const { data: rolePermissions = [], isLoading } = useQuery({
+  const { data: rolePermissions = [], isLoading } = useQuery<Permission[]>({
     queryKey: ["/api/roles", roleId, "permissions"],
     enabled: !!roleId,
     staleTime: 5 * 60 * 1000, // 5 minutes
