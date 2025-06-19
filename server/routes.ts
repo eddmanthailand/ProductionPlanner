@@ -117,13 +117,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Continue anyway - let individual routes handle connection errors
   }
 
-  // Setup Replit Auth
-  await setupAuth(app);
+  // Disable Replit Auth to prevent conflicts with JWT
+  // await setupAuth(app);
 
-  // Combined auth route that handles both JWT and Replit Auth
+  // JWT-only auth route
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Check for JWT token first
+      // Only check for JWT token - ignore Replit Auth completely
       const authHeader = req.headers.authorization;
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.substring(7);
@@ -138,35 +138,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return;
           }
         } catch (jwtError) {
-          console.log("JWT verification failed, falling back to Replit Auth");
+          console.log("JWT verification failed");
         }
       }
 
-      // Fallback to Replit Auth if no valid JWT
-      if (req.isAuthenticated && req.isAuthenticated() && req.user) {
-        const userId = req.user.claims.sub;
-        console.log("Fetching user for Replit ID:", userId);
-        
-        const replitUser = await storage.getReplitAuthUser(userId);
-        console.log("Replit user found:", replitUser);
-        
-        if (replitUser && replitUser.internalUserId) {
-          const internalUser = await storage.getUser(replitUser.internalUserId);
-          console.log("Internal user found:", internalUser);
-          
-          if (internalUser) {
-            const { password, ...userWithoutPassword } = internalUser;
-            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.json(userWithoutPassword);
-            return;
-          }
-        }
-        
-        console.log("Falling back to Replit user data");
-        res.json(replitUser);
-        return;
-      }
-
+      // No valid JWT token found
       res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
