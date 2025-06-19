@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -120,6 +121,7 @@ interface SubJobProgress {
 
 export default function DailyWorkLog() {
   const { toast } = useToast();
+  const { canAccess } = usePermissions();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
@@ -796,7 +798,7 @@ export default function DailyWorkLog() {
       )}
 
       {/* Work Log Form */}
-      {hasSelectedJobs && (
+      {hasSelectedJobs && canAccess("production", "create") && (
         <Card className="mb-6 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 justify-between">
@@ -995,18 +997,19 @@ export default function DailyWorkLog() {
                 </DialogDescription>
               </div>
               <div className="mr-[10%]">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="flex items-center gap-2"
-                      disabled={deleteLogMutation.isPending}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                      ลบบันทึก
-                    </Button>
-                  </AlertDialogTrigger>
+                {canAccess("production", "delete") && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="flex items-center gap-2"
+                        disabled={deleteLogMutation.isPending}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        ลบบันทึก
+                      </Button>
+                    </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
                       <AlertDialogTitle>ยืนยันการลบบันทึก</AlertDialogTitle>
@@ -1025,6 +1028,7 @@ export default function DailyWorkLog() {
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
+                )}
               </div>
             </div>
           </DialogHeader>
