@@ -533,7 +533,7 @@ function UserManagement() {
                           <FormItem>
                             <FormLabel>คำอธิบาย</FormLabel>
                             <FormControl>
-                              <Input placeholder="คำอธิบายสำหรับบทบาทนี้" {...field} />
+                              <Input placeholder="คำอธิบายสำหรับบทบาทนี้" value={field.value || ""} onChange={field.onChange} onBlur={field.onBlur} name={field.name} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>

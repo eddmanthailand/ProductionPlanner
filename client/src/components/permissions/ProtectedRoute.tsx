@@ -53,8 +53,8 @@ export function ProtectedRoute({
   
   // Check permissions
   const hasRequiredPermissions = permissions.length === 0 || (requireAll 
-    ? hasAllPermissions(permissions)
-    : hasAnyPermission(permissions));
+    ? (hasAllPermissions && hasAllPermissions(permissions))
+    : (hasAnyPermission && hasAnyPermission(permissions)));
 
   if (!hasRequiredPermissions) {
     if (fallback) {
