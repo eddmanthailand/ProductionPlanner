@@ -616,21 +616,25 @@ export default function Inventory() {
                         </td>
                         <td className="p-3">
                           <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleEdit(product)}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDelete(product.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canAccess("inventory", "update") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleEdit(product)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canAccess("inventory", "delete") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDelete(product.id)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </td>
                       </tr>

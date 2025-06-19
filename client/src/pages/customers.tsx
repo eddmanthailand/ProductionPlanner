@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { Plus, Edit, Trash2, Phone, Mail, MapPin, Search, CheckCircle, AlertCirc
 
 export default function Customers() {
   const { t } = useLanguage();
+  const { canAccess } = usePermissions();
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
@@ -329,13 +331,14 @@ export default function Customers() {
             <Search className="h-4 w-4 mr-2" />
             ค้นหาลูกค้า
           </Button>
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={handleAddNew}>
-                <Plus className="h-4 w-4 mr-2" />
-                เพิ่มลูกค้าใหม่
-              </Button>
-            </DialogTrigger>
+          {canAccess("customers", "create") && (
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+              <DialogTrigger asChild>
+                <Button onClick={handleAddNew}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  เพิ่มลูกค้าใหม่
+                </Button>
+              </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
@@ -587,7 +590,8 @@ export default function Customers() {
               </form>
             </Form>
           </DialogContent>
-        </Dialog>
+            </Dialog>
+          )}
         </div>
       </div>
 
