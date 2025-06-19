@@ -1026,6 +1026,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Page Access Management Routes
+  app.get("/api/roles/:roleId/page-access", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { roleId } = req.params;
+      const pageAccesses = await storage.getPageAccessByRole(parseInt(roleId));
+      res.json(pageAccesses);
+    } catch (error) {
+      console.error("Get page access error:", error);
+      res.status(500).json({ message: "Failed to fetch page access" });
+    }
+  });
+
+  app.post("/api/roles/:roleId/page-access", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { roleId } = req.params;
+      const { pageName, pageUrl, hasAccess } = req.body;
+      
+      const pageAccess = await storage.upsertPageAccess({
+        roleId: parseInt(roleId),
+        pageName,
+        pageUrl,
+        hasAccess
+      });
+      
+      res.json(pageAccess);
+    } catch (error) {
+      console.error("Update page access error:", error);
+      res.status(500).json({ message: "Failed to update page access" });
+    }
+  });
+
   // Register new user (for admin/management use)
   app.post("/api/auth/register", isAuthenticated, async (req: any, res: any) => {
     try {

@@ -91,6 +91,19 @@ export const rolePermissions = pgTable("role_permissions", {
   uniqueRolePermission: uniqueIndex("unique_role_permission").on(table.roleId, table.permissionId)
 }));
 
+// Page access permissions mapping
+export const pageAccess = pgTable("page_access", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  pageName: varchar("page_name", { length: 255 }).notNull(),
+  pageUrl: varchar("page_url", { length: 500 }).notNull(),
+  hasAccess: boolean("has_access").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+}, (table) => ({
+  uniqueRolePageUrl: uniqueIndex("unique_role_page_url").on(table.roleId, table.pageUrl)
+}));
+
 // User sessions table
 export const userSessions = pgTable("user_sessions", {
   id: text("id").primaryKey(),
@@ -636,6 +649,12 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions).om
   createdAt: true
 });
 
+export const insertPageAccessSchema = createInsertSchema(pageAccess).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 // Type definitions (moved to end of file to avoid duplicates)
 
 // Organization relations
@@ -967,3 +986,7 @@ export const ACTIONS = {
   DELETE: 'delete',
   MANAGE: 'manage'
 } as const;
+
+// Page Access types
+export type PageAccess = typeof pageAccess.$inferSelect;
+export type InsertPageAccess = z.infer<typeof insertPageAccessSchema>;
