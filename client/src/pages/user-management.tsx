@@ -502,13 +502,14 @@ function UserManagement() {
                 ระบบจัดการสิทธิ์แบบลำดับชั้น จากระดับสูงสุด (1) ไปยังระดับต่ำสุด
               </CardDescription>
             </div>
-            <Dialog open={isCreateRoleDialogOpen} onOpenChange={setIsCreateRoleDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline">
-                  <Plus className="w-4 h-4 mr-2" />
-                  เพิ่มบทบาท
-                </Button>
-              </DialogTrigger>
+            {canAccess("user_management", "write") && (
+              <Dialog open={isCreateRoleDialogOpen} onOpenChange={setIsCreateRoleDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Plus className="w-4 h-4 mr-2" />
+                    เพิ่มบทบาท
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>เพิ่มบทบาทใหม่</DialogTitle>
@@ -593,7 +594,8 @@ function UserManagement() {
                   </form>
                 </Form>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            )}
           </div>
         </CardHeader>
         <CardContent>
