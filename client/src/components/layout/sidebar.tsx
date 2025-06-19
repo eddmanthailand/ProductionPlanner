@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/hooks/useAuth";
 import { useLanguage } from "@/hooks/use-language";
 import TenantSelector from "@/components/tenant/tenant-selector";
 import { 
@@ -28,7 +28,7 @@ import { useState, useEffect } from "react";
 
 export default function Sidebar() {
   const [location] = useLocation();
-  const { user, tenant } = useAuth();
+  const { user } = useAuth();
   const { t } = useLanguage();
   const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
   const [expandedProduction, setExpandedProduction] = useState(location.startsWith("/production"));
