@@ -85,12 +85,12 @@ export default function Sidebar() {
 
   const navigation = [
     { name: t("nav.dashboard"), href: "/", icon: ChartLine },
-    { name: t("nav.accounting"), href: "/accounting", icon: Calculator },
-    { name: t("nav.inventory"), href: "/inventory", icon: Package },
-    { name: t("nav.customers"), href: "/customers", icon: Users },
+    ...(canAccess("accounting", "read") ? [{ name: t("nav.accounting"), href: "/accounting", icon: Calculator }] : []),
+    ...(canAccess("inventory", "read") ? [{ name: t("nav.inventory"), href: "/inventory", icon: Package }] : []),
+    ...(canAccess("customers", "read") ? [{ name: t("nav.customers"), href: "/customers", icon: Users }] : []),
     { name: t("nav.master_data"), href: "/master-data", icon: Settings },
-    { name: t("nav.reports"), href: "/production/production-reports", icon: FileText },
-    { name: "จัดการผู้ใช้และสิทธิ์", href: "/user-management", icon: Shield },
+    ...(canAccess("production_reports", "read") ? [{ name: t("nav.reports"), href: "/production/production-reports", icon: FileText }] : []),
+    ...(canAccess("user_management", "read") ? [{ name: "จัดการผู้ใช้และสิทธิ์", href: "/user-management", icon: Shield }] : []),
   ];
 
   const handleLogout = () => {

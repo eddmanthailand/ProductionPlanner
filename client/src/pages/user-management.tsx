@@ -85,10 +85,6 @@ type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 function UserManagement() {
   const { toast } = useToast();
   const { canAccess } = usePermissions();
-  
-  // Debug logging
-  console.log("UserManagement - canAccess user_management read:", canAccess("user_management", "read"));
-  console.log("UserManagement - canAccess user_management write:", canAccess("user_management", "write"));
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
