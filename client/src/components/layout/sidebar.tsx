@@ -30,6 +30,8 @@ export default function Sidebar() {
   const [location] = useLocation();
   const { user } = useAuth();
   const { t } = useLanguage();
+  
+  console.log("Sidebar user data:", user);
   const [expandedSales, setExpandedSales] = useState(location.startsWith("/sales"));
   const [expandedProduction, setExpandedProduction] = useState(location.startsWith("/production"));
   const [isCollapsed, setIsCollapsed] = useState(false);
