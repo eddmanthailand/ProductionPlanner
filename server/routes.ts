@@ -521,7 +521,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Update user
       const updatedUser = await storage.updateUser(userId, {
         username: username || existingUser.username,
-        email: email || existingUser.email,
+        email: email !== undefined ? email : existingUser.email,
         firstName: firstName || existingUser.firstName,
         lastName: lastName || existingUser.lastName,
         roleId: roleId !== undefined ? roleId : existingUser.roleId,
