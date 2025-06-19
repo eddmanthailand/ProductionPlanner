@@ -6,14 +6,18 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredPermissions: Array<{resource: string, action: string}>;
+  requiredPermissions?: Array<{resource: string, action: string}>;
+  resource?: string;
+  action?: string;
   requireAll?: boolean; // If true, user must have ALL permissions. If false, user needs ANY permission
   fallback?: React.ReactNode;
 }
 
 export function ProtectedRoute({ 
   children, 
-  requiredPermissions, 
+  requiredPermissions,
+  resource,
+  action,
   requireAll = true,
   fallback 
 }: ProtectedRouteProps) {
@@ -44,10 +48,13 @@ export function ProtectedRoute({
     );
   }
 
+  // Normalize permissions to array format
+  const permissions = requiredPermissions || (resource && action ? [{resource, action}] : []);
+  
   // Check permissions
-  const hasRequiredPermissions = requireAll 
-    ? hasAllPermissions(requiredPermissions)
-    : hasAnyPermission(requiredPermissions);
+  const hasRequiredPermissions = permissions.length === 0 || (requireAll 
+    ? hasAllPermissions(permissions)
+    : hasAnyPermission(permissions));
 
   if (!hasRequiredPermissions) {
     if (fallback) {
@@ -63,7 +70,7 @@ export function ProtectedRoute({
             <div className="text-sm text-muted-foreground">
               <p className="font-medium">สิทธิ์ที่ต้องการ:</p>
               <ul className="list-disc list-inside space-y-1 mt-1">
-                {requiredPermissions.map((perm, index) => (
+                {permissions.map((perm, index) => (
                   <li key={index}>
                     {perm.resource} - {perm.action}
                   </li>

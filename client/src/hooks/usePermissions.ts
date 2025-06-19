@@ -23,9 +23,24 @@ export function usePermissions() {
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
+  const { data: userPermissions = [], isLoading: userPermissionsLoading } = useQuery<Permission[]>({
+    queryKey: ["/api/users", user?.id, "permissions"],
+    enabled: !!user?.id,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  const canAccess = (resource: string, action: string): boolean => {
+    if (!user) return false;
+    return userPermissions.some((permission: Permission) => 
+      permission.resource === resource && permission.action === action && permission.isActive
+    );
+  };
+
   return {
     permissions,
-    isLoading,
+    userPermissions,
+    isLoading: isLoading || userPermissionsLoading,
+    canAccess,
   };
 }
 

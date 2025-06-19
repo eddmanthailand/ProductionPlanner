@@ -566,6 +566,12 @@ export const insertUserSchema = createInsertSchema(users).omit({
   deletedAt: true
 });
 
+export const insertRoleSchema = createInsertSchema(roles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
 export const insertProductSchema = createInsertSchema(products).omit({
   id: true,
   createdAt: true,
