@@ -491,6 +491,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch("/api/users/:id", async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { username, email, firstName, lastName, roleId, isActive } = req.body;
+
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Check for existing username (if changed)
+      if (username && username !== existingUser.username) {
+        const existingUsername = await storage.getUserByUsername(username);
+        if (existingUsername) {
+          return res.status(400).json({ message: "Username already exists" });
+        }
+      }
+
+      // Check for existing email (if changed and provided)
+      if (email && email.trim() !== '' && email !== existingUser.email) {
+        const existingEmail = await storage.getUserByEmail(email);
+        if (existingEmail) {
+          return res.status(400).json({ message: "Email already exists" });
+        }
+      }
+
+      // Update user
+      const updatedUser = await storage.updateUser(userId, {
+        username: username || existingUser.username,
+        email: email || existingUser.email,
+        firstName: firstName || existingUser.firstName,
+        lastName: lastName || existingUser.lastName,
+        roleId: roleId !== undefined ? roleId : existingUser.roleId,
+        isActive: isActive !== undefined ? isActive : existingUser.isActive
+      }, existingUser.tenantId ?? '550e8400-e29b-41d4-a716-446655440000');
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "User not found after update" });
+      }
+
+      // Return user without password
+      const userWithoutPassword = {
+        id: updatedUser.id,
+        username: updatedUser.username,
+        email: updatedUser.email,
+        firstName: updatedUser.firstName,
+        lastName: updatedUser.lastName,
+        roleId: updatedUser.roleId,
+        tenantId: updatedUser.tenantId,
+        isActive: updatedUser.isActive,
+        createdAt: updatedUser.createdAt,
+        updatedAt: updatedUser.updatedAt,
+        lastLoginAt: updatedUser.lastLoginAt,
+        deletedAt: updatedUser.deletedAt
+      };
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Update user error:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');

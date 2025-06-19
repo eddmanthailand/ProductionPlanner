@@ -197,7 +197,13 @@ function UserManagement() {
     mutationFn: async (data: EditUserFormData) => {
       const { id, ...updateData } = data;
       const res = await apiRequest("PATCH", `/api/users/${id}`, updateData);
-      return res.json();
+      const text = await res.text();
+      try {
+        return JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse JSON response:", text);
+        throw new Error("Invalid response from server");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
