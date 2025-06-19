@@ -797,6 +797,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =================== ROLES AND PERMISSIONS API ===================
   
   // Get all roles for tenant (accessible to authenticated Replit users)
+  // Get user permissions
+  app.get("/api/users/:userId/permissions", async (req: any, res: any) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const permissions = await storage.getUserPermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Get user permissions error:", error);
+      res.status(500).json({ message: "Failed to fetch user permissions" });
+    }
+  });
+
+  // Get all permissions
+  app.get("/api/permissions", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const permissions = await storage.getPermissions(tenantId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Get permissions error:", error);
+      res.status(500).json({ message: "Failed to fetch permissions" });
+    }
+  });
+
   app.get("/api/roles", isAuthenticated, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
