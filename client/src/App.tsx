@@ -36,6 +36,7 @@ import Reports from "@/pages/reports";
 import Users from "@/pages/users";
 import UserManagement from "@/pages/user-management";
 import PageAccessManagement from "@/pages/page-access-management";
+import AccessDemo from "@/pages/access-demo";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();
@@ -145,6 +146,9 @@ function Router() {
       </Route>
       <Route path="/page-access-management">
         <MainLayout><PageAccessManagement /></MainLayout>
+      </Route>
+      <Route path="/access-demo">
+        <MainLayout><AccessDemo /></MainLayout>
       </Route>
       <Route component={NotFound} />
     </Switch>

@@ -266,7 +266,13 @@ export default function PageAccessManagement() {
         <Card>
           <CardHeader>
             <CardTitle>สิทธิ์การเข้าถึงหน้า</CardTitle>
-            <CardDescription>กำหนดระดับสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบ (ดู, แก้ไข, สร้าง/ลบ)</CardDescription>
+            <CardDescription>กำหนดระดับสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบ<br/>
+            <span className="text-sm text-gray-500">
+              • สร้าง = ทำได้ทุกอย่าง (สร้าง, แก้ไข, ดู, ลบ)<br/>
+              • แก้ไข = แก้ไขและดูได้ (ไม่สามารถสร้างหรือลบ)<br/>
+              • ดู = ดูอย่างเดียว (ไม่สามารถแก้ไข, สร้าง, หรือลบ)
+            </span>
+          </CardDescription>
           </CardHeader>
           <CardContent>
             {accessLoading ? (
@@ -318,9 +324,9 @@ export default function PageAccessManagement() {
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="none">ไม่มีสิทธิ์</SelectItem>
-                                <SelectItem value="read">ดู</SelectItem>
-                                <SelectItem value="edit">แก้ไข</SelectItem>
-                                <SelectItem value="create">สร้าง/ลบ</SelectItem>
+                                <SelectItem value="read">ดู (ดูอย่างเดียว)</SelectItem>
+                                <SelectItem value="edit">แก้ไข (แก้ไข + ดู)</SelectItem>
+                                <SelectItem value="create">สร้าง (ทำได้ทุกอย่าง)</SelectItem>
                               </SelectContent>
                             </Select>
                           </TableCell>
