@@ -448,6 +448,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.post("/api/users", async (req: any, res) => {
+    try {
+      const { username, email, firstName, lastName, password, roleId } = req.body;
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
+      // Check for existing username
+      const existingUsername = await storage.getUserByUsername(username);
+      if (existingUsername) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      // Check for existing email
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ message: "Email already exists" });
+      }
+
+      // Hash password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Create user
+      const user = await storage.createUser({
+        username,
+        email,
+        firstName,
+        lastName,
+        password: hashedPassword,
+        roleId: roleId || null,
+        tenantId,
+        isActive: true
+      });
+
+      // Return user without password
+      const { password: _, ...userWithoutPassword } = user;
+      res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      console.error("Create user error:", error);
+      res.status(500).json({ message: "Failed to create user" });
+    }
+  });
+
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');
