@@ -60,8 +60,8 @@ export async function logout(): Promise<void> {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("tenant");
-    // Force page reload to clear any cached state
-    window.location.href = '/';
+    // Force redirect to login page
+    window.location.href = '/login';
   }
 }
 

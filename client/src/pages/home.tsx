@@ -27,8 +27,8 @@ export default function Home() {
     // Clear remaining browser storage
     sessionStorage.clear();
     
-    // Force redirect to logout endpoint
-    window.location.href = "/api/logout";
+    // Force redirect to login page
+    window.location.href = "/login";
   };
 
   return (

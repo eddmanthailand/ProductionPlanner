@@ -101,12 +101,8 @@ export default function Sidebar() {
     localStorage.removeItem("user");
     localStorage.removeItem("tenant");
     
-    // Then use logout function for Replit Auth
-    try {
-      await logout();
-    } catch (error) {
-      console.log("Logout completed");
-    }
+    // Redirect to login page immediately
+    window.location.href = "/login";
   };
 
   return (
