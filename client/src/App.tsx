@@ -35,6 +35,7 @@ import MasterData from "@/pages/master-data";
 import Reports from "@/pages/reports";
 import Users from "@/pages/users";
 import UserManagement from "@/pages/user-management";
+import PageAccessManagement from "@/pages/page-access-management";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();
@@ -141,6 +142,9 @@ function Router() {
       </Route>
       <Route path="/user-management">
         <MainLayout><UserManagement /></MainLayout>
+      </Route>
+      <Route path="/page-access-management">
+        <MainLayout><PageAccessManagement /></MainLayout>
       </Route>
       <Route component={NotFound} />
     </Switch>

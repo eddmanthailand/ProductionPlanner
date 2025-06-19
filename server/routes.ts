@@ -3072,3 +3072,5 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
   return checkDigit;
 }
 
+
+

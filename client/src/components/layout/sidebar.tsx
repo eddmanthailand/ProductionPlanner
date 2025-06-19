@@ -91,6 +91,7 @@ export default function Sidebar() {
     { name: t("nav.master_data"), href: "/master-data", icon: Settings },
     ...(canAccess("production_reports", "read") ? [{ name: t("nav.reports"), href: "/production/production-reports", icon: FileText }] : []),
     ...(canAccess("user_management", "read") ? [{ name: "จัดการผู้ใช้และสิทธิ์", href: "/user-management", icon: Shield }] : []),
+    ...(canAccess("user_management", "read") ? [{ name: "จัดการสิทธิ์เข้าถึงหน้า", href: "/page-access-management", icon: Settings }] : []),
   ];
 
   const handleLogout = () => {
