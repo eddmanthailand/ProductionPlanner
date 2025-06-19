@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date, index } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -70,20 +70,26 @@ export const ROLE_LEVELS = {
 // Permissions table
 export const permissions = pgTable("permissions", {
   id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  resource: text("resource").notNull(), // e.g., 'work_orders', 'teams', 'reports'
-  action: text("action").notNull(), // e.g., 'create', 'read', 'update', 'delete'
+  name: varchar("name", { length: 100 }).notNull().unique(),
+  displayName: varchar("display_name", { length: 200 }).notNull(),
   description: text("description"),
-  createdAt: timestamp("created_at").defaultNow()
+  module: varchar("module", { length: 50 }).notNull(), // dashboard, sales, production, etc.
+  action: varchar("action", { length: 50 }).notNull(), // read, write, delete, manage
+  resource: varchar("resource", { length: 100 }).notNull(), // specific page or feature
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
 });
 
 // Role permissions mapping
 export const rolePermissions = pgTable("role_permissions", {
   id: serial("id").primaryKey(),
-  roleId: integer("role_id").references(() => roles.id),
-  permissionId: integer("permission_id").references(() => permissions.id),
+  roleId: integer("role_id").notNull().references(() => roles.id, { onDelete: "cascade" }),
+  permissionId: integer("permission_id").notNull().references(() => permissions.id, { onDelete: "cascade" }),
   createdAt: timestamp("created_at").defaultNow()
-});
+}, (table) => ({
+  uniqueRolePermission: uniqueIndex("unique_role_permission").on(table.roleId, table.permissionId)
+}));
 
 // User sessions table
 export const userSessions = pgTable("user_sessions", {
@@ -613,6 +619,19 @@ export const insertQuotationItemSchema = createInsertSchema(quotationItems).omit
   createdAt: true
 });
 
+export const insertPermissionSchema = createInsertSchema(permissions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+
+export const insertRolePermissionSchema = createInsertSchema(rolePermissions).omit({
+  id: true,
+  createdAt: true
+});
+
+// Type definitions (moved to end of file to avoid duplicates)
+
 // Organization relations
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
   tenant: one(tenants, {
@@ -893,8 +912,9 @@ export type InsertProductionPlanItem = z.infer<typeof insertProductionPlanItemSc
 export type Role = typeof roles.$inferSelect;
 export type InsertRole = typeof roles.$inferInsert;
 export type Permission = typeof permissions.$inferSelect;
-export type InsertPermission = typeof permissions.$inferInsert;
+export type InsertPermission = z.infer<typeof insertPermissionSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
+export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
 // User with Role information
 export type UserWithRole = typeof users.$inferSelect & {
