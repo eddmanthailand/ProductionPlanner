@@ -26,14 +26,31 @@ export function usePermissions() {
   const { data: userPermissions = [], isLoading: userPermissionsLoading } = useQuery<Permission[]>({
     queryKey: ["/api/users", user?.id, "permissions"],
     enabled: !!user?.id,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 0, // No cache for debugging
+    queryFn: async () => {
+      const response = await fetch(`/api/users/${user?.id}/permissions`);
+      const data = await response.json();
+      console.log("User permissions data:", data);
+      return data;
+    }
   });
 
   const canAccess = (resource: string, action: string): boolean => {
-    if (!user) return false;
-    return userPermissions.some((permission: Permission) => 
+    if (!user) {
+      console.log("canAccess: No user");
+      return false;
+    }
+    
+    const hasPermission = userPermissions.some((permission: Permission) => 
       permission.resource === resource && permission.action === action && permission.isActive
     );
+    
+    console.log(`canAccess check: resource=${resource}, action=${action}, hasPermission=${hasPermission}`, {
+      userPermissions,
+      userId: user.id
+    });
+    
+    return hasPermission;
   };
 
   return {
