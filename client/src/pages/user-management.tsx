@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, Shield, Edit, Users, UserX, UserCheck, Trash2, AlertTriangle, Eye, EyeOff, Plus, X } from "lucide-react";
+import { ProtectedRoute, ProtectedComponent, usePermissionCheck } from "@/components/permissions/ProtectedRoute";
 import type { UserWithRole, Role } from "@shared/schema";
 
 const createUserSchema = z.object({
@@ -46,7 +47,8 @@ type CreateUserFormData = z.infer<typeof createUserSchema>;
 type EditUserFormData = z.infer<typeof editUserSchema>;
 type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 
-export default function UserManagement() {
+function UserManagement() {
+  const { canAccess } = usePermissionCheck();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -330,13 +332,14 @@ export default function UserManagement() {
           <p className="text-muted-foreground">จัดการผู้ใช้ในระบบและกำหนดบทบาทตามสิทธิ์ 8 ระดับ</p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="w-4 h-4 mr-2" />
-                เพิ่มผู้ใช้ใหม่
-              </Button>
-            </DialogTrigger>
+          {canAccess("user_management", "write") && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  เพิ่มผู้ใช้ใหม่
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
                 <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
@@ -482,6 +485,7 @@ export default function UserManagement() {
               </Form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 
@@ -959,5 +963,19 @@ export default function UserManagement() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  );
+}
+
+// Main export with protection
+export default function ProtectedUserManagement() {
+  return (
+    <ProtectedRoute 
+      requiredPermissions={[
+        { resource: "user_management", action: "read" }
+      ]}
+      requireAll={true}
+    >
+      <UserManagement />
+    </ProtectedRoute>
   );
 }
