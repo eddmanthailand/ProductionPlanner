@@ -48,6 +48,12 @@ export function ProtectedRoute({
     );
   }
 
+  // If user has roleId 1 (ADMIN), grant access to everything
+  if (user.roleId === 1) {
+    console.log("ProtectedRoute: Admin user granted access");
+    return <>{children}</>;
+  }
+
   // Normalize permissions to array format
   const permissions = requiredPermissions || (resource && action ? [{resource, action}] : []);
   
