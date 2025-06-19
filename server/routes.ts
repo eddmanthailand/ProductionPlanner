@@ -2,14 +2,12 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, permissions } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
-
-const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
 
 // Initialize default permissions for all pages in the system
 async function initializeDefaultPermissions() {
@@ -89,22 +87,18 @@ async function initializeDefaultPermissions() {
   }
 }
 
-// Middleware to verify JWT token and extract tenant
-function authenticateToken(req: any, res: any, next: any) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-
-  if (!token) {
-    return res.status(401).json({ message: 'Access token required' });
-  }
-
-  jwt.verify(token, JWT_SECRET, (err: any, decoded: any) => {
-    if (err) {
-      return res.status(403).json({ message: 'Invalid token' });
-    }
-    req.user = decoded;
+// Middleware to verify session authentication
+function requireAuth(req: any, res: any, next: any) {
+  if (req.session && req.session.userId) {
+    req.user = {
+      userId: req.session.userId,
+      tenantId: req.session.tenantId,
+      roleId: req.session.roleId
+    };
     next();
-  });
+  } else {
+    res.status(401).json({ message: 'Authentication required' });
+  }
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -117,32 +111,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Continue anyway - let individual routes handle connection errors
   }
 
-  // Disable Replit Auth to prevent conflicts with JWT
-  // await setupAuth(app);
+  // Setup session middleware
+  const PostgresSessionStore = connectPg(session);
+  const sessionStore = new PostgresSessionStore({
+    pool: pool,
+    createTableIfMissing: true,
+    tableName: 'user_sessions'
+  });
 
-  // JWT-only auth route
+  app.use(session({
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || 'your-session-secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    }
+  }));
+
+  // Session-based auth route
   app.get('/api/auth/user', async (req: any, res) => {
     try {
-      // Only check for JWT token - ignore Replit Auth completely
-      const authHeader = req.headers.authorization;
-      if (authHeader && authHeader.startsWith('Bearer ')) {
-        const token = authHeader.substring(7);
-        try {
-          const decoded = jwt.verify(token, JWT_SECRET) as any;
-          const user = await storage.getUser(decoded.userId);
-          if (user) {
-            const { password, ...userWithoutPassword } = user;
-            console.log("JWT user authenticated:", userWithoutPassword.username);
-            res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-            res.json(userWithoutPassword);
-            return;
-          }
-        } catch (jwtError) {
-          console.log("JWT verification failed");
+      if (req.session && req.session.userId) {
+        const user = await storage.getUser(req.session.userId);
+        if (user) {
+          const { password, ...userWithoutPassword } = user;
+          console.log("Session user authenticated:", userWithoutPassword.username);
+          res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
+          res.json(userWithoutPassword);
+          return;
         }
       }
 
-      // No valid JWT token found
       res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
       console.error("Error fetching user:", error);
@@ -150,8 +152,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // JWT authentication routes
-  app.post("/api/auth/login", async (req, res) => {
+  // Session-based authentication routes
+  app.post("/api/auth/login", async (req: any, res) => {
     try {
       const { username, password } = req.body;
 
@@ -167,40 +169,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const tenant = user.tenantId ? await storage.getTenant(user.tenantId) : null;
 
-      const token = jwt.sign(
-        { 
-          userId: user.id, 
-          tenantId: user.tenantId,
-          roleId: user.roleId 
-        },
-        JWT_SECRET,
-        { expiresIn: '24h' }
-      );
+      // Store user data in session
+      req.session.userId = user.id;
+      req.session.tenantId = user.tenantId;
+      req.session.roleId = user.roleId;
 
-      console.log("JWT login successful for user:", user.username);
+      console.log("Session login successful for user:", user.username);
 
       res.json({ 
-        token, 
         user: {
           id: user.id,
           username: user.username,
           email: user.email,
           firstName: user.firstName,
           lastName: user.lastName,
-          roleId: user.roleId
+          roleId: user.roleId,
+          tenantId: user.tenantId
         },
         tenant 
       });
     } catch (error) {
+      console.error("Login error:", error);
       res.status(500).json({ message: "Login failed" });
     }
   });
 
-  app.post("/api/auth/logout", (req, res) => {
-    console.log("JWT logout requested");
-    // For JWT, we just need to tell the client to remove the token
-    // The client should clear localStorage/sessionStorage
-    res.json({ message: "Logged out successfully" });
+  app.post("/api/auth/logout", (req: any, res) => {
+    try {
+      if (req.session) {
+        req.session.destroy((err: any) => {
+          if (err) {
+            console.error("Session destruction error:", err);
+            return res.status(500).json({ message: "Logout failed" });
+          }
+          res.clearCookie('connect.sid');
+          console.log("Session logout successful");
+          res.json({ message: "Logged out successfully" });
+        });
+      } else {
+        res.json({ message: "Already logged out" });
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+      res.status(500).json({ message: "Logout failed" });
+    }
   });
 
   app.post("/api/auth/register", async (req, res) => {
@@ -940,7 +952,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/roles", isAuthenticated, async (req: any, res: any) => {
+  app.get("/api/roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const roles = await storage.getRoles(tenantId);
@@ -952,7 +964,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Initialize predefined roles for tenant
-  app.post("/api/roles/initialize", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/roles/initialize", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const roles = await storage.initializePredefinedRoles(tenantId);
@@ -964,7 +976,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Create new role
-  app.post("/api/roles", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const { name, displayName, description, level } = req.body;
@@ -998,7 +1010,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete role
-  app.delete("/api/roles/:roleId", isAuthenticated, async (req: any, res: any) => {
+  app.delete("/api/roles/:roleId", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const { roleId } = req.params;
@@ -1027,7 +1039,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get users with roles (accessible to authenticated Replit users)
-  app.get("/api/users-with-roles", isAuthenticated, async (req: any, res: any) => {
+  app.get("/api/users-with-roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const users = await storage.getUsersWithRoles(tenantId);
@@ -1039,7 +1051,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user role
-  app.put("/api/users/:userId/role", isAuthenticated, async (req: any, res: any) => {
+  app.put("/api/users/:userId/role", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const { userId } = req.params;
@@ -1058,7 +1070,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user data
-  app.put("/api/users/:userId", isAuthenticated, async (req: any, res: any) => {
+  app.put("/api/users/:userId", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const { userId } = req.params;
@@ -1102,7 +1114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update user status (activate/deactivate)
-  app.put("/api/users/:userId/status", isAuthenticated, async (req: any, res: any) => {
+  app.put("/api/users/:userId/status", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const { userId } = req.params;
@@ -1126,7 +1138,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Delete user (soft delete)
-  app.delete("/api/users/:userId", isAuthenticated, async (req: any, res: any) => {
+  app.delete("/api/users/:userId", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
       const { userId } = req.params;
@@ -1147,7 +1159,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Page Access Management Routes
-  app.get("/api/roles/:roleId/page-access", isAuthenticated, async (req: any, res: any) => {
+  app.get("/api/roles/:roleId/page-access", requireAuth, async (req: any, res: any) => {
     try {
       const { roleId } = req.params;
       const pageAccesses = await storage.getPageAccessByRole(parseInt(roleId));
@@ -1158,7 +1170,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/roles/:roleId/page-access", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/roles/:roleId/page-access", requireAuth, async (req: any, res: any) => {
     try {
       const { roleId } = req.params;
       const { pageName, pageUrl, accessLevel } = req.body;
@@ -1178,7 +1190,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Register new user (for admin/management use)
-  app.post("/api/auth/register", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/auth/register", requireAuth, async (req: any, res: any) => {
     try {
       const { username, email, firstName, lastName, password, roleId } = req.body;
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
@@ -1228,7 +1240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // =================== PERMISSIONS MANAGEMENT API ===================
   
   // Get all permissions
-  app.get("/api/permissions", isAuthenticated, async (req: any, res: any) => {
+  app.get("/api/permissions", requireAuth, async (req: any, res: any) => {
     try {
       const permissions = await storage.getPermissions();
       res.json(permissions);
@@ -1239,7 +1251,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get permissions for a specific role
-  app.get("/api/roles/:id/permissions", isAuthenticated, async (req: any, res: any) => {
+  app.get("/api/roles/:id/permissions", requireAuth, async (req: any, res: any) => {
     try {
       const roleId = parseInt(req.params.id);
       const permissions = await storage.getRolePermissions(roleId);
@@ -1251,7 +1263,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Assign permission to role
-  app.post("/api/roles/:roleId/permissions/:permissionId", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/roles/:roleId/permissions/:permissionId", requireAuth, async (req: any, res: any) => {
     try {
       const roleId = parseInt(req.params.roleId);
       const permissionId = parseInt(req.params.permissionId);
@@ -1264,7 +1276,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Remove permission from role
-  app.delete("/api/roles/:roleId/permissions/:permissionId", isAuthenticated, async (req: any, res: any) => {
+  app.delete("/api/roles/:roleId/permissions/:permissionId", requireAuth, async (req: any, res: any) => {
     try {
       const roleId = parseInt(req.params.roleId);
       const permissionId = parseInt(req.params.permissionId);
@@ -1277,7 +1289,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Get permissions for a specific user
-  app.get("/api/users/:id/permissions", isAuthenticated, async (req: any, res: any) => {
+  app.get("/api/users/:id/permissions", requireAuth, async (req: any, res: any) => {
     try {
       const userId = parseInt(req.params.id);
       const permissions = await storage.getUserPermissions(userId);
@@ -1289,7 +1301,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Check if user has specific permission
-  app.post("/api/permissions/check", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/permissions/check", requireAuth, async (req: any, res: any) => {
     try {
       const { userId, resource, action } = req.body;
       const hasPermission = await storage.checkUserPermission(userId, resource, action);
@@ -1301,7 +1313,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Initialize default permissions for the system
-  app.post("/api/permissions/initialize", isAuthenticated, async (req: any, res: any) => {
+  app.post("/api/permissions/initialize", requireAuth, async (req: any, res: any) => {
     try {
       await initializeDefaultPermissions();
       res.json({ message: "Default permissions initialized successfully" });
