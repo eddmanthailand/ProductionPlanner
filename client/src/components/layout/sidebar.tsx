@@ -5,6 +5,7 @@ import { useLanguage } from "@/hooks/use-language";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 
 interface Tenant {
   id: string;
@@ -26,15 +27,12 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const [location] = useLocation();
   const { t } = useLanguage();
   const { canAccessCategory, getPagesByCategory, canAccessPage } = usePageNavigation();
+  const { user, logout } = useAuth();
   const [expandedSales, setExpandedSales] = useState(false);
   const [expandedProduction, setExpandedProduction] = useState(false);
 
   const { data: tenants } = useQuery<Tenant[]>({
     queryKey: ["/api/tenants"],
-  });
-
-  const { data: user } = useQuery<any>({
-    queryKey: ["/api/auth/user"],
   });
 
   const currentTenant = tenants && user ? tenants.find((t: Tenant) => t.id === user.tenantId) : null;
@@ -282,7 +280,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           
           {!isCollapsed && (
             <button
-              onClick={() => window.location.href = '/api/logout'}
+              onClick={logout}
               className="w-full mt-3 flex items-center py-2 px-3 text-sm text-red-600 rounded-lg hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-colors"
             >
               <span>{t("nav.logout")}</span>

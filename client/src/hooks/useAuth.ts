@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 export function useAuth() {
   const { data: user, isLoading, error } = useQuery({
@@ -30,10 +31,34 @@ export function useAuth() {
     }
   });
 
+  const logout = async () => {
+    try {
+      // Call logout endpoint
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      // Clear query cache
+      queryClient.clear();
+      
+      // Redirect to login
+      window.location.href = '/login';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force redirect to login even if logout call fails
+      window.location.href = '/login';
+    }
+  };
+
   return {
     user,
     isLoading,
     error,
     isAuthenticated: !!user && !error,
+    logout,
   };
 }
