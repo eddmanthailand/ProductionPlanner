@@ -45,13 +45,15 @@ const devQueryFn: QueryFunction = async ({ queryKey }) => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json'
-      }
+      },
+      credentials: 'include'
     });
     
     console.log('Response status:', res.status);
     
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      const errorText = await res.text();
+      throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
     }
     
     const data = await res.json();
