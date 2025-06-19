@@ -949,6 +949,92 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =================== PERMISSIONS MANAGEMENT API ===================
+  
+  // Get all permissions
+  app.get("/api/permissions", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const permissions = await storage.getPermissions();
+      res.json(permissions);
+    } catch (error) {
+      console.error("Get permissions error:", error);
+      res.status(500).json({ message: "Failed to fetch permissions" });
+    }
+  });
+
+  // Get permissions for a specific role
+  app.get("/api/roles/:id/permissions", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const permissions = await storage.getRolePermissions(roleId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Get role permissions error:", error);
+      res.status(500).json({ message: "Failed to fetch role permissions" });
+    }
+  });
+
+  // Assign permission to role
+  app.post("/api/roles/:roleId/permissions/:permissionId", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const permissionId = parseInt(req.params.permissionId);
+      await storage.assignPermissionToRole(roleId, permissionId);
+      res.json({ message: "Permission assigned successfully" });
+    } catch (error) {
+      console.error("Assign permission error:", error);
+      res.status(400).json({ message: "Failed to assign permission", error });
+    }
+  });
+
+  // Remove permission from role
+  app.delete("/api/roles/:roleId/permissions/:permissionId", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const permissionId = parseInt(req.params.permissionId);
+      await storage.removePermissionFromRole(roleId, permissionId);
+      res.json({ message: "Permission removed successfully" });
+    } catch (error) {
+      console.error("Remove permission error:", error);
+      res.status(400).json({ message: "Failed to remove permission", error });
+    }
+  });
+
+  // Get permissions for a specific user
+  app.get("/api/users/:id/permissions", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const permissions = await storage.getUserPermissions(userId);
+      res.json(permissions);
+    } catch (error) {
+      console.error("Get user permissions error:", error);
+      res.status(500).json({ message: "Failed to fetch user permissions" });
+    }
+  });
+
+  // Check if user has specific permission
+  app.post("/api/permissions/check", isAuthenticated, async (req: any, res: any) => {
+    try {
+      const { userId, resource, action } = req.body;
+      const hasPermission = await storage.checkUserPermission(userId, resource, action);
+      res.json({ hasPermission });
+    } catch (error) {
+      console.error("Check permission error:", error);
+      res.status(400).json({ message: "Failed to check permission", error });
+    }
+  });
+
+  // Initialize default permissions for the system
+  app.post("/api/permissions/initialize", isAuthenticated, async (req: any, res: any) => {
+    try {
+      await initializeDefaultPermissions();
+      res.json({ message: "Default permissions initialized successfully" });
+    } catch (error) {
+      console.error("Initialize permissions error:", error);
+      res.status(500).json({ message: "Failed to initialize permissions", error });
+    }
+  });
+
   // Company Name Search endpoint
   app.post("/api/search-company", async (req: any, res: any) => {
     try {
