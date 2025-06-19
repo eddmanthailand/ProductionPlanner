@@ -28,6 +28,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import {
   Select,
   SelectContent,
@@ -432,7 +433,7 @@ function UserManagement() {
                         <FormItem>
                           <FormLabel>รหัสผ่าน</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="รหัสผ่าน" {...field} />
+                            <PasswordInput placeholder="รหัสผ่าน" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
