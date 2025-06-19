@@ -293,13 +293,56 @@ export class DatabaseStorage implements IStorage {
   }
 
   async upsertReplitAuthUser(userData: UpsertReplitAuthUser): Promise<ReplitAuthUser> {
+    const defaultTenant = '550e8400-e29b-41d4-a716-446655440000';
+    
+    // Get ADMIN role (level 1)
+    const [adminRole] = await db.select().from(roles).where(eq(roles.level, 1));
+    
+    // Create or get internal user with ADMIN privileges for Replit users
+    let internalUser;
+    const existingInternalUser = await db.select().from(users).where(eq(users.email, userData.email || ''));
+    
+    if (existingInternalUser.length === 0) {
+      // Create new internal user with ADMIN role
+      const [newInternalUser] = await db
+        .insert(users)
+        .values({
+          username: `replit_${userData.id}`,
+          email: userData.email || `${userData.id}@replit.user`,
+          password: 'replit_auth', // Placeholder password for Replit users
+          firstName: userData.firstName || 'Replit',
+          lastName: userData.lastName || 'User',
+          roleId: adminRole?.id || 1, // Default to ADMIN role
+          tenantId: defaultTenant,
+          isActive: true,
+        })
+        .returning();
+      internalUser = newInternalUser;
+    } else {
+      internalUser = existingInternalUser[0];
+      
+      // Update existing user to have ADMIN role if not already
+      if (internalUser.roleId !== adminRole?.id) {
+        await db
+          .update(users)
+          .set({ roleId: adminRole?.id || 1 })
+          .where(eq(users.id, internalUser.id));
+      }
+    }
+
     const [user] = await db
       .insert(replitAuthUsers)
-      .values(userData)
+      .values({
+        ...userData,
+        internalUserId: internalUser.id,
+        tenantId: defaultTenant,
+      })
       .onConflictDoUpdate({
         target: replitAuthUsers.id,
         set: {
           ...userData,
+          internalUserId: internalUser.id,
+          tenantId: defaultTenant,
           updatedAt: new Date(),
         },
       })
@@ -450,10 +493,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select({
       id: permissions.id,
       name: permissions.name,
-      resource: permissions.resource,
-      action: permissions.action,
+      displayName: permissions.displayName,
       description: permissions.description,
-      createdAt: permissions.createdAt
+      module: permissions.module,
+      action: permissions.action,
+      resource: permissions.resource,
+      isActive: permissions.isActive,
+      createdAt: permissions.createdAt,
+      updatedAt: permissions.updatedAt
     })
     .from(permissions)
     .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
@@ -483,10 +530,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select({
       id: permissions.id,
       name: permissions.name,
-      resource: permissions.resource,
-      action: permissions.action,
+      displayName: permissions.displayName,
       description: permissions.description,
-      createdAt: permissions.createdAt
+      module: permissions.module,
+      action: permissions.action,
+      resource: permissions.resource,
+      isActive: permissions.isActive,
+      createdAt: permissions.createdAt,
+      updatedAt: permissions.updatedAt
     })
     .from(permissions)
     .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))
