@@ -29,11 +29,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const [expandedSales, setExpandedSales] = useState(false);
   const [expandedProduction, setExpandedProduction] = useState(false);
 
-  const { data: tenants } = useQuery({
+  const { data: tenants } = useQuery<Tenant[]>({
     queryKey: ["/api/tenants"],
   });
 
-  const { data: user } = useQuery({
+  const { data: user } = useQuery<any>({
     queryKey: ["/api/auth/user"],
   });
 
@@ -260,9 +260,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.firstName} {user?.lastName}
+                  {user?.firstName || ''} {user?.lastName || ''}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{user?.username}</p>
+                <p className="text-xs text-gray-500 truncate">{user?.username || ''}</p>
               </div>
             </div>
             <button
