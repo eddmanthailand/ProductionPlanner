@@ -69,18 +69,18 @@ export default function Sidebar() {
   };
 
   const salesSubMenu = [
-    { name: "ใบเสนอราคา", href: "/sales/quotations", icon: FileText },
-    { name: "ใบส่งสินค้า/ใบแจ้งหนี้", href: "/sales/invoices", icon: FileText },
-    { name: "ใบกำกับภาษี", href: "/sales/tax-invoices", icon: FileText },
-    { name: "ใบเสร็จรับเงิน", href: "/sales/receipts", icon: FileText },
+    ...(canAccess("quotations", "read") ? [{ name: "ใบเสนอราคา", href: "/sales/quotations", icon: FileText }] : []),
+    ...(canAccess("invoices", "read") ? [{ name: "ใบส่งสินค้า/ใบแจ้งหนี้", href: "/sales/invoices", icon: FileText }] : []),
+    ...(canAccess("tax_invoices", "read") ? [{ name: "ใบกำกับภาษี", href: "/sales/tax-invoices", icon: FileText }] : []),
+    ...(canAccess("receipts", "read") ? [{ name: "ใบเสร็จรับเงิน", href: "/sales/receipts", icon: FileText }] : []),
   ];
 
   const productionSubMenu = [
-    { name: "ปฏิทินการทำงาน", href: "/production/calendar", icon: Calendar },
-    { name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network },
-    { name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: Calendar },
-    { name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList },
-    { name: "บันทึกงานประจำวัน", href: "/production/daily-work-log", icon: FileText },
+    ...(canAccess("production_calendar", "read") ? [{ name: "ปฏิทินการทำงาน", href: "/production/calendar", icon: Calendar }] : []),
+    ...(canAccess("organization", "read") ? [{ name: "แผนผังหน่วยงาน", href: "/production/organization", icon: Network }] : []),
+    ...(canAccess("work_queue_planning", "read") ? [{ name: "วางแผนและคิวงาน", href: "/production/work-queue-planning", icon: Calendar }] : []),
+    ...(canAccess("work_orders", "read") ? [{ name: "ใบสั่งงาน", href: "/production/work-orders", icon: ClipboardList }] : []),
+    ...(canAccess("daily_work_log", "read") ? [{ name: "บันทึกงานประจำวัน", href: "/production/daily-work-log", icon: FileText }] : []),
   ];
 
   const navigation = [
@@ -151,94 +151,98 @@ export default function Sidebar() {
           })}
           
           {/* Sales Menu with Submenu */}
-          <li>
-            <button
-              onClick={toggleSalesMenu}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
-                location.startsWith("/sales") 
-                  ? "bg-primary text-white" 
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-              title={isCollapsed ? t("nav.sales") : undefined}
-            >
-              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
-                <ShoppingCart className="w-5 h-5" />
-                {!isCollapsed && <span className="font-medium">{t("nav.sales")}</span>}
-              </div>
-              {!isCollapsed && (expandedSales ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              ))}
-            </button>
+          {salesSubMenu.length > 0 && (
+            <li>
+              <button
+                onClick={toggleSalesMenu}
+                className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
+                  location.startsWith("/sales") 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+                title={isCollapsed ? t("nav.sales") : undefined}
+              >
+                <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
+                  <ShoppingCart className="w-5 h-5" />
+                  {!isCollapsed && <span className="font-medium">{t("nav.sales")}</span>}
+                </div>
+                {!isCollapsed && (expandedSales ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                ))}
+              </button>
             
-            {expandedSales && !isCollapsed && (
-              <ul className="mt-2 ml-8 space-y-1">
-                {salesSubMenu.map((subItem) => {
-                  const isSubActive = location === subItem.href;
-                  const SubIcon = subItem.icon;
-                  
-                  return (
-                    <li key={subItem.name}>
-                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        isSubActive 
-                          ? "bg-blue-100 text-blue-700" 
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}>
-                        <SubIcon className="w-4 h-4" />
-                        <span className="font-medium">{subItem.name}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </li>
+              {expandedSales && !isCollapsed && (
+                <ul className="mt-2 ml-8 space-y-1">
+                  {salesSubMenu.map((subItem) => {
+                    const isSubActive = location === subItem.href;
+                    const SubIcon = subItem.icon;
+                    
+                    return (
+                      <li key={subItem.name}>
+                        <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                          isSubActive 
+                            ? "bg-blue-100 text-blue-700" 
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}>
+                          <SubIcon className="w-4 h-4" />
+                          <span className="font-medium">{subItem.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </li>
+          )}
 
           {/* Production Planning Menu with Submenu */}
-          <li>
-            <button
-              onClick={toggleProductionMenu}
-              className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
-                location.startsWith("/production") 
-                  ? "bg-primary text-white" 
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
-              title={isCollapsed ? "วางแผนการผลิต" : undefined}
-            >
-              <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
-                <Settings2 className="w-5 h-5" />
-                {!isCollapsed && <span className="font-medium">วางแผนการผลิต</span>}
-              </div>
-              {!isCollapsed && (expandedProduction ? (
-                <ChevronDown className="w-4 h-4" />
-              ) : (
-                <ChevronRight className="w-4 h-4" />
-              ))}
-            </button>
-            
-            {expandedProduction && !isCollapsed && (
-              <ul className="mt-2 ml-8 space-y-1">
-                {productionSubMenu.map((subItem) => {
-                  const isSubActive = location === subItem.href;
-                  const SubIcon = subItem.icon;
-                  
-                  return (
-                    <li key={subItem.name}>
-                      <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
-                        isSubActive 
-                          ? "bg-green-100 text-green-700" 
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}>
-                        <SubIcon className="w-4 h-4" />
-                        <span className="font-medium">{subItem.name}</span>
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </li>
+          {productionSubMenu.length > 0 && (
+            <li>
+              <button
+                onClick={toggleProductionMenu}
+                className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} w-full px-3 py-2 rounded-lg transition-colors ${
+                  location.startsWith("/production") 
+                    ? "bg-primary text-white" 
+                    : "text-gray-600 hover:bg-gray-100"
+                }`}
+                title={isCollapsed ? "วางแผนการผลิต" : undefined}
+              >
+                <div className={`flex items-center ${isCollapsed ? '' : 'space-x-3'}`}>
+                  <Settings2 className="w-5 h-5" />
+                  {!isCollapsed && <span className="font-medium">วางแผนการผลิต</span>}
+                </div>
+                {!isCollapsed && (expandedProduction ? (
+                  <ChevronDown className="w-4 h-4" />
+                ) : (
+                  <ChevronRight className="w-4 h-4" />
+                ))}
+              </button>
+              
+              {expandedProduction && !isCollapsed && (
+                <ul className="mt-2 ml-8 space-y-1">
+                  {productionSubMenu.map((subItem) => {
+                    const isSubActive = location === subItem.href;
+                    const SubIcon = subItem.icon;
+                    
+                    return (
+                      <li key={subItem.name}>
+                        <Link href={subItem.href} className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors text-sm ${
+                          isSubActive 
+                            ? "bg-green-100 text-green-700" 
+                            : "text-gray-600 hover:bg-gray-100"
+                        }`}>
+                          <SubIcon className="w-4 h-4" />
+                          <span className="font-medium">{subItem.name}</span>
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </li>
+          )}
         </ul>
       </nav>
 
