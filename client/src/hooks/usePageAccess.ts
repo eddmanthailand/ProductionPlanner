@@ -32,6 +32,11 @@ export function usePageAccess(pageUrl: string) {
   });
 
   const getAccessLevel = (): AccessLevel => {
+    // ADMIN role (roleId = 1) has full access to everything
+    if (user?.roleId === 1) {
+      return 'create';
+    }
+    
     const access = pageAccesses.find(pa => pa.pageUrl === pageUrl);
     return access?.accessLevel || 'none';
   };
