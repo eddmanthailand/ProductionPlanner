@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogOut, User } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { queryClient } from "@/lib/queryClient";
 
 interface AuthUser {
@@ -14,6 +15,7 @@ interface AuthUser {
 
 export default function Home() {
   const { user } = useAuth() as { user: AuthUser | null };
+  const { canAccess } = usePermissions();
 
   const handleLogout = async () => {
     // Clear JWT tokens first (auto-clear)
@@ -86,29 +88,33 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>คลังสินค้า</CardTitle>
-              <CardDescription>จัดการสต็อกและวัตถุดิบ</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" onClick={() => window.location.href = '/inventory'}>
-                เข้าสู่หน้าคลังสินค้า
-              </Button>
-            </CardContent>
-          </Card>
+          {canAccess("inventory", "read") && (
+            <Card>
+              <CardHeader>
+                <CardTitle>คลังสินค้า</CardTitle>
+                <CardDescription>จัดการสต็อกและวัตถุดิบ</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" onClick={() => window.location.href = '/inventory'}>
+                  เข้าสู่หน้าคลังสินค้า
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card>
-            <CardHeader>
-              <CardTitle>ข้อมูลหลัก</CardTitle>
-              <CardDescription>จัดการข้อมูลพื้นฐาน</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button className="w-full" onClick={() => window.location.href = '/master-data'}>
-                เข้าสู่หน้าข้อมูลหลัก
-              </Button>
-            </CardContent>
-          </Card>
+          {canAccess("master_data", "read") && (
+            <Card>
+              <CardHeader>
+                <CardTitle>ข้อมูลหลัก</CardTitle>
+                <CardDescription>จัดการข้อมูลพื้นฐาน</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" onClick={() => window.location.href = '/master-data'}>
+                  เข้าสู่หน้าข้อมูลหลัก
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           <Card>
             <CardHeader>

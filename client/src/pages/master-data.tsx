@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,7 +53,20 @@ function SortableItem({ id, children }: { id: string; children: React.ReactNode 
 
 export default function MasterData() {
   const { t } = useLanguage();
+  const { canAccess } = usePermissions();
   const queryClient = useQueryClient();
+
+  // Check if user has permission to access master data
+  if (!canAccess("master_data", "read")) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">ไม่มีสิทธิ์เข้าถึง</h1>
+          <p className="text-gray-600">คุณไม่มีสิทธิ์เข้าถึงหน้าข้อมูลหลัก</p>
+        </div>
+      </div>
+    );
+  }
   const [activeTab, setActiveTab] = useState("colors");
   const [isColorDialogOpen, setIsColorDialogOpen] = useState(false);
   const [isSizeDialogOpen, setIsSizeDialogOpen] = useState(false);
