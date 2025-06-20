@@ -23,6 +23,7 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
+  roleId: number | null;
   isActive: boolean;
 }
 
