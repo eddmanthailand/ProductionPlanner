@@ -217,8 +217,15 @@ export default function PageAccessManagement() {
                     <Button 
                         variant="outline"
                         onClick={() => {
+                          console.log("🔄 คลิกปุ่มรีเฟรชข้อมูล - กำลังล้างแคชและโหลดข้อมูลใหม่");
                           queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
-                          refetch();
+                          refetch().then((result) => {
+                            console.log("📥 ข้อมูลที่ได้จากการรีเฟรช:", result);
+                            if (result.data) {
+                              console.log("📋 จำนวนหน้าใหม่:", result.data.pages?.length);
+                              console.log("📄 รายชื่อหน้าใหม่:", result.data.pages?.map(p => p.name));
+                            }
+                          });
                         }}
                         disabled={isLoading}
                     >
