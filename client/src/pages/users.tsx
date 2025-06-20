@@ -1,10 +1,17 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { useLanguage } from "@/hooks/use-language";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, User, Shield, Settings } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -19,13 +26,73 @@ interface User {
   isActive: boolean;
 }
 
+interface Role {
+  id: number;
+  name: string;
+  displayName: string;
+}
+
+// Form validation schema
+const createUserSchema = z.object({
+  username: z.string().min(1, "กรุณากรอกชื่อผู้ใช้"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง").optional().or(z.literal("")),
+  firstName: z.string().min(1, "กรุณากรอกชื่อ"),
+  lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
+  password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
+  roleId: z.coerce.number().min(1, "กรุณาเลือกบทบาท")
+});
+
+type CreateUserFormData = z.infer<typeof createUserSchema>;
+
 export default function Users() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"]
+  });
+
+  const { data: roles } = useQuery<Role[]>({
+    queryKey: ["/api/roles"]
+  });
+
+  // Form setup
+  const form = useForm<CreateUserFormData>({
+    resolver: zodResolver(createUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      password: "",
+      roleId: 0
+    }
+  });
+
+  // Mutation for creating new user
+  const createUserMutation = useMutation({
+    mutationFn: async (data: CreateUserFormData) => {
+      const response = await apiRequest("POST", "/api/users", data);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsCreateDialogOpen(false);
+      form.reset();
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างผู้ใช้ใหม่เรียบร้อยแล้ว",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
   });
 
   // Mutation for toggling user status
@@ -52,8 +119,13 @@ export default function Users() {
 
   // Navigation handlers
   const handleCreateUser = () => {
-    console.log("Navigating to user management page");
-    setLocation("/user-management");
+    console.log("Opening create dialog");
+    setIsCreateDialogOpen(true);
+  };
+
+  const onSubmit = (data: CreateUserFormData) => {
+    console.log("Form submitted:", data);
+    createUserMutation.mutate(data);
   };
 
   const handleEditUser = (userId: number) => {
@@ -272,6 +344,131 @@ export default function Users() {
           )}
         </CardContent>
       </Card>
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อผู้ใช้</FormLabel>
+                    <FormControl>
+                      <Input placeholder="กรอกชื่อผู้ใช้" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อีเมล (ไม่จำเป็น)</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="กรอกอีเมล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อ</FormLabel>
+                      <FormControl>
+                        <Input placeholder="กรอกชื่อ" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>นามสกุล</FormLabel>
+                      <FormControl>
+                        <Input placeholder="กรอกนามสกุล" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>รหัสผ่าน</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="กรอกรหัสผ่าน" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="roleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>บทบาท</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกบทบาท" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles?.map((role) => (
+                          <SelectItem key={role.id} value={role.id.toString()}>
+                            {role.displayName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createUserMutation.isPending}
+                >
+                  {createUserMutation.isPending ? "กำลังสร้าง..." : "สร้างผู้ใช้"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
