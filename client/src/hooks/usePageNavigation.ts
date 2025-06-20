@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 
-export type AccessLevel = 'none' | 'read' | 'edit' | 'create';
+export type AccessLevel = 'none' | 'view' | 'edit' | 'create';
 
 interface PageAccess {
   id: number;
@@ -15,7 +15,7 @@ interface PageAccess {
 export function hasPermission(userAccessLevel: AccessLevel, requiredLevel: AccessLevel): boolean {
   const hierarchy: Record<AccessLevel, number> = {
     'none': 0,
-    'read': 1,
+    'view': 1,
     'edit': 2,
     'create': 3
   };
@@ -80,7 +80,7 @@ export function usePageNavigation() {
   // ฟังก์ชันตรวจสอบว่าสามารถเข้าถึงหน้าได้หรือไม่
   const canAccessPage = (pageUrl: string): boolean => {
     const accessLevel = getPageAccess(pageUrl);
-    return hasPermission(accessLevel, 'read');
+    return hasPermission(accessLevel, 'view');
   };
 
   // ฟังก์ชันตรวจสอบระดับสิทธิ์สำหรับการทำงาน
@@ -88,7 +88,7 @@ export function usePageNavigation() {
     const accessLevel = getPageAccess(pageUrl);
     
     return {
-      canRead: hasPermission(accessLevel, 'read'),
+      canView: hasPermission(accessLevel, 'view'),
       canEdit: hasPermission(accessLevel, 'edit'),
       canCreate: hasPermission(accessLevel, 'create'),
       canDelete: hasPermission(accessLevel, 'create'), // สร้าง = ทำได้ทุกอย่างรวมถึงลบ
@@ -102,7 +102,7 @@ export function usePageNavigation() {
     
     return pageAccesses
       .filter(pa => categoryPages.includes(pa.pageUrl))
-      .filter(pa => hasPermission(pa.accessLevel, 'read'))
+      .filter(pa => hasPermission(pa.accessLevel, 'view'))
       .map(pa => ({
         url: pa.pageUrl,
         name: pa.pageName,
@@ -119,7 +119,7 @@ export function usePageNavigation() {
   // ฟังก์ชันสำหรับแสดงเมนูที่สามารถเข้าถึงได้
   const getAccessiblePages = (): Array<{url: string, name: string, accessLevel: AccessLevel}> => {
     return pageAccesses
-      .filter(pa => hasPermission(pa.accessLevel, 'read'))
+      .filter(pa => hasPermission(pa.accessLevel, 'view'))
       .map(pa => ({
         url: pa.pageUrl,
         name: pa.pageName,

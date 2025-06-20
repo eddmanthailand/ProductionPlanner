@@ -100,7 +100,7 @@ function UserManagement() {
   const { toast } = useToast();
   const { user } = useAuth();
   const { getPagePermissions } = usePageNavigation();
-  const { canCreate, canEdit, canRead } = getPagePermissions("/user-management");
+  const { canCreate, canEdit, canView } = getPagePermissions("/user-management");
   
   // State variables
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -110,7 +110,7 @@ function UserManagement() {
   console.log("User Management Debug:", { 
     canCreate, 
     canEdit, 
-    canRead, 
+    canView, 
     userRoleId: user?.roleId,
     isCreateDialogOpen 
   });
@@ -257,7 +257,7 @@ function UserManagement() {
     setIsCreateDialogOpen(true);
   };
 
-  if (!canRead) {
+  if (!canView) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
