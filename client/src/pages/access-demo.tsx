@@ -30,7 +30,7 @@ export default function AccessDemo() {
     switch (level) {
       case 'create': return 'สร้าง (ทำได้ทุกอย่าง)';
       case 'edit': return 'แก้ไข (แก้ไข + ดู)';
-      case 'read': return 'ดู (ดูอย่างเดียว)';
+      case 'view': return 'ดู (ดูอย่างเดียว)';
       case 'none': return 'ไม่มีสิทธิ์';
       default: return 'ไม่ระบุ';
     }
