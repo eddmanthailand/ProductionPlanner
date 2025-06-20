@@ -216,10 +216,11 @@ export default function PageAccessManagement() {
                 <div className="flex justify-end gap-2 mb-4">
                     <Button 
                         variant="outline"
-                        onClick={() => {
-                          console.log("🔄 คลิกปุ่มรีเฟรช");
+                        onClick={async () => {
+                          console.log("🔄 กำลังรีเฟรชข้อมูล");
                           queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
-                          window.location.reload();
+                          await refetch();
+                          console.log("✅ รีเฟรชข้อมูลเสร็จสิ้น");
                         }}
                         disabled={isLoading}
                     >
