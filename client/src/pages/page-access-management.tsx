@@ -216,36 +216,10 @@ export default function PageAccessManagement() {
                 <div className="flex justify-end gap-2 mb-4">
                     <Button 
                         variant="outline"
-                        onClick={async () => {
-                          console.log("🔄 คลิกปุ่มรีเฟรชข้อมูล - กำลังล้างแคชและโหลดข้อมูลใหม่");
-                          
-                          // ล้างแคชทั้งหมดก่อน
-                          queryClient.clear();
-                          
-                          try {
-                            // เรียก API ตรงๆ เพื่อให้เห็นข้อมูลแบบเรียลไทม์
-                            const response = await fetch("/api/page-access-management/config", {
-                              cache: 'no-cache',
-                              headers: {
-                                'Cache-Control': 'no-cache',
-                                'Pragma': 'no-cache'
-                              }
-                            });
-                            
-                            if (response.ok) {
-                              const freshData = await response.json();
-                              console.log("🆕 ข้อมูลล่าสุดจาก API:");
-                              console.log("📋 จำนวนหน้าทั้งหมด:", freshData.pages?.length);
-                              console.log("📄 รายชื่อหน้าทั้งหมด:", freshData.pages?.map(p => p.name));
-                              console.log("🔍 หน้าที่มี 'วางแผน':", freshData.pages?.filter(p => p.name.includes('วางแผน')));
-                              console.log("📊 ข้อมูลครบถ้วน:", freshData);
-                            }
-                          } catch (error) {
-                            console.error("❌ เกิดข้อผิดพลาดในการโหลดข้อมูล:", error);
-                          }
-                          
-                          // จากนั้นค่อย refetch
-                          refetch();
+                        onClick={() => {
+                          console.log("🔄 คลิกปุ่มรีเฟรช");
+                          queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
+                          window.location.reload();
                         }}
                         disabled={isLoading}
                     >
