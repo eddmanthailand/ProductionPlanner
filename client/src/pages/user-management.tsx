@@ -656,11 +656,139 @@ function UserManagement() {
 
       {/* Users Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>รายชื่อผู้ใช้ในระบบ ({users.length} คน)</CardTitle>
-          <CardDescription>
-            จัดการข้อมูลผู้ใช้และสิทธิ์การเข้าถึงระบบ
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+          <div>
+            <CardTitle>รายชื่อผู้ใช้ในระบบ ({users.length} คน)</CardTitle>
+            <CardDescription>
+              จัดการข้อมูลผู้ใช้และสิทธิ์การเข้าถึงระบบ
+            </CardDescription>
+          </div>
+          {canCreate && (
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button className="btn-clickable">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  เพิ่มผู้ใช้
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[500px]">
+                <DialogHeader>
+                  <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
+                  <DialogDescription>
+                    สร้างผู้ใช้ใหม่และกำหนดบทบาท
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...createForm}>
+                  <form onSubmit={createForm.handleSubmit(handleCreateUser)} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={createForm.control}
+                        name="firstName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>ชื่อ</FormLabel>
+                            <FormControl>
+                              <Input placeholder="ชื่อ" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={createForm.control}
+                        name="lastName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>นามสกุล</FormLabel>
+                            <FormControl>
+                              <Input placeholder="นามสกุล" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={createForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ชื่อผู้ใช้</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ชื่อผู้ใช้" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>อีเมล</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="อีเมล" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>รหัสผ่าน</FormLabel>
+                          <FormControl>
+                            <PasswordInput placeholder="รหัสผ่าน" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={createForm.control}
+                      name="roleId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>บทบาท</FormLabel>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="เลือกบทบาท" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {roles.map((role) => (
+                                <SelectItem key={role.id} value={role.id.toString()}>
+                                  {role.displayName} (ระดับ {role.level})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="btn-clickable">
+                        ยกเลิก
+                      </Button>
+                      <Button type="submit" disabled={createUserMutation.isPending} className="btn-clickable">
+                        {createUserMutation.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                        ) : (
+                          <UserPlus className="w-4 h-4 mr-2" />
+                        )}
+                        สร้างผู้ใช้
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
+          )}
         </CardHeader>
         <CardContent>
           {usersLoading ? (
@@ -696,7 +824,7 @@ function UserManagement() {
                     <TableCell>
                       {user.role && (
                         <Badge className={getRoleBadgeColor(user.role.level)}>
-                          {user.role.name}
+                          {user.role.displayName} (ระดับ {user.role.level})
                         </Badge>
                       )}
                     </TableCell>
@@ -848,7 +976,7 @@ function UserManagement() {
                       <SelectContent>
                         {roles.map((role) => (
                           <SelectItem key={role.id} value={role.id.toString()}>
-                            {role.name} (ระดับ {role.level})
+                            {role.displayName} (ระดับ {role.level})
                           </SelectItem>
                         ))}
                       </SelectContent>
