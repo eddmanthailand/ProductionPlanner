@@ -9,6 +9,17 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
   }
+  
+  /* Force button clickability */
+  .btn-clickable {
+    pointer-events: auto !important;
+    z-index: 9999 !important;
+    position: relative !important;
+  }
+  
+  .btn-clickable:hover {
+    pointer-events: auto !important;
+  }
 }
 
 :root {

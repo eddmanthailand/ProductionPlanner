@@ -365,7 +365,7 @@ function UserManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6 relative z-0">
+    <div className="p-6 space-y-6 relative z-10" style={{ pointerEvents: 'auto' }}>
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -376,7 +376,7 @@ function UserManagement() {
           {canCreate && (
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="relative z-20 pointer-events-auto">
+                <Button className="btn-clickable">
                   <UserPlus className="w-4 h-4 mr-2" />
                   เพิ่มผู้ใช้ใหม่
                 </Button>
@@ -518,7 +518,7 @@ function UserManagement() {
             {canCreate && (
               <Dialog open={isCreateRoleDialogOpen} onOpenChange={setIsCreateRoleDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button variant="outline" className="relative z-20 pointer-events-auto">
+                  <Button variant="outline" className="btn-clickable">
                     <Plus className="w-4 h-4 mr-2" />
                     เพิ่มบทบาท
                   </Button>
