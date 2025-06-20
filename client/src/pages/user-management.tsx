@@ -68,6 +68,7 @@ import {
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/permissions/ProtectedRoute";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
+import { useAuth } from "@/hooks/useAuth";
 
 const createUserSchema = insertUserSchema.extend({
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
@@ -86,8 +87,13 @@ type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 
 function UserManagement() {
   const { toast } = useToast();
+  const { user } = useAuth();
   const { getPagePermissions } = usePageNavigation();
   const { canCreate, canEdit, canRead } = getPagePermissions("/user-management");
+  
+  // Debug log to check permissions
+  console.log("User Management Permissions:", { canCreate, canEdit, canRead });
+  console.log("Current user role:", user?.roleId);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
