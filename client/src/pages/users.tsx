@@ -42,13 +42,24 @@ const createUserSchema = z.object({
   roleId: z.coerce.number().min(1, "กรุณาเลือกบทบาท")
 });
 
+const editUserSchema = z.object({
+  username: z.string().min(1, "กรุณากรอกชื่อผู้ใช้"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง").optional().or(z.literal("")),
+  firstName: z.string().min(1, "กรุณากรอกชื่อ"),
+  lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
+  roleId: z.coerce.number().min(1, "กรุณาเลือกบทบาท")
+});
+
 type CreateUserFormData = z.infer<typeof createUserSchema>;
+type EditUserFormData = z.infer<typeof editUserSchema>;
 
 export default function Users() {
   const { t } = useLanguage();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"]
@@ -71,6 +82,17 @@ export default function Users() {
     }
   });
 
+  const editForm = useForm<EditUserFormData>({
+    resolver: zodResolver(editUserSchema),
+    defaultValues: {
+      username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      roleId: 0
+    }
+  });
+
   // Mutation for creating new user
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserFormData) => {
@@ -84,6 +106,32 @@ export default function Users() {
       toast({
         title: "สำเร็จ",
         description: "สร้างผู้ใช้ใหม่เรียบร้อยแล้ว",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Mutation for editing user
+  const editUserMutation = useMutation({
+    mutationFn: async (data: EditUserFormData & { id: number }) => {
+      const { id, ...updateData } = data;
+      const response = await apiRequest("PATCH", `/api/users/${id}`, updateData);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      setIsEditDialogOpen(false);
+      setEditingUser(null);
+      editForm.reset();
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว",
       });
     },
     onError: (error: Error) => {
@@ -130,7 +178,25 @@ export default function Users() {
 
   const handleEditUser = (userId: number) => {
     console.log("Editing user:", userId);
-    setLocation("/user-management");
+    const userToEdit = users?.find(user => user.id === userId);
+    if (userToEdit) {
+      setEditingUser(userToEdit);
+      editForm.reset({
+        username: userToEdit.username,
+        email: userToEdit.email,
+        firstName: userToEdit.firstName,
+        lastName: userToEdit.lastName,
+        roleId: userToEdit.roleId || 0
+      });
+      setIsEditDialogOpen(true);
+    }
+  };
+
+  const onEditSubmit = (data: EditUserFormData) => {
+    if (editingUser) {
+      console.log("Edit form submitted:", data);
+      editUserMutation.mutate({ ...data, id: editingUser.id });
+    }
   };
 
   const handleToggleUserStatus = (user: User) => {
@@ -463,6 +529,120 @@ export default function Users() {
                   disabled={createUserMutation.isPending}
                 >
                   {createUserMutation.isPending ? "กำลังสร้าง..." : "สร้างผู้ใช้"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <FormField
+                control={editForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อผู้ใช้</FormLabel>
+                    <FormControl>
+                      <Input placeholder="กรอกชื่อผู้ใช้" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อีเมล (ไม่จำเป็น)</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="กรอกอีเมล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อ</FormLabel>
+                      <FormControl>
+                        <Input placeholder="กรอกชื่อ" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={editForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>นามสกุล</FormLabel>
+                      <FormControl>
+                        <Input placeholder="กรอกนามสกุล" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="roleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>บทบาท</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกบทบาท" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles?.map((role) => (
+                          <SelectItem key={role.id} value={role.id.toString()}>
+                            {role.displayName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingUser(null);
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={editUserMutation.isPending}
+                >
+                  {editUserMutation.isPending ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
                 </Button>
               </div>
             </form>
