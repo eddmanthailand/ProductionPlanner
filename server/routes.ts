@@ -102,12 +102,9 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Use memory store for sessions to avoid database connection issues
-  const memorystore = await import('memorystore');
-  const MemoryStore = memorystore.default(session);
-  const sessionStore = new MemoryStore({
-    checkPeriod: 86400000, // prune expired entries every 24h
-  });
+  // Setup minimal authentication system
+  const { setupMinimalAuth, requireAuth } = await import('./minimal-auth');
+  setupMinimalAuth(app);
 
   app.use(session({
     store: sessionStore,
