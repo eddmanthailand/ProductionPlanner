@@ -3,12 +3,13 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Configure Neon for serverless environment
+// Configure Neon for serverless environment with better timeout handling
 neonConfig.webSocketConstructor = ws;
 neonConfig.useSecureWebSocket = true;
 neonConfig.pipelineConnect = false;
 neonConfig.pipelineTLS = false;
 neonConfig.fetchConnectionCache = true;
+neonConfig.poolQueryViaFetch = false;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
@@ -16,13 +17,13 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-// Create pool with retry logic
+// Create pool with simplified settings to avoid timeout issues
 export const pool = new Pool({ 
   connectionString: process.env.DATABASE_URL,
-  max: 5,
-  idleTimeoutMillis: 60000,
+  max: 1,
+  idleTimeoutMillis: 10000,
   connectionTimeoutMillis: 5000,
-  allowExitOnIdle: true,
+  allowExitOnIdle: false,
 });
 
 // Handle pool errors gracefully
