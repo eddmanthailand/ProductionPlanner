@@ -398,26 +398,36 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsersWithRoles(tenantId: string): Promise<UserWithRole[]> {
-    // Simplified query to avoid complex joins that cause Neon errors
-    const userList = await db.select().from(users)
-      .where(and(eq(users.tenantId, tenantId), isNull(users.deletedAt)));
-    
-    return userList.map(user => ({
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      password: '', // Don't expose password
-      roleId: user.roleId,
-      tenantId: user.tenantId,
-      isActive: user.isActive,
-      lastLoginAt: user.lastLoginAt,
-      deletedAt: user.deletedAt,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      role: undefined // Skip role lookup to avoid complex queries
-    }));
+    try {
+      // Get users first
+      const userList = await db.select().from(users)
+        .where(and(eq(users.tenantId, tenantId), isNull(users.deletedAt)));
+      
+      // Get all roles separately
+      const roleList = await db.select().from(roles);
+      const roleMap = new Map(roleList.map(role => [role.id, role]));
+      
+      return userList.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        password: '', // Don't expose password
+        roleId: user.roleId,
+        tenantId: user.tenantId,
+        isActive: user.isActive,
+        lastLoginAt: user.lastLoginAt,
+        deletedAt: user.deletedAt,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+        role: user.roleId ? roleMap.get(user.roleId) || null : null
+      }));
+    } catch (error) {
+      console.error('Error in getUsersWithRoles:', error);
+      // Fallback to memory storage for user management
+      return await memoryStorage.getUsersWithRoles(tenantId);
+    }
   }
 
   // Roles and Permissions implementation

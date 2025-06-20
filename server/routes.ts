@@ -1026,11 +1026,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get users with roles (accessible to authenticated Replit users)
+  // Get users with roles (use memory storage for proper role display)
   app.get("/api/users-with-roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
-      const users = await storage.getUsersWithRoles(tenantId);
+      const users = await memoryStorage.getUsersWithRoles(tenantId);
       res.json(users);
     } catch (error) {
       console.error("Get users with roles error:", error);
