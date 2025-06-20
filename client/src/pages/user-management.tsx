@@ -365,18 +365,18 @@ function UserManagement() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-6 space-y-6 relative z-0">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">จัดการผู้ใช้และสิทธิ์</h1>
           <p className="text-muted-foreground">จัดการผู้ใช้ในระบบและกำหนดบทบาทตามสิทธิ์ 8 ระดับ</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative z-10">
           {canCreate && (
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="relative z-20 pointer-events-auto">
                   <UserPlus className="w-4 h-4 mr-2" />
                   เพิ่มผู้ใช้ใหม่
                 </Button>
