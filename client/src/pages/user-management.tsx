@@ -512,7 +512,7 @@ function UserManagement() {
                 ระบบจัดการสิทธิ์แบบลำดับชั้น จากระดับสูงสุด (1) ไปยังระดับต่ำสุด
               </CardDescription>
             </div>
-            {canAccess("user_management", "write") && (
+            {canCreate && (
               <Dialog open={isCreateRoleDialogOpen} onOpenChange={setIsCreateRoleDialogOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -618,7 +618,7 @@ function UserManagement() {
                       <Badge className={getRoleBadgeColor(role.level)}>
                         ระดับ {role.level}
                       </Badge>
-                      {canAccess("user_management", "write") && (
+                      {canCreate && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -673,7 +673,7 @@ function UserManagement() {
                   <TableHead>บทบาท</TableHead>
                   <TableHead>สถานะ</TableHead>
                   <TableHead>วันที่สร้าง</TableHead>
-                  {canAccess("user_management", "write") && <TableHead>การดำเนินการ</TableHead>}
+                  {canCreate && <TableHead>การดำเนินการ</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -701,7 +701,7 @@ function UserManagement() {
                     <TableCell>
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString('th-TH') : '-'}
                     </TableCell>
-                    {canAccess("user_management", "write") && (
+                    {canCreate && (
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
