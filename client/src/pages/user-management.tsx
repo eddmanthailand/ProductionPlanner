@@ -90,10 +90,7 @@ function UserManagement() {
   const { user } = useAuth();
   const { getPagePermissions } = usePageNavigation();
   const { canCreate, canEdit, canRead } = getPagePermissions("/user-management");
-  
-  // Debug log to check permissions
-  console.log("User Management Permissions:", { canCreate, canEdit, canRead });
-  console.log("Current user role:", user?.roleId);
+
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
