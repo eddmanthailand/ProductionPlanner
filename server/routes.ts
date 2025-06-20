@@ -3366,7 +3366,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Placeholder for tenant ID
       
       const allRoles = await storage.getRoles(tenantId);
-      const allAccess = await storage.getAllPageAccess(tenantId);
+      let allAccess = await storage.getAllPageAccess(tenantId);
+      
+      // สร้างข้อมูลสิทธิ์เริ่มต้นสำหรับหน้าใหม่ที่ยังไม่มีในฐานข้อมูล
+      const adminRole = allRoles.find(role => role.name === "ADMIN");
+      if (adminRole) {
+        const existingPageUrls = new Set(allAccess.map(access => access.pageUrl));
+        const newPages = definedPages.filter(page => !existingPageUrls.has(page.url));
+        
+        for (const page of newPages) {
+          console.log(`สร้างสิทธิ์เริ่มต้นสำหรับหน้า: ${page.name} (${page.url})`);
+          await storage.upsertPageAccess({
+            roleId: adminRole.id,
+            pageName: page.name,
+            pageUrl: page.url,
+            accessLevel: "create"
+          });
+        }
+        
+        // โหลดข้อมูลสิทธิ์ใหม่หลังจากสร้างข้อมูลเริ่มต้น
+        if (newPages.length > 0) {
+          allAccess = await storage.getAllPageAccess(tenantId);
+        }
+      }
       
       res.json({
         roles: allRoles,
