@@ -66,13 +66,18 @@ export default function PageAccessManagement() {
       }
       return response.json();
     },
-    onSuccess: () => {
+    onSuccess: async () => {
       toast({
         title: "สำเร็จ",
         description: "บันทึกการเปลี่ยนแปลงสิทธิ์เรียบร้อยแล้ว",
       });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+      // รอการ refetch และอัปเดต permissions matrix ใหม่
+      const { data: updatedConfig } = await refetch();
+      if (updatedConfig) {
+        setPermissions(buildPermissionMatrix(updatedConfig));
+      }
     },
     onError: (error: Error) => {
       toast({
