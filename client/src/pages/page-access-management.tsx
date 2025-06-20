@@ -46,12 +46,21 @@ export default function PageAccessManagement() {
   const { data: config, isLoading, error, refetch } = useQuery<PageAccessConfig>({
     queryKey: ["pageAccessConfig"],
     queryFn: async () => {
-      const response = await fetch("/api/page-access-management/config");
+      const response = await fetch("/api/page-access-management/config", {
+        cache: 'no-cache', // ป้องกันการ cache ข้อมูลเก่า
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!response.ok) {
         throw new Error("Failed to fetch page access configuration");
       }
       return response.json();
     },
+    refetchOnWindowFocus: false,
+    staleTime: 0, // ข้อมูลจะ stale ทันที
+    cacheTime: 0, // ไม่เก็บ cache
   });
 
   const updateMutation = useMutation({
@@ -72,11 +81,14 @@ export default function PageAccessManagement() {
         description: "บันทึกการเปลี่ยนแปลงสิทธิ์เรียบร้อยแล้ว",
       });
       setHasChanges(false);
-      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
-      // รอการ refetch และอัปเดต permissions matrix ใหม่
-      const { data: updatedConfig } = await refetch();
-      if (updatedConfig) {
-        setPermissions(buildPermissionMatrix(updatedConfig));
+      // ล้าง cache ทั้งหมดและ reload ข้อมูลใหม่
+      await queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+      // Force refresh โดยดึงข้อมูลใหม่จาก server
+      const result = await refetch();
+      if (result.data) {
+        // อัปเดต permissions matrix ด้วยข้อมูลล่าสุด
+        const newMatrix = buildPermissionMatrix(result.data);
+        setPermissions(newMatrix);
       }
     },
     onError: (error: Error) => {
@@ -133,7 +145,8 @@ export default function PageAccessManagement() {
   // Initialize permissions matrix when config loads
   useEffect(() => {
     if (config) {
-      setPermissions(buildPermissionMatrix(config));
+      const newMatrix = buildPermissionMatrix(config);
+      setPermissions(newMatrix);
     }
   }, [config]);
 
