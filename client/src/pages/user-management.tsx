@@ -48,7 +48,6 @@ import { UserPlus, Edit, Trash2, Loader2, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import Layout from "@/components/layout/main-layout";
 
 // Types
 interface Role {
@@ -75,18 +74,19 @@ interface UserWithRole {
   role?: Role;
 }
 
-// Schemas
+// Form schemas
 const createUserSchema = z.object({
-  username: z.string().min(3, "ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร"),
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  username: z.string().min(1, "ชื่อผู้ใช้จำเป็น"),
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
-  firstName: z.string().min(1, "ชื่อจริงจำเป็น"),
+  firstName: z.string().min(1, "ชื่อจำเป็น"),
   lastName: z.string().min(1, "นามสกุลจำเป็น"),
+  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
   roleId: z.number().min(1, "กรุณาเลือกบทบาท"),
+  isActive: z.boolean(),
 });
 
 const editUserSchema = z.object({
-  firstName: z.string().min(1, "ชื่อจริงจำเป็น"),
+  firstName: z.string().min(1, "ชื่อจำเป็น"),
   lastName: z.string().min(1, "นามสกุลจำเป็น"),
   email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
   roleId: z.number().min(1, "กรุณาเลือกบทบาท"),
@@ -135,11 +135,12 @@ function UserManagement() {
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       username: "",
-      email: "",
       password: "",
       firstName: "",
       lastName: "",
+      email: "",
       roleId: 0,
+      isActive: true,
     },
   });
 
@@ -154,20 +155,19 @@ function UserManagement() {
     },
   });
 
-  // Mutations
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserFormData) => {
       const response = await apiRequest("POST", "/api/users", data);
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
-      setIsCreateDialogOpen(false);
-      createForm.reset();
       toast({
         title: "สำเร็จ",
         description: "สร้างผู้ใช้ใหม่เรียบร้อยแล้ว",
       });
+      setIsCreateDialogOpen(false);
+      createForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: Error) => {
       toast({
@@ -180,19 +180,19 @@ function UserManagement() {
 
   const editUserMutation = useMutation({
     mutationFn: async (data: EditUserFormData) => {
-      if (!editingUser) throw new Error("ไม่พบข้อมูลผู้ใช้ที่จะแก้ไข");
+      if (!editingUser) throw new Error("ไม่พบข้อมูลผู้ใช้");
       const response = await apiRequest("PUT", `/api/users/${editingUser.id}`, data);
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว",
+      });
       setIsEditDialogOpen(false);
       setEditingUser(null);
       editForm.reset();
-      toast({
-        title: "สำเร็จ",
-        description: "อัปเดตข้อมูลผู้ใช้เรียบร้อยแล้ว",
-      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: Error) => {
       toast({
@@ -206,14 +206,14 @@ function UserManagement() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
       const response = await apiRequest("DELETE", `/api/users/${userId}`);
-      return response.json();
+      return await response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
       toast({
         title: "สำเร็จ",
         description: "ลบผู้ใช้เรียบร้อยแล้ว",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: Error) => {
       toast({
@@ -224,9 +224,7 @@ function UserManagement() {
     },
   });
 
-  // Event handlers
   const handleCreateUser = (data: CreateUserFormData) => {
-    console.log("Creating user with data:", data);
     createUserMutation.mutate(data);
   };
 
@@ -243,7 +241,7 @@ function UserManagement() {
   };
 
   const handleDeleteUser = (user: UserWithRole) => {
-    if (confirm(`คุณต้องการลบผู้ใช้ "${user.firstName} ${user.lastName}" หรือไม่?`)) {
+    if (confirm(`คุณต้องการลบผู้ใช้ "${user.username}" หรือไม่?`)) {
       deleteUserMutation.mutate(user.id);
     }
   };
@@ -252,51 +250,46 @@ function UserManagement() {
     editUserMutation.mutate(data);
   };
 
-  const openCreateDialog = () => {
+  const handleCreateDialog = () => {
     console.log("Opening create dialog");
     setIsCreateDialogOpen(true);
   };
 
   if (!canView) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="text-center">
-            <Shield className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <p className="text-gray-600">คุณไม่มีสิทธิ์ในการเข้าถึงหน้านี้</p>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <Shield className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+          <p className="text-gray-600">คุณไม่มีสิทธิ์ในการเข้าถึงหน้านี้</p>
         </div>
-      </Layout>
+      </div>
     );
   }
 
   return (
-    <Layout>
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>จัดการผู้ใช้</CardTitle>
               <CardDescription>
-                จัดการข้อมูลผู้ใช้และสิทธิ์การเข้าถึงระบบ
+                จัดการข้อมูลผู้ใช้และกำหนดบทบาทในระบบ
               </CardDescription>
             </div>
             {canCreate && (
-              <Button onClick={openCreateDialog}>
+              <Button onClick={handleCreateDialog}>
                 <UserPlus className="w-4 h-4 mr-2" />
-                เพิ่มผู้ใช้
+                เพิ่มผู้ใช้ใหม่
               </Button>
             )}
           </div>
         </CardHeader>
-        
         <CardContent>
-          {usersLoading ? (
-            <div className="space-y-4">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="animate-pulse">
-                  <div className="h-12 bg-gray-200 rounded"></div>
-                </div>
+          {usersLoading || rolesLoading ? (
+            <div className="flex items-center justify-center py-8">
+              {[...Array(5)].map((_, i) => (
+                <div key={i} className="animate-pulse bg-gray-200 h-8 w-full mb-2 rounded" />
               ))}
             </div>
           ) : usersError ? (
@@ -363,43 +356,13 @@ function UserManagement() {
 
       {/* Create User Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
-            <DialogDescription>
-              สร้างผู้ใช้ใหม่และกำหนดบทบาท
-            </DialogDescription>
+            <DialogDescription>กรอกข้อมูลสำหรับสร้างผู้ใช้ใหม่</DialogDescription>
           </DialogHeader>
           <Form {...createForm}>
             <form onSubmit={createForm.handleSubmit(handleCreateUser)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={createForm.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ชื่อ</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ชื่อจริง" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={createForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>นามสกุล</FormLabel>
-                      <FormControl>
-                        <Input placeholder="นามสกุล" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
               <FormField
                 control={createForm.control}
                 name="username"
@@ -407,20 +370,7 @@ function UserManagement() {
                   <FormItem>
                     <FormLabel>ชื่อผู้ใช้</FormLabel>
                     <FormControl>
-                      <Input placeholder="ชื่อผู้ใช้" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={createForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>อีเมล</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="อีเมล" {...field} />
+                      <Input {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -433,7 +383,46 @@ function UserManagement() {
                   <FormItem>
                     <FormLabel>รหัสผ่าน</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="รหัสผ่าน" {...field} />
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อ</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>นามสกุล</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อีเมล</FormLabel>
+                    <FormControl>
+                      <Input type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -445,7 +434,7 @@ function UserManagement() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>บทบาท</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="เลือกบทบาท" />
@@ -487,43 +476,39 @@ function UserManagement() {
 
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
-            <DialogDescription>
-              แก้ไขข้อมูลและบทบาทของผู้ใช้
-            </DialogDescription>
+            <DialogDescription>แก้ไขข้อมูลของผู้ใช้ {editingUser?.username}</DialogDescription>
           </DialogHeader>
           <Form {...editForm}>
             <form onSubmit={editForm.handleSubmit(handleSubmitEdit)} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ชื่อ</FormLabel>
-                      <FormControl>
-                        <Input placeholder="ชื่อจริง" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={editForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>นามสกุล</FormLabel>
-                      <FormControl>
-                        <Input placeholder="นามสกุล" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={editForm.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อ</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>นามสกุล</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={editForm.control}
                 name="email"
@@ -531,7 +516,7 @@ function UserManagement() {
                   <FormItem>
                     <FormLabel>อีเมล</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="อีเมล" {...field} />
+                      <Input type="email" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -543,7 +528,10 @@ function UserManagement() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>บทบาท</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <Select
+                      value={field.value.toString()}
+                      onValueChange={(value) => field.onChange(parseInt(value))}
+                    >
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="เลือกบทบาท" />
@@ -582,7 +570,7 @@ function UserManagement() {
           </Form>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </div>
   );
 }
 
