@@ -75,9 +75,12 @@ export default function PageAccessManagement() {
       });
       if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลการตั้งค่าสิทธิ์ได้");
       const data = await res.json();
-      console.log("หน้าทั้งหมดที่โหลด:", data.pages.length, "หน้า");
-      console.log("รายชื่อหน้า:", data.pages.map((p: Page) => p.name));
-      console.log("ข้อมูลหน้าครบถ้วน:", data.pages);
+      console.log("🔍 ข้อมูลที่ได้จาก API /page-access-management/config:");
+      console.log("📊 จำนวนหน้าทั้งหมด:", data.pages?.length);
+      console.log("📋 จำนวนสิทธิ์ทั้งหมด:", data.accessRules?.length);
+      console.log("📝 รายชื่อหน้าทั้งหมด:", data.pages?.map((p: Page) => p.name));
+      console.log("🔍 หน้าที่มี 'วางแผน':", data.pages?.filter((p: Page) => p.name.includes('วางแผน')));
+      console.log("📊 ข้อมูลครบถ้วน:", data);
       return data;
     },
     staleTime: 0,
