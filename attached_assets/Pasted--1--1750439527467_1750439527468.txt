@@ -1,0 +1,75 @@
+// ========================================================================
+// ส่วนที่ 1: เพิ่มฟังก์ชันเหล่านี้ในไฟล์ server/storage.ts
+// Instructions: คัดลอกฟังก์ชันทั้งหมดด้านล่างนี้ไปวางเพิ่มเติมในไฟล์ storage.ts
+// ========================================================================
+
+import { users } from "../shared/schema"; // Ensure this import exists
+import { eq } from "drizzle-orm"; // Ensure this import exists
+import type { InsertUser } from "../shared/schema";
+
+// ... (โค้ดเดิมของคุณ) ...
+
+// Function to update a user
+export async function updateUser(id: number, userData: Partial<InsertUser>) {
+  // We don't want to update the password this way for security reasons.
+  // Password changes should have their own dedicated logic.
+  const { password, ...updatableData } = userData;
+  
+  const [updatedUser] = await db
+    .update(users)
+    .set({ ...updatableData, updatedAt: new Date() })
+    .where(eq(users.id, id))
+    .returning();
+  return updatedUser;
+}
+
+// Function to deactivate (soft delete) a user
+export async function deactivateUser(id: number) {
+  const [deactivatedUser] = await db
+    .update(users)
+    .set({ isActive: false, deletedAt: new Date() })
+    .where(eq(users.id, id))
+    .returning();
+  return deactivatedUser;
+}
+
+
+// ========================================================================
+// ส่วนที่ 2: เพิ่ม API Routes เหล่านี้ในไฟล์ server/routes.ts
+// Instructions: คัดลอกโค้ดส่วนนี้ไปวางภายในฟังก์ชัน registerRoutes
+// วางต่อจาก app.post("/api/users", ...);
+// ========================================================================
+
+// ... (โค้ด app.post("/api/users", ...) เดิมของคุณ ...
+
+// API to update a user
+app.put("/api/users/:id", isAuthenticated, async (req: any, res) => {
+    try {
+        const { id } = req.params;
+        // In a real app, you'd validate that the requesting user has permission to do this
+        const updatedUser = await storage.updateUser(parseInt(id), req.body);
+        if (!updatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.json(updatedUser);
+    } catch (error) {
+        console.error("Update user error:", error);
+        res.status(500).json({ message: "Failed to update user" });
+    }
+});
+
+// API to deactivate a user
+app.delete("/api/users/:id", isAuthenticated, async (req: any, res) => {
+    try {
+        const { id } = req.params;
+        // In a real app, you'd validate that the requesting user has permission to do this
+        const deactivatedUser = await storage.deactivateUser(parseInt(id));
+        if (!deactivatedUser) {
+            return res.status(404).json({ message: "User not found" });
+        }
+        res.status(200).json({ message: "User deactivated successfully" });
+    } catch (error) {
+        console.error("Deactivate user error:", error);
+        res.status(500).json({ message: "Failed to deactivate user" });
+    }
+});

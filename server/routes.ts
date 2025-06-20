@@ -508,7 +508,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch("/api/users/:id", async (req: any, res) => {
+  app.put("/api/users/:id", async (req: any, res) => {
     try {
       const userId = parseInt(req.params.id);
       const { username, email, firstName, lastName, roleId, isActive, password } = req.body;
@@ -577,6 +577,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Update user error:", error);
       res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
+  // Delete/deactivate user
+  app.delete("/api/users/:id", async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
+      // Check if user exists
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Soft delete (deactivate) the user
+      const success = await storage.deleteUser(userId, tenantId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ message: "User deactivated successfully" });
+    } catch (error) {
+      console.error("Delete user error:", error);
+      res.status(500).json({ message: "Failed to deactivate user" });
+    }
+  });
+
+  // Roles routes
+  app.get("/api/roles", async (req: any, res) => {
+    try {
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const roles = await storage.getRoles(tenantId);
+      res.json(roles);
+    } catch (error) {
+      console.error("Get roles error:", error);
+      res.status(500).json({ message: "Failed to fetch roles" });
+    }
+  });
+
+  app.post("/api/roles", async (req: any, res) => {
+    try {
+      const { name, displayName, description, level } = req.body;
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
+      const role = await storage.createRole({
+        name,
+        displayName: displayName || name,
+        description,
+        level: level || 5,
+        tenantId,
+        isActive: true
+      });
+
+      res.status(201).json(role);
+    } catch (error) {
+      console.error("Create role error:", error);
+      res.status(500).json({ message: "Failed to create role" });
+    }
+  });
+
+  // Get users with roles
+  app.get("/api/users-with-roles", async (req: any, res) => {
+    try {
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const users = await storage.getUsersWithRoles(tenantId);
+      res.json(users);
+    } catch (error) {
+      console.error("Get users with roles error:", error);
+      res.status(500).json({ message: "Failed to fetch users with roles" });
     }
   });
 

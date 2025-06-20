@@ -158,6 +158,7 @@ function UserManagement() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsCreateDialogOpen(false);
       createForm.reset();
