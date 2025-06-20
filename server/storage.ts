@@ -553,6 +553,33 @@ export class DatabaseStorage implements IStorage {
     return result;
   }
 
+  async createPageAccess(pageAccessData: InsertPageAccess): Promise<PageAccess> {
+    const [result] = await db.insert(pageAccess)
+      .values({
+        ...pageAccessData,
+        updatedAt: new Date()
+      })
+      .returning();
+    return result;
+  }
+
+  async updatePageAccess(id: number, updateData: Partial<InsertPageAccess>): Promise<PageAccess | undefined> {
+    const [result] = await db.update(pageAccess)
+      .set({
+        ...updateData,
+        updatedAt: new Date()
+      })
+      .where(eq(pageAccess.id, id))
+      .returning();
+    return result || undefined;
+  }
+
+  async deletePageAccess(id: number): Promise<boolean> {
+    const result = await db.delete(pageAccess)
+      .where(eq(pageAccess.id, id));
+    return (result.rowCount ?? 0) > 0;
+  }
+
   async getTenant(id: string): Promise<Tenant | undefined> {
     const [tenant] = await db.select().from(tenants).where(eq(tenants.id, id));
     return tenant || undefined;

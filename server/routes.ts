@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, permissions } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, permissions, pageAccess } from "@shared/schema";
 import { db } from "./db";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -975,24 +975,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { roleId, pageName, pageUrl, accessLevel } = req.body;
       
-      // Check if access already exists
-      const existingAccess = await storage.getPageAccessByRole(roleId);
-      const existing = existingAccess.find(access => access.pageUrl === pageUrl);
-      
-      if (existing) {
-        // Update existing access
-        const updated = await storage.updatePageAccess(existing.id, { accessLevel });
-        res.json(updated);
-      } else {
-        // Create new access
-        const newAccess = await storage.createPageAccess({
-          roleId,
-          pageName,
-          pageUrl,
-          accessLevel
-        });
-        res.status(201).json(newAccess);
+      if (!accessLevel) {
+        // Delete the access if accessLevel is null/empty
+        const existingAccess = await storage.getPageAccessByRole(roleId);
+        const existing = existingAccess.find(access => access.pageUrl === pageUrl);
+        
+        if (existing) {
+          await db.delete(pageAccess).where(eq(pageAccess.id, existing.id));
+        }
+        return res.status(204).send();
       }
+      
+      // Use upsert to handle both create and update
+      const result = await storage.upsertPageAccess({
+        roleId,
+        pageName,
+        pageUrl,
+        accessLevel
+      });
+      
+      res.json(result);
     } catch (error) {
       console.error("Create/update page access error:", error);
       res.status(500).json({ message: "Failed to manage page access" });
@@ -1002,18 +1004,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/page-access/:roleId", async (req: any, res: any) => {
     try {
       const roleId = parseInt(req.params.roleId);
-      const { pageName, pageUrl } = req.body;
+      const { pageUrl } = req.body;
       
       const existingAccess = await storage.getPageAccessByRole(roleId);
       const existing = existingAccess.find(access => access.pageUrl === pageUrl);
       
       if (existing) {
-        const deleted = await storage.deletePageAccess(existing.id);
-        if (deleted) {
-          res.status(204).send();
-        } else {
-          res.status(404).json({ message: "Page access not found" });
-        }
+        await db.delete(pageAccess).where(eq(pageAccess.id, existing.id));
+        res.status(204).send();
       } else {
         res.status(404).json({ message: "Page access not found" });
       }

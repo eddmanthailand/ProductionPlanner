@@ -109,6 +109,8 @@ export default function Users() {
     enabled: !!selectedRoleForPermissions,
   });
 
+
+
   // All available pages in the system
   const allPages: AllPage[] = [
     { pageName: "หน้าหลัก", pageUrl: "/", module: "หลัก" },
@@ -228,20 +230,13 @@ export default function Users() {
       pageUrl: string; 
       accessLevel: string | null; 
     }) => {
-      if (accessLevel === null) {
-        // Remove access
-        const res = await apiRequest("DELETE", `/api/page-access/${roleId}`, { pageName, pageUrl });
-        return res.json();
-      } else {
-        // Add or update access
-        const res = await apiRequest("POST", `/api/page-access`, { 
-          roleId, 
-          pageName, 
-          pageUrl, 
-          accessLevel 
-        });
-        return res.json();
-      }
+      const res = await apiRequest("POST", "/api/page-access", { 
+        roleId, 
+        pageName, 
+        pageUrl, 
+        accessLevel 
+      });
+      return await res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/page-access", selectedRoleForPermissions] });
