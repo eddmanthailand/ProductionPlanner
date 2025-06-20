@@ -1,0 +1,89 @@
+ยอดเยี่ยม! คุณวิเคราะห์ปัญหาและสรุปวิธีแก้ไขได้อย่างแม่นยำถึงแก่นของปัญหาเลยครับ
+
+**ผมยืนยันว่าสิ่งที่คุณวิเคราะห์มานั้นถูกต้อง 100%** และวิธีแก้ไขที่คุณเสนอก็คือทางออกที่ถูกต้องที่สุดครับ
+
+### สรุปปัญหาที่เกิดขึ้น (ที่คุณสรุปไว้ถูกต้องแล้ว)
+
+1.  **หน้าเพจ (`daily-work-log.tsx`) เรียกใช้ Hook ผิดตัว:** ไปเรียกใช้ `usePermissions` ซึ่งพยายามจะหารายการสิทธิ์แบบ Action-based (เช่น "production:create", "production:delete")
+2.  **ข้อมูลผู้ใช้ไม่มีสิทธิ์แบบ Action-based:** User Sert มีข้อมูลสิทธิ์แบบ Page-based ใน `pageAccesses` เท่านั้น ทำให้ `usePermissions` คืนค่า `false` เสมอ
+3.  **ผลลัพธ์:** ปุ่มต่างๆ ที่ถูกควบคุมโดย `canAccess(...)` จึงไม่แสดงผลเลย แม้ว่าตามหลักแล้วผู้ใช้ควรจะเห็นก็ตาม
+
+---
+
+### **คำตอบ:** ใช่ครับ, ต้องแก้ไขการใช้งานในหน้าเพจให้ใช้ `usePageNavigation` แทน `usePermissions`
+
+คุณมาถูกทางแล้วครับ และนี่คือขั้นตอนการแก้ไขที่ผมแนะนำ ซึ่งตรงกับที่คุณเสนอมาทุกประการ:
+
+#### **ขั้นตอนการแก้ไขในไฟล์ `daily-work-log.tsx`**
+
+**1. เปลี่ยน Hook ที่เรียกใช้:**
+
+* **ของเดิม:**
+    ```tsx
+    import { usePermissions } from '@/hooks/usePermissions';
+    // ...
+    const { canAccess } = usePermissions();
+    ```
+* **ของใหม่:** ให้เปลี่ยนไปเรียกใช้ `usePageNavigation` และดึงฟังก์ชัน `getPagePermissions` ออกมา พร้อมทั้งหา path ของหน้าปัจจุบัน
+    ```tsx
+    import { usePageNavigation } from '@/hooks/usePageNavigation';
+    import { useLocation } from 'react-router-dom'; // หรือ hook ที่ใช้ดึง URL path ปัจจุบัน
+    // ...
+    const { getPagePermissions } = usePageNavigation();
+    const location = useLocation();
+
+    // ดึงออบเจ็กต์สิทธิ์ทั้งหมดสำหรับหน้าปัจจุบัน
+    const pagePermissions = getPagePermissions(location.pathname);
+    // location.pathname จะมีค่าเป็น "/production/daily-work-log"
+    ```
+
+**2. อัปเดตเงื่อนไขการแสดงผลของปุ่ม:**
+
+* **ปุ่มบันทึกงาน (Create):**
+    * **ของเดิม:**
+        ```tsx
+        {hasSelectedJobs && canAccess("production", "create") && (
+          // ...
+        )}
+        ```
+    * **ของใหม่:**
+        ```tsx
+        {hasSelectedJobs && pagePermissions.canCreate && (
+          // ...
+        )}
+        ```
+
+* **ปุ่มลบบันทึก (Delete):**
+    * **ของเดิม:**
+        ```tsx
+        {canAccess("production", "delete") && (
+          // ...
+        )}
+        ```
+    * **ของใหม่:** (ตามตรรกะใน `getPagePermissions` ที่ `canDelete` มาจากสิทธิ์ `create`)
+        ```tsx
+        {pagePermissions.canDelete && (
+          // ...
+        )}
+        ```
+
+**3. (ทางเลือก) ทำให้โค้ดอ่านง่ายขึ้น:**
+
+คุณสามารถแตกตัวแปรออกมาเพื่อให้อ่านง่ายในส่วน JSX ก็ได้ครับ
+
+```tsx
+const { canCreate, canEdit, canRead, canDelete } = getPagePermissions(location.pathname);
+
+// ... แล้วใน JSX ก็ใช้ตัวแปรเหล่านี้ได้เลย
+{hasSelectedJobs && canCreate && ( ... )}
+
+{canDelete && ( ... )}
+```
+
+---
+
+### สรุป
+
+เพียงแค่คุณดำเนินการแก้ไขตามนี้ในหน้า `daily-work-log.tsx` และหน้าอื่นๆ ที่มีปัญหาลักษณะเดียวกัน ระบบการควบคุมปุ่มและการกระทำทั้งหมดใน Front-end ของคุณก็จะทำงานสอดคล้องกับระบบสิทธิ์ที่คุณออกแบบไว้ใน `usePageNavigation` อย่างสมบูรณ์แบบครับ
+
+คุณทำได้ดีมากในการไล่ปัญหาและวิเคราะห์จนเจอต้นตอครับ! หากนำไปปรับใช้แล้วติดปัญหาเพิ่มเติม แจ้งมาได้เลยนะครับ

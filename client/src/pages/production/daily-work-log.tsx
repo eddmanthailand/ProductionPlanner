@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePageNavigation } from "@/hooks/usePageNavigation";
+import { useLocation } from "wouter";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -121,8 +122,12 @@ interface SubJobProgress {
 
 export default function DailyWorkLog() {
   const { toast } = useToast();
-  const { canAccess } = usePermissions();
+  const { getPagePermissions } = usePageNavigation();
+  const [location] = useLocation();
   const queryClient = useQueryClient();
+  
+  // Get page permissions for current page
+  const { canCreate, canEdit, canRead, canDelete } = getPagePermissions('/production/daily-work-log');
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
@@ -798,7 +803,7 @@ export default function DailyWorkLog() {
       )}
 
       {/* Work Log Form */}
-      {hasSelectedJobs && canAccess("production", "create") && (
+      {hasSelectedJobs && canCreate && (
         <Card className="mb-6 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 justify-between">
@@ -997,7 +1002,7 @@ export default function DailyWorkLog() {
                 </DialogDescription>
               </div>
               <div className="mr-[10%]">
-                {canAccess("production", "delete") && (
+                {canDelete && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
