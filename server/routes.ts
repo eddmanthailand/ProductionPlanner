@@ -1030,8 +1030,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/users-with-roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
-      const users = await memoryStorage.getUsersWithRoles(tenantId);
-      res.json(users);
+      
+      // Get users from database
+      const dbUsers = await storage.getUsersByTenant(tenantId);
+      
+      // Get roles from memory storage (initialized with defaults)
+      const { MemoryStorage } = await import('./memory-storage');
+      const memStore = new MemoryStorage();
+      const roles = await memStore.getRoles();
+      const roleMap = new Map(roles.map(role => [role.id, role]));
+      
+      // Combine data
+      const usersWithRoles = dbUsers.map(user => ({
+        ...user,
+        password: '', // Don't expose password
+        role: user.roleId ? roleMap.get(user.roleId) || null : null
+      }));
+      
+      res.json(usersWithRoles);
     } catch (error) {
       console.error("Get users with roles error:", error);
       res.status(500).json({ message: "Failed to fetch users with roles" });
