@@ -106,17 +106,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const { setupMinimalAuth, requireAuth } = await import('./minimal-auth');
   setupMinimalAuth(app);
 
-  app.use(session({
-    store: sessionStore,
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: false, // Set to true in production with HTTPS
-      httpOnly: true,
-      maxAge: 24 * 60 * 60 * 1000 // 24 hours
-    }
-  }));
+  // Session configuration is handled by minimal-auth module
+  // No need to configure session here
 
   // Session-based auth route
   app.get('/api/auth/user', async (req: any, res) => {
