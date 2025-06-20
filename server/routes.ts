@@ -523,6 +523,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Toggle user status
+  app.patch("/api/users/:id/toggle-status", async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+
+      // Get current user
+      const existingUser = await storage.getUser(userId);
+      if (!existingUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      // Toggle status
+      const updatedUser = await storage.updateUser(userId, {
+        isActive: !existingUser.isActive
+      }, tenantId);
+
+      if (!updatedUser) {
+        return res.status(404).json({ message: "Failed to update user status" });
+      }
+
+      // Return user without password
+      const { password, ...userWithoutPassword } = updatedUser;
+      res.json(userWithoutPassword);
+    } catch (error) {
+      console.error("Toggle user status error:", error);
+      res.status(500).json({ message: "Failed to toggle user status" });
+    }
+  });
+
   // Roles routes
   app.get("/api/roles", async (req: any, res) => {
     try {

@@ -1,9 +1,13 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLanguage } from "@/hooks/use-language";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
 import { Plus, User, Shield, Settings } from "lucide-react";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface User {
   id: number;
@@ -17,9 +21,50 @@ interface User {
 
 export default function Users() {
   const { t } = useLanguage();
+  const { toast } = useToast();
+  const [location, setLocation] = useLocation();
+  
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"]
   });
+
+  // Mutation for toggling user status
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      const response = await apiRequest("PATCH", `/api/users/${userId}/toggle-status`);
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+      toast({
+        title: "สำเร็จ",
+        description: "เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Navigation handlers
+  const handleCreateUser = () => {
+    console.log("Navigating to user management page");
+    setLocation("/user-management");
+  };
+
+  const handleEditUser = (userId: number) => {
+    console.log("Editing user:", userId);
+    setLocation("/user-management");
+  };
+
+  const handleToggleUserStatus = (user: User) => {
+    console.log("Toggling status for user:", user.id);
+    toggleUserStatusMutation.mutate(user.id);
+  };
 
   const getRoleColor = (role: string) => {
     switch (role) {
@@ -92,7 +137,10 @@ export default function Users() {
           <h1 className="text-2xl font-bold text-gray-900">จัดการผู้ใช้</h1>
           <p className="text-gray-600">จัดการสิทธิ์การเข้าใช้งานและบทบาทของผู้ใช้</p>
         </div>
-        <Button className="bg-primary hover:bg-primary/90">
+        <Button 
+          className="bg-primary hover:bg-primary/90"
+          onClick={handleCreateUser}
+        >
           <Plus className="w-4 h-4 mr-2" />
           เพิ่มผู้ใช้ใหม่
         </Button>
@@ -166,7 +214,7 @@ export default function Users() {
           {!users || users.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-500 mb-4">ยังไม่มีผู้ใช้งานในระบบ</p>
-              <Button>
+              <Button onClick={handleCreateUser}>
                 <Plus className="w-4 h-4 mr-2" />
                 เพิ่มผู้ใช้แรก
               </Button>
@@ -200,14 +248,21 @@ export default function Users() {
                       </div>
                     </div>
                     <div className="flex space-x-2">
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => handleEditUser(user.id)}
+                      >
                         แก้ไข
                       </Button>
                       <Button 
                         variant={user.isActive ? "destructive" : "default"} 
                         size="sm"
+                        onClick={() => handleToggleUserStatus(user)}
+                        disabled={toggleUserStatusMutation.isPending}
                       >
-                        {user.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
+                        {toggleUserStatusMutation.isPending ? "กำลังดำเนินการ..." : 
+                         user.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
                       </Button>
                     </div>
                   </div>
