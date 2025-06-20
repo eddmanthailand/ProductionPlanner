@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, ShieldCheck, RefreshCw, Plus } from "lucide-react";
+import { Loader2, ShieldCheck, RefreshCw, Plus, Users, CheckCircle } from "lucide-react";
 
 // Types matching the backend response
 type Role = { id: number; name: string; displayName: string };
@@ -207,8 +207,8 @@ export default function PageAccessManagement() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex flex-col">
-      <div className="flex-1 p-8 overflow-hidden">
-        <div className="max-w-7xl mx-auto h-full flex flex-col">
+      <div className="flex-1 p-6 overflow-hidden">
+        <div className="w-full h-full flex flex-col">
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center mb-4">
@@ -230,7 +230,7 @@ export default function PageAccessManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100 text-sm">จำนวนหน้าทั้งหมด</p>
-                  <p className="text-3xl font-bold">{config.pages.length}</p>
+                  <p className="text-3xl font-bold">{config?.pages?.length || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center">
                   <ShieldCheck className="w-6 h-6" />
@@ -242,7 +242,7 @@ export default function PageAccessManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100 text-sm">จำนวนบทบาท</p>
-                  <p className="text-3xl font-bold">{displayRoles.length}</p>
+                  <p className="text-3xl font-bold">{displayRoles?.length || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-green-400 rounded-lg flex items-center justify-center">
                   <Users className="w-6 h-6" />
@@ -254,7 +254,7 @@ export default function PageAccessManagement() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100 text-sm">สิทธิ์ที่กำหนดแล้ว</p>
-                  <p className="text-3xl font-bold">{config.currentAccess.length}</p>
+                  <p className="text-3xl font-bold">{config?.currentAccess?.length || 0}</p>
                 </div>
                 <div className="w-12 h-12 bg-purple-400 rounded-lg flex items-center justify-center">
                   <CheckCircle className="w-6 h-6" />
@@ -329,25 +329,26 @@ export default function PageAccessManagement() {
               {/* Table Header with Enhanced Styling */}
               <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
                 <h3 className="text-xl font-semibold text-white">ตารางสิทธิ์การเข้าถึง</h3>
-                <p className="text-blue-100 text-sm mt-1">จัดการสิทธิ์สำหรับ {config.pages.length} หน้า และ {displayRoles.length} ตำแหน่ง</p>
+                <p className="text-blue-100 text-sm mt-1">จัดการสิทธิ์สำหรับ {config?.pages?.length || 0} หน้า และ {displayRoles?.length || 0} ตำแหน่ง</p>
               </div>
               
-              <div className="overflow-auto max-h-[calc(100vh-400px)]">
-                <Table className="relative">
+              <div className="overflow-auto max-h-[calc(100vh-450px)]">
+                <Table className="relative w-full table-fixed">
                   <TableHeader className="sticky top-0 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-blue-200 z-10">
                     <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-96 px-8 py-6 text-left font-bold text-gray-800 border-r-2 border-blue-200 bg-white shadow-sm">
-                        <div className="flex items-center gap-3">
+                      <TableHead className="w-1/3 px-6 py-4 text-left font-bold text-gray-800 border-r-2 border-blue-200 bg-white shadow-sm">
+                        <div className="flex items-center gap-2">
                           <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          <span className="text-lg">หน้าระบบ</span>
+                          <span className="text-base">หน้าระบบ</span>
                         </div>
                       </TableHead>
-                      {displayRoles.map((role, index) => (
+                      {displayRoles && displayRoles.map((role, index) => (
                         <TableHead 
                           key={role.id} 
-                          className={`px-6 py-6 text-center font-bold text-gray-800 border-r border-gray-300 min-w-[220px] ${
+                          className={`px-4 py-4 text-center font-bold text-gray-800 border-r border-gray-300 ${
                             index % 2 === 0 ? 'bg-blue-50' : 'bg-indigo-50'
                           }`}
+                          style={{ width: `${Math.floor(67 / displayRoles.length)}%` }}
                         >
                           <div className="flex flex-col items-center gap-2">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
@@ -362,36 +363,36 @@ export default function PageAccessManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {config.pages.map((page, index) => (
+                    {config?.pages?.map((page, index) => (
                       <TableRow 
                         key={page.url} 
                         className={`transition-all duration-200 hover:bg-blue-50 hover:shadow-md ${
                           index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                         }`}
                       >
-                        <TableCell className="px-8 py-6 font-medium text-gray-900 border-r-2 border-blue-100">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-4 h-4 rounded-full ${
+                        <TableCell className="px-6 py-4 font-medium text-gray-900 border-r-2 border-blue-100">
+                          <div className="flex items-center gap-3">
+                            <div className={`w-3 h-3 rounded-full ${
                               index % 3 === 0 ? 'bg-green-400' : 
                               index % 3 === 1 ? 'bg-yellow-400' : 'bg-purple-400'
                             }`}></div>
-                            <div>
-                              <div className="font-semibold text-lg text-gray-800">{page.name}</div>
-                              <div className="text-sm text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block">
+                            <div className="min-w-0 flex-1">
+                              <div className="font-semibold text-base text-gray-800 truncate">{page.name}</div>
+                              <div className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block truncate max-w-full">
                                 {page.url}
                               </div>
                             </div>
                           </div>
                         </TableCell>
-                        {displayRoles.map((role, roleIndex) => (
-                          <TableCell key={role.id} className="text-center p-4 border-r border-gray-200">
+                        {displayRoles && displayRoles.map((role, roleIndex) => (
+                          <TableCell key={role.id} className="text-center p-3 border-r border-gray-200">
                             <Select
                               value={permissions[page.url]?.[role.id] || "none"}
                               onValueChange={(value: AccessLevel) =>
                                 handlePermissionChange(page.url, role.id, value)
                               }
                             >
-                              <SelectTrigger className={`w-full min-w-[180px] h-12 border-2 transition-all duration-200 ${
+                              <SelectTrigger className={`w-full h-10 border-2 transition-all duration-200 ${
                                 permissions[page.url]?.[role.id] === 'create' ? 'border-green-300 bg-green-50 text-green-800' :
                                 permissions[page.url]?.[role.id] === 'edit' ? 'border-blue-300 bg-blue-50 text-blue-800' :
                                 permissions[page.url]?.[role.id] === 'read' ? 'border-yellow-300 bg-yellow-50 text-yellow-800' :
@@ -399,26 +400,26 @@ export default function PageAccessManagement() {
                               } hover:shadow-md focus:shadow-lg`}>
                                 <SelectValue placeholder="เลือกระดับ" />
                               </SelectTrigger>
-                              <SelectContent className="min-w-[180px]">
+                              <SelectContent>
                                 {accessLevels.map(level => (
                                   <SelectItem 
                                     key={level} 
                                     value={level}
-                                    className={`py-3 px-4 ${
+                                    className={`py-2 px-3 ${
                                       level === 'create' ? 'text-green-700 hover:bg-green-50' :
                                       level === 'edit' ? 'text-blue-700 hover:bg-blue-50' :
                                       level === 'read' ? 'text-yellow-700 hover:bg-yellow-50' :
                                       'text-gray-700 hover:bg-gray-50'
                                     }`}
                                   >
-                                    <div className="flex items-center gap-3">
-                                      <div className={`w-3 h-3 rounded-full ${
+                                    <div className="flex items-center gap-2">
+                                      <div className={`w-2 h-2 rounded-full ${
                                         level === 'create' ? 'bg-green-500' :
                                         level === 'edit' ? 'bg-blue-500' :
                                         level === 'read' ? 'bg-yellow-500' :
                                         'bg-gray-400'
                                       }`}></div>
-                                      <span className="font-medium">{accessLevelLabels[level]}</span>
+                                      <span className="font-medium text-sm">{accessLevelLabels[level]}</span>
                                     </div>
                                   </SelectItem>
                                 ))}
@@ -427,7 +428,7 @@ export default function PageAccessManagement() {
                           </TableCell>
                         ))}
                       </TableRow>
-                    ))}
+                    )) || []}
                   </TableBody>
                 </Table>
               </div>
