@@ -208,6 +208,14 @@ export default function PageAccessManagement() {
                 <div className="flex justify-end gap-2 mb-4">
                     <Button 
                         variant="outline"
+                        onClick={() => refetch()}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                        รีเฟรชข้อมูล
+                    </Button>
+                    <Button 
+                        variant="outline"
                         onClick={handleResetChanges}
                         disabled={!hasChanges || updateMutation.isPending}
                     >
