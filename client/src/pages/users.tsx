@@ -518,84 +518,217 @@ export default function Users() {
             </div>
 
             {selectedRoleForPermissions && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>สิทธิ์การเข้าถึงหน้าต่างๆ</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>โมดูล</TableHead>
-                        <TableHead>หน้า</TableHead>
-                        <TableHead>URL</TableHead>
-                        <TableHead>เปิดใช้งาน</TableHead>
-                        <TableHead>ระดับสิทธิ์</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allPages.map((page) => {
-                        const existingAccess = pageAccess?.find(
-                          (access) => access.pageUrl === page.pageUrl
-                        );
-                        const hasAccess = !!existingAccess;
-                        const accessLevel = existingAccess?.accessLevel || "view";
+              <div className="space-y-6">
+                {/* Quick Actions */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>การตั้งค่าด่วน</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          allPages.forEach(page => {
+                            updatePageAccessMutation.mutate({
+                              roleId: selectedRoleForPermissions,
+                              pageName: page.pageName,
+                              pageUrl: page.pageUrl,
+                              accessLevel: "view"
+                            });
+                          });
+                        }}
+                        disabled={updatePageAccessMutation.isPending}
+                      >
+                        เปิดทุกหน้า (ดูอย่างเดียว)
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          allPages.forEach(page => {
+                            updatePageAccessMutation.mutate({
+                              roleId: selectedRoleForPermissions,
+                              pageName: page.pageName,
+                              pageUrl: page.pageUrl,
+                              accessLevel: null
+                            });
+                          });
+                        }}
+                        disabled={updatePageAccessMutation.isPending}
+                      >
+                        ปิดทุกหน้า
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
 
-                        return (
-                          <TableRow key={page.pageUrl}>
-                            <TableCell>
-                              <Badge variant="outline">{page.module}</Badge>
-                            </TableCell>
-                            <TableCell>{page.pageName}</TableCell>
-                            <TableCell className="font-mono text-sm">{page.pageUrl}</TableCell>
-                            <TableCell>
-                              <Switch
-                                checked={hasAccess}
-                                onCheckedChange={(checked) => {
-                                  updatePageAccessMutation.mutate({
-                                    roleId: selectedRoleForPermissions,
-                                    pageName: page.pageName,
-                                    pageUrl: page.pageUrl,
-                                    accessLevel: checked ? "view" : null
-                                  });
-                                }}
-                                disabled={updatePageAccessMutation.isPending}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              {hasAccess ? (
-                                <Select
-                                  value={accessLevel}
-                                  onValueChange={(value) => {
-                                    updatePageAccessMutation.mutate({
-                                      roleId: selectedRoleForPermissions,
-                                      pageName: page.pageName,
-                                      pageUrl: page.pageUrl,
-                                      accessLevel: value
-                                    });
-                                  }}
-                                  disabled={updatePageAccessMutation.isPending}
-                                >
-                                  <SelectTrigger className="w-32">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="view">ดู</SelectItem>
-                                    <SelectItem value="edit">แก้ไข/ดู</SelectItem>
-                                    <SelectItem value="create">สร้าง/แก้ไข/ดู</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
+                {/* Page Access Management */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>สิทธิ์การเข้าถึงหน้าต่างๆ</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      กำหนดสิทธิ์การเข้าถึงสำหรับบทบาท: <strong>{roles?.find(r => r.id === selectedRoleForPermissions)?.displayName}</strong>
+                    </p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {Object.entries(
+                        allPages.reduce((acc, page) => {
+                          if (!acc[page.module]) acc[page.module] = [];
+                          acc[page.module].push(page);
+                          return acc;
+                        }, {} as Record<string, typeof allPages>)
+                      ).map(([module, pages]) => (
+                        <div key={module} className="border rounded-lg p-4">
+                          <h4 className="font-semibold mb-3 flex items-center gap-2">
+                            <Badge variant="secondary">{module}</Badge>
+                            <span className="text-sm text-muted-foreground">
+                              ({pages.filter(page => pageAccess?.find(access => access.pageUrl === page.pageUrl)).length}/{pages.length} หน้าเปิดใช้งาน)
+                            </span>
+                          </h4>
+                          
+                          <div className="grid gap-3">
+                            {pages.map((page) => {
+                              const existingAccess = pageAccess?.find(
+                                (access) => access.pageUrl === page.pageUrl
+                              );
+                              const hasAccess = !!existingAccess;
+                              const accessLevel = existingAccess?.accessLevel || "view";
+
+                              return (
+                                <div key={page.pageUrl} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                                  <div className="flex-1">
+                                    <div className="font-medium">{page.pageName}</div>
+                                    <div className="text-sm text-muted-foreground font-mono">{page.pageUrl}</div>
+                                  </div>
+                                  
+                                  <div className="flex items-center gap-4">
+                                    {/* Access Toggle */}
+                                    <div className="flex items-center gap-2">
+                                      <Switch
+                                        checked={hasAccess}
+                                        onCheckedChange={(checked) => {
+                                          updatePageAccessMutation.mutate({
+                                            roleId: selectedRoleForPermissions,
+                                            pageName: page.pageName,
+                                            pageUrl: page.pageUrl,
+                                            accessLevel: checked ? "view" : null
+                                          });
+                                        }}
+                                        disabled={updatePageAccessMutation.isPending}
+                                      />
+                                      <span className={`text-sm font-medium ${hasAccess ? 'text-green-600' : 'text-gray-400'}`}>
+                                        {hasAccess ? 'เปิด' : 'ปิด'}
+                                      </span>
+                                    </div>
+
+                                    {/* Permission Level */}
+                                    {hasAccess ? (
+                                      <Select
+                                        value={accessLevel}
+                                        onValueChange={(value) => {
+                                          updatePageAccessMutation.mutate({
+                                            roleId: selectedRoleForPermissions,
+                                            pageName: page.pageName,
+                                            pageUrl: page.pageUrl,
+                                            accessLevel: value
+                                          });
+                                        }}
+                                        disabled={updatePageAccessMutation.isPending}
+                                      >
+                                        <SelectTrigger className="w-40">
+                                          <SelectValue placeholder="เลือกสิทธิ์" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="view">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                              ดูอย่างเดียว
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="edit">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+                                              แก้ไข + ดู
+                                            </div>
+                                          </SelectItem>
+                                          <SelectItem value="create">
+                                            <div className="flex items-center gap-2">
+                                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                              สร้าง + แก้ไข + ดู
+                                            </div>
+                                          </SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <div className="w-40 text-sm text-gray-400 text-center">
+                                        ไม่มีสิทธิ์
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Advanced Permission Settings */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>การตั้งค่าสิทธิ์ขั้นสูง</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">การจำกัดเวลาการเข้าถึง</label>
+                        <div className="flex gap-2">
+                          <Input type="time" placeholder="เวลาเริ่ม" className="flex-1" />
+                          <Input type="time" placeholder="เวลาสิ้นสุด" className="flex-1" />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          กำหนดช่วงเวลาที่อนุญาตให้เข้าถึงระบบ
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">การจำกัด IP Address</label>
+                        <Input placeholder="192.168.1.0/24" />
+                        <p className="text-xs text-muted-foreground">
+                          จำกัดการเข้าถึงจาก IP หรือช่วง IP ที่กำหนด
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">วันที่หมดอายุ</label>
+                        <Input type="date" />
+                        <p className="text-xs text-muted-foreground">
+                          กำหนดวันที่สิทธิ์จะหมดอายุ
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">จำนวนครั้งการเข้าถึงสูงสุด</label>
+                        <Input type="number" placeholder="100" />
+                        <p className="text-xs text-muted-foreground">
+                          จำกัดจำนวนครั้งการเข้าถึงต่อวัน
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex justify-end mt-4">
+                      <Button variant="outline" size="sm">
+                        บันทึกการตั้งค่าขั้นสูง
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             )}
           </div>
         </TabsContent>
