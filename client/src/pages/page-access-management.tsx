@@ -159,30 +159,30 @@ export default function PageAccessManagement() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <MainLayout>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="ml-4 text-lg">กำลังโหลดข้อมูล...</p>
         </div>
-      </Layout>
+      </MainLayout>
     );
   }
 
   if (error || !config) {
     return (
-      <Layout>
+      <MainLayout>
         <Alert variant="destructive" className="m-4">
           <AlertTitle>เกิดข้อผิดพลาด</AlertTitle>
           <AlertDescription>
             ไม่สามารถโหลดข้อมูลการจัดการสิทธิ์ได้ กรุณาลองอีกครั้งในภายหลัง
           </AlertDescription>
         </Alert>
-      </Layout>
+      </MainLayout>
     );
   }
 
   return (
-    <Layout>
+    <MainLayout>
       <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <Card>
             <CardHeader>
@@ -254,6 +254,6 @@ export default function PageAccessManagement() {
             </CardContent>
         </Card>
       </div>
-    </Layout>
+    </MainLayout>
   );
 }

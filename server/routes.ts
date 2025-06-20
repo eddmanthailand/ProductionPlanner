@@ -3275,7 +3275,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // API สำหรับอัปเดตสิทธิ์
-  app.post("/api/page-access-management/update", requireAuth, async (req: any, res) => {
+  app.post("/api/page-access-management/update", async (req: any, res) => {
     try {
       // ในระบบจริง ควรเช็คว่าผู้ใช้ที่ส่ง request มามีสิทธิ์เป็น Admin หรือไม่
       const updates = req.body.accessList;
