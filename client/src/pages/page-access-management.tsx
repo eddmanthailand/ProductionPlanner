@@ -335,28 +335,28 @@ export default function PageAccessManagement() {
               <div className="overflow-auto max-h-[calc(100vh-450px)]">
                 <Table className="relative w-full table-fixed">
                   <TableHeader className="sticky top-0 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-blue-200 z-10">
-                    <TableRow className="hover:bg-transparent">
-                      <TableHead className="w-1/3 px-6 py-4 text-left font-bold text-gray-800 border-r-2 border-blue-200 bg-white shadow-sm">
+                    <TableRow className="hover:bg-transparent h-10">
+                      <TableHead className="w-1/3 px-3 py-2 text-left font-bold text-gray-800 border-r-2 border-blue-200 bg-white shadow-sm">
                         <div className="flex items-center gap-2">
-                          <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                          <span className="text-base">หน้าระบบ</span>
+                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <span className="text-sm">หน้าระบบ</span>
                         </div>
                       </TableHead>
                       {displayRoles && displayRoles.map((role, index) => (
                         <TableHead 
                           key={role.id} 
-                          className={`px-4 py-4 text-center font-bold text-gray-800 border-r border-gray-300 ${
+                          className={`px-2 py-2 text-center font-bold text-gray-800 border-r border-gray-300 ${
                             index % 2 === 0 ? 'bg-blue-50' : 'bg-indigo-50'
                           }`}
                           style={{ width: `${Math.floor(67 / displayRoles.length)}%` }}
                         >
-                          <div className="flex flex-col items-center gap-2">
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${
+                          <div className="flex flex-col items-center gap-1">
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white font-bold text-xs ${
                               index % 2 === 0 ? 'bg-blue-500' : 'bg-indigo-500'
                             }`}>
                               {role.displayName.charAt(0)}
                             </div>
-                            <span className="text-base">{role.displayName}</span>
+                            <span className="text-xs">{role.displayName}</span>
                           </div>
                         </TableHead>
                       ))}
@@ -366,46 +366,46 @@ export default function PageAccessManagement() {
                     {config?.pages?.map((page, index) => (
                       <TableRow 
                         key={page.url} 
-                        className={`transition-all duration-200 hover:bg-blue-50 hover:shadow-md ${
+                        className={`transition-all duration-200 hover:bg-blue-50 hover:shadow-sm h-10 ${
                           index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
                         }`}
                       >
-                        <TableCell className="px-6 py-4 font-medium text-gray-900 border-r-2 border-blue-100">
-                          <div className="flex items-center gap-3">
-                            <div className={`w-3 h-3 rounded-full ${
+                        <TableCell className="px-3 py-1 font-medium text-gray-900 border-r-2 border-blue-100">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${
                               index % 3 === 0 ? 'bg-green-400' : 
                               index % 3 === 1 ? 'bg-yellow-400' : 'bg-purple-400'
                             }`}></div>
                             <div className="min-w-0 flex-1">
-                              <div className="font-semibold text-base text-gray-800 truncate">{page.name}</div>
-                              <div className="text-xs text-gray-500 font-mono bg-gray-100 px-2 py-1 rounded mt-1 inline-block truncate max-w-full">
+                              <div className="font-medium text-sm text-gray-800 truncate">{page.name}</div>
+                              <div className="text-xs text-gray-400 font-mono truncate max-w-full">
                                 {page.url}
                               </div>
                             </div>
                           </div>
                         </TableCell>
                         {displayRoles && displayRoles.map((role, roleIndex) => (
-                          <TableCell key={role.id} className="text-center p-3 border-r border-gray-200">
+                          <TableCell key={role.id} className="text-center p-1 border-r border-gray-200">
                             <Select
                               value={permissions[page.url]?.[role.id] || "none"}
                               onValueChange={(value: AccessLevel) =>
                                 handlePermissionChange(page.url, role.id, value)
                               }
                             >
-                              <SelectTrigger className={`w-full h-10 border-2 transition-all duration-200 ${
+                              <SelectTrigger className={`w-full h-7 border transition-all duration-200 text-xs ${
                                 permissions[page.url]?.[role.id] === 'create' ? 'border-green-300 bg-green-50 text-green-800' :
                                 permissions[page.url]?.[role.id] === 'edit' ? 'border-blue-300 bg-blue-50 text-blue-800' :
                                 permissions[page.url]?.[role.id] === 'read' ? 'border-yellow-300 bg-yellow-50 text-yellow-800' :
                                 'border-gray-300 bg-gray-50 text-gray-600'
-                              } hover:shadow-md focus:shadow-lg`}>
-                                <SelectValue placeholder="เลือกระดับ" />
+                              } hover:shadow-sm focus:shadow-sm`}>
+                                <SelectValue placeholder="เลือก" />
                               </SelectTrigger>
                               <SelectContent>
                                 {accessLevels.map(level => (
                                   <SelectItem 
                                     key={level} 
                                     value={level}
-                                    className={`py-2 px-3 ${
+                                    className={`py-1 px-2 text-xs ${
                                       level === 'create' ? 'text-green-700 hover:bg-green-50' :
                                       level === 'edit' ? 'text-blue-700 hover:bg-blue-50' :
                                       level === 'read' ? 'text-yellow-700 hover:bg-yellow-50' :
@@ -413,13 +413,13 @@ export default function PageAccessManagement() {
                                     }`}
                                   >
                                     <div className="flex items-center gap-2">
-                                      <div className={`w-2 h-2 rounded-full ${
+                                      <div className={`w-1.5 h-1.5 rounded-full ${
                                         level === 'create' ? 'bg-green-500' :
                                         level === 'edit' ? 'bg-blue-500' :
                                         level === 'read' ? 'bg-yellow-500' :
                                         'bg-gray-400'
                                       }`}></div>
-                                      <span className="font-medium text-sm">{accessLevelLabels[level]}</span>
+                                      <span className="font-medium">{accessLevelLabels[level]}</span>
                                     </div>
                                   </SelectItem>
                                 ))}
