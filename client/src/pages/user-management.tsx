@@ -67,7 +67,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { ProtectedRoute } from "@/components/permissions/ProtectedRoute";
-import { usePermissions } from "@/hooks/usePermissions";
+import { usePageNavigation } from "@/hooks/usePageNavigation";
 
 const createUserSchema = insertUserSchema.extend({
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
@@ -86,7 +86,8 @@ type CreateRoleFormData = z.infer<typeof createRoleSchema>;
 
 function UserManagement() {
   const { toast } = useToast();
-  const { canAccess } = usePermissions();
+  const { getPagePermissions } = usePageNavigation();
+  const { canCreate, canEdit, canRead } = getPagePermissions("/user-management");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -369,7 +370,7 @@ function UserManagement() {
           <p className="text-muted-foreground">จัดการผู้ใช้ในระบบและกำหนดบทบาทตามสิทธิ์ 8 ระดับ</p>
         </div>
         <div className="flex gap-2">
-          {canAccess("user_management", "write") && (
+          {canCreate && (
             <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
