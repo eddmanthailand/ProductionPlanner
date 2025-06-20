@@ -31,6 +31,8 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const [expandedSales, setExpandedSales] = useState(false);
   const [expandedProduction, setExpandedProduction] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
+  const [autoCollapsed, setAutoCollapsed] = useState(true);
 
   const { data: tenants } = useQuery<Tenant[]>({
     queryKey: ["/api/tenants"],
@@ -38,6 +40,64 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
 
   const currentTenant = tenants && user ? tenants.find((t: Tenant) => t.id === user.tenantId) : null;
 
+  // Auto-hide functionality for desktop
+  useEffect(() => {
+    let hideTimer: NodeJS.Timeout | null = null;
+
+    const handleMouseMove = (event: MouseEvent) => {
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) return;
+
+      const x = event.clientX;
+      const hoverZone = 50; // pixels from left edge
+      
+      if (x <= hoverZone && isCollapsed && autoCollapsed) {
+        setIsHovering(true);
+        setIsCollapsed(false);
+      } else if (x > 280 && !isCollapsed && autoCollapsed && !isHovering) {
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          setIsCollapsed(true);
+        }, 800);
+      }
+    };
+
+    const handleSidebarMouseEnter = () => {
+      if (hideTimer) {
+        clearTimeout(hideTimer);
+        hideTimer = null;
+      }
+      setIsHovering(true);
+    };
+
+    const handleSidebarMouseLeave = () => {
+      setIsHovering(false);
+      if (autoCollapsed) {
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          setIsCollapsed(true);
+        }, 500);
+      }
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) {
+      sidebar.addEventListener('mouseenter', handleSidebarMouseEnter);
+      sidebar.addEventListener('mouseleave', handleSidebarMouseLeave);
+    }
+
+    return () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      document.removeEventListener('mousemove', handleMouseMove);
+      if (sidebar) {
+        sidebar.removeEventListener('mouseenter', handleSidebarMouseEnter);
+        sidebar.removeEventListener('mouseleave', handleSidebarMouseLeave);
+      }
+    };
+  }, [isHovering, autoCollapsed, isCollapsed, setIsCollapsed]);
+
+  // Click outside handler for mobile
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (isCollapsed) return;
@@ -66,6 +126,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           onClick={() => setIsCollapsed(true)}
         />
       )}
+
+      {/* Desktop hover zone indicator */}
+      {isCollapsed && autoCollapsed && (
+        <div className="fixed left-0 top-0 w-1 h-full bg-gradient-to-b from-blue-500/20 via-blue-500/40 to-blue-500/20 z-30 hidden md:block hover:w-2 transition-all duration-200" />
+      )}
       
       <div
         id="sidebar"
@@ -92,7 +157,10 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           )}
           
           <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
+            onClick={() => {
+              setIsCollapsed(!isCollapsed);
+              setAutoCollapsed(!isCollapsed);
+            }}
             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <X className="w-4 h-4 md:hidden" />}
