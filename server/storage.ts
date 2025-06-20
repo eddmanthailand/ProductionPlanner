@@ -500,14 +500,14 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select({
       id: permissions.id,
       name: permissions.name,
-      displayName: permissions.name,
+      displayName: permissions.displayName,
       description: permissions.description,
-      module: sql<string>`''`.as('module'),
+      module: permissions.module,
       action: permissions.action,
       resource: permissions.resource,
-      isActive: sql<boolean>`true`.as('isActive'),
+      isActive: permissions.isActive,
       createdAt: permissions.createdAt,
-      updatedAt: sql<Date | null>`null`.as('updatedAt')
+      updatedAt: permissions.updatedAt
     })
     .from(permissions)
     .innerJoin(rolePermissions, eq(permissions.id, rolePermissions.permissionId))

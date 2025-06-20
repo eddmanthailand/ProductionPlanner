@@ -71,10 +71,11 @@ async function initializeDefaultPermissions() {
   for (const permission of defaultPermissions) {
     try {
       // Check if permission already exists
-      const [existing] = await db.select().from(permissions)
-        .where(eq(permissions.name, permission.name));
+      const existing = await db.select().from(permissions)
+        .where(eq(permissions.name, permission.name))
+        .limit(1);
       
-      if (!existing) {
+      if (existing.length === 0) {
         await db.insert(permissions).values({
           ...permission,
           isActive: true
