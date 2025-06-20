@@ -33,15 +33,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Initialize default permissions
   await initializeDefaultPermissions();
 
-  // Session configuration
-  const PostgresSessionStore = connectPg(session);
-  const sessionStore = new PostgresSessionStore({
-    pool: pool,
-    createTableIfMissing: true,
-  });
-
+  // Session configuration - using memory store to avoid Neon database issues
+  const createMemoryStore = (await import('memorystore')).default;
+  const MemoryStore = createMemoryStore(session);
+  
   app.use(session({
-    store: sessionStore,
+    store: new MemoryStore({
+      checkPeriod: 86400000 // prune expired entries every 24h
+    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key-here',
     resave: false,
     saveUninitialized: false,
