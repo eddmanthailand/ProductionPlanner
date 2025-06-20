@@ -101,7 +101,7 @@ function UserManagement() {
     isLoading: usersLoading,
     error: usersError,
   } = useQuery<UserWithRole[]>({
-    queryKey: ["/api/users"],
+    queryKey: ["/api/users-with-roles"],
   });
 
   const {
@@ -202,7 +202,7 @@ function UserManagement() {
   const updateUserMutation = useMutation({
     mutationFn: async (data: EditUserFormData) => {
       const { id, ...updateData } = data;
-      const res = await apiRequest("PATCH", `/api/users/${id}`, updateData);
+      const res = await apiRequest("PUT", `/api/users/${id}`, updateData);
       const text = await res.text();
       try {
         return JSON.parse(text);
@@ -212,6 +212,7 @@ function UserManagement() {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsEditDialogOpen(false);
       setEditingUser(null);
@@ -235,6 +236,7 @@ function UserManagement() {
       await apiRequest("DELETE", `/api/users/${id}`);
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
         title: "สำเร็จ",
@@ -272,10 +274,11 @@ function UserManagement() {
 
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
-      const res = await apiRequest("PATCH", `/api/users/${id}`, { isActive });
+      const res = await apiRequest("PUT", `/api/users/${id}`, { isActive });
       return res.json();
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       toast({
         title: "สำเร็จ",
