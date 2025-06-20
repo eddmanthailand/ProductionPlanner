@@ -210,14 +210,14 @@ export default function PageAccessManagement() {
       <div className="flex-1 p-6 overflow-hidden">
         <div className="w-full h-full flex flex-col">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center mb-4">
-              <div className="p-3 bg-blue-100 rounded-lg mr-4">
-                <ShieldCheck className="w-8 h-8 text-blue-600" />
+          <div className="mb-4">
+            <div className="flex items-center mb-3">
+              <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                <ShieldCheck className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">จัดการสิทธิ์การเข้าถึงหน้า</h1>
-                <p className="text-lg text-gray-600">
+                <h1 className="text-xl font-bold text-gray-900 mb-1">จัดการสิทธิ์การเข้าถึงหน้า</h1>
+                <p className="text-sm text-gray-600">
                   กำหนดสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบสำหรับแต่ละตำแหน่ง
                 </p>
               </div>
@@ -225,99 +225,103 @@ export default function PageAccessManagement() {
           </div>
 
           {/* Statistics Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 text-white shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-blue-100 text-sm">จำนวนหน้าทั้งหมด</p>
-                  <p className="text-3xl font-bold">{config?.pages?.length || 0}</p>
+                  <p className="text-blue-100 text-xs">จำนวนหน้าทั้งหมด</p>
+                  <p className="text-lg font-bold">{config?.pages?.length || 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-blue-400 rounded-lg flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6" />
+                <div className="w-6 h-6 bg-blue-400 rounded flex items-center justify-center">
+                  <ShieldCheck className="w-3 h-3" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 text-white shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm">จำนวนบทบาท</p>
-                  <p className="text-3xl font-bold">{displayRoles?.length || 0}</p>
+                  <p className="text-green-100 text-xs">จำนวนบทบาท</p>
+                  <p className="text-lg font-bold">{displayRoles?.length || 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-green-400 rounded-lg flex items-center justify-center">
-                  <Users className="w-6 h-6" />
+                <div className="w-6 h-6 bg-green-400 rounded flex items-center justify-center">
+                  <Users className="w-3 h-3" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 text-white shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm">สิทธิ์ที่กำหนดแล้ว</p>
-                  <p className="text-3xl font-bold">{config?.currentAccess?.length || 0}</p>
+                  <p className="text-purple-100 text-xs">สิทธิ์ที่กำหนดแล้ว</p>
+                  <p className="text-lg font-bold">{config?.currentAccess?.length || 0}</p>
                 </div>
-                <div className="w-12 h-12 bg-purple-400 rounded-lg flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6" />
+                <div className="w-6 h-6 bg-purple-400 rounded flex items-center justify-center">
+                  <CheckCircle className="w-3 h-3" />
                 </div>
               </div>
             </div>
             
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl p-6 text-white shadow-lg">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-3 text-white shadow">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm">การเปลี่ยนแปลง</p>
-                  <p className="text-3xl font-bold">{hasChanges ? '1' : '0'}</p>
+                  <p className="text-orange-100 text-xs">การเปลี่ยนแปลง</p>
+                  <p className="text-lg font-bold">{hasChanges ? '1' : '0'}</p>
                 </div>
-                <div className="w-12 h-12 bg-orange-400 rounded-lg flex items-center justify-center">
-                  <RefreshCw className="w-6 h-6" />
+                <div className="w-6 h-6 bg-orange-400 rounded flex items-center justify-center">
+                  <RefreshCw className="w-3 h-3" />
                 </div>
               </div>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="bg-white rounded-lg shadow border border-gray-200 p-3 mb-3">
             <div className="flex justify-between items-center">
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => refetch()}
                   disabled={isLoading}
-                  className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50"
+                  className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 text-xs"
                 >
-                  <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
                   รีเฟรช
                 </Button>
                 <Button
+                  size="sm"
                   onClick={handleCreateAllPermissions}
                   disabled={createAllMutation.isPending}
-                  className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 shadow-lg"
+                  className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-xs"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3 h-3" />
                   {createAllMutation.isPending ? 'กำลังสร้าง...' : 'สร้างสิทธิ์ครบถ้วน'}
                 </Button>
               </div>
 
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <Button
                   variant="outline"
+                  size="sm"
                   onClick={() => setPermissions(buildPermissionMatrix(config))}
                   disabled={!hasChanges || updateMutation.isPending}
-                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                  className="border-gray-300 text-gray-700 hover:bg-gray-50 text-xs"
                 >
-                  ยกเลิกการเปลี่ยนแปลง
+                  ยกเลิก
                 </Button>
                 <Button
+                  size="sm"
                   onClick={handleSaveChanges}
                   disabled={!hasChanges || updateMutation.isPending}
-                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-lg"
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-xs"
                 >
                   {updateMutation.isPending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    <ShieldCheck className="w-4 h-4" />
+                    <ShieldCheck className="w-3 h-3" />
                   )}
-                  {updateMutation.isPending ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
+                  {updateMutation.isPending ? 'กำลังบันทึก...' : 'บันทึก'}
                 </Button>
               </div>
             </div>
@@ -327,9 +331,9 @@ export default function PageAccessManagement() {
           <div className="flex-1 overflow-hidden">
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
               {/* Table Header with Enhanced Styling */}
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4">
-                <h3 className="text-xl font-semibold text-white">ตารางสิทธิ์การเข้าถึง</h3>
-                <p className="text-blue-100 text-sm mt-1">จัดการสิทธิ์สำหรับ {config?.pages?.length || 0} หน้า และ {displayRoles?.length || 0} ตำแหน่ง</p>
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-2">
+                <h3 className="text-sm font-semibold text-white">ตารางสิทธิ์การเข้าถึง</h3>
+                <p className="text-blue-100 text-xs">จัดการสิทธิ์สำหรับ {config?.pages?.length || 0} หน้า และ {displayRoles?.length || 0} ตำแหน่ง</p>
               </div>
               
               <div className="overflow-auto max-h-[calc(100vh-450px)]">
