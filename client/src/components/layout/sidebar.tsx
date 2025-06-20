@@ -30,6 +30,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const { user, logout } = useAuth();
   const [expandedSales, setExpandedSales] = useState(false);
   const [expandedProduction, setExpandedProduction] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
 
   const { data: tenants } = useQuery<Tenant[]>({
     queryKey: ["/api/tenants"],
@@ -249,16 +250,49 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           )}
 
           {/* User Management - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
-          {canAccessPage('/users') && (
-            <Link
-              href="/users"
-              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
-                location === '/users' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
-              }`}
-            >
-              <Shield className="w-5 h-5" />
-              {!isCollapsed && <span className="ml-3">{t("nav.users")}</span>}
-            </Link>
+          {canAccessPage('/user-management') && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (isCollapsed) return;
+                  setUserManagementOpen(!userManagementOpen);
+                }}
+                className={`w-full flex items-center justify-between py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                  location.startsWith('/user-management') || location.startsWith('/page-access-management') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                }`}
+              >
+                <div className="flex items-center">
+                  <Shield className="w-5 h-5" />
+                  {!isCollapsed && <span className="ml-3">จัดการผู้ใช้</span>}
+                </div>
+                {!isCollapsed && (
+                  <ChevronDown 
+                    className={`w-4 h-4 transition-transform ${userManagementOpen ? 'rotate-180' : ''}`}
+                  />
+                )}
+              </button>
+              
+              {!isCollapsed && userManagementOpen && (
+                <div className="ml-8 mt-1 space-y-1">
+                  <Link
+                    href="/user-management"
+                    className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                      location === '/user-management' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                    }`}
+                  >
+                    จัดการผู้ใช้และสิทธิ์
+                  </Link>
+                  <Link
+                    href="/page-access-management"
+                    className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                      location === '/page-access-management' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                    }`}
+                  >
+                    จัดการสิทธิ์การเข้าถึงหน้า
+                  </Link>
+                </div>
+              )}
+            </div>
           )}
         </nav>
 
