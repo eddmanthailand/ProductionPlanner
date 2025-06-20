@@ -15,7 +15,7 @@ interface PageAccess {
 export function hasPermission(userAccessLevel: AccessLevel, requiredLevel: AccessLevel): boolean {
   const hierarchy: Record<AccessLevel, number> = {
     'none': 0,
-    'read': 1,
+    'view': 1,
     'edit': 2,
     'create': 3
   };
@@ -41,9 +41,9 @@ export function usePageAccess(pageUrl: string) {
     return access?.accessLevel || 'none';
   };
 
-  const canRead = (): boolean => {
+  const canView = (): boolean => {
     const accessLevel = getAccessLevel();
-    return hasPermission(accessLevel, 'read');
+    return hasPermission(accessLevel, 'view');
   };
 
   const canEdit = (): boolean => {
@@ -63,7 +63,7 @@ export function usePageAccess(pageUrl: string) {
 
   return {
     accessLevel: getAccessLevel(),
-    canRead,
+    canView,
     canEdit,
     canCreate,
     canDelete,

@@ -14,13 +14,13 @@ import { Eye, Edit, Plus, Trash2, Shield } from "lucide-react";
 
 export default function AccessDemo() {
   const { user } = useAuth();
-  const { accessLevel, canRead, canEdit, canCreate, canDelete } = usePageAccess("/access-demo");
+  const { accessLevel, canView, canEdit, canCreate, canDelete } = usePageAccess("/access-demo");
 
   const getAccessLevelColor = (level: string) => {
     switch (level) {
       case 'create': return 'bg-green-100 text-green-800';
       case 'edit': return 'bg-blue-100 text-blue-800';
-      case 'read': return 'bg-yellow-100 text-yellow-800';
+      case 'view': return 'bg-yellow-100 text-yellow-800';
       case 'none': return 'bg-gray-100 text-gray-800';
       default: return 'bg-gray-100 text-gray-800';
     }
@@ -81,10 +81,10 @@ export default function AccessDemo() {
             {/* Permission Status */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
-                <div className={`p-4 rounded-lg ${canRead() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <div className={`p-4 rounded-lg ${canView() ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                   <Eye className="w-6 h-6 mx-auto mb-2" />
                   <p className="text-sm font-medium">ดู</p>
-                  <p className="text-xs">{canRead() ? 'อนุญาต' : 'ไม่อนุญาต'}</p>
+                  <p className="text-xs">{canView() ? 'อนุญาต' : 'ไม่อนุญาต'}</p>
                 </div>
               </div>
               <div className="text-center">
