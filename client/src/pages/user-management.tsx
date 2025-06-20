@@ -481,11 +481,11 @@ function UserManagement() {
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-end gap-2 relative z-30">
-                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="pointer-events-auto">
+                    <div className="flex justify-end gap-2">
+                      <Button type="button" variant="outline" onClick={() => setIsCreateDialogOpen(false)} className="btn-clickable">
                         ยกเลิก
                       </Button>
-                      <Button type="submit" disabled={createUserMutation.isPending} className="pointer-events-auto">
+                      <Button type="submit" disabled={createUserMutation.isPending} className="btn-clickable">
                         {createUserMutation.isPending ? (
                           <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         ) : (
@@ -582,11 +582,11 @@ function UserManagement() {
                           </FormItem>
                         )}
                       />
-                      <div className="flex justify-end gap-2 relative z-30">
-                        <Button type="button" variant="outline" onClick={() => setIsCreateRoleDialogOpen(false)} className="pointer-events-auto">
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" onClick={() => setIsCreateRoleDialogOpen(false)} className="btn-clickable">
                           ยกเลิก
                         </Button>
-                        <Button type="submit" disabled={createRoleMutation.isPending} className="pointer-events-auto">
+                        <Button type="submit" disabled={createRoleMutation.isPending} className="btn-clickable">
                           {createRoleMutation.isPending ? (
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
                           ) : (
@@ -708,11 +708,11 @@ function UserManagement() {
                       <TableCell>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="relative z-30 pointer-events-auto">
+                            <Button variant="ghost" size="sm" className="btn-clickable">
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="z-50 pointer-events-auto">
+                          <DropdownMenuContent align="end" className="btn-clickable">
                             <DropdownMenuItem onClick={() => handleEditUser(user)} className="cursor-pointer">
                               <Edit className="w-4 h-4 mr-2" />
                               แก้ไข
@@ -853,11 +853,11 @@ function UserManagement() {
                   </FormItem>
                 )}
               />
-              <div className="flex justify-end gap-2 relative z-30">
-                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="pointer-events-auto">
+              <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)} className="btn-clickable">
                   ยกเลิก
                 </Button>
-                <Button type="submit" disabled={updateUserMutation.isPending} className="pointer-events-auto">
+                <Button type="submit" disabled={updateUserMutation.isPending} className="btn-clickable">
                   {updateUserMutation.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin mr-2" />
                   ) : (
