@@ -16,6 +16,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { usePermissions } from "@/hooks/usePermissions";
 
 
 
@@ -62,6 +63,7 @@ interface SubJob {
 
 export default function WorkOrderForm() {
   const { toast } = useToast();
+  const { canAccess } = usePermissions();
   const queryClient = useQueryClient();
   const [, navigate] = useLocation();
   
@@ -1150,17 +1152,19 @@ export default function WorkOrderForm() {
               >
                 ยกเลิก
               </Button>
-              <Button 
-                onClick={handleSubmit} 
-                className="px-6 bg-blue-600 hover:bg-blue-700" 
-                disabled={createWorkOrderMutation.isPending}
-              >
-                <Save className="h-4 w-4 mr-2" />
-                {createWorkOrderMutation.isPending 
-                  ? (isEditMode ? "กำลังแก้ไข..." : "กำลังบันทึก...") 
-                  : (isEditMode ? "แก้ไขใบสั่งงาน" : "บันทึกใบสั่งงาน")
-                }
-              </Button>
+              {((isEditMode && canAccess("work_orders", "update")) || (!isEditMode && canAccess("work_orders", "create"))) && (
+                <Button 
+                  onClick={handleSubmit} 
+                  className="px-6 bg-blue-600 hover:bg-blue-700" 
+                  disabled={createWorkOrderMutation.isPending}
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {createWorkOrderMutation.isPending 
+                    ? (isEditMode ? "กำลังแก้ไข..." : "กำลังบันทึก...") 
+                    : (isEditMode ? "แก้ไขใบสั่งงาน" : "บันทึกใบสั่งงาน")
+                  }
+                </Button>
+              )}
             </div>
           </div>
         </div>
