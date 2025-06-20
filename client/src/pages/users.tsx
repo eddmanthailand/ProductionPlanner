@@ -12,8 +12,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, User, Shield, Settings } from "lucide-react";
+import { Plus, User, Shield, Settings, Key, MoreHorizontal, Edit, Power } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface User {
@@ -31,6 +34,23 @@ interface Role {
   id: number;
   name: string;
   displayName: string;
+}
+
+interface Permission {
+  id: number;
+  resource: string;
+  name: string;
+  action: string;
+  displayName: string;
+  module: string;
+}
+
+interface PageAccess {
+  id: number;
+  roleId: number;
+  pageName: string;
+  pageUrl: string;
+  accessLevel: string;
 }
 
 // Form validation schema
@@ -61,6 +81,7 @@ export default function Users() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<number | null>(null);
   
   const { data: users, isLoading } = useQuery<User[]>({
     queryKey: ["/api/users"]
@@ -68,6 +89,15 @@ export default function Users() {
 
   const { data: roles } = useQuery<Role[]>({
     queryKey: ["/api/roles"]
+  });
+
+  const { data: permissions } = useQuery<Permission[]>({
+    queryKey: ["/api/permissions"]
+  });
+
+  const { data: pageAccess } = useQuery<PageAccess[]>({
+    queryKey: ["/api/page-access"],
+    enabled: !!selectedRoleForPermissions
   });
 
   // Form setup
@@ -273,19 +303,36 @@ export default function Users() {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">จัดการผู้ใช้</h1>
-          <p className="text-gray-600">จัดการสิทธิ์การเข้าใช้งานและบทบาทของผู้ใช้</p>
+          <h1 className="text-2xl font-bold text-gray-900">จัดการผู้ใช้และสิทธิ์</h1>
+          <p className="text-gray-600">จัดการผู้ใช้งาน บทบาท และสิทธิ์การเข้าถึงระบบ</p>
         </div>
-        <Button 
-          className="bg-primary hover:bg-primary/90"
-          onClick={handleCreateUser}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          เพิ่มผู้ใช้ใหม่
-        </Button>
       </div>
 
-      {/* Stats Cards */}
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="users" className="flex items-center gap-2">
+            <User className="w-4 h-4" />
+            จัดการผู้ใช้
+          </TabsTrigger>
+          <TabsTrigger value="permissions" className="flex items-center gap-2">
+            <Key className="w-4 h-4" />
+            กำหนดสิทธิ์
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold">รายการผู้ใช้</h2>
+            <Button 
+              className="bg-primary hover:bg-primary/90"
+              onClick={handleCreateUser}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              เพิ่มผู้ใช้ใหม่
+            </Button>
+          </div>
+
+          {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card>
           <CardContent className="p-6">
@@ -650,6 +697,69 @@ export default function Users() {
           </Form>
         </DialogContent>
       </Dialog>
+
+        </TabsContent>
+
+        <TabsContent value="permissions" className="space-y-4">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold">กำหนดสิทธิ์การเข้าถึง</h2>
+            
+            <div className="flex items-center space-x-4">
+              <div className="w-48">
+                <Select onValueChange={(value) => setSelectedRoleForPermissions(parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกบทบาทเพื่อดูสิทธิ์" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {roles?.map((role) => (
+                      <SelectItem key={role.id} value={role.id.toString()}>
+                        {role.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {selectedRoleForPermissions && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>สิทธิ์การเข้าถึงหน้าต่างๆ</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>หน้า</TableHead>
+                        <TableHead>URL</TableHead>
+                        <TableHead>ระดับสิทธิ์</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {pageAccess?.map((access) => (
+                        <TableRow key={access.id}>
+                          <TableCell>{access.pageName}</TableCell>
+                          <TableCell className="font-mono text-sm">{access.pageUrl}</TableCell>
+                          <TableCell>
+                            <Badge variant={
+                              access.accessLevel === "create" ? "default" :
+                              access.accessLevel === "edit" ? "secondary" : "outline"
+                            }>
+                              {access.accessLevel === "create" ? "สร้าง/แก้ไข/ดู" :
+                               access.accessLevel === "edit" ? "แก้ไข/ดู" : "ดู"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+      </Tabs>
     </div>
   );
 }
