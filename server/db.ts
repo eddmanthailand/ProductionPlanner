@@ -3,13 +3,13 @@ import { drizzle } from 'drizzle-orm/neon-serverless';
 import ws from "ws";
 import * as schema from "@shared/schema";
 
-// Configure Neon for serverless environment with better timeout handling
+// Configure Neon for serverless environment with connection limits
 neonConfig.webSocketConstructor = ws;
 neonConfig.useSecureWebSocket = true;
 neonConfig.pipelineConnect = false;
 neonConfig.pipelineTLS = false;
-neonConfig.fetchConnectionCache = true;
-neonConfig.poolQueryViaFetch = false;
+neonConfig.fetchConnectionCache = false;
+neonConfig.poolQueryViaFetch = true;
 
 if (!process.env.DATABASE_URL) {
   throw new Error(
