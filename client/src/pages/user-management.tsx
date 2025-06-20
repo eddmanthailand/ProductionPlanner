@@ -90,11 +90,20 @@ function UserManagement() {
   const { user } = useAuth();
   const { getPagePermissions } = usePageNavigation();
   const { canCreate, canEdit, canRead } = getPagePermissions("/user-management");
-
+  
+  // State variables
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  console.log("User Management Permissions Debug:", { 
+    canCreate, 
+    canEdit, 
+    canRead, 
+    userRoleId: user?.roleId,
+    isCreateDialogOpen 
+  });
 
   const {
     data: users = [],
@@ -664,13 +673,20 @@ function UserManagement() {
             </CardDescription>
           </div>
           {canCreate && (
-            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="btn-clickable">
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  เพิ่มผู้ใช้
-                </Button>
-              </DialogTrigger>
+            <Button 
+              onClick={() => {
+                console.log("Direct button clicked - setting dialog to open");
+                setIsCreateDialogOpen(true);
+              }}
+              className="mr-2"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              เพิ่มผู้ใช้
+            </Button>
+          )}
+          
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogContent className="sm:max-w-[500px]">{canCreate && (
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                   <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
