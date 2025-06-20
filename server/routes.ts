@@ -3340,6 +3340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     { name: "ใบเสร็จรับเงิน", url: "/sales/receipts" },
     { name: "ปฏิทินการทำงาน", url: "/production/calendar" },
     { name: "โครงสร้างองค์กร", url: "/production/organization" },
+    { name: "วางแผนการผลิต", url: "/production/planning" },
     { name: "วางแผนและคิวงาน", url: "/production/work-queue-planning" },
     { name: "ใบสั่งงาน", url: "/production/work-orders" },
     { name: "บันทึกงานประจำวัน", url: "/production/daily-work-log" },
