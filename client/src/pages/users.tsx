@@ -53,22 +53,21 @@ interface PageAccess {
   accessLevel: string;
 }
 
-// Form validation schema
 const createUserSchema = z.object({
-  username: z.string().min(1, "กรุณากรอกชื่อผู้ใช้"),
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง").optional().or(z.literal("")),
-  firstName: z.string().min(1, "กรุณากรอกชื่อ"),
-  lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
+  username: z.string().min(1, "กรุณาระบุชื่อผู้ใช้"),
+  email: z.string().email("อีเมลไม่ถูกต้อง"),
+  firstName: z.string().min(1, "กรุณาระบุชื่อจริง"),
+  lastName: z.string().min(1, "กรุณาระบุนามสกุล"),
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
-  roleId: z.coerce.number().min(1, "กรุณาเลือกบทบาท")
+  roleId: z.number().min(1, "กรุณาเลือกบทบาท")
 });
 
 const editUserSchema = z.object({
-  username: z.string().min(1, "กรุณากรอกชื่อผู้ใช้"),
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง").optional().or(z.literal("")),
-  firstName: z.string().min(1, "กรุณากรอกชื่อ"),
-  lastName: z.string().min(1, "กรุณากรอกนามสกุล"),
-  roleId: z.coerce.number().min(1, "กรุณาเลือกบทบาท")
+  username: z.string().min(1, "กรุณาระบุชื่อผู้ใช้"),
+  email: z.string().email("อีเมลไม่ถูกต้อง"),
+  firstName: z.string().min(1, "กรุณาระบุชื่อจริง"),
+  lastName: z.string().min(1, "กรุณาระบุนามสกุล"),
+  roleId: z.number().min(1, "กรุณาเลือกบทบาท")
 });
 
 type CreateUserFormData = z.infer<typeof createUserSchema>;
@@ -76,32 +75,35 @@ type EditUserFormData = z.infer<typeof editUserSchema>;
 
 export default function Users() {
   const { t } = useLanguage();
-  const { toast } = useToast();
   const [location, setLocation] = useLocation();
+  const { toast } = useToast();
+
+  // State for dialogs and forms
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<number | null>(null);
-  
+
+  // Fetch data
   const { data: users, isLoading } = useQuery<User[]>({
-    queryKey: ["/api/users"]
+    queryKey: ["/api/users"],
   });
 
   const { data: roles } = useQuery<Role[]>({
-    queryKey: ["/api/roles"]
+    queryKey: ["/api/roles"],
   });
 
   const { data: permissions } = useQuery<Permission[]>({
-    queryKey: ["/api/permissions"]
+    queryKey: ["/api/permissions"],
   });
 
   const { data: pageAccess } = useQuery<PageAccess[]>({
-    queryKey: ["/api/page-access"],
-    enabled: !!selectedRoleForPermissions
+    queryKey: ["/api/page-access", selectedRoleForPermissions],
+    enabled: !!selectedRoleForPermissions,
   });
 
-  // Form setup
-  const form = useForm<CreateUserFormData>({
+  // Forms
+  const createForm = useForm<CreateUserFormData>({
     resolver: zodResolver(createUserSchema),
     defaultValues: {
       username: "",
@@ -124,19 +126,19 @@ export default function Users() {
     }
   });
 
-  // Mutation for creating new user
+  // Mutations
   const createUserMutation = useMutation({
     mutationFn: async (data: CreateUserFormData) => {
-      const response = await apiRequest("POST", "/api/users", data);
-      return response.json();
+      const res = await apiRequest("POST", "/api/users", data);
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
       setIsCreateDialogOpen(false);
-      form.reset();
+      createForm.reset();
       toast({
         title: "สำเร็จ",
-        description: "สร้างผู้ใช้ใหม่เรียบร้อยแล้ว",
+        description: "เพิ่มผู้ใช้ใหม่เรียบร้อยแล้ว",
       });
     },
     onError: (error: Error) => {
@@ -148,12 +150,10 @@ export default function Users() {
     },
   });
 
-  // Mutation for editing user
   const editUserMutation = useMutation({
     mutationFn: async (data: EditUserFormData & { id: number }) => {
-      const { id, ...updateData } = data;
-      const response = await apiRequest("PATCH", `/api/users/${id}`, updateData);
-      return response.json();
+      const res = await apiRequest("PUT", `/api/users/${data.id}`, data);
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -174,11 +174,10 @@ export default function Users() {
     },
   });
 
-  // Mutation for toggling user status
   const toggleUserStatusMutation = useMutation({
-    mutationFn: async (userId: number) => {
-      const response = await apiRequest("PATCH", `/api/users/${userId}/toggle-status`);
-      return response.json();
+    mutationFn: async ({ id, isActive }: { id: number; isActive: boolean }) => {
+      const res = await apiRequest("PATCH", `/api/users/${id}/toggle-status`, { isActive });
+      return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/users"] });
@@ -196,56 +195,38 @@ export default function Users() {
     },
   });
 
-  // Navigation handlers
+  // Event handlers
   const handleCreateUser = () => {
-    console.log("Opening create dialog");
     setIsCreateDialogOpen(true);
   };
 
-  const onSubmit = (data: CreateUserFormData) => {
-    console.log("Form submitted:", data);
-    createUserMutation.mutate(data);
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    editForm.reset({
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      roleId: user.roleId || 0
+    });
+    setIsEditDialogOpen(true);
   };
 
-  const handleEditUser = (userId: number) => {
-    console.log("Editing user:", userId);
-    const userToEdit = users?.find(user => user.id === userId);
-    if (userToEdit) {
-      setEditingUser(userToEdit);
-      editForm.reset({
-        username: userToEdit.username,
-        email: userToEdit.email,
-        firstName: userToEdit.firstName,
-        lastName: userToEdit.lastName,
-        roleId: userToEdit.roleId || 0
-      });
-      setIsEditDialogOpen(true);
-    }
+  const onSubmit = (data: CreateUserFormData) => {
+    createUserMutation.mutate(data);
   };
 
   const onEditSubmit = (data: EditUserFormData) => {
     if (editingUser) {
-      console.log("Edit form submitted:", data);
       editUserMutation.mutate({ ...data, id: editingUser.id });
     }
   };
 
   const handleToggleUserStatus = (user: User) => {
-    console.log("Toggling status for user:", user.id);
-    toggleUserStatusMutation.mutate(user.id);
-  };
-
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "admin":
-        return "bg-red-100 text-red-800";
-      case "manager":
-        return "bg-blue-100 text-blue-800";
-      case "user":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
+    toggleUserStatusMutation.mutate({
+      id: user.id,
+      isActive: !user.isActive
+    });
   };
 
   const getRoleText = (role: string) => {
@@ -279,9 +260,9 @@ export default function Users() {
           <h1 className="text-2xl font-bold">จัดการผู้ใช้</h1>
           <Button disabled>เพิ่มผู้ใช้ใหม่</Button>
         </div>
-        <div className="grid gap-4">
-          {[...Array(5)].map((_, i) => (
-            <Card key={i} className="animate-pulse">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
               <CardContent className="p-6">
                 <div className="h-20 bg-gray-200 rounded"></div>
               </CardContent>
@@ -333,371 +314,127 @@ export default function Users() {
           </div>
 
           {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                <User className="w-5 h-5 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">ผู้ใช้ทั้งหมด</p>
-                <p className="text-2xl font-bold">{totalUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                <User className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">ใช้งานอยู่</p>
-                <p className="text-2xl font-bold text-green-600">{activeUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <Shield className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">ผู้ดูแลระบบ</p>
-                <p className="text-2xl font-bold text-red-600">{adminUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                <Settings className="w-5 h-5 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600">ผู้จัดการ</p>
-                <p className="text-2xl font-bold text-orange-600">{managerUsers}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Users List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>รายชื่อผู้ใช้งาน</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {!users || users.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-500 mb-4">ยังไม่มีผู้ใช้งานในระบบ</p>
-              <Button onClick={handleCreateUser}>
-                <Plus className="w-4 h-4 mr-2" />
-                เพิ่มผู้ใช้แรก
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {users.map((user) => (
-                <div key={user.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                        <span className="text-gray-600 font-medium">
-                          {user.firstName.charAt(0)}{user.lastName.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {user.firstName} {user.lastName}
-                        </h3>
-                        <div className="flex items-center space-x-3 text-sm text-gray-600">
-                          <span>{user.email}</span>
-                          <span>@{user.username}</span>
-                          <Badge className={`${getRoleColor(user.role)} flex items-center space-x-1`}>
-                            {getRoleIcon(user.role)}
-                            <span>{getRoleText(user.role)}</span>
-                          </Badge>
-                          <Badge variant={user.isActive ? "default" : "secondary"}>
-                            {user.isActive ? "ใช้งานอยู่" : "ไม่ใช้งาน"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleEditUser(user.id)}
-                      >
-                        แก้ไข
-                      </Button>
-                      <Button 
-                        variant={user.isActive ? "destructive" : "default"} 
-                        size="sm"
-                        onClick={() => handleToggleUserStatus(user)}
-                        disabled={toggleUserStatusMutation.isPending}
-                      >
-                        {toggleUserStatusMutation.isPending ? "กำลังดำเนินการ..." : 
-                         user.isActive ? "ปิดการใช้งาน" : "เปิดการใช้งาน"}
-                      </Button>
-                    </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">ผู้ใช้ทั้งหมด</p>
+                    <p className="text-2xl font-bold">{totalUsers}</p>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
 
-      {/* Create User Dialog */}
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
-          </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ชื่อผู้ใช้</FormLabel>
-                    <FormControl>
-                      <Input placeholder="กรอกชื่อผู้ใช้" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>อีเมล (ไม่จำเป็น)</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="กรอกอีเมล" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <User className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">ใช้งานอยู่</p>
+                    <p className="text-2xl font-bold text-green-600">{activeUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ชื่อ</FormLabel>
-                      <FormControl>
-                        <Input placeholder="กรอกชื่อ" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Shield className="w-5 h-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">ผู้ดูแลระบบ</p>
+                    <p className="text-2xl font-bold text-purple-600">{adminUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>นามสกุล</FormLabel>
-                      <FormControl>
-                        <Input placeholder="กรอกนามสกุล" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <Settings className="w-5 h-5 text-orange-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">ผู้จัดการ</p>
+                    <p className="text-2xl font-bold text-orange-600">{managerUsers}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>รหัสผ่าน</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="กรอกรหัสผ่าน" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="roleId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>บทบาท</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เลือกบทบาท" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {roles?.map((role) => (
-                          <SelectItem key={role.id} value={role.id.toString()}>
-                            {role.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsCreateDialogOpen(false)}
-                >
-                  ยกเลิก
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={createUserMutation.isPending}
-                >
-                  {createUserMutation.isPending ? "กำลังสร้าง..." : "สร้างผู้ใช้"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit User Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
-          </DialogHeader>
-          <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
-              <FormField
-                control={editForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ชื่อผู้ใช้</FormLabel>
-                    <FormControl>
-                      <Input placeholder="กรอกชื่อผู้ใช้" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={editForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>อีเมล (ไม่จำเป็น)</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="กรอกอีเมล" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={editForm.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>ชื่อ</FormLabel>
-                      <FormControl>
-                        <Input placeholder="กรอกชื่อ" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={editForm.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>นามสกุล</FormLabel>
-                      <FormControl>
-                        <Input placeholder="กรอกนามสกุล" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={editForm.control}
-                name="roleId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>บทบาท</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="เลือกบทบาท" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {roles?.map((role) => (
-                          <SelectItem key={role.id} value={role.id.toString()}>
-                            {role.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setIsEditDialogOpen(false);
-                    setEditingUser(null);
-                  }}
-                >
-                  ยกเลิก
-                </Button>
-                <Button 
-                  type="submit" 
-                  disabled={editUserMutation.isPending}
-                >
-                  {editUserMutation.isPending ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </DialogContent>
-      </Dialog>
-
+          {/* Users Table */}
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ผู้ใช้</TableHead>
+                    <TableHead>อีเมล</TableHead>
+                    <TableHead>บทบาท</TableHead>
+                    <TableHead>สถานะ</TableHead>
+                    <TableHead className="text-right">จัดการ</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users?.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                            {getRoleIcon(user.role)}
+                          </div>
+                          <div>
+                            <p className="font-medium">{user.firstName} {user.lastName}</p>
+                            <p className="text-sm text-gray-500">@{user.username}</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {getRoleText(user.role)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={user.isActive ? "default" : "secondary"}>
+                          {user.isActive ? "ใช้งานอยู่" : "หยุดใช้งาน"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                              <Edit className="w-4 h-4 mr-2" />
+                              แก้ไข
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleToggleUserStatus(user)}>
+                              <Power className="w-4 h-4 mr-2" />
+                              {user.isActive ? "หยุดใช้งาน" : "เปิดใช้งาน"}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="permissions" className="space-y-4">
@@ -758,8 +495,244 @@ export default function Users() {
             )}
           </div>
         </TabsContent>
-
       </Tabs>
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>เพิ่มผู้ใช้ใหม่</DialogTitle>
+          </DialogHeader>
+          <Form {...createForm}>
+            <form onSubmit={createForm.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={createForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อจริง</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ชื่อจริง" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={createForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>นามสกุล</FormLabel>
+                      <FormControl>
+                        <Input placeholder="นามสกุล" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={createForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อผู้ใช้</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ชื่อผู้ใช้" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={createForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อีเมล</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="อีเมล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={createForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>รหัสผ่าน</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="รหัสผ่าน" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={createForm.control}
+                name="roleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>บทบาท</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกบทบาท" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles?.map((role) => (
+                          <SelectItem key={role.id} value={role.id.toString()}>
+                            {role.displayName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateDialogOpen(false)}
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={createUserMutation.isPending}
+                >
+                  {createUserMutation.isPending ? "กำลังสร้าง..." : "สร้างผู้ใช้"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>แก้ไขข้อมูลผู้ใช้</DialogTitle>
+          </DialogHeader>
+          <Form {...editForm}>
+            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={editForm.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>ชื่อจริง</FormLabel>
+                      <FormControl>
+                        <Input placeholder="ชื่อจริง" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={editForm.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>นามสกุล</FormLabel>
+                      <FormControl>
+                        <Input placeholder="นามสกุล" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={editForm.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อผู้ใช้</FormLabel>
+                    <FormControl>
+                      <Input placeholder="ชื่อผู้ใช้" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>อีเมล</FormLabel>
+                    <FormControl>
+                      <Input type="email" placeholder="อีเมล" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={editForm.control}
+                name="roleId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>บทบาท</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value.toString()}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="เลือกบทบาท" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {roles?.map((role) => (
+                          <SelectItem key={role.id} value={role.id.toString()}>
+                            {role.displayName}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="flex justify-end space-x-2 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setEditingUser(null);
+                  }}
+                >
+                  ยกเลิก
+                </Button>
+                <Button 
+                  type="submit" 
+                  disabled={editUserMutation.isPending}
+                >
+                  {editUserMutation.isPending ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
