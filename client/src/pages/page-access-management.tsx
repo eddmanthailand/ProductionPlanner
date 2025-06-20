@@ -28,109 +28,84 @@ type Page = { name: string; url: string };
 type AccessRule = { roleId: number; pageUrl: string; accessLevel: AccessLevel };
 type AccessLevel = "none" | "read" | "edit" | "create";
 
-type PageAccessConfig = {
+interface PageAccessConfig {
   roles: Role[];
   pages: Page[];
-  accessRules: AccessRule[];
-};
+  currentAccess: { roleId: number; pageUrl: string; accessLevel: AccessLevel }[];
+}
+
+type PermissionMatrix = Record<string, Record<number, AccessLevel>>;
 
 const accessLevels: AccessLevel[] = ["none", "read", "edit", "create"];
 const accessLevelLabels: Record<AccessLevel, string> = {
   none: "ไม่มีสิทธิ์",
-  read: "อ่าน",
-  edit: "แก้ไข",
-  create: "สร้าง/ลบ",
-};
-
-// --- Helper function to build the permission matrix ---
-const buildPermissionMatrix = (config: PageAccessConfig | undefined) => {
-  if (!config) return {};
-  const matrix: Record<string, Record<number, AccessLevel>> = {};
-  config.pages.forEach(page => {
-    matrix[page.url] = {};
-    config.roles.forEach(role => {
-      const rule = config.accessRules.find(r => r.pageUrl === page.url && r.roleId === role.id);
-      matrix[page.url][role.id] = rule ? rule.accessLevel : 'none';
-    });
-  });
-  return matrix;
+  read: "ดูได้อย่างเดียว",
+  edit: "แก้ไขได้",
+  create: "สร้างได้ (เต็มสิทธิ์)",
 };
 
 export default function PageAccessManagement() {
-  const queryClient = useQueryClient();
   const { toast } = useToast();
-  const [permissions, setPermissions] = useState<Record<string, Record<number, AccessLevel>>>({});
+  const queryClient = useQueryClient();
+  const [permissions, setPermissions] = useState<PermissionMatrix>({});
   const [hasChanges, setHasChanges] = useState(false);
 
-  // --- Data Fetching using React Query ---
   const { data: config, isLoading, error, refetch } = useQuery<PageAccessConfig>({
     queryKey: ["pageAccessConfig"],
     queryFn: async () => {
-      const res = await fetch("/api/page-access-management/config", {
-        cache: 'no-cache',
-        headers: {
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
-      });
-      if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลการตั้งค่าสิทธิ์ได้");
-      const data = await res.json();
-      console.log("🔍 ข้อมูลที่ได้จาก API /page-access-management/config:");
-      console.log("📊 จำนวนหน้าทั้งหมด:", data.pages?.length);
-      console.log("📋 จำนวนสิทธิ์ทั้งหมด:", data.accessRules?.length);
-      console.log("📝 รายชื่อหน้าทั้งหมด:", data.pages?.map((p: Page) => p.name));
-      console.log("🔍 หน้าที่มี 'วางแผน':", data.pages?.filter((p: Page) => p.name.includes('วางแผน')));
-      console.log("📊 ข้อมูลครบถ้วน:", data);
-      return data;
+      const response = await fetch("/api/page-access-management/config");
+      if (!response.ok) throw new Error("Failed to fetch page access config");
+      return response.json();
     },
-    staleTime: 0,
-    gcTime: 0,
   });
 
-  // --- Mutation for updating permissions ---
   const updateMutation = useMutation({
-    mutationFn: (newAccessList: Omit<AccessRule, "id">[]) =>
-      fetch("/api/page-access-management/update", {
-        method: "POST",
+    mutationFn: async (updates: Omit<AccessRule, "id">[]) => {
+      const response = await fetch("/api/page-access-management/update", {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ accessList: newAccessList }),
-      }).then(res => {
-        if (!res.ok) throw new Error("การบันทึกสิทธิ์ล้มเหลว");
-        return res.json();
-      }),
-    onSuccess: () => {
-      toast({
-        title: "สำเร็จ!",
-        description: "บันทึกการตั้งค่าสิทธิ์เรียบร้อยแล้ว",
-        className: "bg-green-100 text-green-800",
+        body: JSON.stringify({ updates }),
       });
-      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/roles"] }); // Invalidate related queries
-      setHasChanges(false);
+      if (!response.ok) throw new Error("Failed to update permissions");
+      return response.json();
     },
-    onError: (e: Error) => {
+    onSuccess: () => {
+      toast({ title: "สำเร็จ", description: "อัปเดตสิทธิ์การเข้าถึงเรียบร้อยแล้ว" });
+      setHasChanges(false);
+      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+    },
+    onError: (error) => {
+      console.error("Permission update error:", error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: e.message || "ไม่สามารถบันทึกข้อมูลได้",
+        description: "ไม่สามารถอัปเดตสิทธิ์ได้",
         variant: "destructive",
       });
     },
   });
 
-  // --- Effect to initialize state when data is loaded ---
+  const buildPermissionMatrix = (config: PageAccessConfig): PermissionMatrix => {
+    const matrix: PermissionMatrix = {};
+    config.pages.forEach(page => {
+      matrix[page.url] = {};
+      config.roles.forEach(role => {
+        const access = config.currentAccess.find(
+          a => a.roleId === role.id && a.pageUrl === page.url
+        );
+        matrix[page.url][role.id] = access?.accessLevel || "none";
+      });
+    });
+    return matrix;
+  };
+
   useEffect(() => {
     if (config) {
-      console.log("🔄 กำลังสร้างตารางสิทธิ์จากข้อมูล config:", config);
-      console.log("📋 จำนวนหน้าที่ได้รับ:", config.pages?.length);
-      console.log("👥 จำนวน Role ที่ได้รับ:", config.roles?.length);
-      if (config.pages) {
-        console.log("📄 รายชื่อหน้าทั้งหมด:", config.pages.map(p => p.name));
-      }
-      setPermissions(buildPermissionMatrix(config));
+      const matrix = buildPermissionMatrix(config);
+      setPermissions(matrix);
+      setHasChanges(false);
     }
   }, [config]);
-  
-  // --- Event Handler ---
+
   const handlePermissionChange = (pageUrl: string, roleId: number, level: AccessLevel) => {
     setPermissions(prev => ({
       ...prev,
@@ -204,123 +179,141 @@ export default function PageAccessManagement() {
 
   return (
     <MainLayout>
-      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-2xl font-bold flex items-center">
-                    <ShieldCheck className="w-7 h-7 mr-3 text-primary"/>
-                    จัดการสิทธิ์การเข้าถึงหน้า
-                </CardTitle>
-                <CardDescription>
-                    กำหนดระดับการเข้าถึงแต่ละหน้าสำหรับ Role ต่างๆ ในระบบ Role 'Admin' มีสิทธิ์เข้าถึงทุกอย่างโดยอัตโนมัติ
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <div className="flex justify-end gap-2 mb-4">
-                    <Button 
-                        variant="secondary"
-                        onClick={async () => {
-                          try {
-                            console.log("สร้างข้อมูลสิทธิ์ครบถ้วน");
-                            const response = await fetch("/api/page-access-management/force-sync", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" }
-                            });
-                            
-                            if (response.ok) {
-                              const result = await response.json();
-                              console.log("สร้างสิทธิ์สำเร็จ:", result);
-                              toast({
-                                title: "สำเร็จ",
-                                description: `สร้างสิทธิ์สำหรับ ${result.pagesCount} หน้า และ ${result.rolesCount} บทบาท`,
-                              });
-                              queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
-                              await refetch();
-                            }
-                          } catch (error) {
-                            console.error("เกิดข้อผิดพลาด:", error);
-                            toast({
-                              title: "ข้อผิดพลาด",
-                              description: "ไม่สามารถสร้างข้อมูลสิทธิ์ได้",
-                              variant: "destructive"
-                            });
-                          }
-                        }}
-                        disabled={isLoading}
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        สร้างสิทธิ์ครบถ้วน
-                    </Button>
-                    <Button 
-                        variant="outline"
-                        onClick={async () => {
-                          console.log("🔄 กำลังรีเฟรชข้อมูล");
-                          queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
-                          await refetch();
-                          console.log("✅ รีเฟรชข้อมูลเสร็จสิ้น");
-                        }}
-                        disabled={isLoading}
-                    >
-                        {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                        รีเฟรชข้อมูล
-                    </Button>
-                    <Button 
-                        variant="outline"
-                        onClick={handleResetChanges}
-                        disabled={!hasChanges || updateMutation.isPending}
-                    >
-                        ยกเลิกการเปลี่ยนแปลง
-                    </Button>
-                    <Button 
-                        onClick={handleSaveChanges} 
-                        disabled={!hasChanges || updateMutation.isPending}
-                    >
-                        {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        บันทึกการเปลี่ยนแปลง
-                    </Button>
-                </div>
-                <div className="border rounded-lg overflow-x-auto">
-                    <Table>
-                        <TableHeader className="bg-muted/50">
-                            <TableRow>
-                                <TableHead className="font-bold min-w-[250px]">หน้า (Page)</TableHead>
-                                {displayRoles.map(role => (
-                                    <TableHead key={role.id} className="font-bold min-w-[150px] text-center">{role.displayName}</TableHead>
+      <div className="h-full flex flex-col">
+        <div className="flex-1 p-6 overflow-hidden">
+          <div className="h-full flex flex-col">
+            {/* Header */}
+            <div className="mb-6">
+              <div className="flex items-center mb-2">
+                <ShieldCheck className="w-8 h-8 mr-3 text-primary"/>
+                <h1 className="text-3xl font-bold">จัดการสิทธิ์การเข้าถึงหน้า</h1>
+              </div>
+              <p className="text-muted-foreground">
+                กำหนดระดับการเข้าถึงแต่ละหน้าสำหรับ Role ต่างๆ ในระบบ Role 'Admin' มีสิทธิ์เข้าถึงทุกอย่างโดยอัตโนมัติ
+              </p>
+            </div>
+
+            {/* Controls */}
+            <div className="flex justify-end gap-2 mb-4">
+              <Button 
+                variant="secondary"
+                onClick={async () => {
+                  console.log("🔄 กำลังเริ่มต้นระบบสิทธิ์");
+                  try {
+                    const response = await fetch('/api/page-access-management/force-sync', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                    });
+                    
+                    if (response.ok) {
+                      const result = await response.json();
+                      console.log("✅ สร้างสิทธิ์เสร็จสิ้น:", result.message);
+                      toast({
+                        title: "เสร็จสิ้น",
+                        description: result.message,
+                      });
+                      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+                      refetch();
+                    } else {
+                      throw new Error('Failed to sync permissions');
+                    }
+                  } catch (error) {
+                    console.error("❌ ข้อผิดพลาด:", error);
+                    toast({
+                      title: "เกิดข้อผิดพลาด",
+                      description: "ไม่สามารถสร้างสิทธิ์ได้",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                disabled={isLoading}
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                สร้างสิทธิ์ครบถ้วน
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={async () => {
+                  console.log("🔄 กำลังรีเฟรชข้อมูล");
+                  queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
+                  await refetch();
+                  console.log("✅ รีเฟรชข้อมูลเสร็จสิ้น");
+                }}
+                disabled={isLoading}
+              >
+                {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+                รีเฟรชข้อมูล
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleResetChanges}
+                disabled={!hasChanges || updateMutation.isPending}
+              >
+                ยกเลิกการเปลี่ยนแปลง
+              </Button>
+              <Button 
+                onClick={handleSaveChanges} 
+                disabled={!hasChanges || updateMutation.isPending}
+              >
+                {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                บันทึกการเปลี่ยนแปลง
+              </Button>
+            </div>
+
+            {/* Table Container with Full Height */}
+            <div className="flex-1 border rounded-lg overflow-hidden bg-white dark:bg-gray-800">
+              <div className="h-full overflow-auto">
+                <Table>
+                  <TableHeader className="bg-muted/50 sticky top-0 z-10">
+                    <TableRow>
+                      <TableHead className="font-bold min-w-[300px] bg-muted/50 sticky left-0 z-20">หน้า (Page)</TableHead>
+                      {displayRoles.map(role => (
+                        <TableHead key={role.id} className="font-bold min-w-[180px] text-center bg-muted/50">
+                          {role.displayName}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {config.pages.map(page => (
+                      <TableRow key={page.url} className="hover:bg-muted/20">
+                        <TableCell className="font-medium sticky left-0 bg-white dark:bg-gray-800 border-r z-10">
+                          <div className="min-w-[280px]">
+                            <div className="font-semibold text-sm">{page.name}</div>
+                            <div className="text-xs text-muted-foreground mt-1">{page.url}</div>
+                          </div>
+                        </TableCell>
+                        {displayRoles.map(role => (
+                          <TableCell key={role.id} className="text-center p-2">
+                            <Select
+                              value={permissions[page.url]?.[role.id] || "none"}
+                              onValueChange={(value: AccessLevel) =>
+                                handlePermissionChange(page.url, role.id, value)
+                              }
+                            >
+                              <SelectTrigger className="w-full min-w-[160px]">
+                                <SelectValue placeholder="เลือกระดับ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {accessLevels.map(level => (
+                                  <SelectItem key={level} value={level}>
+                                    {accessLevelLabels[level]}
+                                  </SelectItem>
                                 ))}
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {config.pages.map(page => (
-                                <TableRow key={page.url}>
-                                <TableCell className="font-medium">{page.name} <span className="text-xs text-muted-foreground">{page.url}</span></TableCell>
-                                {displayRoles.map(role => (
-                                    <TableCell key={role.id}>
-                                    <Select
-                                        value={permissions[page.url]?.[role.id] || "none"}
-                                        onValueChange={(value: AccessLevel) =>
-                                        handlePermissionChange(page.url, role.id, value)
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                        <SelectValue placeholder="เลือกระดับ" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                        {accessLevels.map(level => (
-                                            <SelectItem key={level} value={level}>
-                                            {accessLevelLabels[level]}
-                                            </SelectItem>
-                                        ))}
-                                        </SelectContent>
-                                    </Select>
-                                    </TableCell>
-                                ))}
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            </CardContent>
-        </Card>
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </MainLayout>
   );
