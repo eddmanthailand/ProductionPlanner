@@ -86,10 +86,12 @@ export default function PageAccessManagement() {
 
   const buildPermissionMatrix = (config: PageAccessConfig): PermissionMatrix => {
     const matrix: PermissionMatrix = {};
+    if (!config?.pages || !config?.roles) return matrix;
+    
     config.pages.forEach(page => {
       matrix[page.url] = {};
       config.roles.forEach(role => {
-        const access = config.currentAccess.find(
+        const access = config.currentAccess?.find(
           a => a.roleId === role.id && a.pageUrl === page.url
         );
         matrix[page.url][role.id] = access?.accessLevel || "none";
@@ -118,18 +120,20 @@ export default function PageAccessManagement() {
   };
 
   const handleSaveChanges = () => {
-    if (!config) return;
+    if (!config?.pages || !config?.roles) return;
 
     const updatedList: Omit<AccessRule, "id">[] = [];
+    const originalMatrix = buildPermissionMatrix(config);
+    
     config.pages.forEach(page => {
       config.roles.forEach(role => {
-        const originalLevel = buildPermissionMatrix(config)[page.url][role.id];
-        const currentLevel = permissions[page.url]?.[role.id];
+        const originalLevel = originalMatrix[page.url]?.[role.id] || 'none';
+        const currentLevel = permissions[page.url]?.[role.id] || 'none';
         if (originalLevel !== currentLevel) {
           updatedList.push({
             pageUrl: page.url,
             roleId: role.id,
-            accessLevel: currentLevel ?? 'none',
+            accessLevel: currentLevel,
           });
         }
       });
