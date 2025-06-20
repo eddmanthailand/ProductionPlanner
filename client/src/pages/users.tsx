@@ -245,6 +245,12 @@ export default function Users() {
         pageUrl, 
         accessLevel 
       });
+      
+      // Handle No Content response (204) when deleting access
+      if (res.status === 204) {
+        return { deleted: true };
+      }
+      
       return await res.json();
     },
     onSuccess: () => {
