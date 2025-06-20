@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import MainLayout from "@/components/layout/main-layout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -28,21 +27,15 @@ type Page = { name: string; url: string };
 type AccessRule = { roleId: number; pageUrl: string; accessLevel: AccessLevel };
 type AccessLevel = "none" | "read" | "edit" | "create";
 
+// Type for API response
 interface PageAccessConfig {
   roles: Role[];
   pages: Page[];
   currentAccess: { roleId: number; pageUrl: string; accessLevel: AccessLevel }[];
 }
 
+// Type for the permission matrix state
 type PermissionMatrix = Record<string, Record<number, AccessLevel>>;
-
-const accessLevels: AccessLevel[] = ["none", "read", "edit", "create"];
-const accessLevelLabels: Record<AccessLevel, string> = {
-  none: "ไม่มีสิทธิ์",
-  read: "ดูได้อย่างเดียว",
-  edit: "แก้ไขได้",
-  create: "สร้างได้ (เต็มสิทธิ์)",
-};
 
 export default function PageAccessManagement() {
   const { toast } = useToast();
@@ -54,31 +47,63 @@ export default function PageAccessManagement() {
     queryKey: ["pageAccessConfig"],
     queryFn: async () => {
       const response = await fetch("/api/page-access-management/config");
-      if (!response.ok) throw new Error("Failed to fetch page access config");
+      if (!response.ok) {
+        throw new Error("Failed to fetch page access configuration");
+      }
       return response.json();
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async (updates: Omit<AccessRule, "id">[]) => {
-      const response = await fetch("/api/page-access-management/update", {
-        method: "PUT",
+      const response = await fetch("/api/page-access-management/bulk-update", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ updates }),
+        body: JSON.stringify(updates),
       });
-      if (!response.ok) throw new Error("Failed to update permissions");
+      if (!response.ok) {
+        throw new Error("Failed to update permissions");
+      }
       return response.json();
     },
     onSuccess: () => {
-      toast({ title: "สำเร็จ", description: "อัปเดตสิทธิ์การเข้าถึงเรียบร้อยแล้ว" });
+      toast({
+        title: "สำเร็จ",
+        description: "บันทึกการเปลี่ยนแปลงสิทธิ์เรียบร้อยแล้ว",
+      });
       setHasChanges(false);
       queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
     },
-    onError: (error) => {
-      console.error("Permission update error:", error);
+    onError: (error: Error) => {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถอัปเดตสิทธิ์ได้",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const createAllMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/page-access-management/create-all", {
+        method: "POST",
+      });
+      if (!response.ok) {
+        throw new Error("Failed to create all permissions");
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างสิทธิ์ครบถ้วนเรียบร้อยแล้ว",
+      });
+      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
         variant: "destructive",
       });
     },
@@ -100,13 +125,20 @@ export default function PageAccessManagement() {
     return matrix;
   };
 
+  // Initialize permissions matrix when config loads
   useEffect(() => {
     if (config) {
-      const matrix = buildPermissionMatrix(config);
-      setPermissions(matrix);
-      setHasChanges(false);
+      setPermissions(buildPermissionMatrix(config));
     }
   }, [config]);
+
+  const accessLevels: AccessLevel[] = ["none", "read", "edit", "create"];
+  const accessLevelLabels = {
+    none: "ไม่มีสิทธิ์",
+    read: "ดูได้",
+    edit: "แก้ไขได้",
+    create: "สร้างได้",
+  };
 
   const handlePermissionChange = (pageUrl: string, roleId: number, level: AccessLevel) => {
     setPermissions(prev => ({
@@ -145,180 +177,151 @@ export default function PageAccessManagement() {
        toast({ title: "ไม่มีการเปลี่ยนแปลง", description: "ไม่มีข้อมูลที่ต้องบันทึก" });
     }
   };
-  
-  const handleResetChanges = () => {
-    if (config) {
-        setPermissions(buildPermissionMatrix(config));
-        setHasChanges(false);
-        toast({ description: "ยกเลิกการเปลี่ยนแปลงทั้งหมดแล้ว" });
-    }
-  }
+
+  const handleCreateAllPermissions = () => {
+    createAllMutation.mutate();
+  };
 
   // Filter out the 'Admin' role from columns, as they have all permissions by default.
   const displayRoles = useMemo(() => config?.roles.filter(r => r.name !== 'ADMIN') ?? [], [config]);
 
   if (isLoading) {
     return (
-      <MainLayout>
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="ml-4 text-lg">กำลังโหลดข้อมูล...</p>
-        </div>
-      </MainLayout>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="ml-4 text-lg">กำลังโหลดข้อมูล...</p>
+      </div>
     );
   }
 
   if (error || !config) {
     return (
-      <MainLayout>
-        <Alert variant="destructive" className="m-4">
-          <AlertTitle>เกิดข้อผิดพลาด</AlertTitle>
-          <AlertDescription>
-            ไม่สามารถโหลดข้อมูลการจัดการสิทธิ์ได้ กรุณาลองอีกครั้งในภายหลัง
-          </AlertDescription>
-        </Alert>
-      </MainLayout>
+      <Alert variant="destructive" className="m-4">
+        <AlertTitle>เกิดข้อผิดพลาด</AlertTitle>
+        <AlertDescription>
+          ไม่สามารถโหลดข้อมูลการจัดการสิทธิ์ได้ กรุณาลองอีกครั้งในภายหลัง
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <MainLayout>
-      <div className="h-full flex flex-col">
-        <div className="flex-1 p-6 overflow-hidden">
-          <div className="h-full flex flex-col">
-            {/* Header */}
-            <div className="mb-6">
-              <div className="flex items-center mb-2">
-                <ShieldCheck className="w-8 h-8 mr-3 text-primary"/>
-                <h1 className="text-3xl font-bold">จัดการสิทธิ์การเข้าถึงหน้า</h1>
-              </div>
-              <p className="text-muted-foreground">
-                กำหนดระดับการเข้าถึงแต่ละหน้าสำหรับ Role ต่างๆ ในระบบ Role 'Admin' มีสิทธิ์เข้าถึงทุกอย่างโดยอัตโนมัติ
-              </p>
+    <div className="h-full flex flex-col">
+      <div className="flex-1 p-6 overflow-hidden">
+        <div className="h-full flex flex-col">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center mb-2">
+              <ShieldCheck className="w-6 h-6 text-primary mr-2" />
+              <h1 className="text-2xl font-bold text-gray-900">จัดการสิทธิ์การเข้าถึงหน้า</h1>
+            </div>
+            <p className="text-gray-600">
+              กำหนดสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบสำหรับแต่ละตำแหน่ง
+            </p>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => refetch()}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+                รีเฟรช
+              </Button>
+              <Button
+                onClick={handleCreateAllPermissions}
+                disabled={createAllMutation.isPending}
+                className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+              >
+                <Plus className="w-4 h-4" />
+                {createAllMutation.isPending ? 'กำลังสร้าง...' : 'สร้างสิทธิ์ครบถ้วน'}
+              </Button>
             </div>
 
-            {/* Controls */}
-            <div className="flex justify-end gap-2 mb-4">
-              <Button 
-                variant="secondary"
-                onClick={async () => {
-                  console.log("🔄 กำลังเริ่มต้นระบบสิทธิ์");
-                  try {
-                    const response = await fetch('/api/page-access-management/force-sync', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                    });
-                    
-                    if (response.ok) {
-                      const result = await response.json();
-                      console.log("✅ สร้างสิทธิ์เสร็จสิ้น:", result.message);
-                      toast({
-                        title: "เสร็จสิ้น",
-                        description: result.message,
-                      });
-                      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
-                      refetch();
-                    } else {
-                      throw new Error('Failed to sync permissions');
-                    }
-                  } catch (error) {
-                    console.error("❌ ข้อผิดพลาด:", error);
-                    toast({
-                      title: "เกิดข้อผิดพลาด",
-                      description: "ไม่สามารถสร้างสิทธิ์ได้",
-                      variant: "destructive",
-                    });
-                  }
-                }}
-                disabled={isLoading}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                สร้างสิทธิ์ครบถ้วน
-              </Button>
-              <Button 
+            <div className="flex gap-2">
+              <Button
                 variant="outline"
-                onClick={async () => {
-                  console.log("🔄 กำลังรีเฟรชข้อมูล");
-                  queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
-                  await refetch();
-                  console.log("✅ รีเฟรชข้อมูลเสร็จสิ้น");
-                }}
-                disabled={isLoading}
-              >
-                {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
-                รีเฟรชข้อมูล
-              </Button>
-              <Button 
-                variant="outline"
-                onClick={handleResetChanges}
+                onClick={() => setPermissions(buildPermissionMatrix(config))}
                 disabled={!hasChanges || updateMutation.isPending}
               >
                 ยกเลิกการเปลี่ยนแปลง
               </Button>
-              <Button 
-                onClick={handleSaveChanges} 
+              <Button
+                onClick={handleSaveChanges}
                 disabled={!hasChanges || updateMutation.isPending}
+                className="flex items-center gap-2"
               >
-                {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                บันทึกการเปลี่ยนแปลง
+                {updateMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4" />
+                )}
+                {updateMutation.isPending ? 'กำลังบันทึก...' : 'บันทึกการเปลี่ยนแปลง'}
               </Button>
             </div>
+          </div>
 
-            {/* Table Container with Full Height */}
-            <div className="flex-1 border rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-              <div className="h-full overflow-auto">
-                <Table>
-                  <TableHeader className="bg-muted/50 sticky top-0 z-10">
-                    <TableRow>
-                      <TableHead className="font-bold min-w-[300px] bg-muted/50 sticky left-0 z-20">หน้า (Page)</TableHead>
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-hidden">
+            <div className="h-full border border-gray-200 rounded-lg bg-white shadow-sm overflow-hidden">
+              <Table>
+                <TableHeader className="sticky top-0 bg-gray-50 border-b border-gray-200 z-10">
+                  <TableRow>
+                    <TableHead className="w-80 px-6 py-4 text-left font-semibold text-gray-900 border-r border-gray-200">
+                      หน้า
+                    </TableHead>
+                    {displayRoles.map(role => (
+                      <TableHead key={role.id} className="px-4 py-4 text-center font-semibold text-gray-900 border-r border-gray-200 min-w-[200px]">
+                        {role.displayName}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {config.pages.map((page, index) => (
+                    <TableRow 
+                      key={page.url} 
+                      className={`border-b border-gray-100 hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}`}
+                    >
+                      <TableCell className="px-6 py-4 font-medium text-gray-900 border-r border-gray-200">
+                        <div>
+                          <div className="font-semibold">{page.name}</div>
+                          <div className="text-sm text-gray-500">{page.url}</div>
+                        </div>
+                      </TableCell>
                       {displayRoles.map(role => (
-                        <TableHead key={role.id} className="font-bold min-w-[180px] text-center bg-muted/50">
-                          {role.displayName}
-                        </TableHead>
+                        <TableCell key={role.id} className="text-center p-2">
+                          <Select
+                            value={permissions[page.url]?.[role.id] || "none"}
+                            onValueChange={(value: AccessLevel) =>
+                              handlePermissionChange(page.url, role.id, value)
+                            }
+                          >
+                            <SelectTrigger className="w-full min-w-[160px]">
+                              <SelectValue placeholder="เลือกระดับ" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {accessLevels.map(level => (
+                                <SelectItem key={level} value={level}>
+                                  {accessLevelLabels[level]}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
                       ))}
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {config.pages.map(page => (
-                      <TableRow key={page.url} className="hover:bg-muted/20">
-                        <TableCell className="font-medium sticky left-0 bg-white dark:bg-gray-800 border-r z-10">
-                          <div className="min-w-[280px]">
-                            <div className="font-semibold text-sm">{page.name}</div>
-                            <div className="text-xs text-muted-foreground mt-1">{page.url}</div>
-                          </div>
-                        </TableCell>
-                        {displayRoles.map(role => (
-                          <TableCell key={role.id} className="text-center p-2">
-                            <Select
-                              value={permissions[page.url]?.[role.id] || "none"}
-                              onValueChange={(value: AccessLevel) =>
-                                handlePermissionChange(page.url, role.id, value)
-                              }
-                            >
-                              <SelectTrigger className="w-full min-w-[160px]">
-                                <SelectValue placeholder="เลือกระดับ" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {accessLevels.map(level => (
-                                  <SelectItem key={level} value={level}>
-                                    {accessLevelLabels[level]}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           </div>
         </div>
       </div>
-    </MainLayout>
+    </div>
   );
 }
