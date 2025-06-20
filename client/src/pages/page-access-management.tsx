@@ -117,6 +117,12 @@ export default function PageAccessManagement() {
   // --- Effect to initialize state when data is loaded ---
   useEffect(() => {
     if (config) {
+      console.log("🔄 กำลังสร้างตารางสิทธิ์จากข้อมูล config:", config);
+      console.log("📋 จำนวนหน้าที่ได้รับ:", config.pages?.length);
+      console.log("👥 จำนวน Role ที่ได้รับ:", config.roles?.length);
+      if (config.pages) {
+        console.log("📄 รายชื่อหน้าทั้งหมด:", config.pages.map(p => p.name));
+      }
       setPermissions(buildPermissionMatrix(config));
     }
   }, [config]);
