@@ -104,7 +104,7 @@ export default function Users() {
     queryKey: ["/api/permissions"],
   });
 
-  const { data: pageAccess } = useQuery<PageAccess[]>({
+  const { data: pageAccess, refetch: refetchPageAccess } = useQuery<PageAccess[]>({
     queryKey: ["/api/page-access", selectedRoleForPermissions],
     enabled: !!selectedRoleForPermissions,
   });
@@ -239,7 +239,8 @@ export default function Users() {
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/page-access", selectedRoleForPermissions] });
+      queryClient.invalidateQueries({ queryKey: ["/api/page-access"] });
+      refetchPageAccess();
       toast({
         title: "สำเร็จ",
         description: "อัปเดตสิทธิ์การเข้าถึงเรียบร้อยแล้ว",
@@ -610,18 +611,24 @@ export default function Users() {
                                       <Switch
                                         checked={hasAccess}
                                         onCheckedChange={(checked) => {
+                                          // Optimistic update
+                                          const newAccessLevel = checked ? "view" : null;
+                                          
                                           updatePageAccessMutation.mutate({
                                             roleId: selectedRoleForPermissions,
                                             pageName: page.pageName,
                                             pageUrl: page.pageUrl,
-                                            accessLevel: checked ? "view" : null
+                                            accessLevel: newAccessLevel
                                           });
                                         }}
                                         disabled={updatePageAccessMutation.isPending}
                                       />
-                                      <span className={`text-sm font-medium ${hasAccess ? 'text-green-600' : 'text-gray-400'}`}>
+                                      <span className={`text-sm font-medium transition-colors ${hasAccess ? 'text-green-600' : 'text-gray-400'}`}>
                                         {hasAccess ? 'เปิด' : 'ปิด'}
                                       </span>
+                                      {updatePageAccessMutation.isPending && (
+                                        <div className="w-3 h-3 border border-gray-300 border-t-blue-500 rounded-full animate-spin"></div>
+                                      )}
                                     </div>
 
                                     {/* Permission Level */}
