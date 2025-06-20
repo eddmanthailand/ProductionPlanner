@@ -25,7 +25,7 @@ import { Loader2, ShieldCheck, RefreshCw, Plus, Users, CheckCircle } from "lucid
 type Role = { id: number; name: string; displayName: string };
 type Page = { name: string; url: string };
 type AccessRule = { roleId: number; pageUrl: string; accessLevel: AccessLevel };
-type AccessLevel = "none" | "read" | "edit" | "create";
+type AccessLevel = "none" | "view" | "edit" | "create";
 
 // Type for API response
 interface PageAccessConfig {
@@ -132,10 +132,10 @@ export default function PageAccessManagement() {
     }
   }, [config]);
 
-  const accessLevels: AccessLevel[] = ["none", "read", "edit", "create"];
+  const accessLevels: AccessLevel[] = ["none", "view", "edit", "create"];
   const accessLevelLabels = {
     none: "ไม่มีสิทธิ์",
-    read: "ดูได้",
+    view: "ดูได้",
     edit: "แก้ไขได้",
     create: "สร้างได้",
   };
@@ -399,7 +399,7 @@ export default function PageAccessManagement() {
                               <SelectTrigger className={`w-full h-7 border transition-all duration-200 text-xs ${
                                 permissions[page.url]?.[role.id] === 'create' ? 'border-green-300 bg-green-50 text-green-800' :
                                 permissions[page.url]?.[role.id] === 'edit' ? 'border-blue-300 bg-blue-50 text-blue-800' :
-                                permissions[page.url]?.[role.id] === 'read' ? 'border-yellow-300 bg-yellow-50 text-yellow-800' :
+                                permissions[page.url]?.[role.id] === 'view' ? 'border-yellow-300 bg-yellow-50 text-yellow-800' :
                                 'border-gray-300 bg-gray-50 text-gray-600'
                               } hover:shadow-sm focus:shadow-sm`}>
                                 <SelectValue placeholder="เลือก" />
@@ -412,7 +412,7 @@ export default function PageAccessManagement() {
                                     className={`py-1 px-2 text-xs ${
                                       level === 'create' ? 'text-green-700 hover:bg-green-50' :
                                       level === 'edit' ? 'text-blue-700 hover:bg-blue-50' :
-                                      level === 'read' ? 'text-yellow-700 hover:bg-yellow-50' :
+                                      level === 'view' ? 'text-yellow-700 hover:bg-yellow-50' :
                                       'text-gray-700 hover:bg-gray-50'
                                     }`}
                                   >
