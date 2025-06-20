@@ -8,6 +8,7 @@ import { eq } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
+import memorystore from "memorystore";
 
 // Initialize default permissions for all pages in the system
 async function initializeDefaultPermissions() {
@@ -34,8 +35,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   await initializeDefaultPermissions();
 
   // Session configuration - using memory store to avoid Neon database issues
-  const createMemoryStore = (await import('memorystore')).default;
-  const MemoryStore = createMemoryStore(session);
+  const MemoryStore = memorystore(session);
   
   app.use(session({
     store: new MemoryStore({
