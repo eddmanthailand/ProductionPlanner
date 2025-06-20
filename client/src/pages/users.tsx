@@ -15,6 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, User, Shield, Settings, Key, MoreHorizontal, Edit, Power } from "lucide-react";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -51,6 +52,12 @@ interface PageAccess {
   pageName: string;
   pageUrl: string;
   accessLevel: string;
+}
+
+interface AllPage {
+  pageName: string;
+  pageUrl: string;
+  module: string;
 }
 
 const createUserSchema = z.object({
@@ -101,6 +108,25 @@ export default function Users() {
     queryKey: ["/api/page-access", selectedRoleForPermissions],
     enabled: !!selectedRoleForPermissions,
   });
+
+  // All available pages in the system
+  const allPages: AllPage[] = [
+    { pageName: "หน้าหลัก", pageUrl: "/", module: "หลัก" },
+    { pageName: "บัญชี", pageUrl: "/accounting", module: "บัญชี" },
+    { pageName: "คลังสินค้า", pageUrl: "/inventory", module: "คลังสินค้า" },
+    { pageName: "ข้อมูลหลัก", pageUrl: "/master-data", module: "ข้อมูล" },
+    { pageName: "จัดการลูกค้า", pageUrl: "/customers", module: "ข้อมูล" },
+    { pageName: "จัดการสินค้า", pageUrl: "/products", module: "ข้อมูล" },
+    { pageName: "จัดการผู้ใช้และสิทธิ์", pageUrl: "/user-management", module: "ระบบ" },
+    { pageName: "การผลิต", pageUrl: "/production", module: "การผลิต" },
+    { pageName: "แผนการผลิต", pageUrl: "/production/planning", module: "การผลิต" },
+    { pageName: "บันทึกงานประจำวัน", pageUrl: "/production/daily-work-log", module: "การผลิต" },
+    { pageName: "ใบเสนอราคา", pageUrl: "/quotations", module: "ขาย" },
+    { pageName: "รายงานการขาย", pageUrl: "/sales-reports", module: "รายงาน" },
+    { pageName: "รายงานการผลิต", pageUrl: "/production-reports", module: "รายงาน" },
+    { pageName: "ตั้งค่าระบบ", pageUrl: "/settings", module: "ระบบ" },
+    { pageName: "ทดสอบระบบสิทธิ์การเข้าถึง", pageUrl: "/access-demo", module: "ระบบ" },
+  ];
 
   // Forms
   const createForm = useForm<CreateUserFormData>({
@@ -184,6 +210,44 @@ export default function Users() {
       toast({
         title: "สำเร็จ",
         description: "เปลี่ยนสถานะผู้ใช้เรียบร้อยแล้ว",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updatePageAccessMutation = useMutation({
+    mutationFn: async ({ roleId, pageName, pageUrl, accessLevel }: { 
+      roleId: number; 
+      pageName: string; 
+      pageUrl: string; 
+      accessLevel: string | null; 
+    }) => {
+      if (accessLevel === null) {
+        // Remove access
+        const res = await apiRequest("DELETE", `/api/page-access/${roleId}`, { pageName, pageUrl });
+        return res.json();
+      } else {
+        // Add or update access
+        const res = await apiRequest("POST", `/api/page-access`, { 
+          roleId, 
+          pageName, 
+          pageUrl, 
+          accessLevel 
+        });
+        return res.json();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/page-access", selectedRoleForPermissions] });
+      toast({
+        title: "สำเร็จ",
+        description: "อัปเดตสิทธิ์การเข้าถึงเรียบร้อยแล้ว",
       });
     },
     onError: (error: Error) => {
@@ -467,27 +531,72 @@ export default function Users() {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>โมดูล</TableHead>
                         <TableHead>หน้า</TableHead>
                         <TableHead>URL</TableHead>
+                        <TableHead>เปิดใช้งาน</TableHead>
                         <TableHead>ระดับสิทธิ์</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {pageAccess?.map((access) => (
-                        <TableRow key={access.id}>
-                          <TableCell>{access.pageName}</TableCell>
-                          <TableCell className="font-mono text-sm">{access.pageUrl}</TableCell>
-                          <TableCell>
-                            <Badge variant={
-                              access.accessLevel === "create" ? "default" :
-                              access.accessLevel === "edit" ? "secondary" : "outline"
-                            }>
-                              {access.accessLevel === "create" ? "สร้าง/แก้ไข/ดู" :
-                               access.accessLevel === "edit" ? "แก้ไข/ดู" : "ดู"}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                      {allPages.map((page) => {
+                        const existingAccess = pageAccess?.find(
+                          (access) => access.pageUrl === page.pageUrl
+                        );
+                        const hasAccess = !!existingAccess;
+                        const accessLevel = existingAccess?.accessLevel || "view";
+
+                        return (
+                          <TableRow key={page.pageUrl}>
+                            <TableCell>
+                              <Badge variant="outline">{page.module}</Badge>
+                            </TableCell>
+                            <TableCell>{page.pageName}</TableCell>
+                            <TableCell className="font-mono text-sm">{page.pageUrl}</TableCell>
+                            <TableCell>
+                              <Switch
+                                checked={hasAccess}
+                                onCheckedChange={(checked) => {
+                                  updatePageAccessMutation.mutate({
+                                    roleId: selectedRoleForPermissions,
+                                    pageName: page.pageName,
+                                    pageUrl: page.pageUrl,
+                                    accessLevel: checked ? "view" : null
+                                  });
+                                }}
+                                disabled={updatePageAccessMutation.isPending}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              {hasAccess ? (
+                                <Select
+                                  value={accessLevel}
+                                  onValueChange={(value) => {
+                                    updatePageAccessMutation.mutate({
+                                      roleId: selectedRoleForPermissions,
+                                      pageName: page.pageName,
+                                      pageUrl: page.pageUrl,
+                                      accessLevel: value
+                                    });
+                                  }}
+                                  disabled={updatePageAccessMutation.isPending}
+                                >
+                                  <SelectTrigger className="w-32">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="view">ดู</SelectItem>
+                                    <SelectItem value="edit">แก้ไข/ดู</SelectItem>
+                                    <SelectItem value="create">สร้าง/แก้ไข/ดู</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </CardContent>

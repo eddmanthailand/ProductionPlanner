@@ -127,6 +127,9 @@ export interface IStorage {
   // Page access management
   getPageAccessByRole(roleId: number): Promise<PageAccess[]>;
   upsertPageAccess(pageAccess: InsertPageAccess): Promise<PageAccess>;
+  createPageAccess(pageAccess: InsertPageAccess): Promise<PageAccess>;
+  updatePageAccess(id: number, pageAccess: Partial<InsertPageAccess>): Promise<PageAccess | undefined>;
+  deletePageAccess(id: number): Promise<boolean>;
 
   // Tenants
   getTenant(id: string): Promise<Tenant | undefined>;

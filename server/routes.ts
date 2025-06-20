@@ -970,6 +970,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Page access management endpoints
+  app.post("/api/page-access", async (req: any, res: any) => {
+    try {
+      const { roleId, pageName, pageUrl, accessLevel } = req.body;
+      
+      // Check if access already exists
+      const existingAccess = await storage.getPageAccessByRole(roleId);
+      const existing = existingAccess.find(access => access.pageUrl === pageUrl);
+      
+      if (existing) {
+        // Update existing access
+        const updated = await storage.updatePageAccess(existing.id, { accessLevel });
+        res.json(updated);
+      } else {
+        // Create new access
+        const newAccess = await storage.createPageAccess({
+          roleId,
+          pageName,
+          pageUrl,
+          accessLevel
+        });
+        res.status(201).json(newAccess);
+      }
+    } catch (error) {
+      console.error("Create/update page access error:", error);
+      res.status(500).json({ message: "Failed to manage page access" });
+    }
+  });
+
+  app.delete("/api/page-access/:roleId", async (req: any, res: any) => {
+    try {
+      const roleId = parseInt(req.params.roleId);
+      const { pageName, pageUrl } = req.body;
+      
+      const existingAccess = await storage.getPageAccessByRole(roleId);
+      const existing = existingAccess.find(access => access.pageUrl === pageUrl);
+      
+      if (existing) {
+        const deleted = await storage.deletePageAccess(existing.id);
+        if (deleted) {
+          res.status(204).send();
+        } else {
+          res.status(404).json({ message: "Page access not found" });
+        }
+      } else {
+        res.status(404).json({ message: "Page access not found" });
+      }
+    } catch (error) {
+      console.error("Delete page access error:", error);
+      res.status(500).json({ message: "Failed to delete page access" });
+    }
+  });
+
   app.get("/api/roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
