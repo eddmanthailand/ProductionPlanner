@@ -3455,6 +3455,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API สำหรับอัปเดตสิทธิ์แบบ bulk
+  app.post("/api/page-access-management/bulk-update", async (req: any, res) => {
+    try {
+      console.log("Bulk update request received:", req.body);
+      
+      const updates = req.body;
+      if (!updates || !Array.isArray(updates)) {
+        return res.status(400).json({ message: "Invalid request body - expected array" });
+      }
+
+      console.log("Processing", updates.length, "permission updates");
+      await storage.batchUpdatePageAccess(updates);
+      
+      console.log("Bulk update completed successfully");
+      res.status(200).json({ message: "Permissions updated successfully" });
+
+    } catch (error) {
+      console.error("Bulk update page access error:", error);
+      res.status(500).json({ message: "Failed to update permissions", error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
