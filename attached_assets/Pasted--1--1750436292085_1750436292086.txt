@@ -1,0 +1,119 @@
+// ========================================================================
+// ส่วนที่ 1: เพิ่มฟังก์ชันเหล่านี้ในไฟล์ server/storage.ts
+// Instructions: คัดลอกฟังก์ชันทั้งหมดด้านล่างนี้ไปวางเพิ่มเติมในไฟล์ storage.ts ของคุณ
+// ========================================================================
+
+import { db } from "./db"; // ตรวจสอบว่าคุณ import 'db' มาจากที่ที่ถูกต้อง
+import { pageAccess, roles } from "../shared/schema";
+import { eq, and, In } from "drizzle-orm";
+import type { PageAccess } from "../shared/schema";
+
+// ฟังก์ชันสำหรับดึงข้อมูล Page Access ทั้งหมดของ Tenant
+export async function getAllPageAccess(tenantId: string) {
+  // หมายเหตุ: ในโค้ดจริง คุณควรจะ filter ด้วย tenantId
+  // แต่เนื่องจาก page_access ไม่มี tenantId โดยตรง เราจะ join ผ่าน roles
+  // หากโครงสร้างของคุณต่างออกไป อาจต้องปรับแก้ส่วนนี้
+  return db.select().from(pageAccess);
+}
+
+// ฟังก์ชันสำหรับบันทึกการเปลี่ยนแปลงสิทธิ์แบบ Batch
+export async function batchUpdatePageAccess(
+  accessList: Omit<PageAccess, "id" | "createdAt" | "updatedAt">[]
+) {
+  if (accessList.length === 0) {
+    return;
+  }
+
+  // ใช้ Transaction เพื่อให้แน่ใจว่าการทำงานสำเร็จทั้งหมดหรือไม่ก็ไม่สำเร็จเลย
+  return db.transaction(async (tx) => {
+    for (const access of accessList) {
+      // ตรวจสอบว่ามีข้อมูลเดิมอยู่หรือไม่
+      const existing = await tx.query.pageAccess.findFirst({
+        where: and(
+          eq(pageAccess.roleId, access.roleId),
+          eq(pageAccess.pageUrl, access.pageUrl)
+        ),
+      });
+
+      if (existing) {
+        // ถ้ามีอยู่แล้ว ให้อัปเดต
+        await tx
+          .update(pageAccess)
+          .set({ accessLevel: access.accessLevel })
+          .where(eq(pageAccess.id, existing.id));
+      } else {
+        // ถ้ายังไม่มี ให้สร้างใหม่
+        await tx.insert(pageAccess).values(access);
+      }
+    }
+  });
+}
+
+// ========================================================================
+// ส่วนที่ 2: เพิ่ม API Routes เหล่านี้ในไฟล์ server/routes.ts
+// Instructions: คัดลอกโค้ดส่วนนี้ไปวางภายในฟังก์ชัน registerRoutes
+// ควรวางไว้ก่อนหน้าบรรทัด "const httpServer = createServer(app);"
+// ========================================================================
+
+// รายการหน้าทั้งหมดในระบบ (ควรจะตรงกับใน client/src/App.tsx)
+const definedPages = [
+    { name: "แดชบอร์ด", url: "/" },
+    { name: "ใบเสนอราคา", url: "/sales/quotations" },
+    { name: "ใบส่งสินค้า/ใบแจ้งหนี้", url: "/sales/invoices" },
+    { name: "ใบกำกับภาษี", url: "/sales/tax-invoices" },
+    { name: "ใบเสร็จรับเงิน", url: "/sales/receipts" },
+    { name: "ปฏิทินการทำงาน", url: "/production/calendar" },
+    { name: "โครงสร้างองค์กร", url: "/production/organization" },
+    { name: "วางแผนและคิวงาน", url: "/production/work-queue-planning" },
+    { name: "ใบสั่งงาน", url: "/production/work-orders" },
+    { name: "บันทึกงานประจำวัน", url: "/production/daily-work-log" },
+    { name: "รายงานการผลิต", url: "/production/production-reports" },
+    { name: "บัญชี", url: "/accounting" },
+    { name: "คลังสินค้า", url: "/inventory" },
+    { name: "ลูกค้า", url: "/customers" },
+    { name: "ข้อมูลหลัก", url: "/master-data" },
+    { name: "รายงาน", url: "/reports" },
+    { name: "ผู้ใช้งาน", url: "/users" },
+    { name: "จัดการผู้ใช้และสิทธิ์", url: "/user-management" },
+    { name: "จัดการสิทธิ์การเข้าถึงหน้า", url: "/page-access-management" },
+    { name: "Access Demo", url: "/access-demo" },
+];
+
+// API สำหรับดึงข้อมูลทั้งหมดที่จำเป็นสำหรับหน้าจัดการสิทธิ์
+app.get("/api/page-access-management/config", isAuthenticated, async (req: any, res) => {
+    try {
+        const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Placeholder for tenant ID
+        
+        const allRoles = await storage.getRoles(tenantId);
+        const allAccess = await storage.getAllPageAccess(tenantId);
+        
+        res.json({
+            roles: allRoles,
+            pages: definedPages,
+            accessRules: allAccess,
+        });
+
+    } catch (error) {
+        console.error("Get page access config error:", error);
+        res.status(500).json({ message: "Failed to get page access config" });
+    }
+});
+
+// API สำหรับอัปเดตสิทธิ์
+app.post("/api/page-access-management/update", isAuthenticated, async (req: any, res) => {
+    try {
+        // ในระบบจริง ควรเช็คว่าผู้ใช้ที่ส่ง request มามีสิทธิ์เป็น Admin หรือไม่
+        const updates = req.body.accessList;
+        if (!updates || !Array.isArray(updates)) {
+            return res.status(400).json({ message: "Invalid request body" });
+        }
+
+        await storage.batchUpdatePageAccess(updates);
+        
+        res.status(200).json({ message: "Permissions updated successfully" });
+
+    } catch (error) {
+        console.error("Update page access error:", error);
+        res.status(500).json({ message: "Failed to update permissions" });
+    }
+});

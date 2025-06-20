@@ -1787,6 +1787,66 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // ฟังก์ชันสำหรับดึงข้อมูล Page Access ทั้งหมดของ Tenant
+  async getAllPageAccess(tenantId: string): Promise<PageAccess[]> {
+    // Join กับ roles เพื่อ filter ด้วย tenantId
+    const result = await db.select({
+      id: pageAccess.id,
+      roleId: pageAccess.roleId,
+      pageName: pageAccess.pageName,
+      pageUrl: pageAccess.pageUrl,
+      accessLevel: pageAccess.accessLevel,
+      createdAt: pageAccess.createdAt,
+      updatedAt: pageAccess.updatedAt,
+    })
+    .from(pageAccess)
+    .innerJoin(roles, eq(pageAccess.roleId, roles.id))
+    .where(eq(roles.tenantId, tenantId));
+    
+    return result;
+  }
+
+  // ฟังก์ชันสำหรับบันทึกการเปลี่ยนแปลงสิทธิ์แบบ Batch
+  async batchUpdatePageAccess(
+    accessList: Omit<PageAccess, "id" | "createdAt" | "updatedAt">[]
+  ): Promise<void> {
+    if (accessList.length === 0) {
+      return;
+    }
+
+    // ใช้ Transaction เพื่อให้แน่ใจว่าการทำงานสำเร็จทั้งหมดหรือไม่ก็ไม่สำเร็จเลย
+    await db.transaction(async (tx) => {
+      for (const access of accessList) {
+        // ตรวจสอบว่ามีข้อมูลเดิมอยู่หรือไม่
+        const [existing] = await tx.select()
+          .from(pageAccess)
+          .where(and(
+            eq(pageAccess.roleId, access.roleId),
+            eq(pageAccess.pageUrl, access.pageUrl)
+          ));
+
+        if (existing) {
+          // ถ้ามีอยู่แล้ว ให้อัปเดต
+          await tx
+            .update(pageAccess)
+            .set({ 
+              accessLevel: access.accessLevel,
+              updatedAt: new Date()
+            })
+            .where(eq(pageAccess.id, existing.id));
+        } else {
+          // ถ้ายังไม่มี ให้สร้างใหม่
+          await tx.insert(pageAccess).values({
+            roleId: access.roleId,
+            pageName: access.pageName,
+            pageUrl: access.pageUrl,
+            accessLevel: access.accessLevel
+          });
+        }
+      }
+    });
+  }
 }
 
 export const storage = new DatabaseStorage();

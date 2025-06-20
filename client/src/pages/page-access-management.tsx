@@ -1,21 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import MainLayout from "@/components/layout/main-layout";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -24,322 +11,249 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-
-import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
 import {
-  ChartLine,
-  Calculator,
-  Package,
-  Users,
-  Settings,
-  FileText,
-  Shield,
-  ShoppingCart,
-  Settings2,
-  Calendar,
-  Network,
-  ClipboardList,
-  BarChart3
-} from "lucide-react";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Loader2, ShieldCheck } from "lucide-react";
 
-interface Role {
-  id: number;
-  name: string;
-  displayName: string;
-  description?: string;
-  level: number;
-  isActive: boolean;
-}
+// Types matching the backend response
+type Role = { id: number; name: string; displayName: string };
+type Page = { name: string; url: string };
+type AccessRule = { roleId: number; pageUrl: string; accessLevel: AccessLevel };
+type AccessLevel = "none" | "read" | "edit" | "create";
 
-interface PageAccess {
-  id?: number;
-  roleId: number;
-  pageName: string;
-  pageUrl: string;
-  accessLevel: 'none' | 'read' | 'edit' | 'create';
-}
+type PageAccessConfig = {
+  roles: Role[];
+  pages: Page[];
+  accessRules: AccessRule[];
+};
 
-interface Page {
-  name: string;
-  url: string;
-  icon: any;
-  description: string;
-  module: string;
-}
+const accessLevels: AccessLevel[] = ["none", "read", "edit", "create"];
+const accessLevelLabels: Record<AccessLevel, string> = {
+  none: "ไม่มีสิทธิ์",
+  read: "อ่าน",
+  edit: "แก้ไข",
+  create: "สร้าง/ลบ",
+};
+
+// --- Helper function to build the permission matrix ---
+const buildPermissionMatrix = (config: PageAccessConfig | undefined) => {
+  if (!config) return {};
+  const matrix: Record<string, Record<number, AccessLevel>> = {};
+  config.pages.forEach(page => {
+    matrix[page.url] = {};
+    config.roles.forEach(role => {
+      const rule = config.accessRules.find(r => r.pageUrl === page.url && r.roleId === role.id);
+      matrix[page.url][role.id] = rule ? rule.accessLevel : 'none';
+    });
+  });
+  return matrix;
+};
 
 export default function PageAccessManagement() {
-  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
+  const [permissions, setPermissions] = useState<Record<string, Record<number, AccessLevel>>>({});
+  const [hasChanges, setHasChanges] = useState(false);
 
-  // Define all available pages in the system
-  const availablePages: Page[] = [
-    { name: "แดชบอร์ด", url: "/", icon: ChartLine, description: "หน้าหลักของระบบ", module: "dashboard" },
-    { name: "บัญชี", url: "/accounting", icon: Calculator, description: "ระบบบัญชีและการเงิน", module: "accounting" },
-    { name: "คลังสินค้า", url: "/inventory", icon: Package, description: "จัดการสินค้าคงคลัง", module: "inventory" },
-    { name: "ลูกค้า", url: "/customers", icon: Users, description: "จัดการข้อมูลลูกค้า", module: "customers" },
-    { name: "ข้อมูลหลัก", url: "/master-data", icon: Settings, description: "จัดการข้อมูลพื้นฐาน", module: "master" },
-    { name: "รายงานการผลิต", url: "/production/production-reports", icon: FileText, description: "รายงานเกี่ยวกับการผลิต", module: "production" },
-    { name: "ใบเสนอราคา", url: "/sales/quotations", icon: FileText, description: "สร้างและจัดการใบเสนอราคา", module: "sales" },
-    { name: "ใบส่งสินค้า/ใบแจ้งหนี้", url: "/sales/invoices", icon: FileText, description: "ใบส่งสินค้าและใบแจ้งหนี้", module: "sales" },
-    { name: "ใบกำกับภาษี", url: "/sales/tax-invoices", icon: FileText, description: "ใบกำกับภาษี", module: "sales" },
-    { name: "ใบเสร็จรับเงิน", url: "/sales/receipts", icon: FileText, description: "ใบเสร็จรับเงิน", module: "sales" },
-    { name: "ปฏิทินการทำงาน", url: "/production/calendar", icon: Calendar, description: "ปฏิทินการวางแผนงาน", module: "production" },
-    { name: "แผนผังหน่วยงาน", url: "/production/organization", icon: Network, description: "โครงสร้างองค์กร", module: "production" },
-    { name: "วางแผนและคิวงาน", url: "/production/work-queue-planning", icon: Calendar, description: "วางแผนคิวการผลิต", module: "production" },
-    { name: "ใบสั่งงาน", url: "/production/work-orders", icon: ClipboardList, description: "จัดการใบสั่งงาน", module: "production" },
-    { name: "บันทึกงานประจำวัน", url: "/production/daily-work-log", icon: FileText, description: "บันทึกงานรายวัน", module: "production" },
-    { name: "จัดการผู้ใช้และสิทธิ์", url: "/user-management", icon: Shield, description: "จัดการผู้ใช้และระบบสิทธิ์", module: "admin" },
-  ];
-
-  // Fetch roles
-  const { data: roles = [], isLoading: rolesLoading } = useQuery<Role[]>({
-    queryKey: ["/api/roles"],
-    staleTime: 5 * 60 * 1000,
-  });
-
-  // Fetch page access for selected role
-  const { data: pageAccesses = [], isLoading: accessLoading } = useQuery<PageAccess[]>({
-    queryKey: ["/api/roles", selectedRoleId, "page-access"],
-    enabled: !!selectedRoleId,
+  // --- Data Fetching using React Query ---
+  const { data: config, isLoading, error } = useQuery<PageAccessConfig>({
+    queryKey: ["pageAccessConfig"],
     queryFn: async () => {
-      const response = await fetch(`/api/roles/${selectedRoleId}/page-access`);
-      if (!response.ok) {
-        // If no page access records exist, return empty array
-        if (response.status === 404) {
-          return [];
-        }
-        throw new Error('Failed to fetch page access');
-      }
-      return response.json();
+      const res = await fetch("/api/page-access-management/config");
+      if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลการตั้งค่าสิทธิ์ได้");
+      return res.json();
     },
   });
 
-  // Mutation to update page access
-  const updatePageAccessMutation = useMutation({
-    mutationFn: async ({ roleId, pageName, pageUrl, accessLevel }: { roleId: number, pageName: string, pageUrl: string, accessLevel: string }) => {
-      await apiRequest(`/api/roles/${roleId}/page-access`, "POST", {
-        pageName,
-        pageUrl,
-        accessLevel
-      });
-    },
+  // --- Mutation for updating permissions ---
+  const updateMutation = useMutation({
+    mutationFn: (newAccessList: Omit<AccessRule, "id">[]) =>
+      fetch("/api/page-access-management/update", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ accessList: newAccessList }),
+      }).then(res => {
+        if (!res.ok) throw new Error("การบันทึกสิทธิ์ล้มเหลว");
+        return res.json();
+      }),
     onSuccess: () => {
       toast({
-        title: "สำเร็จ",
-        description: "อัปเดตสิทธิ์การเข้าถึงหน้าเรียบร้อยแล้ว",
+        title: "สำเร็จ!",
+        description: "บันทึกการตั้งค่าสิทธิ์เรียบร้อยแล้ว",
+        className: "bg-green-100 text-green-800",
       });
-      queryClient.invalidateQueries({ queryKey: ["/api/roles", selectedRoleId, "page-access"] });
+      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] }); // Invalidate related queries
+      setHasChanges(false);
     },
-    onError: (error) => {
+    onError: (e: Error) => {
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถอัปเดตสิทธิ์การเข้าถึงหน้าได้",
+        description: e.message || "ไม่สามารถบันทึกข้อมูลได้",
         variant: "destructive",
       });
     },
   });
 
-  const handlePageAccessChange = (page: Page, accessLevel: 'none' | 'read' | 'edit' | 'create') => {
-    if (!selectedRoleId) return;
-    
-    updatePageAccessMutation.mutate({
-      roleId: selectedRoleId,
-      pageName: page.name,
-      pageUrl: page.url,
-      accessLevel
+  // --- Effect to initialize state when data is loaded ---
+  useEffect(() => {
+    if (config) {
+      setPermissions(buildPermissionMatrix(config));
+    }
+  }, [config]);
+  
+  // --- Event Handler ---
+  const handlePermissionChange = (pageUrl: string, roleId: number, level: AccessLevel) => {
+    setPermissions(prev => ({
+      ...prev,
+      [pageUrl]: {
+        ...prev[pageUrl],
+        [roleId]: level,
+      },
+    }));
+    setHasChanges(true);
+  };
+
+  const handleSaveChanges = () => {
+    if (!config) return;
+
+    const updatedList: Omit<AccessRule, "id">[] = [];
+    config.pages.forEach(page => {
+      config.roles.forEach(role => {
+        const originalLevel = buildPermissionMatrix(config)[page.url][role.id];
+        const currentLevel = permissions[page.url]?.[role.id];
+        if (originalLevel !== currentLevel) {
+          updatedList.push({
+            pageUrl: page.url,
+            roleId: role.id,
+            accessLevel: currentLevel ?? 'none',
+          });
+        }
+      });
     });
-  };
 
-  const getPageAccessLevel = (pageUrl: string): 'none' | 'read' | 'edit' | 'create' => {
-    const access = pageAccesses.find(pa => pa.pageUrl === pageUrl);
-    return access ? access.accessLevel : 'none';
+    if (updatedList.length > 0) {
+      updateMutation.mutate(updatedList);
+    } else {
+       toast({ title: "ไม่มีการเปลี่ยนแปลง", description: "ไม่มีข้อมูลที่ต้องบันทึก" });
+    }
   };
+  
+  const handleResetChanges = () => {
+    if (config) {
+        setPermissions(buildPermissionMatrix(config));
+        setHasChanges(false);
+        toast({ description: "ยกเลิกการเปลี่ยนแปลงทั้งหมดแล้ว" });
+    }
+  }
 
-  const getRoleLevelColor = (level: number) => {
-    const colors = [
-      "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300",
-      "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
-      "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300",
-      "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
-      "bg-teal-100 text-teal-800 dark:bg-teal-900 dark:text-teal-300",
-      "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
-      "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-300",
-      "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
-      "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300",
-    ];
-    return colors[level - 1] || colors[8];
-  };
+  // Filter out the 'Admin' role from columns, as they have all permissions by default.
+  const displayRoles = useMemo(() => config?.roles.filter(r => r.name !== 'ADMIN') ?? [], [config]);
 
-  const getModuleColor = (module: string) => {
-    const moduleColors: { [key: string]: string } = {
-      dashboard: "bg-blue-100 text-blue-800",
-      accounting: "bg-green-100 text-green-800",
-      inventory: "bg-purple-100 text-purple-800",
-      customers: "bg-orange-100 text-orange-800",
-      master: "bg-gray-100 text-gray-800",
-      production: "bg-teal-100 text-teal-800",
-      sales: "bg-yellow-100 text-yellow-800",
-      admin: "bg-red-100 text-red-800",
-    };
-    return moduleColors[module] || "bg-gray-100 text-gray-800";
-  };
-
-  if (rolesLoading) {
+  if (isLoading) {
     return (
-      <div className="p-6">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center">กำลังโหลดข้อมูล...</div>
-          </CardContent>
-        </Card>
-      </div>
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="ml-4 text-lg">กำลังโหลดข้อมูล...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (error || !config) {
+    return (
+      <Layout>
+        <Alert variant="destructive" className="m-4">
+          <AlertTitle>เกิดข้อผิดพลาด</AlertTitle>
+          <AlertDescription>
+            ไม่สามารถโหลดข้อมูลการจัดการสิทธิ์ได้ กรุณาลองอีกครั้งในภายหลัง
+          </AlertDescription>
+        </Alert>
+      </Layout>
     );
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">จัดการสิทธิ์การเข้าถึงหน้า</h1>
-          <p className="text-muted-foreground">กำหนดสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบสำหรับแต่ละบทบาท</p>
-        </div>
-      </div>
-
-      {/* Role Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle>เลือกบทบาท</CardTitle>
-          <CardDescription>เลือกบทบาทที่ต้องการจัดการสิทธิ์การเข้าถึงหน้า</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">บทบาท</label>
-              <Select value={selectedRoleId?.toString() || ""} onValueChange={(value) => setSelectedRoleId(Number(value))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="เลือกบทบาท" />
-                </SelectTrigger>
-                <SelectContent>
-                  {roles.map((role) => (
-                    <SelectItem key={role.id} value={role.id.toString()}>
-                      <div className="flex items-center space-x-2">
-                        <span>{role.displayName}</span>
-                        <Badge variant="outline" className={getRoleLevelColor(role.level)}>
-                          ระดับ {role.level}
-                        </Badge>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            {selectedRoleId && (
-              <div className="md:col-span-2">
-                <label className="text-sm font-medium mb-2 block">รายละเอียดบทบาท</label>
-                <div className="p-3 bg-gray-50 rounded-lg">
-                  {(() => {
-                    const role = roles.find(r => r.id === selectedRoleId);
-                    return role ? (
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium">{role.displayName}</span>
-                          <Badge variant="outline" className={getRoleLevelColor(role.level)}>
-                            ระดับ {role.level}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-gray-600">{role.description}</p>
-                      </div>
-                    ) : null;
-                  })()}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Page Access Management */}
-      {selectedRoleId && (
+    <Layout>
+      <div className="container mx-auto py-8 px-4 sm:px-6 lg:px-8">
         <Card>
-          <CardHeader>
-            <CardTitle>สิทธิ์การเข้าถึงหน้า</CardTitle>
-            <CardDescription>กำหนดระดับสิทธิ์การเข้าถึงหน้าต่างๆ ในระบบ<br/>
-            <span className="text-sm text-gray-500">
-              • สร้าง = ทำได้ทุกอย่าง (สร้าง, แก้ไข, ดู, ลบ)<br/>
-              • แก้ไข = แก้ไขและดูได้ (ไม่สามารถสร้างหรือลบ)<br/>
-              • ดู = ดูอย่างเดียว (ไม่สามารถแก้ไข, สร้าง, หรือลบ)
-            </span>
-          </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {accessLoading ? (
-              <div className="text-center py-4">กำลังโหลดข้อมูลสิทธิ์...</div>
-            ) : (
-              <div className="space-y-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>หน้า</TableHead>
-                      <TableHead>URL</TableHead>
-                      <TableHead>โมดูล</TableHead>
-                      <TableHead>คำอธิบาย</TableHead>
-                      <TableHead className="text-center">ระดับสิทธิ์</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {availablePages.map((page) => {
-                      const accessLevel = getPageAccessLevel(page.url);
-                      const PageIcon = page.icon;
-                      
-                      return (
-                        <TableRow key={page.url}>
-                          <TableCell>
-                            <div className="flex items-center space-x-2">
-                              <PageIcon className="w-4 h-4" />
-                              <span className="font-medium">{page.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <code className="text-xs bg-gray-100 px-2 py-1 rounded">{page.url}</code>
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={getModuleColor(page.module)}>
-                              {page.module}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-sm text-gray-600">{page.description}</span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            <Select 
-                              value={accessLevel} 
-                              onValueChange={(value) => handlePageAccessChange(page, value as 'none' | 'read' | 'edit' | 'create')}
-                              disabled={updatePageAccessMutation.isPending}
-                            >
-                              <SelectTrigger className="w-32">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="none">ไม่มีสิทธิ์</SelectItem>
-                                <SelectItem value="read">ดู (ดูอย่างเดียว)</SelectItem>
-                                <SelectItem value="edit">แก้ไข (แก้ไข + ดู)</SelectItem>
-                                <SelectItem value="create">สร้าง (ทำได้ทุกอย่าง)</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
-          </CardContent>
+            <CardHeader>
+                <CardTitle className="text-2xl font-bold flex items-center">
+                    <ShieldCheck className="w-7 h-7 mr-3 text-primary"/>
+                    จัดการสิทธิ์การเข้าถึงหน้า
+                </CardTitle>
+                <CardDescription>
+                    กำหนดระดับการเข้าถึงแต่ละหน้าสำหรับ Role ต่างๆ ในระบบ Role 'Admin' มีสิทธิ์เข้าถึงทุกอย่างโดยอัตโนมัติ
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="flex justify-end gap-2 mb-4">
+                    <Button 
+                        variant="outline"
+                        onClick={handleResetChanges}
+                        disabled={!hasChanges || updateMutation.isPending}
+                    >
+                        ยกเลิกการเปลี่ยนแปลง
+                    </Button>
+                    <Button 
+                        onClick={handleSaveChanges} 
+                        disabled={!hasChanges || updateMutation.isPending}
+                    >
+                        {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        บันทึกการเปลี่ยนแปลง
+                    </Button>
+                </div>
+                <div className="border rounded-lg overflow-x-auto">
+                    <Table>
+                        <TableHeader className="bg-muted/50">
+                            <TableRow>
+                                <TableHead className="font-bold min-w-[250px]">หน้า (Page)</TableHead>
+                                {displayRoles.map(role => (
+                                    <TableHead key={role.id} className="font-bold min-w-[150px] text-center">{role.displayName}</TableHead>
+                                ))}
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {config.pages.map(page => (
+                                <TableRow key={page.url}>
+                                <TableCell className="font-medium">{page.name} <span className="text-xs text-muted-foreground">{page.url}</span></TableCell>
+                                {displayRoles.map(role => (
+                                    <TableCell key={role.id}>
+                                    <Select
+                                        value={permissions[page.url]?.[role.id] || "none"}
+                                        onValueChange={(value: AccessLevel) =>
+                                        handlePermissionChange(page.url, role.id, value)
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                        <SelectValue placeholder="เลือกระดับ" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                        {accessLevels.map(level => (
+                                            <SelectItem key={level} value={level}>
+                                            {accessLevelLabels[level]}
+                                            </SelectItem>
+                                        ))}
+                                        </SelectContent>
+                                    </Select>
+                                    </TableCell>
+                                ))}
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+            </CardContent>
         </Card>
-      )}
-    </div>
+      </div>
+    </Layout>
   );
 }

@@ -3230,6 +3230,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // รายการหน้าทั้งหมดในระบบ (ควรจะตรงกับใน client/src/App.tsx)
+  const definedPages = [
+    { name: "แดชบอร์ด", url: "/" },
+    { name: "ใบเสนอราคา", url: "/sales/quotations" },
+    { name: "ใบส่งสินค้า/ใบแจ้งหนี้", url: "/sales/invoices" },
+    { name: "ใบกำกับภาษี", url: "/sales/tax-invoices" },
+    { name: "ใบเสร็จรับเงิน", url: "/sales/receipts" },
+    { name: "ปฏิทินการทำงาน", url: "/production/calendar" },
+    { name: "โครงสร้างองค์กร", url: "/production/organization" },
+    { name: "วางแผนและคิวงาน", url: "/production/work-queue-planning" },
+    { name: "ใบสั่งงาน", url: "/production/work-orders" },
+    { name: "บันทึกงานประจำวัน", url: "/production/daily-work-log" },
+    { name: "รายงานการผลิต", url: "/production/production-reports" },
+    { name: "บัญชี", url: "/accounting" },
+    { name: "คลังสินค้า", url: "/inventory" },
+    { name: "ลูกค้า", url: "/customers" },
+    { name: "ข้อมูลหลัก", url: "/master-data" },
+    { name: "รายงาน", url: "/reports" },
+    { name: "ผู้ใช้งาน", url: "/users" },
+    { name: "จัดการผู้ใช้และสิทธิ์", url: "/user-management" },
+    { name: "จัดการสิทธิ์การเข้าถึงหน้า", url: "/page-access-management" },
+    { name: "Access Demo", url: "/access-demo" },
+  ];
+
+  // API สำหรับดึงข้อมูลทั้งหมดที่จำเป็นสำหรับหน้าจัดการสิทธิ์
+  app.get("/api/page-access-management/config", async (req: any, res) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Placeholder for tenant ID
+      
+      const allRoles = await storage.getRoles(tenantId);
+      const allAccess = await storage.getAllPageAccess(tenantId);
+      
+      res.json({
+        roles: allRoles,
+        pages: definedPages,
+        accessRules: allAccess,
+      });
+
+    } catch (error) {
+      console.error("Get page access config error:", error);
+      res.status(500).json({ message: "Failed to get page access config" });
+    }
+  });
+
+  // API สำหรับอัปเดตสิทธิ์
+  app.post("/api/page-access-management/update", requireAuth, async (req: any, res) => {
+    try {
+      // ในระบบจริง ควรเช็คว่าผู้ใช้ที่ส่ง request มามีสิทธิ์เป็น Admin หรือไม่
+      const updates = req.body.accessList;
+      if (!updates || !Array.isArray(updates)) {
+        return res.status(400).json({ message: "Invalid request body" });
+      }
+
+      await storage.batchUpdatePageAccess(updates);
+      
+      res.status(200).json({ message: "Permissions updated successfully" });
+
+    } catch (error) {
+      console.error("Update page access error:", error);
+      res.status(500).json({ message: "Failed to update permissions" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
