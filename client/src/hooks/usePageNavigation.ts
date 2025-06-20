@@ -68,16 +68,12 @@ export function usePageNavigation() {
 
   // ฟังก์ชันตรวจสอบสิทธิ์การเข้าถึงหน้า
   const getPageAccess = (pageUrl: string): AccessLevel => {
-    console.log(`Getting page access for ${pageUrl}, user roleId: ${user?.roleId}`);
-    
     // ADMIN role (roleId = 1) has full access to everything
     if (user?.roleId === 1) {
-      console.log(`Admin detected, returning 'create' access`);
       return 'create';
     }
     
     const access = pageAccesses.find(pa => pa.pageUrl === pageUrl);
-    console.log(`Found access for ${pageUrl}:`, access);
     return access?.accessLevel || 'none';
   };
 
