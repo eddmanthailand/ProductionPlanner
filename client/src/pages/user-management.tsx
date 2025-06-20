@@ -463,7 +463,7 @@ function UserManagement() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>บทบาท</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                          <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="เลือกบทบาท" />
@@ -564,7 +564,7 @@ function UserManagement() {
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>ระดับสิทธิ์ (1-8)</FormLabel>
-                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                            <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
                               <FormControl>
                                 <SelectTrigger>
                                   <SelectValue placeholder="เลือกระดับสิทธิ์" />
@@ -835,7 +835,7 @@ function UserManagement() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>บทบาท</FormLabel>
-                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                    <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="เลือกบทบาท" />
