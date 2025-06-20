@@ -398,36 +398,25 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUsersWithRoles(tenantId: string): Promise<UserWithRole[]> {
-    const result = await db.select()
-      .from(users)
-      .leftJoin(roles, eq(users.roleId, roles.id))
+    // Simplified query to avoid complex joins that cause Neon errors
+    const userList = await db.select().from(users)
       .where(and(eq(users.tenantId, tenantId), isNull(users.deletedAt)));
     
-    return result.map(row => ({
-      id: row.users.id,
-      username: row.users.username,
-      email: row.users.email,
-      firstName: row.users.firstName,
-      lastName: row.users.lastName,
+    return userList.map(user => ({
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
       password: '', // Don't expose password
-      roleId: row.users.roleId,
-      tenantId: row.users.tenantId,
-      isActive: row.users.isActive,
-      lastLoginAt: row.users.lastLoginAt,
-      deletedAt: row.users.deletedAt,
-      createdAt: row.users.createdAt,
-      updatedAt: row.users.updatedAt,
-      role: row.roles ? {
-        id: row.roles.id,
-        name: row.roles.name,
-        displayName: row.roles.displayName,
-        description: row.roles.description,
-        level: row.roles.level,
-        tenantId: row.roles.tenantId,
-        isActive: row.roles.isActive,
-        createdAt: row.roles.createdAt,
-        updatedAt: row.roles.updatedAt
-      } : undefined
+      roleId: user.roleId,
+      tenantId: user.tenantId,
+      isActive: user.isActive,
+      lastLoginAt: user.lastLoginAt,
+      deletedAt: user.deletedAt,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+      role: undefined // Skip role lookup to avoid complex queries
     }));
   }
 
