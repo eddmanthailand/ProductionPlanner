@@ -971,6 +971,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Page access management endpoints
+  app.get("/api/page-access", async (req: any, res: any) => {
+    try {
+      const roleId = req.query.roleId ? parseInt(req.query.roleId) : null;
+      
+      if (!roleId) {
+        return res.status(400).json({ message: "Role ID is required" });
+      }
+      
+      const pageAccess = await storage.getPageAccessByRole(roleId);
+      res.json(pageAccess);
+    } catch (error) {
+      console.error("Get page access error:", error);
+      res.status(500).json({ message: "Failed to fetch page access" });
+    }
+  });
+
   app.post("/api/page-access", async (req: any, res: any) => {
     try {
       const { roleId, pageName, pageUrl, accessLevel } = req.body;

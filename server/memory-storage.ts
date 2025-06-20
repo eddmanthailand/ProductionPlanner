@@ -344,28 +344,49 @@ export class MemoryStorage implements IStorage {
     return [];
   }
 
+  private pageAccessData: Map<string, any> = new Map();
+  private nextPageAccessId = 1;
+
   async getPageAccessByRole(roleId: number): Promise<any[]> {
-    // For admin role, return full access to all pages
-    if (roleId === 1) {
-      return [
-        { pageId: 'dashboard', accessLevel: 'create' },
-        { pageId: 'customers', accessLevel: 'create' },
-        { pageId: 'products', accessLevel: 'create' },
-        { pageId: 'quotations', accessLevel: 'create' },
-        { pageId: 'transactions', accessLevel: 'create' },
-        { pageId: 'inventory', accessLevel: 'create' },
-        { pageId: 'users', accessLevel: 'create' },
-        { pageId: 'roles', accessLevel: 'create' },
-        { pageId: 'permissions', accessLevel: 'create' },
-        { pageId: 'master_data', accessLevel: 'create' },
-        { pageId: 'work_orders', accessLevel: 'create' },
-        { pageId: 'production_planning', accessLevel: 'create' },
-        { pageId: 'reports', accessLevel: 'create' },
-        { pageId: 'page_access_management', accessLevel: 'create' }
-      ];
-    }
+    // Get all page access entries for this role
+    const entries = Array.from(this.pageAccessData.values()).filter(
+      entry => entry.roleId === roleId
+    );
     
-    // For other roles, return empty for now
-    return [];
+    return entries;
+  }
+
+  async upsertPageAccess(data: {
+    roleId: number;
+    pageName: string;
+    pageUrl: string;
+    accessLevel: string;
+  }): Promise<any> {
+    const key = `${data.roleId}-${data.pageUrl}`;
+    const existing = this.pageAccessData.get(key);
+    
+    if (existing) {
+      // Update existing
+      const updated = {
+        ...existing,
+        accessLevel: data.accessLevel,
+        updatedAt: new Date()
+      };
+      this.pageAccessData.set(key, updated);
+      return updated;
+    } else {
+      // Create new
+      const newEntry = {
+        id: this.nextPageAccessId++,
+        roleId: data.roleId,
+        pageName: data.pageName,
+        pageUrl: data.pageUrl,
+        accessLevel: data.accessLevel,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+      this.pageAccessData.set(key, newEntry);
+      return newEntry;
+    }
   }
 }

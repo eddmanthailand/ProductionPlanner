@@ -107,6 +107,15 @@ export default function Users() {
   const { data: pageAccess, refetch: refetchPageAccess } = useQuery<PageAccess[]>({
     queryKey: ["/api/page-access", selectedRoleForPermissions],
     enabled: !!selectedRoleForPermissions,
+    queryFn: async () => {
+      const res = await fetch(`/api/page-access?roleId=${selectedRoleForPermissions}`, {
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        throw new Error(`Failed to fetch page access: ${res.status}`);
+      }
+      return await res.json();
+    }
   });
 
 
@@ -240,6 +249,7 @@ export default function Users() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/page-access"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/page-access", selectedRoleForPermissions] });
       refetchPageAccess();
       toast({
         title: "สำเร็จ",
