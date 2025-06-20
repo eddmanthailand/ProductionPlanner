@@ -102,31 +102,42 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Setup minimal authentication system
-  const { setupMinimalAuth, requireAuth } = await import('./minimal-auth');
-  setupMinimalAuth(app);
+  // Initialize default permissions
+  await initializeDefaultPermissions();
 
-  // Session configuration is handled by minimal-auth module
-  // No need to configure session here
+  // Session configuration
+  const PostgresSessionStore = connectPg(session);
+  const sessionStore = new PostgresSessionStore({
+    pool: pool,
+    createTableIfMissing: true,
+  });
 
-  // Session-based auth route
-  app.get('/api/auth/user', async (req: any, res) => {
+  app.use(session({
+    store: sessionStore,
+    secret: process.env.SESSION_SECRET || 'your-secret-key-here',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false,
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  }));
+
+  // Auth routes  
+  app.get('/api/auth/user', requireAuth, async (req: any, res) => {
     try {
-      if (req.session && req.session.userId) {
-        const user = await storage.getUser(req.session.userId);
-        if (user) {
-          const { password, ...userWithoutPassword } = user;
-          console.log("Session user authenticated:", userWithoutPassword.username);
-          res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
-          res.json(userWithoutPassword);
-          return;
-        }
+      const userId = req.session.userId;
+      const user = await storage.getUser(userId);
+      if (user) {
+        const { password, ...userWithoutPassword } = user;
+        res.json(userWithoutPassword);
+      } else {
+        res.status(401).json({ message: 'User not found' });
       }
-
-      res.status(401).json({ message: "Unauthorized" });
     } catch (error) {
-      console.error("Error fetching user:", error);
-      res.status(500).json({ message: "Failed to fetch user" });
+      console.error('Auth check error:', error);
+      res.status(500).json({ message: 'Internal server error' });
     }
   });
 

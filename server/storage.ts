@@ -1849,6 +1849,4 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-import { SimpleMemoryStorage } from "./simple-memory-storage";
-
-export const storage = new SimpleMemoryStorage() as any;
+export const storage = new DatabaseStorage();
