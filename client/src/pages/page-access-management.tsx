@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, ShieldCheck } from "lucide-react";
+import { Loader2, ShieldCheck, RefreshCw } from "lucide-react";
 
 // Types matching the backend response
 type Role = { id: number; name: string; displayName: string };
@@ -63,13 +63,23 @@ export default function PageAccessManagement() {
   const [hasChanges, setHasChanges] = useState(false);
 
   // --- Data Fetching using React Query ---
-  const { data: config, isLoading, error } = useQuery<PageAccessConfig>({
+  const { data: config, isLoading, error, refetch } = useQuery<PageAccessConfig>({
     queryKey: ["pageAccessConfig"],
     queryFn: async () => {
-      const res = await fetch("/api/page-access-management/config");
+      const res = await fetch("/api/page-access-management/config", {
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
       if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลการตั้งค่าสิทธิ์ได้");
-      return res.json();
+      const data = await res.json();
+      console.log("หน้าทั้งหมดที่โหลด:", data.pages.map((p: Page) => p.name).join(", "));
+      return data;
     },
+    staleTime: 0,
+    gcTime: 0,
   });
 
   // --- Mutation for updating permissions ---
