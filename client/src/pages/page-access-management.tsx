@@ -75,21 +75,19 @@ export default function PageAccessManagement() {
       }
       return response.json();
     },
-    onSuccess: async () => {
+    onSuccess: () => {
       toast({
         title: "สำเร็จ",
         description: "บันทึกการเปลี่ยนแปลงสิทธิ์เรียบร้อยแล้ว",
       });
       setHasChanges(false);
-      // ล้าง cache ทั้งหมดและ reload ข้อมูลใหม่
-      await queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
-      // Force refresh โดยดึงข้อมูลใหม่จาก server
-      const result = await refetch();
-      if (result.data) {
-        // อัปเดต permissions matrix ด้วยข้อมูลล่าสุด
-        const newMatrix = buildPermissionMatrix(result.data);
-        setPermissions(newMatrix);
-      }
+      // รีเซ็ต permissions state ให้เป็นค่าว่าง เพื่อให้ useEffect ทำงานใหม่
+      setPermissions({});
+      // ล้าง cache และ refetch
+      queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
+      setTimeout(() => {
+        refetch();
+      }, 100);
     },
     onError: (error: Error) => {
       toast({
@@ -147,6 +145,7 @@ export default function PageAccessManagement() {
     if (config) {
       const newMatrix = buildPermissionMatrix(config);
       setPermissions(newMatrix);
+      console.log("Updated permissions matrix:", newMatrix);
     }
   }, [config]);
 

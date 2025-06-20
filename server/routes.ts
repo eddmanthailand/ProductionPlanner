@@ -3393,7 +3393,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         roles: allRoles,
         pages: definedPages,
-        accessRules: allAccess,
+        currentAccess: allAccess,
       });
 
     } catch (error) {
