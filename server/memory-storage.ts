@@ -329,4 +329,43 @@ export class MemoryStorage implements IStorage {
   async createWorkOrder(insertWorkOrder: InsertWorkOrder): Promise<WorkOrder> { throw new Error("Not implemented"); }
   async updateWorkOrder(id: number, updateData: UpdateWorkOrder, tenantId: string): Promise<WorkOrder | undefined> { throw new Error("Not implemented"); }
   async deleteWorkOrder(id: number, tenantId: string): Promise<boolean> { throw new Error("Not implemented"); }
+
+  // Add missing methods that routes.ts is calling
+  async getUserPermissions(userId: number): Promise<Permission[]> {
+    const user = this.users.get(userId);
+    if (!user || !user.roleId) return [];
+    
+    // For admin user (roleId 1), return all permissions
+    if (user.roleId === 1) {
+      return Array.from(this.permissions.values());
+    }
+    
+    // For other users, return empty for now
+    return [];
+  }
+
+  async getPageAccessByRole(roleId: number): Promise<any[]> {
+    // For admin role, return full access to all pages
+    if (roleId === 1) {
+      return [
+        { pageId: 'dashboard', accessLevel: 'create' },
+        { pageId: 'customers', accessLevel: 'create' },
+        { pageId: 'products', accessLevel: 'create' },
+        { pageId: 'quotations', accessLevel: 'create' },
+        { pageId: 'transactions', accessLevel: 'create' },
+        { pageId: 'inventory', accessLevel: 'create' },
+        { pageId: 'users', accessLevel: 'create' },
+        { pageId: 'roles', accessLevel: 'create' },
+        { pageId: 'permissions', accessLevel: 'create' },
+        { pageId: 'master_data', accessLevel: 'create' },
+        { pageId: 'work_orders', accessLevel: 'create' },
+        { pageId: 'production_planning', accessLevel: 'create' },
+        { pageId: 'reports', accessLevel: 'create' },
+        { pageId: 'page_access_management', accessLevel: 'create' }
+      ];
+    }
+    
+    // For other roles, return empty for now
+    return [];
+  }
 }
