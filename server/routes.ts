@@ -102,21 +102,11 @@ function requireAuth(req: any, res: any, next: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Test database connection
-  try {
-    await pool.query('SELECT 1');
-    console.log('Database connection established successfully');
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    // Continue anyway - let individual routes handle connection errors
-  }
-
-  // Setup session middleware
-  const PostgresSessionStore = connectPg(session);
-  const sessionStore = new PostgresSessionStore({
-    pool: pool,
-    createTableIfMissing: true,
-    tableName: 'user_sessions'
+  // Use memory store for sessions to avoid database connection issues
+  const memorystore = await import('memorystore');
+  const MemoryStore = memorystore.default(session);
+  const sessionStore = new MemoryStore({
+    checkPeriod: 86400000, // prune expired entries every 24h
   });
 
   app.use(session({
