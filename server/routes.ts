@@ -3402,6 +3402,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // API สำหรับบังคับสร้างข้อมูลหน้าใหม่ทั้งหมด
+  app.post("/api/page-access-management/force-sync", async (req: any, res) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const allRoles = await storage.getRoles(tenantId);
+      
+      // สร้างสิทธิ์สำหรับหน้าใหม่ทั้งหมดให้กับทุก role
+      for (const role of allRoles) {
+        for (const page of definedPages) {
+          const defaultAccessLevel = role.name === "ADMIN" ? "create" : 
+                                   role.name === "GENERAL_MANAGER" ? "edit" : "view";
+          
+          await storage.upsertPageAccess({
+            roleId: role.id,
+            pageName: page.name,
+            pageUrl: page.url,
+            accessLevel: defaultAccessLevel
+          });
+        }
+      }
+      
+      console.log(`สร้างสิทธิ์ครบถ้วนสำหรับ ${definedPages.length} หน้า และ ${allRoles.length} บทบาท`);
+      res.json({ 
+        message: "สร้างข้อมูลสิทธิ์ครบถ้วนแล้ว",
+        pagesCount: definedPages.length,
+        rolesCount: allRoles.length
+      });
+
+    } catch (error) {
+      console.error("Force sync error:", error);
+      res.status(500).json({ message: "Failed to sync permissions" });
+    }
+  });
+
   // API สำหรับอัปเดตสิทธิ์
   app.post("/api/page-access-management/update", async (req: any, res) => {
     try {

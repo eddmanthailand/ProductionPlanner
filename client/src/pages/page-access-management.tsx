@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Loader2, ShieldCheck, RefreshCw } from "lucide-react";
+import { Loader2, ShieldCheck, RefreshCw, Plus } from "lucide-react";
 
 // Types matching the backend response
 type Role = { id: number; name: string; displayName: string };
@@ -217,6 +217,40 @@ export default function PageAccessManagement() {
             </CardHeader>
             <CardContent>
                 <div className="flex justify-end gap-2 mb-4">
+                    <Button 
+                        variant="secondary"
+                        onClick={async () => {
+                          try {
+                            console.log("สร้างข้อมูลสิทธิ์ครบถ้วน");
+                            const response = await fetch("/api/page-access-management/force-sync", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" }
+                            });
+                            
+                            if (response.ok) {
+                              const result = await response.json();
+                              console.log("สร้างสิทธิ์สำเร็จ:", result);
+                              toast({
+                                title: "สำเร็จ",
+                                description: `สร้างสิทธิ์สำหรับ ${result.pagesCount} หน้า และ ${result.rolesCount} บทบาท`,
+                              });
+                              queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
+                              await refetch();
+                            }
+                          } catch (error) {
+                            console.error("เกิดข้อผิดพลาด:", error);
+                            toast({
+                              title: "ข้อผิดพลาด",
+                              description: "ไม่สามารถสร้างข้อมูลสิทธิ์ได้",
+                              variant: "destructive"
+                            });
+                          }
+                        }}
+                        disabled={isLoading}
+                    >
+                        <Plus className="w-4 h-4 mr-2" />
+                        สร้างสิทธิ์ครบถ้วน
+                    </Button>
                     <Button 
                         variant="outline"
                         onClick={async () => {
