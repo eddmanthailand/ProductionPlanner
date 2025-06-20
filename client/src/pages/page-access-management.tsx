@@ -75,7 +75,9 @@ export default function PageAccessManagement() {
       });
       if (!res.ok) throw new Error("ไม่สามารถดึงข้อมูลการตั้งค่าสิทธิ์ได้");
       const data = await res.json();
-      console.log("หน้าทั้งหมดที่โหลด:", data.pages.map((p: Page) => p.name).join(", "));
+      console.log("หน้าทั้งหมดที่โหลด:", data.pages.length, "หน้า");
+      console.log("รายชื่อหน้า:", data.pages.map((p: Page) => p.name));
+      console.log("ข้อมูลหน้าครบถ้วน:", data.pages);
       return data;
     },
     staleTime: 0,
@@ -208,7 +210,10 @@ export default function PageAccessManagement() {
                 <div className="flex justify-end gap-2 mb-4">
                     <Button 
                         variant="outline"
-                        onClick={() => refetch()}
+                        onClick={() => {
+                          queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+                          refetch();
+                        }}
                         disabled={isLoading}
                     >
                         {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
