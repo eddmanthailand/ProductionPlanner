@@ -40,30 +40,44 @@ export function setupMinimalAuth(app: Express) {
   // Login route
   app.post('/api/auth/login', async (req: any, res) => {
     try {
+      console.log("Login attempt received:", req.body);
       const { username, password } = req.body;
 
       if (!username || !password) {
+        console.log("Missing username or password");
         return res.status(400).json({ message: "กรุณาใส่ชื่อผู้ใช้และรหัสผ่าน" });
       }
 
+      console.log("Looking for user:", username);
+      console.log("Available users:", Array.from(users.keys()));
+      
       const user = users.get(username);
       if (!user) {
+        console.log("User not found:", username);
         return res.status(401).json({ message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" });
       }
 
+      console.log("User found, checking password");
+      console.log("Provided password:", password);
+      console.log("Stored password:", user.password);
+      
       // Simple password comparison for now
       if (password !== user.password) {
+        console.log("Password mismatch");
         return res.status(401).json({ message: "ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง" });
       }
 
       if (!user.isActive) {
+        console.log("User account is inactive");
         return res.status(401).json({ message: "บัญชีผู้ใช้ถูกปิดการใช้งาน" });
       }
 
+      console.log("Creating session for user:", username);
       req.session.userId = user.id;
       req.session.username = user.username;
 
       const { password: _, ...userWithoutPassword } = user;
+      console.log("Login successful for user:", username);
       res.json({ 
         message: "เข้าสู่ระบบสำเร็จ",
         user: userWithoutPassword
