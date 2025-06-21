@@ -18,7 +18,7 @@ import QuotationsEdit from "@/pages/sales/quotations-edit";
 import Invoices from "@/pages/sales/invoices";
 import TaxInvoices from "@/pages/sales/tax-invoices";
 import Receipts from "@/pages/sales/receipts";
-import Production from "@/pages/production";
+
 import ProductionCalendar from "@/pages/production/calendar";
 import OrganizationChart from "@/pages/production/organization";
 import WorkQueue from "@/pages/production/work-queue";
@@ -109,9 +109,7 @@ function Router() {
       <Route path="/sales/receipts">
         <MainLayout><Receipts /></MainLayout>
       </Route>
-      <Route path="/production">
-        <MainLayout><Production /></MainLayout>
-      </Route>
+
       <Route path="/production/calendar">
         <MainLayout><ProductionCalendar /></MainLayout>
       </Route>
