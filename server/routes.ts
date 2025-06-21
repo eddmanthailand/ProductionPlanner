@@ -1510,6 +1510,149 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Page Access Management API endpoints
+  app.get("/api/page-access-management/config", async (req: any, res: any) => {
+    try {
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      // Get all roles
+      const roles = await storage.getRoles(tenantId);
+      
+      // Get all unique pages from pageAccess table
+      const allPageAccess = await storage.getAllPageAccess(tenantId);
+      const uniquePages = Array.from(
+        new Map(
+          allPageAccess.map(pa => [pa.pageUrl, { name: pa.pageName, url: pa.pageUrl }])
+        ).values()
+      );
+      
+      // Get current access levels
+      const currentAccess = allPageAccess.map(pa => ({
+        roleId: pa.roleId,
+        pageUrl: pa.pageUrl,
+        accessLevel: pa.accessLevel
+      }));
+
+      const config = {
+        roles: roles.map(role => ({
+          id: role.id,
+          name: role.name,
+          displayName: role.name
+        })),
+        pages: uniquePages,
+        currentAccess: currentAccess
+      };
+
+      res.json(config);
+    } catch (error) {
+      console.error("Page access config error:", error);
+      res.status(500).json({ message: "Failed to fetch page access configuration" });
+    }
+  });
+
+  app.post("/api/page-access-management/bulk-update", async (req: any, res: any) => {
+    try {
+      const updates = req.body;
+      
+      if (!Array.isArray(updates)) {
+        return res.status(400).json({ message: "Invalid request format. Expected array of updates." });
+      }
+
+      // Validate each update item
+      for (const update of updates) {
+        if (!update.roleId || !update.pageUrl || !update.accessLevel) {
+          return res.status(400).json({ 
+            message: "Each update must include roleId, pageUrl, and accessLevel" 
+          });
+        }
+        
+        if (!['none', 'view', 'edit', 'create'].includes(update.accessLevel)) {
+          return res.status(400).json({ 
+            message: "accessLevel must be one of: none, view, edit, create" 
+          });
+        }
+      }
+
+      // Use storage method for batch update
+      await storage.batchUpdatePageAccess(updates);
+      
+      res.json({ message: "Permissions updated successfully" });
+    } catch (error) {
+      console.error("Bulk update page access error:", error);
+      res.status(500).json({ message: "Failed to update permissions" });
+    }
+  });
+
+  app.post("/api/page-access-management/create-all", async (req: any, res: any) => {
+    try {
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      // สร้างสิทธิ์เริ่มต้นสำหรับทุก page และทุก role
+      const systemPages = [
+        { name: 'หน้าหลัก', url: '/' },
+        { name: 'จัดการใบเสนอราคา', url: '/sales/quotations' },
+        { name: 'จัดการใบแจ้งหนี้', url: '/sales/invoices' },
+        { name: 'จัดการใบกำกับภาษี', url: '/sales/tax-invoices' },
+        { name: 'จัดการใบเสร็จรับเงิน', url: '/sales/receipts' },
+        { name: 'ปฏิทินวันหยุดประจำปี', url: '/production/calendar' },
+        { name: 'โครงสร้างองค์กร', url: '/production/organization' },
+        { name: 'วางแผนการผลิต', url: '/production/planning' },
+        { name: 'บันทึกงานประจำวัน', url: '/production/daily-work-log' },
+        { name: 'รายงานการผลิต', url: '/production/production-reports' },
+        { name: 'ใบสั่งงาน', url: '/production/work-orders' },
+        { name: 'วางแผนและคิวงาน', url: '/production/work-queue-planning' },
+        { name: 'ระบบบัญชี', url: '/accounting' },
+        { name: 'คลังสินค้า', url: '/inventory' },
+        { name: 'ลูกค้า', url: '/customers' },
+        { name: 'ข้อมูลหลัก', url: '/master-data' },
+        { name: 'รายงาน', url: '/reports' },
+        { name: 'ผู้ใช้งาน', url: '/users' },
+        { name: 'จัดการผู้ใช้และสิทธิ์', url: '/user-management' },
+        { name: 'จัดการสิทธิ์การเข้าถึงหน้า', url: '/page-access-management' },
+        { name: 'การผลิต', url: '/production' },
+        { name: 'การขาย', url: '/sales' },
+        { name: 'จัดการสินค้า', url: '/products' },
+        { name: 'ทดสอบสิทธิ์', url: '/access-demo' }
+      ];
+
+      const roles = await storage.getRoles(tenantId);
+      const accessLevels = {
+        1: 'create', // Super Admin
+        2: 'create', // Admin  
+        3: 'create', // Manager
+        4: 'none',   // Supervisor
+        5: 'view',   // Lead
+        6: 'view',   // Senior
+        7: 'view',   // Employee
+        8: 'view'    // Trainee
+      };
+
+      const updates = [];
+      for (const page of systemPages) {
+        for (const role of roles) {
+          const accessLevel = accessLevels[role.id as keyof typeof accessLevels] || 'none';
+          
+          // สร้างสิทธิ์เริ่มต้นในหน้า "/production/work-calendar" ถ้ายังไม่มี
+          console.log(`สร้างสิทธิ์เริ่มต้นสำหรับหน้า: ${page.name} (${page.url})`);
+          
+          updates.push({
+            roleId: role.id,
+            pageName: page.name,
+            pageUrl: page.url,
+            accessLevel: accessLevel
+          });
+        }
+      }
+
+      await storage.batchUpdatePageAccess(updates);
+      
+      res.json({ message: "All permissions created successfully", created: updates.length });
+    } catch (error) {
+      console.error("Create all permissions error:", error);
+      res.status(500).json({ message: "Failed to create all permissions" });
+    }
+  });
+
   // Company Name Search endpoint
   app.post("/api/search-company", async (req: any, res: any) => {
     try {
