@@ -74,14 +74,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { username, password } = req.body;
 
       const user = await storage.getUserByUsername(username);
+      console.log("User found for login:", user ? `${user.username} (active: ${user.isActive})` : "not found");
+      
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
 
       const isValidPassword = await bcrypt.compare(password, user.password);
+      console.log("Password check result:", { username, isValidPassword });
       if (!isValidPassword) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
+
+      // Check if user is active
+      console.log("About to check user active status...");
+      console.log("Checking user active status:", { username, isActive: user.isActive, type: typeof user.isActive });
+      if (!user.isActive) {
+        console.log("Login rejected - user account disabled:", username);
+        return res.status(401).json({ message: "บัญชีผู้ใช้ถูกปิดการใช้งาน" });
+      }
+      console.log("User is active, continuing with login...");
 
       // Skip tenant lookup to avoid complex database queries
       const tenant = null;

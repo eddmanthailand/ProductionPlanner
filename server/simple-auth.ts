@@ -50,6 +50,7 @@ export function setupSimpleAuth(app: Express) {
       }
 
       // Check if user is active
+      console.log("Checking user active status:", { username, isActive: user.isActive, type: typeof user.isActive });
       if (!user.isActive) {
         console.log("Login rejected - user account disabled:", username);
         return res.status(401).json({ message: "บัญชีผู้ใช้ถูกปิดการใช้งาน" });
