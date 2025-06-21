@@ -363,6 +363,31 @@ function UserManagement() {
     editUserMutation.mutate(data);
   };
 
+  // Role handlers
+  const handleCreateRole = (data: CreateRoleFormData) => {
+    createRoleMutation.mutate(data);
+  };
+
+  const handleEditRole = (role: Role) => {
+    setEditingRole(role);
+    editRoleForm.reset({
+      displayName: role.displayName,
+      description: role.description || "",
+      level: role.level,
+    });
+    setIsEditRoleDialogOpen(true);
+  };
+
+  const handleDeleteRole = (role: Role) => {
+    if (window.confirm(`คุณแน่ใจหรือไม่ที่จะลบบทบาท "${role.displayName}"?`)) {
+      deleteRoleMutation.mutate(role.id);
+    }
+  };
+
+  const handleSubmitEditRole = (data: EditRoleFormData) => {
+    editRoleMutation.mutate(data);
+  };
+
   const handleCreateDialog = () => {
     console.log("Opening create dialog");
     setIsCreateDialogOpen(true);
@@ -383,89 +408,174 @@ function UserManagement() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle>จัดการผู้ใช้</CardTitle>
-              <CardDescription>
-                จัดการข้อมูลผู้ใช้และกำหนดบทบาทในระบบ
-              </CardDescription>
-            </div>
-            {canCreate && (
-              <Button onClick={handleCreateDialog}>
-                <UserPlus className="w-4 h-4 mr-2" />
-                เพิ่มผู้ใช้ใหม่
-              </Button>
-            )}
-          </div>
+          <CardTitle>จัดการผู้ใช้และสิทธิ์</CardTitle>
+          <CardDescription>
+            จัดการข้อมูลผู้ใช้และบทบาทในระบบ
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {usersLoading || rolesLoading ? (
-            <div className="flex items-center justify-center py-8">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="animate-pulse bg-gray-200 h-8 w-full mb-2 rounded" />
-              ))}
-            </div>
-          ) : usersError ? (
-            <div className="text-center py-8">
-              <p className="text-red-600">เกิดข้อผิดพลาดในการโหลดข้อมูล</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ชื่อผู้ใช้</TableHead>
-                  <TableHead>ชื่อ-นามสกุล</TableHead>
-                  <TableHead>อีเมล</TableHead>
-                  <TableHead>บทบาท</TableHead>
-                  <TableHead>สถานะ</TableHead>
-                  <TableHead>การจัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>{user.username}</TableCell>
-                    <TableCell>{user.firstName} {user.lastName}</TableCell>
-                    <TableCell>{user.email}</TableCell>
-                    <TableCell>
-                      <Badge variant={user.role ? "default" : "secondary"}>
-                        {user.role?.displayName || "ไม่มีบทบาท"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant={user.isActive ? "default" : "destructive"}>
-                        {user.isActive ? "ใช้งาน" : "ปิดการใช้งาน"}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        {canEdit && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleEditUser(user)}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {canCreate && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleDeleteUser(user)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+          <Tabs defaultValue="users" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="users" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                จัดการผู้ใช้
+              </TabsTrigger>
+              <TabsTrigger value="roles" className="flex items-center gap-2">
+                <Settings className="w-4 h-4" />
+                จัดการบทบาท
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="users" className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">จัดการผู้ใช้</h3>
+                  <p className="text-sm text-muted-foreground">จัดการข้อมูลผู้ใช้และกำหนดบทบาท</p>
+                </div>
+                {canCreate && (
+                  <Button onClick={handleCreateDialog}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    เพิ่มผู้ใช้ใหม่
+                  </Button>
+                )}
+              </div>
+              
+              {isLoadingUsers || isLoadingRoles ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ชื่อผู้ใช้</TableHead>
+                      <TableHead>ชื่อ-นามสกุล</TableHead>
+                      <TableHead>อีเมล</TableHead>
+                      <TableHead>บทบาท</TableHead>
+                      <TableHead>สถานะ</TableHead>
+                      <TableHead>การจัดการ</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {usersWithRoles.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell>{user.username}</TableCell>
+                          <TableCell>{user.firstName} {user.lastName}</TableCell>
+                          <TableCell>{user.email}</TableCell>
+                          <TableCell>
+                            <Badge variant={user.role ? "default" : "secondary"}>
+                              {user.role?.displayName || "ไม่มีบทบาท"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={user.isActive ? "default" : "destructive"}>
+                              {user.isActive ? "ใช้งาน" : "ปิดการใช้งาน"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {canEdit && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditUser(user)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canCreate && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteUser(user)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+
+              <TabsContent value="roles" className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold">จัดการบทบาท</h3>
+                    <p className="text-sm text-muted-foreground">จัดการบทบาทและระดับสิทธิ์ในระบบ</p>
+                  </div>
+                  {canCreate && (
+                    <Button onClick={() => setIsCreateRoleDialogOpen(true)}>
+                      <Settings className="w-4 h-4 mr-2" />
+                      เพิ่มบทบาทใหม่
+                    </Button>
+                  )}
+                </div>
+                
+                {isLoadingRoles ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-8 h-8 animate-spin" />
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>ชื่อบทบาท</TableHead>
+                        <TableHead>ชื่อแสดง</TableHead>
+                        <TableHead>คำอธิบาย</TableHead>
+                        <TableHead>ระดับ</TableHead>
+                        <TableHead>สถานะ</TableHead>
+                        <TableHead>การจัดการ</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {roles.map((role) => (
+                        <TableRow key={role.id}>
+                          <TableCell className="font-medium">{role.name}</TableCell>
+                          <TableCell>{role.displayName}</TableCell>
+                          <TableCell>{role.description || "-"}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">ระดับ {role.level}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={role.isActive ? "default" : "destructive"}>
+                              {role.isActive ? "ใช้งาน" : "ปิดการใช้งาน"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex gap-2">
+                              {canEdit && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleEditRole(role)}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canCreate && role.name !== "ADMIN" && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteRole(role)}
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
 
       {/* Create User Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
