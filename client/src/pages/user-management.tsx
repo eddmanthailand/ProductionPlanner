@@ -496,7 +496,14 @@ function UserManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {users.map((user) => (
+                      {users
+                        .sort((a, b) => {
+                          // เรียงตามระดับบทบาท (level) จากน้อยไปมาก
+                          const aLevel = a.role?.level || 999;
+                          const bLevel = b.role?.level || 999;
+                          return aLevel - bLevel;
+                        })
+                        .map((user) => (
                         <TableRow key={user.id}>
                           <TableCell>{user.username}</TableCell>
                           <TableCell>{user.firstName} {user.lastName}</TableCell>
