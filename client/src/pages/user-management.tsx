@@ -81,7 +81,7 @@ const createUserSchema = z.object({
   password: z.string().min(6, "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"),
   firstName: z.string().min(1, "ชื่อจำเป็น"),
   lastName: z.string().min(1, "นามสกุลจำเป็น"),
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  email: z.string().optional(),
   roleId: z.number().min(1, "กรุณาเลือกบทบาท"),
   isActive: z.boolean(),
 });
@@ -89,7 +89,8 @@ const createUserSchema = z.object({
 const editUserSchema = z.object({
   firstName: z.string().min(1, "ชื่อจำเป็น"),
   lastName: z.string().min(1, "นามสกุลจำเป็น"),
-  email: z.string().email("รูปแบบอีเมลไม่ถูกต้อง"),
+  email: z.string().optional(),
+  password: z.string().optional(),
   roleId: z.number().min(1, "กรุณาเลือกบทบาท"),
   isActive: z.boolean(),
 });
@@ -663,7 +664,7 @@ function UserManagement() {
                   <FormItem>
                     <FormLabel>รหัสผ่าน</FormLabel>
                     <FormControl>
-                      <Input type="password" {...field} />
+                      <Input type="text" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -700,7 +701,7 @@ function UserManagement() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>อีเมล</FormLabel>
+                    <FormLabel>อีเมล (ไม่บังคับ)</FormLabel>
                     <FormControl>
                       <Input type="email" {...field} />
                     </FormControl>
@@ -794,9 +795,22 @@ function UserManagement() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>อีเมล</FormLabel>
+                    <FormLabel>อีเมล (ไม่บังคับ)</FormLabel>
                     <FormControl>
                       <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>รหัสผ่าน (ไม่บังคับ)</FormLabel>
+                    <FormControl>
+                      <Input type="text" {...field} placeholder="เว้นว่างไว้หากไม่ต้องการเปลี่ยน" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
