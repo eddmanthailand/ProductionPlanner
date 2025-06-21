@@ -412,7 +412,7 @@ export class DatabaseStorage implements IStorage {
     try {
       // Get users first
       const userList = await db.select().from(users)
-        .where(and(eq(users.tenantId, tenantId), isNull(users.deletedAt)));
+        .where(eq(users.tenantId, tenantId));
       
       // Get all roles separately
       const roleList = await db.select().from(roles);
