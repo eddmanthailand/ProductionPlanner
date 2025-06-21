@@ -586,6 +586,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/roles/:id", async (req: any, res) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const { displayName, description, level } = req.body;
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      const role = await storage.updateRole(roleId, {
+        displayName,
+        description,
+        level
+      }, tenantId);
+
+      if (!role) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      res.json(role);
+    } catch (error) {
+      console.error("Update role error:", error);
+      res.status(500).json({ message: "Failed to update role" });
+    }
+  });
+
+  app.delete("/api/roles/:id", async (req: any, res) => {
+    try {
+      const roleId = parseInt(req.params.id);
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      const deleted = await storage.deleteRole(roleId, tenantId);
+      
+      if (!deleted) {
+        return res.status(404).json({ message: "Role not found" });
+      }
+
+      res.status(204).send();
+    } catch (error) {
+      console.error("Delete role error:", error);
+      res.status(500).json({ message: "Failed to delete role" });
+    }
+  });
+
   // Get users with roles
   app.get("/api/users-with-roles", async (req: any, res) => {
     try {

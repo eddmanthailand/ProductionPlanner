@@ -793,6 +793,171 @@ function UserManagement() {
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* Create Role Dialog */}
+      <Dialog open={isCreateRoleDialogOpen} onOpenChange={setIsCreateRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>เพิ่มบทบาทใหม่</DialogTitle>
+            <DialogDescription>กรอกข้อมูลสำหรับสร้างบทบาทใหม่</DialogDescription>
+          </DialogHeader>
+          <Form {...createRoleForm}>
+            <form onSubmit={createRoleForm.handleSubmit(handleCreateRole)} className="space-y-4">
+              <FormField
+                control={createRoleForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อบทบาท</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="เช่น MANAGER, EMPLOYEE" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createRoleForm.control}
+                name="displayName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อแสดง</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="เช่น ผู้จัดการ, พนักงาน" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createRoleForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>คำอธิบาย</FormLabel>
+                    <FormControl>
+                      <Input {...field} placeholder="คำอธิบายของบทบาท (ไม่บังคับ)" />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={createRoleForm.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ระดับ (1-8)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="8"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateRoleDialogOpen(false)}
+                >
+                  ยกเลิก
+                </Button>
+                <Button type="submit" disabled={createRoleMutation.isPending}>
+                  {createRoleMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Settings className="w-4 h-4 mr-2" />
+                  )}
+                  สร้างบทบาท
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Role Dialog */}
+      <Dialog open={isEditRoleDialogOpen} onOpenChange={setIsEditRoleDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>แก้ไขบทบาท</DialogTitle>
+            <DialogDescription>แก้ไขข้อมูลบทบาท</DialogDescription>
+          </DialogHeader>
+          <Form {...editRoleForm}>
+            <form onSubmit={editRoleForm.handleSubmit(handleSubmitEditRole)} className="space-y-4">
+              <FormField
+                control={editRoleForm.control}
+                name="displayName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ชื่อแสดง</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editRoleForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>คำอธิบาย</FormLabel>
+                    <FormControl>
+                      <Input {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={editRoleForm.control}
+                name="level"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ระดับ (1-8)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        min="1"
+                        max="8"
+                        {...field}
+                        onChange={(e) => field.onChange(Number(e.target.value))}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditRoleDialogOpen(false)}
+                >
+                  ยกเลิก
+                </Button>
+                <Button type="submit" disabled={editRoleMutation.isPending}>
+                  {editRoleMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Edit className="w-4 h-4 mr-2" />
+                  )}
+                  บันทึกการเปลี่ยนแปลง
+                </Button>
+              </div>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
