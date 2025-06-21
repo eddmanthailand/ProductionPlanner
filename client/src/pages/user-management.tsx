@@ -440,7 +440,7 @@ function UserManagement() {
                 )}
               </div>
               
-              {isLoadingUsers || isLoadingRoles ? (
+              {usersLoading || rolesLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-8 h-8 animate-spin" />
                 </div>
@@ -457,7 +457,7 @@ function UserManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                      {usersWithRoles.map((user) => (
+                      {users.map((user) => (
                         <TableRow key={user.id}>
                           <TableCell>{user.username}</TableCell>
                           <TableCell>{user.firstName} {user.lastName}</TableCell>
@@ -515,7 +515,7 @@ function UserManagement() {
                   )}
                 </div>
                 
-                {isLoadingRoles ? (
+                {rolesLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="w-8 h-8 animate-spin" />
                   </div>
