@@ -339,7 +339,13 @@ function UserManagement() {
   const deleteRoleMutation = useMutation({
     mutationFn: async (roleId: number) => {
       const response = await apiRequest("DELETE", `/api/roles/${roleId}`);
-      return await response.json();
+      // Handle 204 No Content response (successful deletion)
+      if (response.status === 204) {
+        return null;
+      }
+      // For other responses, try to parse JSON
+      const text = await response.text();
+      return text ? JSON.parse(text) : null;
     },
     onSuccess: () => {
       toast({
