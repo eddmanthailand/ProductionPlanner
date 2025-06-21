@@ -1625,7 +1625,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { name: 'คลังสินค้า', url: '/inventory' },
         { name: 'ลูกค้า', url: '/customers' },
         { name: 'ข้อมูลหลัก', url: '/master-data' },
-        { name: 'รายงาน', url: '/reports' },
+        { name: 'รายงานทั่วไป', url: '/reports' },
         { name: 'ผู้ใช้งาน', url: '/users' },
         { name: 'จัดการผู้ใช้และสิทธิ์', url: '/user-management' },
         { name: 'จัดการสิทธิ์การเข้าถึงหน้า', url: '/page-access-management' },
