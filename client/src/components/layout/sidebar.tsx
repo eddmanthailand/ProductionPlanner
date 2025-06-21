@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChartLine, Calculator, Package, Users, Settings, Shield, ChevronRight, ChevronDown, ShoppingCart, Settings2, Network, Calendar, ClipboardList, FileText, UserCheck, X } from "lucide-react";
+import { ChartLine, Calculator, Package, Users, Settings, Shield, ChevronRight, ChevronDown, ShoppingCart, Settings2, Network, Calendar, ClipboardList, FileText, UserCheck, X, BarChart3 } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
@@ -30,6 +30,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
   const { user, logout } = useAuth();
   const [expandedSales, setExpandedSales] = useState(false);
   const [expandedProduction, setExpandedProduction] = useState(false);
+  const [expandedReports, setExpandedReports] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
   const [isHovering, setIsHovering] = useState(false);
   const [autoCollapsed, setAutoCollapsed] = useState(true);
@@ -304,17 +305,54 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             </Link>
           )}
 
-          {/* Production Reports - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
-          {canAccessPage('/production/production-reports') && (
-            <Link
-              href="/production/production-reports"
-              className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
-                location === '/production/production-reports' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
-              }`}
-            >
-              <ChartLine className="w-5 h-5" />
-              {!isCollapsed && <span className="ml-3">รายงานการผลิต</span>}
-            </Link>
+          {/* Production Reports with Submenu */}
+          {(canAccessPage('/production/production-reports') || canAccessPage('/production/work-queue-table')) && (
+            <div className="relative">
+              <button
+                onClick={() => {
+                  if (isCollapsed) return;
+                  setExpandedReports(!expandedReports);
+                }}
+                className={`w-full flex items-center justify-between py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+                  location.startsWith('/production/production-reports') || location.startsWith('/production/work-queue-table') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                }`}
+              >
+                <div className="flex items-center">
+                  <ChartLine className="w-5 h-5" />
+                  {!isCollapsed && <span className="ml-3">รายงาน</span>}
+                </div>
+                {!isCollapsed && (
+                  <ChevronDown 
+                    className={`w-4 h-4 transition-transform ${expandedReports ? 'rotate-180' : ''}`}
+                  />
+                )}
+              </button>
+              
+              {!isCollapsed && expandedReports && (
+                <div className="ml-8 mt-1 space-y-1">
+                  {canAccessPage('/production/production-reports') && (
+                    <Link
+                      href="/production/production-reports"
+                      className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                        location === '/production/production-reports' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                      }`}
+                    >
+                      รายงานการผลิต
+                    </Link>
+                  )}
+                  {canAccessPage('/production/work-queue-table') && (
+                    <Link
+                      href="/production/work-queue-table"
+                      className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                        location === '/production/work-queue-table' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                      }`}
+                    >
+                      ตารางคิวงาน
+                    </Link>
+                  )}
+                </div>
+              )}
+            </div>
           )}
 
           {/* User Management - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}

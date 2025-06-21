@@ -453,7 +453,7 @@ export default function WorkQueuePlanning() {
         const teamName = teams.find(t => t.id === selectedTeam)?.name || 'Unknown Team';
         const planName = `แผนการผลิต ${teamName} - ${format(new Date(), "dd/MM/yyyy HH:mm")}`;
         
-        await apiRequest('/api/production-plans', 'POST', {
+        await apiRequest('POST', '/api/production-plans', {
           teamId: selectedTeam,
           name: planName,
           startDate: teamStartDate,
