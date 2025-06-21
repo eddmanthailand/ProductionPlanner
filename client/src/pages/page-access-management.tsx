@@ -411,74 +411,72 @@ export default function PageAccessManagement() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {Object.entries(groupedPages).map(([groupName, pages]) => (
-                      <React.Fragment key={groupName}>
-                        {/* Group Header */}
-                        <TableRow className="bg-gradient-to-r from-blue-600 to-blue-700">
-                          <TableCell colSpan={displayRoles.length + 1} className="px-2 py-1 font-bold text-white text-xs">
-                            <div className="flex items-center gap-2">
-                              <div className="w-2 h-2 bg-white rounded-full flex items-center justify-center">
-                                <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
-                              </div>
-                              {groupName} ({pages.length} หน้า)
+                    {Object.entries(groupedPages).map(([groupName, pages]) => [
+                      // Group Header
+                      <TableRow key={`${groupName}-header`} className="bg-gradient-to-r from-blue-600 to-blue-700">
+                        <TableCell colSpan={displayRoles.length + 1} className="px-2 py-1 font-bold text-white text-xs">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 bg-white rounded-full flex items-center justify-center">
+                              <div className="w-1 h-1 bg-blue-600 rounded-full"></div>
                             </div>
-                          </TableCell>
-                        </TableRow>
-                        {/* Group Pages */}
-                        {pages.map((page, index) => (
-                          <TableRow 
-                            key={page.url} 
-                            className={`transition-all duration-200 hover:bg-blue-50 hover:shadow-sm h-8 ${
-                              index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                            }`}
-                          >
-                            <TableCell className="px-2 py-0.5 font-medium text-gray-900 border-r-2 border-blue-100">
-                              <div className="flex items-center gap-1.5">
-                                <div className={`w-1 h-1 rounded-full ${
-                                  groupName === 'ระบบหลัก' ? 'bg-green-400' : 
-                                  groupName === 'การขาย' ? 'bg-blue-400' :
-                                  groupName === 'การผลิต' ? 'bg-purple-400' : 'bg-gray-400'
-                                }`}></div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="text-xs font-medium text-gray-900 truncate leading-tight" title={page.name}>
-                                    {page.name}
-                                  </div>
-                                  <div className="text-xs text-gray-500 truncate leading-tight" title={page.url}>
-                                    {page.url}
-                                  </div>
+                            {groupName} ({pages.length} หน้า)
+                          </div>
+                        </TableCell>
+                      </TableRow>,
+                      // Group Pages
+                      ...pages.map((page, index) => (
+                        <TableRow 
+                          key={page.url} 
+                          className={`transition-all duration-200 hover:bg-blue-50 hover:shadow-sm h-8 ${
+                            index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                          }`}
+                        >
+                          <TableCell className="px-2 py-0.5 font-medium text-gray-900 border-r-2 border-blue-100">
+                            <div className="flex items-center gap-1.5">
+                              <div className={`w-1 h-1 rounded-full ${
+                                groupName === 'ระบบหลัก' ? 'bg-green-400' : 
+                                groupName === 'การขาย' ? 'bg-blue-400' :
+                                groupName === 'การผลิต' ? 'bg-purple-400' : 'bg-gray-400'
+                              }`}></div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-xs font-medium text-gray-900 truncate leading-tight" title={page.name}>
+                                  {page.name}
+                                </div>
+                                <div className="text-xs text-gray-500 truncate leading-tight" title={page.url}>
+                                  {page.url}
                                 </div>
                               </div>
+                            </div>
+                          </TableCell>
+                          {displayRoles && displayRoles.map((role, roleIndex) => (
+                            <TableCell key={role.id} className="text-center px-0.5 py-0.5 border-r border-gray-200">
+                              <Select
+                                value={permissions[page.url]?.[role.id] || "none"}
+                                onValueChange={(value: AccessLevel) =>
+                                  handlePermissionChange(page.url, role.id, value)
+                                }
+                              >
+                                <SelectTrigger className={`w-full h-5 border-0 shadow-none focus:ring-1 focus:ring-blue-500 rounded text-xs ${
+                                  permissions[page.url]?.[role.id] === 'create' ? 'bg-green-100 text-green-800' :
+                                  permissions[page.url]?.[role.id] === 'edit' ? 'bg-blue-100 text-blue-800' :
+                                  permissions[page.url]?.[role.id] === 'view' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-gray-100 text-gray-600'
+                                }`}>
+                                  <SelectValue placeholder="เลือก" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {accessLevels.map((level) => (
+                                    <SelectItem key={level} value={level} className="text-xs">
+                                      {accessLevelLabels[level]}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                             </TableCell>
-                            {displayRoles && displayRoles.map((role, roleIndex) => (
-                              <TableCell key={role.id} className="text-center px-0.5 py-0.5 border-r border-gray-200">
-                                <Select
-                                  value={permissions[page.url]?.[role.id] || "none"}
-                                  onValueChange={(value: AccessLevel) =>
-                                    handlePermissionChange(page.url, role.id, value)
-                                  }
-                                >
-                                  <SelectTrigger className={`w-full h-5 border-0 shadow-none focus:ring-1 focus:ring-blue-500 rounded text-xs ${
-                                    permissions[page.url]?.[role.id] === 'create' ? 'bg-green-100 text-green-800' :
-                                    permissions[page.url]?.[role.id] === 'edit' ? 'bg-blue-100 text-blue-800' :
-                                    permissions[page.url]?.[role.id] === 'view' ? 'bg-yellow-100 text-yellow-800' :
-                                    'bg-gray-100 text-gray-600'
-                                  }`}>
-                                    <SelectValue placeholder="เลือก" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {accessLevels.map((level) => (
-                                      <SelectItem key={level} value={level} className="text-xs">
-                                        {accessLevelLabels[level]}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </TableCell>
-                            ))}
-                          </TableRow>
-                        ))}
-                      </React.Fragment>
-                    ))}
+                          ))}
+                        </TableRow>
+                      ))
+                    ]).flat()}
                   </TableBody>
                 </Table>
               </div>
