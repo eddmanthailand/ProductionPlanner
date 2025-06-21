@@ -616,23 +616,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete("/api/roles/:id", async (req: any, res) => {
-    try {
-      const roleId = parseInt(req.params.id);
-      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
-      
-      const deleted = await storage.deleteRole(roleId, tenantId);
-      
-      if (!deleted) {
-        return res.status(404).json({ message: "Role not found" });
-      }
 
-      res.status(204).send();
-    } catch (error) {
-      console.error("Delete role error:", error);
-      res.status(500).json({ message: "Failed to delete role" });
-    }
-  });
 
   // Get users with roles
   app.get("/api/users-with-roles", async (req: any, res) => {
@@ -1162,7 +1146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Delete role
+  // Delete role - Single unified endpoint
   app.delete("/api/roles/:roleId", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
@@ -1174,20 +1158,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (roleHasUsers) {
         return res.status(400).json({ 
-          message: "Cannot delete role that has assigned users. Please reassign users to other roles first." 
+          message: "ไม่สามารถลบบทบาทที่มีผู้ใช้งานอยู่ได้ กรุณาย้ายผู้ใช้ไปยังบทบาทอื่นก่อน" 
         });
       }
 
       const success = await storage.deleteRole(parseInt(roleId), tenantId);
       
       if (!success) {
-        return res.status(404).json({ message: "Role not found" });
+        return res.status(404).json({ message: "ไม่พบบทบาทที่ต้องการลบ" });
       }
 
-      res.json({ message: "Role deleted successfully" });
+      res.status(204).send();
     } catch (error) {
       console.error("Delete role error:", error);
-      res.status(500).json({ message: "Failed to delete role" });
+      res.status(500).json({ message: "ไม่สามารถลบบทบาทได้" });
     }
   });
 
