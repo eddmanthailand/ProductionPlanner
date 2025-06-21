@@ -45,7 +45,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Edit, Trash2, Loader2, Shield, Users, Settings } from "lucide-react";
+import { UserPlus, Edit, Trash2, Loader2, Shield, Users, Settings, UserX, UserCheck } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -266,6 +266,27 @@ function UserManagement() {
     },
   });
 
+  const toggleUserStatusMutation = useMutation({
+    mutationFn: async ({ userId, isActive }: { userId: number; isActive: boolean }) => {
+      const response = await apiRequest("PATCH", `/api/users/${userId}/status`, { isActive });
+      return await response.json();
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "สำเร็จ",
+        description: variables.isActive ? "เปิดการใช้งานผู้ใช้เรียบร้อยแล้ว" : "ระงับการเข้าถึงผู้ใช้เรียบร้อยแล้ว",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Role mutations
   const createRoleMutation = useMutation({
     mutationFn: async (data: CreateRoleFormData) => {
@@ -361,6 +382,17 @@ function UserManagement() {
 
   const handleSubmitEdit = (data: EditUserFormData) => {
     editUserMutation.mutate(data);
+  };
+
+  const handleToggleUserStatus = (user: UserWithRole) => {
+    const newStatus = !user.isActive;
+    const confirmMessage = newStatus 
+      ? `คุณต้องการเปิดการใช้งานผู้ใช้ "${user.username}" หรือไม่?`
+      : `คุณต้องการระงับการเข้าถึงผู้ใช้ "${user.username}" หรือไม่? (ผู้ใช้จะไม่สามารถเข้าสู่ระบบได้)`;
+    
+    if (window.confirm(confirmMessage)) {
+      toggleUserStatusMutation.mutate({ userId: user.id, isActive: newStatus });
+    }
   };
 
   // Role handlers
@@ -479,8 +511,26 @@ function UserManagement() {
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleEditUser(user)}
+                                  title="แก้ไขข้อมูลผู้ใช้"
                                 >
                                   <Edit className="w-4 h-4" />
+                                </Button>
+                              )}
+                              {canEdit && (
+                                <Button
+                                  size="sm"
+                                  variant={user.isActive ? "secondary" : "default"}
+                                  onClick={() => handleToggleUserStatus(user)}
+                                  title={user.isActive ? "ระงับการเข้าถึง" : "เปิดการใช้งาน"}
+                                  disabled={toggleUserStatusMutation.isPending}
+                                >
+                                  {toggleUserStatusMutation.isPending ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : user.isActive ? (
+                                    <UserX className="w-4 h-4" />
+                                  ) : (
+                                    <UserCheck className="w-4 h-4" />
+                                  )}
                                 </Button>
                               )}
                               {canCreate && (
@@ -488,6 +538,7 @@ function UserManagement() {
                                   size="sm"
                                   variant="destructive"
                                   onClick={() => handleDeleteUser(user)}
+                                  title="ลบผู้ใช้"
                                 >
                                   <Trash2 className="w-4 h-4" />
                                 </Button>

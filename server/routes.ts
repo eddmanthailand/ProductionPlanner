@@ -639,6 +639,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update user status (suspend/activate)
+  app.patch("/api/users/:id/status", async (req: any, res) => {
+    try {
+      const userId = parseInt(req.params.id);
+      const { isActive } = req.body;
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      
+      const user = await storage.updateUserStatus(userId, isActive, tenantId);
+      
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json(user);
+    } catch (error) {
+      console.error("Update user status error:", error);
+      res.status(500).json({ message: "Failed to update user status" });
+    }
+  });
+
   // Customers routes (dev mode - bypass auth)
   app.get("/api/customers", async (req: any, res) => {
     console.log('API: Customers endpoint called');

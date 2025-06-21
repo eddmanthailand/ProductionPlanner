@@ -393,6 +393,14 @@ export class DatabaseStorage implements IStorage {
     return user || undefined;
   }
 
+  async updateUserStatus(id: number, isActive: boolean, tenantId: string): Promise<User | undefined> {
+    const [user] = await db.update(users)
+      .set({ isActive, updatedAt: new Date() })
+      .where(and(eq(users.id, id), eq(users.tenantId, tenantId)))
+      .returning();
+    return user || undefined;
+  }
+
   async deleteUser(id: number, tenantId: string): Promise<boolean> {
     const result = await db.update(users)
       .set({ isActive: false, updatedAt: new Date() })
