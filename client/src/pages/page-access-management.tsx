@@ -383,7 +383,7 @@ export default function PageAccessManagement() {
               <div className="overflow-auto max-h-[calc(100vh-450px)]">
                 <Table className="relative w-full table-fixed">
                   <TableHeader className="sticky top-0 bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-blue-200 z-10">
-                    <TableRow className="hover:bg-transparent h-8">
+                    <TableRow className="hover:bg-transparent h-12">
                       <TableHead className="w-[15%] px-2 py-1 text-left font-bold text-gray-800 border-r-2 border-blue-200 bg-white shadow-sm">
                         <div className="flex items-center gap-1">
                           <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
@@ -404,7 +404,7 @@ export default function PageAccessManagement() {
                             }`}>
                               {role.displayName.charAt(0)}
                             </div>
-                            <span className="text-xs leading-tight">{role.displayName}</span>
+                            <span className="text-[10px] leading-3 text-center break-words hyphens-auto max-w-full">{role.displayName}</span>
                           </div>
                         </TableHead>
                       ))}
