@@ -1647,13 +1647,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         8: 'view'    // Trainee
       };
 
+      // ดึงสิทธิ์ที่มีอยู่แล้วทั้งหมด
+      const existingAccess = await storage.getAllPageAccess(tenantId);
+      const existingMap = new Map();
+      existingAccess.forEach(access => {
+        const key = `${access.roleId}-${access.pageUrl}`;
+        existingMap.set(key, access);
+      });
+
       const updates = [];
+      let createdCount = 0;
+      let skippedCount = 0;
+
       for (const page of systemPages) {
         for (const role of roles) {
+          const key = `${role.id}-${page.url}`;
+          
+          // ตรวจสอบว่ามีสิทธิ์อยู่แล้วหรือไม่
+          if (existingMap.has(key)) {
+            console.log(`ข้ามการสร้างสิทธิ์ (มีอยู่แล้ว): ${page.name} (${page.url}) สำหรับ ${role.name}`);
+            skippedCount++;
+            continue;
+          }
+
           const accessLevel = accessLevels[role.id as keyof typeof accessLevels] || 'none';
           
-          // สร้างสิทธิ์เริ่มต้นในหน้า "/production/work-calendar" ถ้ายังไม่มี
-          console.log(`สร้างสิทธิ์เริ่มต้นสำหรับหน้า: ${page.name} (${page.url})`);
+          console.log(`สร้างสิทธิ์เริ่มต้นสำหรับหน้า: ${page.name} (${page.url}) สำหรับ ${role.name}`);
           
           updates.push({
             roleId: role.id,
@@ -1661,12 +1680,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
             pageUrl: page.url,
             accessLevel: accessLevel
           });
+          createdCount++;
         }
       }
 
-      await storage.batchUpdatePageAccess(updates);
+      if (updates.length > 0) {
+        await storage.batchUpdatePageAccess(updates);
+      }
       
-      res.json({ message: "All permissions created successfully", created: updates.length });
+      res.json({ 
+        message: "All permissions processed successfully", 
+        created: createdCount,
+        skipped: skippedCount,
+        total: createdCount + skippedCount
+      });
     } catch (error) {
       console.error("Create all permissions error:", error);
       res.status(500).json({ message: "Failed to create all permissions" });
