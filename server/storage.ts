@@ -403,8 +403,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteUser(id: number, tenantId: string): Promise<boolean> {
-    const result = await db.update(users)
-      .set({ isActive: false, updatedAt: new Date() })
+    const result = await db.delete(users)
       .where(and(eq(users.id, id), eq(users.tenantId, tenantId)));
     return (result.rowCount ?? 0) > 0;
   }

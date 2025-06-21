@@ -516,17 +516,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Soft delete (deactivate) the user
+      // Hard delete the user from database
       const success = await storage.deleteUser(userId, tenantId);
       
       if (!success) {
         return res.status(404).json({ message: "User not found" });
       }
 
-      res.json({ message: "User deactivated successfully" });
+      res.json({ message: "User deleted successfully" });
     } catch (error) {
       console.error("Delete user error:", error);
-      res.status(500).json({ message: "Failed to deactivate user" });
+      res.status(500).json({ message: "Failed to delete user" });
     }
   });
 
