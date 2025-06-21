@@ -1175,7 +1175,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get users with roles (use memory storage for proper role display)
+  // Get users with roles (use database for consistent role display)
   app.get("/api/users-with-roles", requireAuth, async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for now
@@ -1183,10 +1183,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get users from database
       const dbUsers = await storage.getUsersByTenant(tenantId);
       
-      // Get roles from memory storage (initialized with defaults)
-      const { MemoryStorage } = await import('./memory-storage');
-      const memStore = new MemoryStorage();
-      const roles = await memStore.getRoles();
+      // Get roles from database (consistent with deletion)
+      const roles = await storage.getRoles(tenantId);
       const roleMap = new Map(roles.map(role => [role.id, role]));
       
       // Combine data
