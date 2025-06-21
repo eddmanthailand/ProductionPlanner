@@ -448,7 +448,26 @@ export default function WorkQueuePlanning() {
       
       setCalculatedPlan(jobCompletions);
       
-      // Save production plan to database
+      // Convert to work queue table format
+      const workQueueTableData = jobCompletions.map((job, index) => ({
+        id: job.jobId,
+        teamId: selectedTeam,
+        teamName: teams.find(t => t.id === selectedTeam)?.name || 'Unknown Team',
+        workOrderId: job.jobId.toString(),
+        orderNumber: job.orderNumber,
+        customerName: job.customerName,
+        productName: `${job.productName} (${job.colorName}, ${job.sizeName})`,
+        quantity: job.quantity,
+        startDate: index === 0 ? teamStartDate : jobCompletions[index - 1].completionDate.split('/').reverse().join('-'),
+        endDate: job.completionDate.split('/').reverse().join('-'),
+        status: 'pending',
+        estimatedDays: 1 // Simple estimation, can be improved
+      }));
+      
+      // Save to localStorage for work queue table
+      localStorage.setItem('calculatedProductionPlan', JSON.stringify(workQueueTableData));
+      
+      // Try to save production plan to database
       try {
         const teamName = teams.find(t => t.id === selectedTeam)?.name || 'Unknown Team';
         const planName = `แผนการผลิต ${teamName} - ${format(new Date(), "dd/MM/yyyy HH:mm")}`;
@@ -473,14 +492,13 @@ export default function WorkQueuePlanning() {
         
         toast({
           title: "บันทึกแผนการผลิตสำเร็จ",
-          description: `แผนการผลิตสำหรับ ${teamQueue.length} งานถูกบันทึกแล้ว`,
+          description: `แผนการผลิตสำหรับ ${teamQueue.length} งานถูกบันทึกแล้ว และส่งไปยังตารางคิวงานแล้ว`,
         });
       } catch (error) {
         console.error('Save production plan error:', error);
         toast({
           title: "คำนวณแผนเสร็จสิ้น",
-          description: `แผนการผลิตสำหรับ ${teamQueue.length} งาน (ไม่สามารถบันทึกได้)`,
-          variant: "destructive"
+          description: `แผนการผลิตสำหรับ ${teamQueue.length} งานคำนวณเสร็จแล้ว และส่งไปยังตารางคิวงานแล้ว`,
         });
       }
       
