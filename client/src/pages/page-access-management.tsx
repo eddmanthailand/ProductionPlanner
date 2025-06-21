@@ -326,7 +326,13 @@ export default function PageAccessManagement() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => refetch()}
+                  onClick={() => {
+                    refetch();
+                    toast({
+                      title: "กำลังรีเฟรชข้อมูล",
+                      description: "กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์",
+                    });
+                  }}
                   disabled={isLoading}
                   className="flex items-center gap-2 border-blue-200 text-blue-700 hover:bg-blue-50 text-xs"
                 >
