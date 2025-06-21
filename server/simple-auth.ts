@@ -102,12 +102,19 @@ export function setupSimpleAuth(app: Express) {
           res.set('Cache-Control', 'no-cache, no-store, must-revalidate');
           res.json(userWithoutPassword);
           return;
+        } else if (user && !user.isActive) {
+          // User account has been suspended - destroy session immediately
+          console.log("User account suspended, destroying session:", user.username);
+          req.session.destroy((err: any) => {
+            if (err) console.error("Error destroying session:", err);
+          });
+          return res.status(401).json({ message: "บัญชีผู้ใช้ถูกระงับการใช้งาน" });
         }
       }
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ message: "Authentication required" });
     } catch (error) {
       console.error("Auth user error:", error);
-      res.status(401).json({ message: "Unauthorized" });
+      res.status(401).json({ message: "Authentication required" });
     }
   });
 }
