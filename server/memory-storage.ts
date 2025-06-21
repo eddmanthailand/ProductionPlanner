@@ -124,6 +124,16 @@ export class MemoryStorage implements IStorage {
     return undefined;
   }
 
+  async updateUserStatus(id: number, isActive: boolean, tenantId: string): Promise<User | undefined> {
+    const user = this.users.get(id);
+    if (user && user.tenantId === tenantId) {
+      const updatedUser = { ...user, isActive, updatedAt: new Date() };
+      this.users.set(id, updatedUser);
+      return updatedUser;
+    }
+    return undefined;
+  }
+
   async deleteUser(id: number, tenantId: string): Promise<boolean> {
     const user = this.users.get(id);
     if (user && user.tenantId === tenantId) {

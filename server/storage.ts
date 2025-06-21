@@ -105,6 +105,7 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   updateUser(id: number, user: UpdateUser, tenantId: string): Promise<User | undefined>;
+  updateUserStatus(id: number, isActive: boolean, tenantId: string): Promise<User | undefined>;
   deleteUser(id: number, tenantId: string): Promise<boolean>;
   getUsersByTenant(tenantId: string): Promise<User[]>;
   getUsersWithRoles(tenantId: string): Promise<UserWithRole[]>;
@@ -432,12 +433,12 @@ export class DatabaseStorage implements IStorage {
         deletedAt: user.deletedAt,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
-        role: user.roleId ? roleMap.get(user.roleId) || null : null
+        role: user.roleId ? roleMap.get(user.roleId) || undefined : undefined
       }));
     } catch (error) {
       console.error('Error in getUsersWithRoles:', error);
-      // Fallback to memory storage for user management
-      return await memoryStorage.getUsersWithRoles(tenantId);
+      // Return empty array on error
+      return [];
     }
   }
 
