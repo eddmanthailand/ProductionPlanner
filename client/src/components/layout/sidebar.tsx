@@ -304,16 +304,16 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             </Link>
           )}
 
-          {/* Reports - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
-          {canAccessPage('/reports') && (
+          {/* Production Reports - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
+          {canAccessPage('/production/production-reports') && (
             <Link
-              href="/reports"
+              href="/production/production-reports"
               className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
-                location === '/reports' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                location === '/production/production-reports' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
               }`}
             >
               <ChartLine className="w-5 h-5" />
-              {!isCollapsed && <span className="ml-3">รายงาน</span>}
+              {!isCollapsed && <span className="ml-3">รายงานการผลิต</span>}
             </Link>
           )}
 
