@@ -1573,8 +1573,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // Add pageName to each update if missing
+      const updatesWithPageName = updates.map(update => ({
+        ...update,
+        pageName: update.pageTitle || update.pageName || getPageNameFromUrl(update.pageUrl)
+      }));
+
       // Use storage method for batch update
-      await storage.batchUpdatePageAccess(updates);
+      await storage.batchUpdatePageAccess(updatesWithPageName);
       
       res.json({ message: "Permissions updated successfully" });
     } catch (error) {
@@ -1582,6 +1588,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to update permissions" });
     }
   });
+
+  // Helper function to get page name from URL
+  function getPageNameFromUrl(url: string): string {
+    const pageNameMap: { [key: string]: string } = {
+      '/': 'หน้าหลัก',
+      '/sales/quotations': 'จัดการใบเสนอราคา',
+      '/sales/invoices': 'จัดการใบแจ้งหนี้',
+      '/sales/tax-invoices': 'จัดการใบกำกับภาษี',
+      '/sales/receipts': 'จัดการใบเสร็จรับเงิน',
+      '/production/calendar': 'ปฏิทินวันหยุดประจำปี',
+      '/production/organization': 'โครงสร้างองค์กร',
+      '/production/planning': 'วางแผนการผลิต',
+      '/production/daily-work-log': 'บันทึกงานประจำวัน',
+      '/production/production-reports': 'รายงานการผลิต',
+      '/production/work-orders': 'ใบสั่งงาน',
+      '/production/work-queue-planning': 'วางแผนและคิวงาน',
+      '/accounting': 'ระบบบัญชี',
+      '/inventory': 'คลังสินค้า',
+      '/customers': 'ลูกค้า',
+      '/master-data': 'ข้อมูลหลัก',
+      '/reports': 'รายงาน',
+      '/users': 'ผู้ใช้งาน',
+      '/user-management': 'จัดการผู้ใช้และสิทธิ์',
+      '/page-access-management': 'จัดการสิทธิ์การเข้าถึงหน้า',
+      '/production': 'การผลิต',
+      '/sales': 'การขาย',
+      '/products': 'จัดการสินค้า',
+      '/access-demo': 'ทดสอบสิทธิ์'
+    };
+    
+    return pageNameMap[url] || url;
+  }
 
   app.post("/api/page-access-management/create-all", async (req: any, res: any) => {
     try {
