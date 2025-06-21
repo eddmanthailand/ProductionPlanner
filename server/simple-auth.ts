@@ -37,6 +37,8 @@ export function setupSimpleAuth(app: Express) {
 
       // Get user by username
       const user = await storage.getUserByUsername(username);
+      console.log("User found for login:", user ? `${user.username} (active: ${user.isActive})` : "not found");
+      
       if (!user) {
         return res.status(401).json({ message: "Invalid credentials" });
       }
@@ -49,7 +51,8 @@ export function setupSimpleAuth(app: Express) {
 
       // Check if user is active
       if (!user.isActive) {
-        return res.status(401).json({ message: "Account is disabled" });
+        console.log("Login rejected - user account disabled:", username);
+        return res.status(401).json({ message: "บัญชีผู้ใช้ถูกปิดการใช้งาน" });
       }
 
       // Create session
