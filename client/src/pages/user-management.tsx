@@ -43,8 +43,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Edit, Trash2, Loader2, Shield } from "lucide-react";
+import { UserPlus, Edit, Trash2, Loader2, Shield, Users, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
 import { apiRequest, queryClient } from "@/lib/queryClient";
@@ -93,8 +94,24 @@ const editUserSchema = z.object({
   isActive: z.boolean(),
 });
 
+// Role form schemas
+const createRoleSchema = z.object({
+  name: z.string().min(1, "ชื่อบทบาทจำเป็น"),
+  displayName: z.string().min(1, "ชื่อแสดงจำเป็น"),
+  description: z.string().optional(),
+  level: z.number().min(1).max(8, "ระดับต้องอยู่ระหว่าง 1-8"),
+});
+
+const editRoleSchema = z.object({
+  displayName: z.string().min(1, "ชื่อแสดงจำเป็น"),
+  description: z.string().optional(),
+  level: z.number().min(1).max(8, "ระดับต้องอยู่ระหว่าง 1-8"),
+});
+
 type CreateUserFormData = z.infer<typeof createUserSchema>;
 type EditUserFormData = z.infer<typeof editUserSchema>;
+type CreateRoleFormData = z.infer<typeof createRoleSchema>;
+type EditRoleFormData = z.infer<typeof editRoleSchema>;
 
 function UserManagement() {
   const { toast } = useToast();
@@ -102,10 +119,15 @@ function UserManagement() {
   const { getPagePermissions } = usePageNavigation();
   const { canCreate, canEdit, canView } = getPagePermissions("/user-management");
   
-  // State variables
+  // State variables for users
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  
+  // State variables for roles
+  const [isCreateRoleDialogOpen, setIsCreateRoleDialogOpen] = useState(false);
+  const [editingRole, setEditingRole] = useState<Role | null>(null);
+  const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
   
   console.log("User Management Debug:", { 
     canCreate, 
@@ -152,6 +174,26 @@ function UserManagement() {
       email: "",
       roleId: 0,
       isActive: true,
+    },
+  });
+
+  // Role forms
+  const createRoleForm = useForm<CreateRoleFormData>({
+    resolver: zodResolver(createRoleSchema),
+    defaultValues: {
+      name: "",
+      displayName: "",
+      description: "",
+      level: 1,
+    },
+  });
+
+  const editRoleForm = useForm<EditRoleFormData>({
+    resolver: zodResolver(editRoleSchema),
+    defaultValues: {
+      displayName: "",
+      description: "",
+      level: 1,
     },
   });
 
@@ -213,6 +255,77 @@ function UserManagement() {
         title: "สำเร็จ",
         description: "ลบผู้ใช้เรียบร้อยแล้ว",
       });
+      queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Role mutations
+  const createRoleMutation = useMutation({
+    mutationFn: async (data: CreateRoleFormData) => {
+      const response = await apiRequest("POST", "/api/roles", data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "สร้างบทบาทใหม่เรียบร้อยแล้ว",
+      });
+      setIsCreateRoleDialogOpen(false);
+      createRoleForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const editRoleMutation = useMutation({
+    mutationFn: async (data: EditRoleFormData) => {
+      if (!editingRole) throw new Error("ไม่พบข้อมูลบทบาท");
+      const response = await apiRequest("PUT", `/api/roles/${editingRole.id}`, data);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "แก้ไขข้อมูลบทบาทเรียบร้อยแล้ว",
+      });
+      setIsEditRoleDialogOpen(false);
+      setEditingRole(null);
+      editRoleForm.reset();
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteRoleMutation = useMutation({
+    mutationFn: async (roleId: number) => {
+      const response = await apiRequest("DELETE", `/api/roles/${roleId}`);
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "สำเร็จ",
+        description: "ลบบทบาทเรียบร้อยแล้ว",
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/roles"] });
       queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: Error) => {
