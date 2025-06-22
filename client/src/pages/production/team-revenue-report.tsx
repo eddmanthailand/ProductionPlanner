@@ -23,8 +23,8 @@ interface DailyWorkLog {
   date: string;
   productName: string;
   quantity: number;
-  unitPrice: number;
-  totalRevenue: number;
+  unitPrice: string;  // API ส่งมาเป็น string
+  totalRevenue?: number;
   workerId: string;
   workerName: string;
   customerName: string;
