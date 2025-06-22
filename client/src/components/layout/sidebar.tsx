@@ -319,7 +319,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               >
                 <div className="flex items-center">
                   <ChartLine className="w-5 h-5" />
-                  {!isCollapsed && <span className="ml-3">รายงาน</span>}
+                  {!isCollapsed && <span className="ml-3">รายงานการผลิต</span>}
                 </div>
                 {!isCollapsed && (
                   <ChevronDown 
