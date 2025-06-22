@@ -27,17 +27,35 @@ interface DailyWorkLog {
   totalRevenue: number;
   workerId: string;
   workerName: string;
+  customerName: string;
+  orderNumber: string;
+  jobTitle: string;
+  colorName: string;
+  colorCode: string;
+  sizeName: string;
+  workStepId: string;
+  workStepName: string;
+  workDescription: string;
 }
 
 interface RevenueData {
   date: string;
   revenue: number;
   quantity: number;
-  products: Array<{
-    name: string;
+  jobs: Array<{
+    id: string;
+    orderNumber: string;
+    customerName: string;
+    jobTitle: string;
+    productName: string;
+    colorName: string;
+    sizeName: string;
+    workStepName: string;
     quantity: number;
     unitPrice: number;
     revenue: number;
+    workerName: string;
+    workDescription: string;
   }>;
 }
 
@@ -82,7 +100,7 @@ export default function TeamRevenueReport() {
           date: dateKey,
           revenue: 0,
           quantity: 0,
-          products: []
+          jobs: []
         });
       }
 
@@ -90,19 +108,22 @@ export default function TeamRevenueReport() {
       dayData.revenue += revenue;
       dayData.quantity += log.quantity;
 
-      // เช็คว่ามีสินค้านี้แล้วหรือไม่
-      const existingProduct = dayData.products.find(p => p.name === log.productName);
-      if (existingProduct) {
-        existingProduct.quantity += log.quantity;
-        existingProduct.revenue += revenue;
-      } else {
-        dayData.products.push({
-          name: log.productName,
-          quantity: log.quantity,
-          unitPrice: log.unitPrice,
-          revenue: revenue
-        });
-      }
+      // เพิ่มข้อมูลงานทุกรายการ
+      dayData.jobs.push({
+        id: log.id,
+        orderNumber: log.orderNumber || 'ไม่ระบุ',
+        customerName: log.customerName || 'ไม่ระบุลูกค้า',
+        jobTitle: log.jobTitle || 'ไม่ระบุงาน',
+        productName: log.productName,
+        colorName: log.colorName || 'ไม่ระบุสี',
+        sizeName: log.sizeName || 'ไม่ระบุไซร์',
+        workStepName: log.workStepName || 'ไม่ระบุขั้นตอน',
+        quantity: log.quantity,
+        unitPrice: log.unitPrice,
+        revenue: revenue,
+        workerName: log.workerName,
+        workDescription: log.workDescription || 'ไม่ระบุ'
+      });
     });
 
     return Array.from(grouped.values()).sort((a, b) => a.date.localeCompare(b.date));
@@ -317,7 +338,7 @@ export default function TeamRevenueReport() {
                     <TableHead>วันที่</TableHead>
                     <TableHead>จำนวนผลิต (ตัว)</TableHead>
                     <TableHead>รายได้ (บาท)</TableHead>
-                    <TableHead>รายละเอียดสินค้า</TableHead>
+                    <TableHead>รายละเอียดงาน</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -331,10 +352,21 @@ export default function TeamRevenueReport() {
                         ฿{day.revenue.toLocaleString()}
                       </TableCell>
                       <TableCell>
-                        <div className="space-y-1">
-                          {day.products.map((product, pIndex) => (
-                            <div key={pIndex} className="text-sm">
-                              {product.name}: {product.quantity} ตัว × ฿{product.unitPrice} = ฿{product.revenue.toLocaleString()}
+                        <div className="space-y-2">
+                          {day.jobs.map((job, jIndex) => (
+                            <div key={jIndex} className="text-sm border-l-2 border-blue-200 pl-2">
+                              <div className="font-medium text-blue-700">
+                                {job.orderNumber} - {job.customerName}
+                              </div>
+                              <div className="text-gray-600">
+                                {job.productName} ({job.colorName}, {job.sizeName})
+                              </div>
+                              <div className="text-gray-500 text-xs">
+                                ขั้นตอน: {job.workStepName} | ช่าง: {job.workerName}
+                              </div>
+                              <div className="font-medium text-green-600">
+                                {job.quantity} ตัว × ฿{job.unitPrice.toLocaleString()} = ฿{job.revenue.toLocaleString()}
+                              </div>
                             </div>
                           ))}
                         </div>

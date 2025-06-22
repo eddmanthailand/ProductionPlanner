@@ -1742,14 +1742,27 @@ export class DatabaseStorage implements IStorage {
           COALESCE(dwl.quantity_completed, 0) as quantity,
           COALESCE(sj.unit_price, 0) as "unitPrice",
           dwl.employee_id as "workerId",
-          CONCAT(COALESCE(e.first_name, ''), ' ', COALESCE(e.last_name, 'ไม่ระบุชื่อ')) as "workerName"
+          CONCAT(COALESCE(e.first_name, ''), ' ', COALESCE(e.last_name, 'ไม่ระบุชื่อ')) as "workerName",
+          wo.customer_name as "customerName",
+          wo.order_number as "orderNumber",
+          wo.title as "jobTitle",
+          c.name as "colorName",
+          c.code as "colorCode",
+          s.name as "sizeName",
+          sj.work_step_id as "workStepId",
+          ws.name as "workStepName",
+          dwl.work_description as "workDescription"
         FROM daily_work_logs dwl
         LEFT JOIN sub_jobs sj ON dwl.sub_job_id = sj.id
         LEFT JOIN employees e ON dwl.employee_id = e.id
+        LEFT JOIN work_orders wo ON sj.work_order_id = wo.id
+        LEFT JOIN colors c ON sj.color_id = c.id
+        LEFT JOIN sizes s ON sj.size_id = s.id
+        LEFT JOIN work_steps ws ON sj.work_step_id = ws.id
         WHERE dwl.team_id = ${teamId}
           AND dwl.date >= ${startDate}
           AND dwl.date <= ${endDate}
-        ORDER BY dwl.date ASC
+        ORDER BY dwl.date ASC, wo.order_number ASC
       `);
       
       console.log('Storage: Found work logs for revenue calculation:', logs.rows.length);
