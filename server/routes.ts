@@ -1586,6 +1586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       '/production/production-reports': 'รายงานการผลิต',
       '/production/work-orders': 'ใบสั่งงาน',
       '/production/work-queue-planning': 'วางแผนและคิวงาน',
+      '/production/work-queue-table': 'ตารางคิวงาน',
       '/accounting': 'ระบบบัญชี',
       '/inventory': 'คลังสินค้า',
       '/customers': 'ลูกค้า',
@@ -1621,6 +1622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         { name: 'รายงานการผลิต', url: '/production/production-reports' },
         { name: 'ใบสั่งงาน', url: '/production/work-orders' },
         { name: 'วางแผนและคิวงาน', url: '/production/work-queue-planning' },
+        { name: 'ตารางคิวงาน', url: '/production/work-queue-table' },
         { name: 'ระบบบัญชี', url: '/accounting' },
         { name: 'คลังสินค้า', url: '/inventory' },
         { name: 'ลูกค้า', url: '/customers' },
@@ -3731,7 +3733,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
     } catch (error) {
       console.error("Bulk update page access error:", error);
-      res.status(500).json({ message: "Failed to update permissions", error: error.message });
+      res.status(500).json({ message: "Failed to update permissions", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
