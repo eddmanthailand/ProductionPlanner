@@ -55,6 +55,16 @@ export default function TeamRevenueReport() {
   const { data: workLogs, isLoading } = useQuery<DailyWorkLog[]>({
     queryKey: ["/api/daily-work-logs", selectedTeam, startDate, endDate],
     enabled: !!selectedTeam && !!startDate && !!endDate,
+    queryFn: async () => {
+      const params = new URLSearchParams({
+        teamId: selectedTeam,
+        startDate: format(startDate!, "yyyy-MM-dd"),
+        endDate: format(endDate!, "yyyy-MM-dd")
+      });
+      const response = await fetch(`/api/daily-work-logs?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch work logs');
+      return response.json();
+    }
   });
 
   // คำนวณข้อมูลรายได้

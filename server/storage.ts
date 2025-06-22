@@ -91,7 +91,7 @@ import {
   type InsertDailyWorkLog
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull, leftJoin } from "drizzle-orm";
+import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -1733,29 +1733,27 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Getting daily work logs for team revenue report:', { teamId, startDate, endDate });
       
-      const logs = await db
-        .select({
-          id: dailyWorkLogs.id,
-          teamId: dailyWorkLogs.teamId,
-          date: dailyWorkLogs.date,
-          productName: sql<string>`COALESCE(sj.product_name, 'ไม่ระบุสินค้า')`,
-          quantity: sql<number>`COALESCE(${dailyWorkLogs.quantityCompleted}, 0)`,
-          unitPrice: sql<number>`COALESCE(sj.unit_price, 0)`,
-          workerId: dailyWorkLogs.employeeId,
-          workerName: sql<string>`CONCAT(COALESCE(e.first_name, ''), ' ', COALESCE(e.last_name, 'ไม่ระบุชื่อ'))`
-        })
-        .from(dailyWorkLogs)
-        .leftJoin(subJobs, eq(dailyWorkLogs.subJobId, subJobs.id))
-        .leftJoin(employees, eq(dailyWorkLogs.employeeId, employees.id))
-        .where(and(
-          eq(dailyWorkLogs.teamId, teamId),
-          gte(dailyWorkLogs.date, startDate),
-          lte(dailyWorkLogs.date, endDate)
-        ))
-        .orderBy(asc(dailyWorkLogs.date));
+      const logs = await db.execute(sql`
+        SELECT 
+          dwl.id,
+          dwl.team_id as "teamId",
+          dwl.date,
+          COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
+          COALESCE(dwl.quantity_completed, 0) as quantity,
+          COALESCE(sj.unit_price, 0) as "unitPrice",
+          dwl.employee_id as "workerId",
+          CONCAT(COALESCE(e.first_name, ''), ' ', COALESCE(e.last_name, 'ไม่ระบุชื่อ')) as "workerName"
+        FROM daily_work_logs dwl
+        LEFT JOIN sub_jobs sj ON dwl.sub_job_id = sj.id
+        LEFT JOIN employees e ON dwl.employee_id = e.id
+        WHERE dwl.team_id = ${teamId}
+          AND dwl.date >= ${startDate}
+          AND dwl.date <= ${endDate}
+        ORDER BY dwl.date ASC
+      `);
       
-      console.log('Storage: Found work logs for revenue calculation:', logs.length);
-      return logs;
+      console.log('Storage: Found work logs for revenue calculation:', logs.rows.length);
+      return logs.rows;
     } catch (error) {
       console.error('Get daily work logs by team and date range error:', error);
       return [];
