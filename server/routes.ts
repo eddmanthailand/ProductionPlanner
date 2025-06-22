@@ -3797,9 +3797,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
 
       // คำนวณรายได้และจัดรูปแบบข้อมูล
-      const enrichedLogs = workLogs.map(log => ({
+      const enrichedLogs = workLogs.map((log: any) => ({
         ...log,
-        totalRevenue: log.quantity * log.unitPrice
+        totalRevenue: (log.quantity || 0) * (log.unitPrice || 0)
       }));
 
       res.json(enrichedLogs);
