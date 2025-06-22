@@ -169,7 +169,7 @@ export default function WorkQueueTable() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">ทุกทีม</SelectItem>
-                    {teams.map((team: any) => (
+                    {(teams as any[]).map((team: any) => (
                       <SelectItem key={team.id} value={team.id}>
                         {team.name}
                       </SelectItem>
@@ -347,7 +347,7 @@ export default function WorkQueueTable() {
                 <div>
                   <p className="text-sm text-gray-600">ทีมที่คำนวณแล้ว</p>
                   <p className="text-2xl font-bold">{calculatedTeams.length}</p>
-                  <p className="text-xs text-gray-500">จาก {teams.length} ทีม</p>
+                  <p className="text-xs text-gray-500">จาก {(teams as any[]).length} ทีม</p>
                 </div>
                 <Filter className="w-8 h-8 text-purple-500" />
               </div>
