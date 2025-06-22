@@ -135,9 +135,10 @@ export default function TeamRevenueReport() {
       (acc, day) => ({
         totalRevenue: acc.totalRevenue + day.revenue,
         totalQuantity: acc.totalQuantity + day.quantity,
-        totalDays: acc.totalDays + 1
+        totalDays: acc.totalDays + 1,
+        totalJobs: acc.totalJobs + day.jobs.length
       }),
-      { totalRevenue: 0, totalQuantity: 0, totalDays: 0 }
+      { totalRevenue: 0, totalQuantity: 0, totalDays: 0, totalJobs: 0 }
     );
   }, [revenueData]);
 
@@ -309,9 +310,9 @@ export default function TeamRevenueReport() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">จำนวนวันที่ทำงาน</p>
+                  <p className="text-sm font-medium text-gray-600">จำนวนงานทั้งหมด</p>
                   <p className="text-2xl font-bold text-orange-600">
-                    {summary.totalDays} วัน
+                    {summary.totalJobs} งาน
                   </p>
                 </div>
                 <Users className="w-8 h-8 text-orange-600" />
