@@ -464,8 +464,25 @@ export default function WorkQueuePlanning() {
         estimatedDays: 1 // Simple estimation, can be improved
       }));
       
-      // Save to localStorage for work queue table
-      localStorage.setItem('calculatedProductionPlan', JSON.stringify(workQueueTableData));
+      // Save to localStorage for work queue table (separated by team)
+      const teamKey = `calculatedPlan_${selectedTeam}`;
+      const teamData = {
+        teamId: selectedTeam,
+        teamName: teams.find(t => t.id === selectedTeam)?.name || 'Unknown Team',
+        calculatedAt: new Date().toISOString(),
+        data: workQueueTableData
+      };
+      localStorage.setItem(teamKey, JSON.stringify(teamData));
+      
+      // Also update the main index for easier retrieval
+      const existingTeams = JSON.parse(localStorage.getItem('calculatedTeams') || '[]');
+      const updatedTeams = existingTeams.filter((t: any) => t.teamId !== selectedTeam);
+      updatedTeams.push({
+        teamId: selectedTeam,
+        teamName: teams.find(t => t.id === selectedTeam)?.name || 'Unknown Team',
+        calculatedAt: new Date().toISOString()
+      });
+      localStorage.setItem('calculatedTeams', JSON.stringify(updatedTeams));
       
       // Try to save production plan to database
       try {

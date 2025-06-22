@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Clock, Users, RefreshCw } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CalendarDays, Clock, Users, RefreshCw, Trash2, Filter } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { useToast } from "@/hooks/use-toast";
 
 interface WorkQueueItem {
   id: number;
@@ -23,25 +25,93 @@ interface WorkQueueItem {
 
 export default function WorkQueueTable() {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>("all");
+  const { toast } = useToast();
 
-  // ดึงข้อมูลแผนการผลิตจาก localStorage หรือ API
-  const { data: workQueues = [], isLoading, refetch } = useQuery<WorkQueueItem[]>({
+  // ดึงรายชื่อทีมจาก API เพื่อรองรับทีมใหม่
+  const { data: teams = [] } = useQuery<any[]>({
+    queryKey: ["/api/teams"],
+  });
+
+  // ดึงข้อมูลแผนการผลิตจาก localStorage ทุกทีม
+  const { data: allWorkQueues = [], isLoading, refetch } = useQuery<WorkQueueItem[]>({
     queryKey: ["/api/work-queue-table", refreshKey],
     queryFn: async () => {
-      // ตรวจสอบ localStorage ก่อน
-      const savedPlan = localStorage.getItem('calculatedProductionPlan');
-      if (savedPlan) {
-        return JSON.parse(savedPlan);
+      const allData: WorkQueueItem[] = [];
+      
+      // อ่านข้อมูลจาก localStorage ทุก key ที่ขึ้นต้นด้วย calculatedPlan_
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('calculatedPlan_')) {
+          try {
+            const teamData = JSON.parse(localStorage.getItem(key) || '{}');
+            if (teamData.data && Array.isArray(teamData.data)) {
+              allData.push(...teamData.data);
+            }
+          } catch (error) {
+            console.error(`Error parsing data for key ${key}:`, error);
+          }
+        }
       }
       
-      // หากไม่มีข้อมูลใน localStorage ให้คืนค่าเป็น array ว่าง
-      return [];
+      return allData;
+    },
+  });
+
+  // กรองข้อมูลตามทีมที่เลือก
+  const workQueues = selectedTeamFilter === "all" 
+    ? allWorkQueues 
+    : allWorkQueues.filter(item => item.teamId === selectedTeamFilter);
+
+  // ดึงรายการทีมที่มีการคำนวณแล้ว
+  const { data: calculatedTeams = [] } = useQuery({
+    queryKey: ["/api/calculated-teams", refreshKey],
+    queryFn: async () => {
+      return JSON.parse(localStorage.getItem('calculatedTeams') || '[]');
     },
   });
 
   const handleRefresh = () => {
     setRefreshKey(prev => prev + 1);
     refetch();
+  };
+
+  const handleDeleteTeamData = (teamId: string) => {
+    const teamKey = `calculatedPlan_${teamId}`;
+    localStorage.removeItem(teamKey);
+    
+    // อัพเดท calculatedTeams index
+    const existingTeams = JSON.parse(localStorage.getItem('calculatedTeams') || '[]');
+    const updatedTeams = existingTeams.filter((t: any) => t.teamId !== teamId);
+    localStorage.setItem('calculatedTeams', JSON.stringify(updatedTeams));
+    
+    toast({
+      title: "ลบข้อมูลสำเร็จ",
+      description: `ลบข้อมูลการคำนวณของทีม ${(teams as any[]).find(t => t.id === teamId)?.name || teamId} แล้ว`,
+    });
+    
+    handleRefresh();
+  };
+
+  const handleClearAllData = () => {
+    // ลบข้อมูลทั้งหมด
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('calculatedPlan_')) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+    localStorage.removeItem('calculatedTeams');
+    
+    toast({
+      title: "ลบข้อมูลทั้งหมดสำเร็จ",
+      description: "ลบข้อมูลการคำนวณของทุกทีมแล้ว",
+    });
+    
+    handleRefresh();
   };
 
   const getStatusBadge = (status: string) => {
@@ -63,7 +133,7 @@ export default function WorkQueueTable() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
             <CalendarDays className="w-8 h-8 text-blue-600" />
@@ -71,11 +141,94 @@ export default function WorkQueueTable() {
           </h1>
           <p className="text-gray-600 mt-1">แสดงตารางคิวงานของแต่ละทีมพร้อมวันเริ่มงานและวันจบงาน</p>
         </div>
-        <Button onClick={handleRefresh} variant="outline" size="sm">
-          <RefreshCw className="w-4 h-4 mr-2" />
-          รีเฟรช
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            รีเฟรช
+          </Button>
+          {allWorkQueues.length > 0 && (
+            <Button onClick={handleClearAllData} variant="destructive" size="sm">
+              <Trash2 className="w-4 h-4 mr-2" />
+              ลบทั้งหมด
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Controls */}
+      {allWorkQueues.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-gray-500" />
+                <span className="text-sm font-medium">กรองตามทีม:</span>
+                <Select value={selectedTeamFilter} onValueChange={setSelectedTeamFilter}>
+                  <SelectTrigger className="w-48">
+                    <SelectValue placeholder="เลือกทีม" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">ทุกทีม</SelectItem>
+                    {teams.map((team: any) => (
+                      <SelectItem key={team.id} value={team.id}>
+                        {team.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {selectedTeamFilter !== "all" && (
+                <Button 
+                  onClick={() => handleDeleteTeamData(selectedTeamFilter)} 
+                  variant="outline" 
+                  size="sm"
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  ลบข้อมูลทีมนี้
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Team Status Cards */}
+      {calculatedTeams.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5" />
+              สถานะการคำนวณแต่ละทีม
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {calculatedTeams.map((team: any) => (
+                <div key={team.teamId} className="p-4 border rounded-lg bg-green-50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900">{team.teamName}</h4>
+                      <p className="text-sm text-gray-500">
+                        คำนวณล่าสุด: {new Date(team.calculatedAt).toLocaleString('th-TH')}
+                      </p>
+                    </div>
+                    <Button 
+                      onClick={() => handleDeleteTeamData(team.teamId)} 
+                      variant="ghost" 
+                      size="sm"
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Work Queue Table */}
       <Card>
@@ -141,12 +294,14 @@ export default function WorkQueueTable() {
 
       {/* Summary Stats */}
       {workQueues.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">งานทั้งหมด</p>
+                  <p className="text-sm text-gray-600">
+                    {selectedTeamFilter === "all" ? "งานทั้งหมด" : "งานของทีมนี้"}
+                  </p>
                   <p className="text-2xl font-bold">{workQueues.length}</p>
                 </div>
                 <CalendarDays className="w-8 h-8 text-blue-500" />
@@ -158,9 +313,13 @@ export default function WorkQueueTable() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">ทีมที่ใช้งาน</p>
+                  <p className="text-sm text-gray-600">
+                    {selectedTeamFilter === "all" ? "ทีมที่มีงาน" : "ทีมที่เลือก"}
+                  </p>
                   <p className="text-2xl font-bold">
-                    {new Set(workQueues.map(item => item.teamId)).size}
+                    {selectedTeamFilter === "all" 
+                      ? new Set(workQueues.map(item => item.teamId)).size 
+                      : 1}
                   </p>
                 </div>
                 <Users className="w-8 h-8 text-green-500" />
@@ -178,6 +337,19 @@ export default function WorkQueueTable() {
                   </p>
                 </div>
                 <Clock className="w-8 h-8 text-orange-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">ทีมที่คำนวณแล้ว</p>
+                  <p className="text-2xl font-bold">{calculatedTeams.length}</p>
+                  <p className="text-xs text-gray-500">จาก {teams.length} ทีม</p>
+                </div>
+                <Filter className="w-8 h-8 text-purple-500" />
               </div>
             </CardContent>
           </Card>
