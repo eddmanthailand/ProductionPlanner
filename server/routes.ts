@@ -1573,69 +1573,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Helper function to get page name from URL
   function getPageNameFromUrl(url: string): string {
-    const pageNameMap: { [key: string]: string } = {
-      '/': 'หน้าหลัก',
-      '/sales/quotations': 'จัดการใบเสนอราคา',
-      '/sales/invoices': 'จัดการใบแจ้งหนี้',
-      '/sales/tax-invoices': 'จัดการใบกำกับภาษี',
-      '/sales/receipts': 'จัดการใบเสร็จรับเงิน',
-      '/production/calendar': 'ปฏิทินวันหยุดประจำปี',
-      '/production/organization': 'โครงสร้างองค์กร',
-      '/production/planning': 'วางแผนการผลิต',
-      '/production/daily-work-log': 'บันทึกงานประจำวัน',
-      '/production/production-reports': 'รายงานการผลิต',
-      '/production/work-orders': 'ใบสั่งงาน',
-      '/production/work-queue-planning': 'วางแผนและคิวงาน',
-      '/production/work-queue-table': 'ตารางคิวงาน',
-      '/accounting': 'ระบบบัญชี',
-      '/inventory': 'คลังสินค้า',
-      '/customers': 'ลูกค้า',
-      '/master-data': 'ข้อมูลหลัก',
-      '/reports': 'รายงาน',
-      '/users': 'ผู้ใช้งาน',
-      '/user-management': 'จัดการผู้ใช้และสิทธิ์',
-      '/page-access-management': 'จัดการสิทธิ์การเข้าถึงหน้า',
-      '/production': 'การผลิต',
-      '/sales': 'การขาย',
-      '/products': 'จัดการสินค้า',
-      '/access-demo': 'ทดสอบสิทธิ์'
-    };
-    
-    return pageNameMap[url] || url;
+    try {
+      const { parseRoutesFromAppTsx, generatePageNameMap } = require('./route-parser');
+      
+      // อ่าน routes จาก App.tsx และสร้าง pageNameMap
+      const routes = parseRoutesFromAppTsx();
+      const pageNameMap = generatePageNameMap(routes);
+      
+      return pageNameMap[url] || url;
+    } catch (error) {
+      console.error('ไม่สามารถอ่าน routes จาก App.tsx ได้:', error);
+      
+      // fallback ใช้ pageNameMap เดิม
+      const fallbackPageNameMap: { [key: string]: string } = {
+        '/': 'หน้าหลัก',
+        '/sales/quotations': 'จัดการใบเสนอราคา',
+        '/sales/invoices': 'จัดการใบแจ้งหนี้',
+        '/sales/tax-invoices': 'จัดการใบกำกับภาษี',
+        '/sales/receipts': 'จัดการใบเสร็จรับเงิน',
+        '/production/calendar': 'ปฏิทินวันหยุดประจำปี',
+        '/production/organization': 'โครงสร้างองค์กร',
+        '/production/daily-work-log': 'บันทึกงานประจำวัน',
+        '/production/production-reports': 'รายงานการผลิต',
+        '/production/work-orders': 'ใบสั่งงาน',
+        '/production/work-queue-planning': 'วางแผนและคิวงาน',
+        '/production/work-queue-table': 'ตารางคิวงาน',
+        '/production/work-queue': 'คิวงาน',
+        '/production/work-steps': 'ขั้นตอนการทำงาน',
+        '/accounting': 'ระบบบัญชี',
+        '/inventory': 'คลังสินค้า',
+        '/customers': 'ลูกค้า',
+        '/master-data': 'ข้อมูลหลัก',
+        '/reports': 'รายงาน',
+        '/users': 'ผู้ใช้งาน',
+        '/user-management': 'จัดการผู้ใช้และสิทธิ์',
+        '/page-access-management': 'จัดการสิทธิ์การเข้าถึงหน้า',
+        '/production': 'การผลิต',
+        '/sales': 'การขาย',
+        '/products': 'จัดการสินค้า',
+        '/access-demo': 'ทดสอบสิทธิ์'
+      };
+      
+      return fallbackPageNameMap[url] || url;
+    }
   }
 
-  // ฟังก์ชันดึงรายการหน้าจาก pageNameMap (รวมกับฟังก์ชัน getPageNameFromUrl)
+  // ฟังก์ชันดึงรายการหน้าจาก App.tsx อัตโนมัติ
   function getAllSystemPages() {
-    // ใช้ pageNameMap จากฟังก์ชัน getPageNameFromUrl ที่มีอยู่แล้ว
-    const pageNameMap: { [key: string]: string } = {
-      '/': 'หน้าหลัก',
-      '/sales/quotations': 'จัดการใบเสนอราคา',
-      '/sales/invoices': 'จัดการใบแจ้งหนี้',
-      '/sales/tax-invoices': 'จัดการใบกำกับภาษี',
-      '/sales/receipts': 'จัดการใบเสร็จรับเงิน',
-      '/production/calendar': 'ปฏิทินวันหยุดประจำปี',
-      '/production/organization': 'โครงสร้างองค์กร',
-      '/production/planning': 'วางแผนการผลิต',
-      '/production/daily-work-log': 'บันทึกงานประจำวัน',
-      '/production/production-reports': 'รายงานการผลิต',
-      '/production/work-orders': 'ใบสั่งงาน',
-      '/production/work-queue-planning': 'วางแผนและคิวงาน',
-      '/production/work-queue-table': 'ตารางคิวงาน',
-      '/accounting': 'ระบบบัญชี',
-      '/inventory': 'คลังสินค้า',
-      '/customers': 'ลูกค้า',
-      '/master-data': 'ข้อมูลหลัก',
-      '/reports': 'รายงาน',
-      '/users': 'ผู้ใช้งาน',
-      '/user-management': 'จัดการผู้ใช้และสิทธิ์',
-      '/page-access-management': 'จัดการสิทธิ์การเข้าถึงหน้า',
-      '/production': 'การผลิต',
-      '/sales': 'การขาย',
-      '/products': 'จัดการสินค้า',
-      '/access-demo': 'ทดสอบสิทธิ์'
-    };
-
-    return Object.entries(pageNameMap).map(([url, name]) => ({ name, url }));
+    try {
+      const { parseRoutesFromAppTsx, generatePageNameMap } = require('./route-parser');
+      
+      // อ่าน routes จาก App.tsx
+      const routes = parseRoutesFromAppTsx();
+      const pageNameMap = generatePageNameMap(routes);
+      
+      return Object.entries(pageNameMap).map(([url, name]) => ({ name, url }));
+    } catch (error) {
+      console.error('ไม่สามารถอ่าน routes จาก App.tsx ได้:', error);
+      
+      // fallback ใช้ pageNameMap เดิม
+      const fallbackPageNameMap: { [key: string]: string } = {
+        '/': 'หน้าหลัก',
+        '/sales/quotations': 'จัดการใบเสนอราคา',
+        '/sales/invoices': 'จัดการใบแจ้งหนี้',
+        '/sales/tax-invoices': 'จัดการใบกำกับภาษี',
+        '/sales/receipts': 'จัดการใบเสร็จรับเงิน',
+        '/production/calendar': 'ปฏิทินวันหยุดประจำปี',
+        '/production/organization': 'โครงสร้างองค์กร',
+        '/production/daily-work-log': 'บันทึกงานประจำวัน',
+        '/production/production-reports': 'รายงานการผลิต',
+        '/production/work-orders': 'ใบสั่งงาน',
+        '/production/work-queue-planning': 'วางแผนและคิวงาน',
+        '/production/work-queue-table': 'ตารางคิวงาน',
+        '/production/work-queue': 'คิวงาน',
+        '/production/work-steps': 'ขั้นตอนการทำงาน',
+        '/accounting': 'ระบบบัญชี',
+        '/inventory': 'คลังสินค้า',
+        '/customers': 'ลูกค้า',
+        '/master-data': 'ข้อมูลหลัก',
+        '/reports': 'รายงาน',
+        '/users': 'ผู้ใช้งาน',
+        '/user-management': 'จัดการผู้ใช้และสิทธิ์',
+        '/page-access-management': 'จัดการสิทธิ์การเข้าถึงหน้า',
+        '/production': 'การผลิต',
+        '/sales': 'การขาย',
+        '/products': 'จัดการสินค้า',
+        '/access-demo': 'ทดสอบสิทธิ์'
+      };
+      
+      return Object.entries(fallbackPageNameMap).map(([url, name]) => ({ name, url }));
+    }
   }
 
   app.post("/api/page-access-management/create-all", async (req: any, res: any) => {
@@ -1665,7 +1692,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         existingMap.set(key, access);
       });
 
-      const updates = [];
+      const updates: Array<{
+        roleId: number;
+        pageName: string;
+        pageUrl: string;
+        accessLevel: string;
+      }> = [];
       let createdCount = 0;
       let skippedCount = 0;
 
