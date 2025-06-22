@@ -1742,7 +1742,7 @@ export class DatabaseStorage implements IStorage {
           COALESCE(dwl.quantity_completed, 0) as quantity,
           COALESCE(sj.unit_price, 0) as "unitPrice",
           dwl.employee_id as "workerId",
-          CONCAT(COALESCE(e.first_name, ''), ' ', COALESCE(e.last_name, 'ไม่ระบุชื่อ')) as "workerName",
+          COALESCE(dwl.employee_id, 'ไม่ระบุพนักงาน') as "workerName",
           wo.customer_name as "customerName",
           wo.order_number as "orderNumber",
           wo.title as "jobTitle",
@@ -1754,7 +1754,6 @@ export class DatabaseStorage implements IStorage {
           dwl.work_description as "workDescription"
         FROM daily_work_logs dwl
         LEFT JOIN sub_jobs sj ON dwl.sub_job_id = sj.id
-        LEFT JOIN employees e ON dwl.employee_id = e.id
         LEFT JOIN work_orders wo ON sj.work_order_id = wo.id
         LEFT JOIN colors c ON sj.color_id = c.id
         LEFT JOIN sizes s ON sj.size_id = s.id
@@ -1769,7 +1768,7 @@ export class DatabaseStorage implements IStorage {
       return logs.rows;
     } catch (error) {
       console.error('Get daily work logs by team and date range error:', error);
-      return [];
+      throw error; // Re-throw error to be handled by API endpoint
     }
   }
 
