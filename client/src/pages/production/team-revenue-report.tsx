@@ -81,7 +81,12 @@ export default function TeamRevenueReport() {
       });
       const response = await fetch(`/api/team-revenue-report?${params}`);
       if (!response.ok) throw new Error('Failed to fetch revenue report');
-      return response.json();
+      const data = await response.json();
+      console.log('Raw API data:', data);
+      data.forEach((log: any, index: number) => {
+        console.log(`Log ${index}: unitPrice=${log.unitPrice} (type: ${typeof log.unitPrice})`);
+      });
+      return data;
     }
   });
 
@@ -364,6 +369,8 @@ export default function TeamRevenueReport() {
                     const quantity = Number(log.quantity) || 0;
                     const unitPrice = Number(log.unitPrice) || 0;
                     const revenue = quantity * unitPrice;
+                    
+                    console.log(`Row ${index}: raw unitPrice="${log.unitPrice}", parsed=${unitPrice}, quantity=${quantity}, revenue=${revenue}`);
                     
                     return (
                       <TableRow key={index}>
