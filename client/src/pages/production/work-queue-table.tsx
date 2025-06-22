@@ -26,6 +26,7 @@ interface WorkQueueItem {
 export default function WorkQueueTable() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedTeamFilter, setSelectedTeamFilter] = useState<string>("all");
+  const [isCompactView, setIsCompactView] = useState(false);
   const { toast } = useToast();
 
   // ดึงรายชื่อทีมจาก API เพื่อรองรับทีมใหม่
@@ -62,6 +63,45 @@ export default function WorkQueueTable() {
   const workQueues = selectedTeamFilter === "all" 
     ? allWorkQueues 
     : allWorkQueues.filter(item => item.teamId === selectedTeamFilter);
+
+  // จัดกรุ๊ปข้อมูลตามเลขที่ใบสั่งงานสำหรับโหมดย่อ
+  const groupedWorkQueues = workQueues.reduce((groups: any[], item) => {
+    const existingGroup = groups.find(group => group.orderNumber === item.orderNumber);
+    
+    if (existingGroup) {
+      existingGroup.totalQuantity += item.quantity;
+      existingGroup.items.push(item);
+      // อัพเดทวันที่สิ้นสุดหากรายการนี้มีวันที่หลังกว่า
+      if (new Date(item.endDate) > new Date(existingGroup.endDate)) {
+        existingGroup.endDate = item.endDate;
+      }
+      // อัพเดทวันที่เริ่มต้นหากรายการนี้มีวันที่ก่อนหน้า
+      if (new Date(item.startDate) < new Date(existingGroup.startDate)) {
+        existingGroup.startDate = item.startDate;
+      }
+    } else {
+      groups.push({
+        orderNumber: item.orderNumber,
+        customerName: item.customerName,
+        productName: item.productName,
+        totalQuantity: item.quantity,
+        startDate: item.startDate,
+        endDate: item.endDate,
+        teamId: item.teamId,
+        teamName: item.teamName,
+        totalCost: parseFloat((item as any).totalCost || '0'),
+        items: [item]
+      });
+    }
+    return groups;
+  }, []);
+
+  // คำนวณต้นทุนรวมสำหรับแต่ละกรุ๊ป
+  groupedWorkQueues.forEach(group => {
+    group.totalCost = group.items.reduce((sum: number, item: any) => 
+      sum + parseFloat((item as any).totalCost || '0'), 0
+    );
+  });
 
   // ดึงรายการทีมที่มีการคำนวณแล้ว
   const { data: calculatedTeams = [] } = useQuery({
@@ -176,6 +216,25 @@ export default function WorkQueueTable() {
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={isCompactView ? "outline" : "default"}
+                  size="sm"
+                  onClick={() => setIsCompactView(false)}
+                >
+                  <List className="w-4 h-4 mr-2" />
+                  แสดงทั้งหมด
+                </Button>
+                <Button
+                  variant={isCompactView ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setIsCompactView(true)}
+                >
+                  <LayoutList className="w-4 h-4 mr-2" />
+                  คิวงานแบบย่อ
+                </Button>
               </div>
               
               {selectedTeamFilter !== "all" && (
