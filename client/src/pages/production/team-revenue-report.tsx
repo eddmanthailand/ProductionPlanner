@@ -73,20 +73,19 @@ export default function TeamRevenueReport() {
   const { data: workLogs, isLoading } = useQuery<DailyWorkLog[]>({
     queryKey: ["/api/team-revenue-report", selectedTeam, startDate, endDate],
     enabled: !!selectedTeam && !!startDate && !!endDate,
+    staleTime: 0,
+    gcTime: 0,
     queryFn: async () => {
       const params = new URLSearchParams({
         teamId: selectedTeam,
         startDate: format(startDate!, "yyyy-MM-dd"),
         endDate: format(endDate!, "yyyy-MM-dd")
       });
-      const response = await fetch(`/api/team-revenue-report?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch revenue report');
-      const data = await response.json();
-      console.log('Raw API data:', data);
-      data.forEach((log: any, index: number) => {
-        console.log(`Log ${index}: unitPrice=${log.unitPrice} (type: ${typeof log.unitPrice})`);
+      const response = await fetch(`/api/team-revenue-report?${params}`, {
+        cache: 'no-cache'
       });
-      return data;
+      if (!response.ok) throw new Error('Failed to fetch revenue report');
+      return response.json();
     }
   });
 
@@ -365,15 +364,13 @@ export default function TeamRevenueReport() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {workLogs.map((log, index) => {
+                  {workLogs?.map((log, index) => {
                     const quantity = Number(log.quantity) || 0;
                     const unitPrice = Number(log.unitPrice) || 0;
                     const revenue = quantity * unitPrice;
                     
-                    console.log(`Row ${index}: raw unitPrice="${log.unitPrice}", parsed=${unitPrice}, quantity=${quantity}, revenue=${revenue}`);
-                    
                     return (
-                      <TableRow key={index}>
+                      <TableRow key={log.id || index}>
                         <TableCell className="font-medium">
                           {format(parseISO(log.date), "dd/MM/yyyy", { locale: th })}
                         </TableCell>
@@ -383,7 +380,7 @@ export default function TeamRevenueReport() {
                         <TableCell>{log.colorName || 'ไม่ระบุสี'}</TableCell>
                         <TableCell>{log.sizeName || 'ไม่ระบุไซส์'}</TableCell>
                         <TableCell className="text-center">{quantity.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">฿{unitPrice.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">฿{parseFloat(log.unitPrice).toLocaleString()}</TableCell>
                         <TableCell className="font-semibold text-green-600 text-right">
                           ฿{revenue.toLocaleString()}
                         </TableCell>
