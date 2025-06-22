@@ -1740,7 +1740,7 @@ export class DatabaseStorage implements IStorage {
           dwl.date,
           COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
           COALESCE(dwl.quantity_completed, 0) as quantity,
-          COALESCE(sj.unit_price, 0) as "unitPrice",
+          COALESCE(sj.production_cost, 0) as "unitPrice",
           dwl.employee_id as "workerId",
           COALESCE(dwl.employee_id, 'ไม่ระบุพนักงาน') as "workerName",
           wo.customer_name as "customerName",
