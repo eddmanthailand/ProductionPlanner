@@ -1735,7 +1735,7 @@ export class DatabaseStorage implements IStorage {
       
       const logs = await db.execute(sql`
         SELECT 
-          dwl.id,
+          sj.id,
           dwl.team_id as "teamId",
           dwl.date,
           COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
@@ -1751,17 +1751,18 @@ export class DatabaseStorage implements IStorage {
           s.name as "sizeName",
           sj.work_step_id as "workStepId",
           ws.name as "workStepName",
-          dwl.work_description as "workDescription"
-        FROM daily_work_logs dwl
-        LEFT JOIN sub_jobs sj ON dwl.sub_job_id = sj.id
-        LEFT JOIN work_orders wo ON sj.work_order_id = wo.id
+          dwl.work_description as "workDescription",
+          sj.updated_at as "lastUpdated"
+        FROM sub_jobs sj
+        INNER JOIN daily_work_logs dwl ON dwl.sub_job_id = sj.id
+        INNER JOIN work_orders wo ON sj.work_order_id = wo.id
         LEFT JOIN colors c ON sj.color_id = c.id
         LEFT JOIN sizes s ON sj.size_id = s.id
         LEFT JOIN work_steps ws ON sj.work_step_id = ws.id
         WHERE dwl.team_id = ${teamId}
           AND dwl.date >= ${startDate}
           AND dwl.date <= ${endDate}
-        ORDER BY dwl.date ASC, wo.order_number ASC
+        ORDER BY dwl.date ASC, wo.order_number ASC, sj.id ASC
       `);
       
       console.log('Storage: Found work logs for revenue calculation:', logs.rows.length);
@@ -1895,7 +1896,7 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Updating sub-job with sync:', { id, data });
       
-      // Update sub_job
+      // Update sub_job - ข้อมูลหลักที่จะใช้ในการคำนวณรายได้
       const updateData: any = { updatedAt: new Date() };
       if (data.quantity !== undefined) updateData.quantity = data.quantity;
       if (data.production_cost !== undefined) updateData.productionCost = data.production_cost;
@@ -1905,7 +1906,7 @@ export class DatabaseStorage implements IStorage {
         .set(updateData)
         .where(eq(subJobs.id, id));
 
-      // Sync daily_work_logs quantity if sub_job quantity changed
+      // ซิงค์ daily_work_logs เพื่อให้ข้อมูลตรงกัน (แต่รายงานจะดึงจาก sub_jobs เป็นหลัก)
       if (data.quantity !== undefined) {
         await db
           .update(dailyWorkLogs)
@@ -1916,9 +1917,29 @@ export class DatabaseStorage implements IStorage {
           .where(eq(dailyWorkLogs.subJobId, id));
       }
 
-      console.log('Storage: Sub-job updated and synced successfully');
+      console.log('Storage: Sub-job updated and daily_work_logs synced successfully');
     } catch (error) {
       console.error('Storage: Error updating sub-job:', error);
+      throw error;
+    }
+  }
+
+  // ฟังก์ชันอัตโนมัติซิงค์ข้อมูลทั้งหมดจาก sub_jobs ไปยัง daily_work_logs
+  async syncAllSubJobsToWorkLogs(): Promise<void> {
+    try {
+      console.log('Storage: Starting full sync from sub_jobs to daily_work_logs');
+      
+      await db.execute(sql`
+        UPDATE daily_work_logs dwl
+        SET quantity_completed = sj.quantity,
+            updated_at = NOW()
+        FROM sub_jobs sj
+        WHERE dwl.sub_job_id = sj.id
+      `);
+      
+      console.log('Storage: Full sync completed successfully');
+    } catch (error) {
+      console.error('Storage: Error in full sync:', error);
       throw error;
     }
   }

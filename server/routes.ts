@@ -3843,14 +3843,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log('API: Syncing sub-job data:', { id, quantity, production_cost });
 
-      // Update sub_job
       await storage.updateSubJob(parseInt(id), { quantity, production_cost });
 
-      console.log('API: Sub-job and daily work logs synced successfully');
+      console.log('API: Sub-job updated successfully');
       res.json({ message: "Sub-job synced successfully" });
     } catch (error) {
       console.error("Sync sub-job error:", error);
       res.status(500).json({ message: "Failed to sync sub-job" });
+    }
+  });
+
+  // Full sync endpoint to ensure all data is consistent
+  app.post("/api/sync-all-subjobs", async (req: any, res: any) => {
+    try {
+      console.log('API: Starting full sync of all sub-jobs to daily work logs');
+      
+      await storage.syncAllSubJobsToWorkLogs();
+      
+      console.log('API: Full sync completed successfully');
+      res.json({ message: "All sub-jobs synced successfully" });
+    } catch (error) {
+      console.error("Full sync error:", error);
+      res.status(500).json({ message: "Failed to sync all sub-jobs" });
     }
   });
 
