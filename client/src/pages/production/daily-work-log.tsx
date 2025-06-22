@@ -878,13 +878,10 @@ export default function DailyWorkLog() {
                   <div className="h-11 px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-gray-50 dark:bg-gray-800 flex items-center">
                     <UserCheck className="h-4 w-4 mr-2 text-green-600" />
                     <span className="text-sm font-medium">
-                      {selectedTeam && teams.find(t => t.id === selectedTeam)?.name 
-                        ? `ทีม ${teams.find(t => t.id === selectedTeam)?.name}` 
-                        : 'กรุณาเลือกทีมก่อน'
-                      }
+                      {user ? `${user.firstName} ${user.lastName}` : 'กำลังโหลด...'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">ระบบจะใช้สมาชิกในทีมเป็นผู้บันทึกอัตโนมัติ</p>
+                  <p className="text-xs text-gray-500">ระบบจะใช้ชื่อของผู้ที่ล็อกอินเป็นผู้บันทึกอัตโนมัติ</p>
                 </div>
 
                 <div className="space-y-2">
