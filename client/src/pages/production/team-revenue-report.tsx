@@ -370,7 +370,7 @@ export default function TeamRevenueReport() {
                     const revenue = quantity * unitPrice;
                     
                     return (
-                      <TableRow key={log.id || index}>
+                      <TableRow key={`${log.id}-${index}`}>
                         <TableCell className="font-medium">
                           {format(parseISO(log.date), "dd/MM/yyyy", { locale: th })}
                         </TableCell>

@@ -1731,7 +1731,7 @@ export class DatabaseStorage implements IStorage {
     endDate: string
   ): Promise<any[]> {
     try {
-      console.log('Storage: Getting daily work logs for team revenue report:', { teamId, startDate, endDate });
+      console.log('Storage: Getting team revenue data (primary source: sub_jobs):', { teamId, startDate, endDate });
       
       const logs = await db.execute(sql`
         SELECT 
