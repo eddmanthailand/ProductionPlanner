@@ -3778,6 +3778,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  // Daily Work Logs API for Team Revenue Report
+  app.get("/api/daily-work-logs", async (req: any, res: any) => {
+    try {
+      const { teamId, startDate, endDate } = req.query;
+      
+      if (!teamId || !startDate || !endDate) {
+        return res.status(400).json({
+          error: "Missing required parameters: teamId, startDate, endDate"
+        });
+      }
+
+      // ดึงข้อมูลจากตาราง daily_work_logs
+      const workLogs = await storage.getDailyWorkLogsByTeamAndDateRange(
+        teamId as string,
+        startDate as string,
+        endDate as string
+      );
+
+      // คำนวณรายได้และจัดรูปแบบข้อมูล
+      const enrichedLogs = workLogs.map(log => ({
+        ...log,
+        totalRevenue: log.quantity * log.unitPrice
+      }));
+
+      res.json(enrichedLogs);
+    } catch (error) {
+      console.error("Error fetching daily work logs:", error);
+      res.status(500).json({
+        error: "Internal server error"
+      });
+    }
+  });
+
   return httpServer;
 }
 

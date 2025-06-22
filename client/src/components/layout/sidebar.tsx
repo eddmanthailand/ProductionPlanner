@@ -306,7 +306,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           )}
 
           {/* Production Reports with Submenu */}
-          {(canAccessPage('/production/production-reports') || canAccessPage('/production/work-queue-table')) && (
+          {(canAccessPage('/production/team-revenue-report') || canAccessPage('/production/work-queue-table')) && (
             <div className="relative">
               <button
                 onClick={() => {
@@ -314,7 +314,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   setExpandedReports(!expandedReports);
                 }}
                 className={`w-full flex items-center justify-between py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
-                  location.startsWith('/production/production-reports') || location.startsWith('/production/work-queue-table') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                  location.startsWith('/production/team-revenue-report') || location.startsWith('/production/work-queue-table') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
                 }`}
               >
                 <div className="flex items-center">
@@ -330,11 +330,11 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               
               {!isCollapsed && expandedReports && (
                 <div className="ml-8 mt-1 space-y-1">
-                  {canAccessPage('/production/production-reports') && (
+                  {canAccessPage('/production/team-revenue-report') && (
                     <Link
-                      href="/production/production-reports"
+                      href="/production/team-revenue-report"
                       className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
-                        location === '/production/production-reports' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                        location === '/production/team-revenue-report' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
                       }`}
                     >
                       รายได้ทีมผลิต

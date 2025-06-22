@@ -28,6 +28,7 @@ import WorkOrderForm from "@/pages/production/work-order-form";
 import WorkQueuePlanning from "@/pages/production/work-queue-planning";
 import DailyWorkLog from "@/pages/production/daily-work-log";
 import ProductionReports from "@/pages/production/production-reports";
+import TeamRevenueReport from "@/pages/production/team-revenue-report";
 import WorkQueueTable from "@/pages/production/work-queue-table";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
@@ -137,6 +138,9 @@ function Router() {
       </Route>
       <Route path="/production/production-reports">
         <MainLayout><ProductionReports /></MainLayout>
+      </Route>
+      <Route path="/production/team-revenue-report">
+        <MainLayout><TeamRevenueReport /></MainLayout>
       </Route>
       <Route path="/production/work-queue-table">
         <MainLayout><WorkQueueTable /></MainLayout>
