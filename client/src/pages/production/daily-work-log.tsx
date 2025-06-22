@@ -127,7 +127,7 @@ export default function DailyWorkLog() {
   const queryClient = useQueryClient();
   
   // Get page permissions for current page
-  const { canCreate, canEdit, canRead, canDelete } = getPagePermissions('/production/daily-work-log');
+  const { canCreate, canEdit, canView, canDelete } = getPagePermissions('/production/daily-work-log');
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [selectedDepartment, setSelectedDepartment] = useState<string>("");
   const [selectedTeam, setSelectedTeam] = useState<string>("");
@@ -205,18 +205,15 @@ export default function DailyWorkLog() {
 
   const { data: subJobs = [] } = useQuery<SubJob[]>({
     queryKey: ["/api/sub-jobs/by-work-order", selectedWorkOrder, selectedWorkStep],
-    enabled: !!selectedWorkOrder,
+    enabled: !!selectedWorkOrder && !!selectedWorkStep,
     queryFn: async () => {
-      if (!selectedWorkOrder) return [];
+      if (!selectedWorkOrder || !selectedWorkStep) return [];
       const response = await fetch(`/api/sub-jobs/by-work-order/${selectedWorkOrder}`);
       if (!response.ok) throw new Error('Failed to fetch sub jobs');
       const allSubJobs = await response.json();
       
-      // Filter by work step if selected
-      if (selectedWorkStep) {
-        return allSubJobs.filter((job: SubJob) => job.workStepId === selectedWorkStep);
-      }
-      return allSubJobs;
+      // Filter by work step - ป้องกันการบันทึกข้ามแผนก
+      return allSubJobs.filter((job: SubJob) => job.workStepId === selectedWorkStep);
     }
   });
 
@@ -365,14 +362,28 @@ export default function DailyWorkLog() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),
       });
-      if (!response.ok) throw new Error('Failed to create log');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create log');
+      }
+      
       return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      toast({ 
+        title: "สำเร็จ", 
+        description: "บันทึกงานประจำวันเรียบร้อยแล้ว",
+      });
+      resetForm();
     },
-    onError: () => {
-      toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
+    onError: (error: any) => {
+      toast({ 
+        title: "ไม่สามารถบันทึกงานได้", 
+        description: error.message || "เกิดข้อผิดพลาดในการบันทึกงาน", 
+        variant: "destructive" 
+      });
     },
   });
 
@@ -790,7 +801,8 @@ export default function DailyWorkLog() {
               <div className="text-center py-8 text-gray-500">
                 <ClipboardList className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                 <p>ไม่พบงานที่ตรงกับขั้นตอน "{workSteps.find(ws => ws.id === selectedWorkStep)?.name}"</p>
-                <p className="text-sm mt-1">กรุณาเลือกขั้นตอนอื่นหรือตรวจสอบข้อมูลใบสั่งงาน</p>
+                <p className="text-sm mt-1">ทีมนี้สามารถทำงานได้เฉพาะขั้นตอนของแผนกเดียวกันเท่านั้น</p>
+                <p className="text-xs mt-1 text-amber-600">หมายเหตุ: ไม่อนุญาตให้บันทึกงานข้ามแผนกเนื่องจากใช้เครื่องจักรที่แตกต่างกัน</p>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">

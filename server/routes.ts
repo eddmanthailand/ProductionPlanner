@@ -3465,7 +3465,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       const logData = { ...req.body, tenantId };
       
+      console.log("API: Creating daily work log:", logData);
+      
+      // ตรวจสอบการบันทึกข้ามแผนก
+      const validationResult = await pool.query(`
+        SELECT 
+          t.department_id as team_dept_id,
+          ws.department_id as work_step_dept_id,
+          t.name as team_name,
+          ws.name as work_step_name,
+          d1.name as team_dept_name,
+          d2.name as work_step_dept_name
+        FROM teams t
+        LEFT JOIN sub_jobs sj ON sj.id = $1
+        LEFT JOIN work_steps ws ON sj.work_step_id = ws.id
+        LEFT JOIN departments d1 ON t.department_id = d1.id
+        LEFT JOIN departments d2 ON ws.department_id = d2.id
+        WHERE t.id = $2
+      `, [logData.subJobId, logData.teamId]);
+      
+      if (validationResult.rows.length > 0) {
+        const validation = validationResult.rows[0];
+        if (validation.team_dept_id !== validation.work_step_dept_id) {
+          console.log("API: Cross-department work logging attempt blocked:", validation);
+          return res.status(400).json({ 
+            message: `ไม่สามารถบันทึกงานข้ามแผนกได้: ทีม "${validation.team_name}" (${validation.team_dept_name}) ไม่สามารถทำงาน "${validation.work_step_name}" ของ${validation.work_step_dept_name}` 
+          });
+        }
+      }
+      
       const log = await storage.createDailyWorkLog(logData);
+      console.log("API: Successfully created daily work log:", log);
       res.json(log);
     } catch (error) {
       console.error("Create daily work log error:", error);
