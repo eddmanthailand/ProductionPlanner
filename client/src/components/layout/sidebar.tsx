@@ -337,7 +337,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                         location === '/production/production-reports' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
                       }`}
                     >
-                      รายงานการผลิต
+                      รายได้ทีมผลิต
                     </Link>
                   )}
                   {canAccessPage('/production/work-queue-table') && (
