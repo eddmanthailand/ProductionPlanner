@@ -330,11 +330,18 @@ export default function DailyWorkLog() {
       const response = await fetch(`/api/daily-work-logs/${logId}`, {
         method: 'DELETE',
       });
-      if (!response.ok) throw new Error('Failed to delete log');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete log');
+      }
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all related queries to ensure data refresh
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/progress"] });
+      
       toast({
         title: "สำเร็จ",
         description: "ลบบันทึกประจำวันเรียบร้อยแล้ว",
@@ -352,6 +359,44 @@ export default function DailyWorkLog() {
 
   const handleDeleteLog = (log: any) => {
     deleteLogMutation.mutate(log.id);
+  };
+
+  const handleDeleteGroupedLog = async (groupedLog: any) => {
+    if (!groupedLog || !groupedLog.id) return;
+    
+    // For grouped logs, we need to delete all individual logs that were grouped together
+    // Find all logs in the current dailyLogs that match this group
+    const logsToDelete = dailyLogs.filter(log => 
+      log.date === groupedLog.date && 
+      log.teamId === groupedLog.teamId && 
+      log.workOrderId === groupedLog.workOrderId
+    );
+    
+    try {
+      // Delete all logs in this group
+      for (const log of logsToDelete) {
+        await fetch(`/api/daily-work-logs/${log.id}`, {
+          method: 'DELETE',
+        });
+      }
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/progress"] });
+      
+      toast({
+        title: "สำเร็จ",
+        description: `ลบบันทึกประจำวันเรียบร้อยแล้ว (${logsToDelete.length} รายการ)`,
+      });
+      setPreviewingLog(null);
+    } catch (error) {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถลบบันทึกได้",
+        variant: "destructive",
+      });
+    }
   };
 
   // Mutations
@@ -1037,10 +1082,11 @@ export default function DailyWorkLog() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleDeleteLog(previewingLog)}
+                        onClick={() => handleDeleteGroupedLog(previewingLog)}
                         className="bg-red-600 hover:bg-red-700"
+                        disabled={deleteLogMutation.isPending}
                       >
-                        ลบบันทึก
+                        {deleteLogMutation.isPending ? "กำลังลบ..." : "ลบบันทึก"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
