@@ -1739,7 +1739,7 @@ export class DatabaseStorage implements IStorage {
           dwl.team_id as "teamId",
           dwl.date,
           COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
-          COALESCE(dwl.quantity_completed, 0) as quantity,
+          COALESCE(sj.quantity, 0) as quantity,
           COALESCE(sj.production_cost, 0) as "unitPrice",
           dwl.employee_id as "workerId",
           COALESCE(dwl.employee_id, 'ไม่ระบุพนักงาน') as "workerName",
@@ -1889,6 +1889,38 @@ export class DatabaseStorage implements IStorage {
         }
       }
     });
+  }
+
+  async updateSubJob(id: number, data: { quantity?: number; production_cost?: number }): Promise<void> {
+    try {
+      console.log('Storage: Updating sub-job with sync:', { id, data });
+      
+      // Update sub_job
+      const updateData: any = { updatedAt: new Date() };
+      if (data.quantity !== undefined) updateData.quantity = data.quantity;
+      if (data.production_cost !== undefined) updateData.productionCost = data.production_cost;
+
+      await db
+        .update(subJobs)
+        .set(updateData)
+        .where(eq(subJobs.id, id));
+
+      // Sync daily_work_logs quantity if sub_job quantity changed
+      if (data.quantity !== undefined) {
+        await db
+          .update(dailyWorkLogs)
+          .set({ 
+            quantityCompleted: data.quantity,
+            updatedAt: new Date()
+          })
+          .where(eq(dailyWorkLogs.subJobId, id));
+      }
+
+      console.log('Storage: Sub-job updated and synced successfully');
+    } catch (error) {
+      console.error('Storage: Error updating sub-job:', error);
+      throw error;
+    }
   }
 }
 

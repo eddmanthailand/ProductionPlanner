@@ -3835,6 +3835,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Sub-job update endpoint with sync to daily work logs
+  app.put("/api/sub-jobs/:id/sync", async (req: any, res: any) => {
+    try {
+      const { id } = req.params;
+      const { quantity, production_cost } = req.body;
+      
+      console.log('API: Syncing sub-job data:', { id, quantity, production_cost });
+
+      // Update sub_job
+      await storage.updateSubJob(parseInt(id), { quantity, production_cost });
+
+      console.log('API: Sub-job and daily work logs synced successfully');
+      res.json({ message: "Sub-job synced successfully" });
+    } catch (error) {
+      console.error("Sync sub-job error:", error);
+      res.status(500).json({ message: "Failed to sync sub-job" });
+    }
+  });
+
   return httpServer;
 }
 
