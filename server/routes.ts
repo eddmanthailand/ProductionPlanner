@@ -1574,7 +1574,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Helper function to get page name from URL
   function getPageNameFromUrl(url: string): string {
     try {
-      const { parseRoutesFromAppTsx, generatePageNameMap } = require('./route-parser');
+      const { parseRoutesFromAppTsx, generatePageNameMap } = require('./route-parser.cjs');
       
       // อ่าน routes จาก App.tsx และสร้าง pageNameMap
       const routes = parseRoutesFromAppTsx();
@@ -1619,15 +1619,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   }
 
   // ฟังก์ชันดึงรายการหน้าจาก App.tsx อัตโนมัติ
-  function getAllSystemPages() {
+  function getAllSystemPages(): Array<{ name: string; url: string }> {
     try {
-      const { parseRoutesFromAppTsx, generatePageNameMap } = require('./route-parser');
+      const { parseRoutesFromAppTsx, generatePageNameMap } = require('./route-parser.cjs');
       
       // อ่าน routes จาก App.tsx
       const routes = parseRoutesFromAppTsx();
       const pageNameMap = generatePageNameMap(routes);
       
-      return Object.entries(pageNameMap).map(([url, name]) => ({ name, url }));
+      return Object.entries(pageNameMap).map(([url, name]) => ({ name: name as string, url }));
     } catch (error) {
       console.error('ไม่สามารถอ่าน routes จาก App.tsx ได้:', error);
       
@@ -1718,7 +1718,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           updates.push({
             roleId: role.id,
-            pageName: page.name,
+            pageName: String(page.name),
             pageUrl: page.url,
             accessLevel: accessLevel
           });
