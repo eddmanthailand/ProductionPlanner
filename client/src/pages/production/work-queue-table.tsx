@@ -64,9 +64,15 @@ export default function WorkQueueTable() {
     ? allWorkQueues 
     : allWorkQueues.filter(item => item.teamId === selectedTeamFilter);
 
-  // จัดกรุ๊ปข้อมูลตามเลขที่ใบสั่งงานสำหรับโหมดย่อ
+  // จัดกรุ๊ปข้อมูลตามเลขที่ใบสั่งงานและชื่อสินค้าสำหรับโหมดย่อ
   const groupedWorkQueues = workQueues.reduce((groups: any[], item) => {
-    const existingGroup = groups.find(group => group.orderNumber === item.orderNumber);
+    // แยกชื่อสินค้าออกจากข้อมูลสีและไซส์
+    const cleanProductName = item.productName.split('(')[0].trim();
+    
+    // หากรุ๊ปตามทั้งเลขที่ใบสั่งงานและชื่อสินค้า
+    const existingGroup = groups.find(group => 
+      group.orderNumber === item.orderNumber && group.productName === cleanProductName
+    );
     
     if (existingGroup) {
       existingGroup.totalQuantity += item.quantity;
@@ -83,7 +89,7 @@ export default function WorkQueueTable() {
       groups.push({
         orderNumber: item.orderNumber,
         customerName: item.customerName,
-        productName: item.productName,
+        productName: cleanProductName,
         totalQuantity: item.quantity,
         startDate: item.startDate,
         endDate: item.endDate,
