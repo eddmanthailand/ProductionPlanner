@@ -93,7 +93,9 @@ export default function TeamRevenueReport() {
 
     workLogs.forEach(log => {
       const dateKey = log.date;
-      const revenue = log.quantity * log.unitPrice;
+      const quantity = Number(log.quantity) || 0;
+      const unitPrice = Number(log.unitPrice) || 0;
+      const revenue = quantity * unitPrice;
 
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, {
@@ -106,7 +108,7 @@ export default function TeamRevenueReport() {
 
       const dayData = grouped.get(dateKey)!;
       dayData.revenue += revenue;
-      dayData.quantity += log.quantity;
+      dayData.quantity += quantity;
 
       // เพิ่มข้อมูลงานทุกรายการ
       dayData.jobs.push({
@@ -114,14 +116,14 @@ export default function TeamRevenueReport() {
         orderNumber: log.orderNumber || 'ไม่ระบุ',
         customerName: log.customerName || 'ไม่ระบุลูกค้า',
         jobTitle: log.jobTitle || 'ไม่ระบุงาน',
-        productName: log.productName,
+        productName: log.productName || 'ไม่ระบุสินค้า',
         colorName: log.colorName || 'ไม่ระบุสี',
         sizeName: log.sizeName || 'ไม่ระบุไซร์',
         workStepName: log.workStepName || 'ไม่ระบุขั้นตอน',
-        quantity: log.quantity,
-        unitPrice: log.unitPrice,
+        quantity: quantity,
+        unitPrice: unitPrice,
         revenue: revenue,
-        workerName: log.workerName,
+        workerName: log.workerName || 'ไม่ระบุช่าง',
         workDescription: log.workDescription || 'ไม่ระบุ'
       });
     });
@@ -366,7 +368,7 @@ export default function TeamRevenueReport() {
                                 ขั้นตอน: {job.workStepName} | ช่าง: {job.workerName}
                               </div>
                               <div className="font-medium text-green-600">
-                                {job.quantity} ตัว × ฿{job.unitPrice.toLocaleString()} = ฿{job.revenue.toLocaleString()}
+                                {job.quantity || 0} ตัว × ฿{(job.unitPrice || 0).toLocaleString()} = ฿{(job.revenue || 0).toLocaleString()}
                               </div>
                             </div>
                           ))}
