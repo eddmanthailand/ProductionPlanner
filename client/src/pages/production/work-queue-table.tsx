@@ -64,9 +64,12 @@ export default function WorkQueueTable() {
     ? allWorkQueues 
     : allWorkQueues.filter(item => item.teamId === selectedTeamFilter);
 
-  // จัดกรุ๊ปข้อมูลตามเลขที่ใบสั่งงานสำหรับโหมดย่อ
+  // จัดกรุ๊ปข้อมูลตามเลขที่ใบสั่งงานสำหรับโหมดย่อ (รวมทุกสีไซส์)
   const groupedWorkQueues = workQueues.reduce((groups: any[], item) => {
-    const existingGroup = groups.find(group => group.orderNumber === item.orderNumber);
+    const groupKey = `${item.orderNumber}-${item.productName}`;
+    const existingGroup = groups.find(group => 
+      group.orderNumber === item.orderNumber && group.productName === item.productName
+    );
     
     if (existingGroup) {
       existingGroup.totalQuantity += item.quantity;
@@ -79,6 +82,10 @@ export default function WorkQueueTable() {
       if (new Date(item.startDate) < new Date(existingGroup.startDate)) {
         existingGroup.startDate = item.startDate;
       }
+      // รวมทีมที่เกี่ยวข้อง
+      if (!existingGroup.teamNames.includes(item.teamName)) {
+        existingGroup.teamNames.push(item.teamName);
+      }
     } else {
       groups.push({
         orderNumber: item.orderNumber,
@@ -89,6 +96,7 @@ export default function WorkQueueTable() {
         endDate: item.endDate,
         teamId: item.teamId,
         teamName: item.teamName,
+        teamNames: [item.teamName],
         totalCost: parseFloat((item as any).totalCost || '0'),
         items: [item]
       });
@@ -314,6 +322,7 @@ export default function WorkQueueTable() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {isCompactView && <TableHead>ทีมที่เกี่ยวข้อง</TableHead>}
                     {!isCompactView && <TableHead>ทีม</TableHead>}
                     <TableHead>เลขที่ใบสั่งงาน</TableHead>
                     <TableHead>ลูกค้า</TableHead>
@@ -329,7 +338,16 @@ export default function WorkQueueTable() {
                 <TableBody>
                   {isCompactView ? (
                     groupedWorkQueues.map((group, index) => (
-                      <TableRow key={`group-${group.orderNumber}-${index}`}>
+                      <TableRow key={`group-${group.orderNumber}-${group.productName}-${index}`}>
+                        <TableCell className="font-medium">
+                          <div className="flex flex-wrap gap-1">
+                            {group.teamNames.map((teamName: string, idx: number) => (
+                              <Badge key={idx} variant="secondary" className="text-xs">
+                                {teamName}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
                         <TableCell className="font-medium">{group.orderNumber}</TableCell>
                         <TableCell>{group.customerName}</TableCell>
                         <TableCell>{group.productName}</TableCell>
