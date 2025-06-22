@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { pool } from "./db";
 import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, permissions, pageAccess } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -3821,13 +3821,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "teamId, startDate, and endDate are required" });
       }
 
-      // ดึงข้อมูลจาก sub_jobs โดยตรง เพื่อให้ได้ราคาและจำนวนล่าสุดเสมอ
-      const revenueData = await db.execute(sql`
-        SELECT DISTINCT
+      // ดึงข้อมูลจาก sub_jobs โดยตรงผ่าน raw SQL เพื่อความแม่นยำ
+      const result = await pool.query(`
+        SELECT 
           sj.id,
-          '${teamId}' as "teamId",
+          dwl.team_id as "teamId",
           dwl.date,
-          COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
+          sj.product_name as "productName",
           sj.quantity,
           sj.production_cost as "unitPrice",
           dwl.employee_id as "workerId",
@@ -3848,14 +3848,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN colors c ON sj.color_id = c.id
         LEFT JOIN sizes s ON sj.size_id = s.id
         LEFT JOIN work_steps ws ON sj.work_step_id = ws.id
-        WHERE dwl.team_id = ${teamId}
-          AND dwl.date >= ${startDate}
-          AND dwl.date <= ${endDate}
-        ORDER BY dwl.date ASC, wo.order_number ASC, sj.id ASC
-      `);
+        WHERE dwl.team_id = $1
+          AND dwl.date >= $2
+          AND dwl.date <= $3
+        ORDER BY dwl.date ASC, wo.order_number ASC, c.name ASC, s.name ASC, ws.name ASC
+      `, [teamId, startDate, endDate]);
 
-      console.log('API: Found sub_jobs revenue data:', revenueData.rows.length);
-      res.json(revenueData.rows);
+      console.log('API: Found sub_jobs revenue data:', result.rows.length);
+      res.json(result.rows);
     } catch (error) {
       console.error("Get team revenue report error:", error);
       res.status(500).json({ message: "Failed to fetch team revenue report" });

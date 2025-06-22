@@ -1734,13 +1734,13 @@ export class DatabaseStorage implements IStorage {
       console.log('Storage: Getting team revenue data (primary source: sub_jobs):', { teamId, startDate, endDate });
       
       const logs = await db.execute(sql`
-        SELECT DISTINCT
-          CONCAT('sj_', sj.id) as id,
+        SELECT 
+          sj.id,
           dwl.team_id as "teamId",
           dwl.date,
-          COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
-          COALESCE(sj.quantity, 0) as quantity,
-          COALESCE(sj.production_cost, 0) as "unitPrice",
+          sj.product_name as "productName",
+          sj.quantity,
+          sj.production_cost as "unitPrice",
           dwl.employee_id as "workerId",
           COALESCE(dwl.employee_id, 'ไม่ระบุพนักงาน') as "workerName",
           wo.customer_name as "customerName",
@@ -1762,7 +1762,7 @@ export class DatabaseStorage implements IStorage {
         WHERE dwl.team_id = ${teamId}
           AND dwl.date >= ${startDate}
           AND dwl.date <= ${endDate}
-        ORDER BY dwl.date ASC, wo.order_number ASC, sj.id ASC
+        ORDER BY dwl.date ASC, wo.order_number ASC, c.name ASC, s.name ASC, ws.name ASC
       `);
       
       console.log('Storage: Found work logs for revenue calculation:', logs.rows.length);
