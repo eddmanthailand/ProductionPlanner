@@ -133,16 +133,26 @@ export default function TeamRevenueReport() {
 
   // สรุปข้อมูลรวม
   const summary = useMemo(() => {
-    return revenueData.reduce(
-      (acc, day) => ({
-        totalRevenue: acc.totalRevenue + day.revenue,
-        totalQuantity: acc.totalQuantity + day.quantity,
-        totalDays: acc.totalDays + 1,
-        totalJobs: acc.totalJobs + day.jobs.length
-      }),
-      { totalRevenue: 0, totalQuantity: 0, totalDays: 0, totalJobs: 0 }
-    );
-  }, [revenueData]);
+    if (!workLogs || workLogs.length === 0) {
+      return { totalRevenue: 0, totalQuantity: 0, totalDays: 0, totalJobs: 0 };
+    }
+
+    const totalRevenue = workLogs.reduce((sum, log) => {
+      const quantity = Number(log.quantity) || 0;
+      const unitPrice = Number(log.unitPrice) || 0;
+      return sum + (quantity * unitPrice);
+    }, 0);
+
+    const totalQuantity = workLogs.reduce((sum, log) => sum + (Number(log.quantity) || 0), 0);
+    const uniqueDays = new Set(workLogs.map(log => log.date)).size;
+
+    return {
+      totalRevenue,
+      totalQuantity,
+      totalDays: uniqueDays,
+      totalJobs: workLogs.length
+    };
+  }, [workLogs]);
 
   const selectedTeamName = teams?.find(t => t.id === selectedTeam)?.name || "";
 
@@ -264,7 +274,7 @@ export default function TeamRevenueReport() {
       </Card>
 
       {/* Summary Cards */}
-      {revenueData.length > 0 && (
+      {workLogs && workLogs.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -325,57 +335,54 @@ export default function TeamRevenueReport() {
       )}
 
       {/* Revenue Table */}
-      {revenueData.length > 0 && (
+      {workLogs && workLogs.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-blue-600" />
-              รายละเอียดรายได้รายวัน - ทีม {selectedTeamName}
+              ตารางรายละเอียดรายได้ - ทีม {selectedTeamName}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="overflow-auto max-h-96">
+            <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>วันที่</TableHead>
-                    <TableHead>จำนวนผลิต (ตัว)</TableHead>
-                    <TableHead>รายได้ (บาท)</TableHead>
-                    <TableHead>รายละเอียดงาน</TableHead>
+                    <TableHead>ใบสั่งงาน</TableHead>
+                    <TableHead>ชื่อลูกค้า</TableHead>
+                    <TableHead>ชื่อสินค้า</TableHead>
+                    <TableHead>สี</TableHead>
+                    <TableHead>ไซส์</TableHead>
+                    <TableHead>จำนวนที่ทำ</TableHead>
+                    <TableHead>ราคา/ชิ้น</TableHead>
+                    <TableHead>รายได้</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {revenueData.map((day, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">
-                        {format(parseISO(day.date), "dd/MM/yyyy", { locale: th })}
-                      </TableCell>
-                      <TableCell>{day.quantity.toLocaleString()}</TableCell>
-                      <TableCell className="font-semibold text-green-600">
-                        ฿{day.revenue.toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-2">
-                          {day.jobs.map((job, jIndex) => (
-                            <div key={jIndex} className="text-sm border-l-2 border-blue-200 pl-2">
-                              <div className="font-medium text-blue-700">
-                                {job.orderNumber} - {job.customerName}
-                              </div>
-                              <div className="text-gray-600">
-                                {job.productName} ({job.colorName}, {job.sizeName})
-                              </div>
-                              <div className="text-gray-500 text-xs">
-                                ขั้นตอน: {job.workStepName} | ช่าง: {job.workerName}
-                              </div>
-                              <div className="font-medium text-green-600">
-                                {job.quantity || 0} ตัว × ฿{(job.unitPrice || 0).toLocaleString()} = ฿{(job.revenue || 0).toLocaleString()}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {workLogs.map((log, index) => {
+                    const quantity = Number(log.quantity) || 0;
+                    const unitPrice = Number(log.unitPrice) || 0;
+                    const revenue = quantity * unitPrice;
+                    
+                    return (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">
+                          {format(parseISO(log.date), "dd/MM/yyyy", { locale: th })}
+                        </TableCell>
+                        <TableCell>{log.orderNumber || 'ไม่ระบุ'}</TableCell>
+                        <TableCell>{log.customerName || 'ไม่ระบุลูกค้า'}</TableCell>
+                        <TableCell>{log.productName || 'ไม่ระบุสินค้า'}</TableCell>
+                        <TableCell>{log.colorName || 'ไม่ระบุสี'}</TableCell>
+                        <TableCell>{log.sizeName || 'ไม่ระบุไซส์'}</TableCell>
+                        <TableCell className="text-center">{quantity.toLocaleString()}</TableCell>
+                        <TableCell className="text-right">฿{unitPrice.toLocaleString()}</TableCell>
+                        <TableCell className="font-semibold text-green-600 text-right">
+                          ฿{revenue.toLocaleString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
@@ -384,7 +391,7 @@ export default function TeamRevenueReport() {
       )}
 
       {/* Empty State */}
-      {selectedTeam && startDate && endDate && revenueData.length === 0 && !isLoading && (
+      {selectedTeam && startDate && endDate && (!workLogs || workLogs.length === 0) && !isLoading && (
         <Card>
           <CardContent className="text-center py-12">
             <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
