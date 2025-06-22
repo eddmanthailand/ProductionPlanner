@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Calendar, Clock, Users, Plus, Save, FileText, CheckCircle2, AlertCircle, Edit2, ChevronRight, Building, UserCheck, Workflow, ClipboardList, Search, Check, ChevronsUpDown, Eye, Circle, BarChart3, MessageSquare, TrendingUp, Trash2 } from "lucide-react";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
 import { useLocation } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -125,6 +126,7 @@ export default function DailyWorkLog() {
   const { getPagePermissions } = usePageNavigation();
   const [location] = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   
   // Get page permissions for current page
   const { canCreate, canEdit, canView, canDelete } = getPagePermissions('/production/daily-work-log');
@@ -462,20 +464,11 @@ export default function DailyWorkLog() {
       return;
     }
 
-    // Get team data and find first employee in the team
-    const selectedTeamData = teams.find(t => t.id === selectedTeam);
-    if (!selectedTeamData) {
-      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลทีม", variant: "destructive" });
+    // Use logged-in user as the recorder
+    if (!user) {
+      toast({ title: "ข้อผิดพลาด", description: "ไม่พบข้อมูลผู้ใช้", variant: "destructive" });
       return;
     }
-
-    // Use the first employee in the team as the recorder
-    const teamEmployees = await fetch(`/api/employees/by-team/${selectedTeam}`).then(res => res.json());
-    if (!teamEmployees || teamEmployees.length === 0) {
-      toast({ title: "ข้อผิดพลาด", description: "ไม่พบพนักงานในทีม", variant: "destructive" });
-      return;
-    }
-    const employeeId = teamEmployees[0].id;
 
     try {
       // Create log entries for selected sub jobs
@@ -485,7 +478,8 @@ export default function DailyWorkLog() {
         const logData = {
           date: selectedDate,
           teamId: selectedTeam,
-          employeeId: employeeId, // Use first employee in team
+          employeeId: user.id.toString(), // Use logged-in user ID
+          employeeName: `${user.firstName} ${user.lastName}`, // Use logged-in user name
           workOrderId: selectedWorkOrder,
           subJobId: parseInt(subJobId),
           hoursWorked: 8, // Default 8 hours - auto calculated
@@ -504,7 +498,8 @@ export default function DailyWorkLog() {
 
       await Promise.all(logPromises);
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
-      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ทีม: ${selectedTeamData.name})` });
+      const selectedTeamData = teams.find(t => t.id === selectedTeam);
+      toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ทีม: ${selectedTeamData?.name})` });
       resetForm();
     } catch (error) {
       toast({ title: "ข้อผิดพลาด", description: "ไม่สามารถบันทึกงานได้", variant: "destructive" });
