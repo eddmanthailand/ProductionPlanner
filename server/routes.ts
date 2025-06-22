@@ -3811,10 +3811,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Team revenue report endpoint with complete data
+  app.get("/api/team-revenue-report", async (req, res) => {
+    try {
+      const { teamId, startDate, endDate } = req.query;
+      console.log('API: Team revenue report requested:', { teamId, startDate, endDate });
+
+      if (!teamId || !startDate || !endDate) {
+        return res.status(400).json({ message: "teamId, startDate, and endDate are required" });
+      }
+
+      const logs = await storage.getDailyWorkLogsByTeamAndDateRange(
+        teamId as string,
+        startDate as string,
+        endDate as string
+      );
+
+      console.log('API: Found revenue report data:', logs.length);
+      res.json(logs);
+    } catch (error) {
+      console.error("Get team revenue report error:", error);
+      res.status(500).json({ message: "Failed to fetch team revenue report" });
+    }
+  });
+
   return httpServer;
 }
 
 // ฟังก์ชันคำนวณ check digit สำหรับเลขที่ผู้เสียภาษีไทย
+
 function calculateTaxIdCheckDigit(first12Digits: string): number {
   const multipliers = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
   let sum = 0;

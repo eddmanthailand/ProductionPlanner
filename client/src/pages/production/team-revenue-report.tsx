@@ -69,9 +69,9 @@ export default function TeamRevenueReport() {
     queryKey: ["/api/teams"],
   });
 
-  // ดึงข้อมูลใบบันทึกงานประจำวัน
+  // ดึงข้อมูลรายงานรายได้ที่มีข้อมูลครบถ้วน
   const { data: workLogs, isLoading } = useQuery<DailyWorkLog[]>({
-    queryKey: ["/api/daily-work-logs", selectedTeam, startDate, endDate],
+    queryKey: ["/api/team-revenue-report", selectedTeam, startDate, endDate],
     enabled: !!selectedTeam && !!startDate && !!endDate,
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -79,8 +79,8 @@ export default function TeamRevenueReport() {
         startDate: format(startDate!, "yyyy-MM-dd"),
         endDate: format(endDate!, "yyyy-MM-dd")
       });
-      const response = await fetch(`/api/daily-work-logs?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch work logs');
+      const response = await fetch(`/api/team-revenue-report?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch revenue report');
       return response.json();
     }
   });
