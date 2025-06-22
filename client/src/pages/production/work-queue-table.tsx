@@ -314,36 +314,53 @@ export default function WorkQueueTable() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>ทีม</TableHead>
+                    {!isCompactView && <TableHead>ทีม</TableHead>}
                     <TableHead>เลขที่ใบสั่งงาน</TableHead>
                     <TableHead>ลูกค้า</TableHead>
                     <TableHead>สินค้า</TableHead>
-                    <TableHead className="text-center">จำนวน</TableHead>
+                    <TableHead className="text-center">จำนวน{isCompactView ? " (รวม)" : ""}</TableHead>
                     <TableHead className="text-center">วันเริ่มงาน</TableHead>
                     <TableHead className="text-center">วันจบงาน</TableHead>
-                    <TableHead className="text-center">ระยะเวลา (วัน)</TableHead>
-                    <TableHead className="text-center">สถานะ</TableHead>
+                    {!isCompactView && <TableHead className="text-center">ระยะเวลา (วัน)</TableHead>}
+                    {!isCompactView && <TableHead className="text-center">สถานะ</TableHead>}
+                    {isCompactView && <TableHead className="text-center">รายการย่อย</TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {workQueues.map((item) => (
-                    <TableRow key={`${item.teamId}-${item.id}`}>
-                      <TableCell className="font-medium">{item.teamName}</TableCell>
-                      <TableCell>{item.orderNumber}</TableCell>
-                      <TableCell>{item.customerName}</TableCell>
-                      <TableCell>{item.productName}</TableCell>
-                      <TableCell className="text-center">{item.quantity}</TableCell>
-                      <TableCell className="text-center">{formatDate(item.startDate)}</TableCell>
-                      <TableCell className="text-center">{formatDate(item.endDate)}</TableCell>
-                      <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {item.estimatedDays}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-center">{getStatusBadge(item.status)}</TableCell>
-                    </TableRow>
-                  ))}
+                  {isCompactView ? (
+                    groupedWorkQueues.map((group, index) => (
+                      <TableRow key={`group-${group.orderNumber}-${index}`}>
+                        <TableCell className="font-medium">{group.orderNumber}</TableCell>
+                        <TableCell>{group.customerName}</TableCell>
+                        <TableCell>{group.productName}</TableCell>
+                        <TableCell className="text-center font-bold text-blue-600">{group.totalQuantity}</TableCell>
+                        <TableCell className="text-center">{formatDate(group.startDate)}</TableCell>
+                        <TableCell className="text-center">{formatDate(group.endDate)}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline">{group.items.length} รายการ</Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    workQueues.map((item) => (
+                      <TableRow key={`${item.teamId}-${item.id}`}>
+                        <TableCell className="font-medium">{item.teamName}</TableCell>
+                        <TableCell>{item.orderNumber}</TableCell>
+                        <TableCell>{item.customerName}</TableCell>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell className="text-center">{item.quantity}</TableCell>
+                        <TableCell className="text-center">{formatDate(item.startDate)}</TableCell>
+                        <TableCell className="text-center">{formatDate(item.endDate)}</TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <Clock className="w-4 h-4" />
+                            {item.estimatedDays}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">{getStatusBadge(item.status)}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </div>
@@ -359,9 +376,11 @@ export default function WorkQueueTable() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-600">
-                    {selectedTeamFilter === "all" ? "งานทั้งหมด" : "งานของทีมนี้"}
+                    {isCompactView ? "ใบสั่งงาน" : (selectedTeamFilter === "all" ? "งานทั้งหมด" : "งานของทีมนี้")}
                   </p>
-                  <p className="text-2xl font-bold">{workQueues.length}</p>
+                  <p className="text-2xl font-bold">
+                    {isCompactView ? groupedWorkQueues.length : workQueues.length}
+                  </p>
                 </div>
                 <CalendarDays className="w-8 h-8 text-blue-500" />
               </div>
@@ -390,9 +409,14 @@ export default function WorkQueueTable() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">วันทำงานรวม</p>
+                  <p className="text-sm text-gray-600">
+                    {isCompactView ? "จำนวนรวม" : "วันทำงานรวม"}
+                  </p>
                   <p className="text-2xl font-bold">
-                    {workQueues.reduce((sum, item) => sum + item.estimatedDays, 0)}
+                    {isCompactView 
+                      ? groupedWorkQueues.reduce((sum, group) => sum + group.totalQuantity, 0)
+                      : workQueues.reduce((sum, item) => sum + item.estimatedDays, 0)
+                    }
                   </p>
                 </div>
                 <Clock className="w-8 h-8 text-orange-500" />
