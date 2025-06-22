@@ -1604,38 +1604,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return pageNameMap[url] || url;
   }
 
+  // ฟังก์ชันดึงรายการหน้าจาก pageNameMap (รวมกับฟังก์ชัน getPageNameFromUrl)
+  function getAllSystemPages() {
+    // ใช้ pageNameMap จากฟังก์ชัน getPageNameFromUrl ที่มีอยู่แล้ว
+    const pageNameMap: { [key: string]: string } = {
+      '/': 'หน้าหลัก',
+      '/sales/quotations': 'จัดการใบเสนอราคา',
+      '/sales/invoices': 'จัดการใบแจ้งหนี้',
+      '/sales/tax-invoices': 'จัดการใบกำกับภาษี',
+      '/sales/receipts': 'จัดการใบเสร็จรับเงิน',
+      '/production/calendar': 'ปฏิทินวันหยุดประจำปี',
+      '/production/organization': 'โครงสร้างองค์กร',
+      '/production/planning': 'วางแผนการผลิต',
+      '/production/daily-work-log': 'บันทึกงานประจำวัน',
+      '/production/production-reports': 'รายงานการผลิต',
+      '/production/work-orders': 'ใบสั่งงาน',
+      '/production/work-queue-planning': 'วางแผนและคิวงาน',
+      '/production/work-queue-table': 'ตารางคิวงาน',
+      '/accounting': 'ระบบบัญชี',
+      '/inventory': 'คลังสินค้า',
+      '/customers': 'ลูกค้า',
+      '/master-data': 'ข้อมูลหลัก',
+      '/reports': 'รายงาน',
+      '/users': 'ผู้ใช้งาน',
+      '/user-management': 'จัดการผู้ใช้และสิทธิ์',
+      '/page-access-management': 'จัดการสิทธิ์การเข้าถึงหน้า',
+      '/production': 'การผลิต',
+      '/sales': 'การขาย',
+      '/products': 'จัดการสินค้า',
+      '/access-demo': 'ทดสอบสิทธิ์'
+    };
+
+    return Object.entries(pageNameMap).map(([url, name]) => ({ name, url }));
+  }
+
   app.post("/api/page-access-management/create-all", async (req: any, res: any) => {
     try {
       const tenantId = '550e8400-e29b-41d4-a716-446655440000';
       
-      // สร้างสิทธิ์เริ่มต้นสำหรับทุก page และทุก role
-      const systemPages = [
-        { name: 'หน้าหลัก', url: '/' },
-        { name: 'จัดการใบเสนอราคา', url: '/sales/quotations' },
-        { name: 'จัดการใบแจ้งหนี้', url: '/sales/invoices' },
-        { name: 'จัดการใบกำกับภาษี', url: '/sales/tax-invoices' },
-        { name: 'จัดการใบเสร็จรับเงิน', url: '/sales/receipts' },
-        { name: 'ปฏิทินวันหยุดประจำปี', url: '/production/calendar' },
-        { name: 'โครงสร้างองค์กร', url: '/production/organization' },
-        { name: 'วางแผนการผลิต', url: '/production/planning' },
-        { name: 'บันทึกงานประจำวัน', url: '/production/daily-work-log' },
-        { name: 'รายงานการผลิต', url: '/production/production-reports' },
-        { name: 'ใบสั่งงาน', url: '/production/work-orders' },
-        { name: 'วางแผนและคิวงาน', url: '/production/work-queue-planning' },
-        { name: 'ตารางคิวงาน', url: '/production/work-queue-table' },
-        { name: 'ระบบบัญชี', url: '/accounting' },
-        { name: 'คลังสินค้า', url: '/inventory' },
-        { name: 'ลูกค้า', url: '/customers' },
-        { name: 'ข้อมูลหลัก', url: '/master-data' },
-        { name: 'รายงานทั่วไป', url: '/reports' },
-        { name: 'ผู้ใช้งาน', url: '/users' },
-        { name: 'จัดการผู้ใช้และสิทธิ์', url: '/user-management' },
-        { name: 'จัดการสิทธิ์การเข้าถึงหน้า', url: '/page-access-management' },
-        { name: 'การผลิต', url: '/production' },
-        { name: 'การขาย', url: '/sales' },
-        { name: 'จัดการสินค้า', url: '/products' },
-        { name: 'ทดสอบสิทธิ์', url: '/access-demo' }
-      ];
+      // ดึงรายการหน้าจาก pageNameMap แทนการฮาร์ดโค้ด
+      const systemPages = getAllSystemPages();
 
       const roles = await storage.getRoles(tenantId);
       const accessLevels = {
