@@ -1734,8 +1734,8 @@ export class DatabaseStorage implements IStorage {
       console.log('Storage: Getting team revenue data (primary source: sub_jobs):', { teamId, startDate, endDate });
       
       const logs = await db.execute(sql`
-        SELECT 
-          sj.id,
+        SELECT DISTINCT
+          CONCAT('sj_', sj.id) as id,
           dwl.team_id as "teamId",
           dwl.date,
           COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",

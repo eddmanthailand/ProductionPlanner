@@ -3811,24 +3811,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Team revenue report endpoint with complete data
+  // Team revenue report endpoint - ดึงข้อมูลจาก sub_jobs โดยตรงเท่านั้น
   app.get("/api/team-revenue-report", async (req, res) => {
     try {
       const { teamId, startDate, endDate } = req.query;
-      console.log('API: Team revenue report requested:', { teamId, startDate, endDate });
+      console.log('API: Team revenue report (sub_jobs primary):', { teamId, startDate, endDate });
 
       if (!teamId || !startDate || !endDate) {
         return res.status(400).json({ message: "teamId, startDate, and endDate are required" });
       }
 
-      const logs = await storage.getDailyWorkLogsByTeamAndDateRange(
-        teamId as string,
-        startDate as string,
-        endDate as string
-      );
+      // ดึงข้อมูลจาก sub_jobs โดยตรง เพื่อให้ได้ราคาและจำนวนล่าสุดเสมอ
+      const revenueData = await db.execute(sql`
+        SELECT DISTINCT
+          sj.id,
+          '${teamId}' as "teamId",
+          dwl.date,
+          COALESCE(sj.product_name, 'ไม่ระบุสินค้า') as "productName",
+          sj.quantity,
+          sj.production_cost as "unitPrice",
+          dwl.employee_id as "workerId",
+          COALESCE(dwl.employee_id, 'ไม่ระบุพนักงาน') as "workerName",
+          wo.customer_name as "customerName",
+          wo.order_number as "orderNumber",
+          wo.title as "jobTitle",
+          c.name as "colorName",
+          c.code as "colorCode",
+          s.name as "sizeName",
+          sj.work_step_id as "workStepId",
+          ws.name as "workStepName",
+          dwl.work_description as "workDescription",
+          sj.updated_at as "lastUpdated"
+        FROM sub_jobs sj
+        INNER JOIN daily_work_logs dwl ON dwl.sub_job_id = sj.id
+        INNER JOIN work_orders wo ON sj.work_order_id = wo.id
+        LEFT JOIN colors c ON sj.color_id = c.id
+        LEFT JOIN sizes s ON sj.size_id = s.id
+        LEFT JOIN work_steps ws ON sj.work_step_id = ws.id
+        WHERE dwl.team_id = ${teamId}
+          AND dwl.date >= ${startDate}
+          AND dwl.date <= ${endDate}
+        ORDER BY dwl.date ASC, wo.order_number ASC, sj.id ASC
+      `);
 
-      console.log('API: Found revenue report data:', logs.length);
-      res.json(logs);
+      console.log('API: Found sub_jobs revenue data:', revenueData.rows.length);
+      res.json(revenueData.rows);
     } catch (error) {
       console.error("Get team revenue report error:", error);
       res.status(500).json({ message: "Failed to fetch team revenue report" });
