@@ -3812,7 +3812,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Team revenue report endpoint - ดึงข้อมูลจาก sub_jobs โดยตรงเท่านั้น
-  app.get("/api/team-revenue-report", async (req, res) => {
+  app.get("/api/team-revenue-report", async (req: any, res: any) => {
     try {
       const { teamId, startDate, endDate } = req.query;
       console.log('API: Team revenue report (sub_jobs primary):', { teamId, startDate, endDate });
@@ -3821,11 +3821,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "teamId, startDate, and endDate are required" });
       }
 
-      // ดึงข้อมูลจาก sub_jobs โดยตรงผ่าน raw SQL เพื่อความแม่นยำ
+      // ดึงข้อมูลจาก sub_jobs โดยตรง - ข้อมูลราคาและจำนวนล่าสุด
       const result = await pool.query(`
         SELECT 
           sj.id,
-          dwl.team_id as "teamId",
+          $1 as "teamId",
           dwl.date,
           sj.product_name as "productName",
           sj.quantity,
@@ -3835,12 +3835,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
           wo.customer_name as "customerName",
           wo.order_number as "orderNumber",
           wo.title as "jobTitle",
-          c.name as "colorName",
-          c.code as "colorCode",
-          s.name as "sizeName",
+          COALESCE(c.name, '') as "colorName",
+          COALESCE(c.code, '') as "colorCode",
+          COALESCE(s.name, '') as "sizeName",
           sj.work_step_id as "workStepId",
-          ws.name as "workStepName",
-          dwl.work_description as "workDescription",
+          COALESCE(ws.name, '') as "workStepName",
+          COALESCE(dwl.work_description, '') as "workDescription",
           sj.updated_at as "lastUpdated"
         FROM sub_jobs sj
         INNER JOIN daily_work_logs dwl ON dwl.sub_job_id = sj.id
@@ -3851,14 +3851,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE dwl.team_id = $1
           AND dwl.date >= $2
           AND dwl.date <= $3
-        ORDER BY dwl.date ASC, wo.order_number ASC, c.name ASC, s.name ASC, ws.name ASC
+        ORDER BY dwl.date ASC, wo.order_number ASC, COALESCE(c.name, '') ASC, COALESCE(s.name, '') ASC, COALESCE(ws.name, '') ASC
       `, [teamId, startDate, endDate]);
 
       console.log('API: Found sub_jobs revenue data:', result.rows.length);
       res.json(result.rows);
     } catch (error) {
       console.error("Get team revenue report error:", error);
-      res.status(500).json({ message: "Failed to fetch team revenue report" });
+      res.status(500).json({ message: "Failed to fetch team revenue report", error: error.message });
     }
   });
 
