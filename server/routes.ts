@@ -3570,7 +3570,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         GROUP BY sj.id, sj.work_order_id, sj.product_name, sj.quantity, sj.unit_price, 
                  sj.total_cost, sj.color_id, sj.size_id, sj.work_step_id, sj.status, 
                  sj.sort_order, c.name, c.code, s.name, sj.created_at, sj.updated_at
-        ORDER BY sj.work_order_id, c.name, s.name, sj.sort_order
+        ORDER BY sj.work_order_id, sj.product_name, c.name, s.name, sj.sort_order
       `, [tenantId]);
       
       const subJobs = result.rows.map((row: any) => ({

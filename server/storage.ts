@@ -1919,7 +1919,7 @@ export class DatabaseStorage implements IStorage {
         .leftJoin(colors, eq(subJobs.colorId, colors.id))
         .leftJoin(sizes, eq(subJobs.sizeId, sizes.id))
         .where(eq(subJobs.workOrderId, workOrderId))
-        .orderBy(asc(colors.name), asc(sizes.name), asc(subJobs.sortOrder));
+        .orderBy(asc(subJobs.productName), asc(colors.name), asc(sizes.name), asc(subJobs.sortOrder));
       return jobs;
     } catch (error) {
       console.error('Get sub jobs by work order error:', error);
