@@ -24,31 +24,14 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
-// Color mapping สำหรับแสดงสีที่ถูกต้อง
+// ฟังก์ชันสำหรับแสดงสี - ตอนนี้ใช้ hex code จากฐานข้อมูลโดยตรง
 const getColorHex = (colorCode: string): string => {
-  const colorMap: { [key: string]: string } = {
-    'White': '#FFFFFF',
-    'Black': '#000000', 
-    'Red': '#EF4444',
-    'Yellow': '#EAB308',
-    'Blue': '#3B82F6',
-    'Green': '#22C55E',
-    'Orange': '#F97316',
-    'Purple': '#A855F7',
-    'Pink': '#EC4899',
-    'Sky Blue': '#0EA5E9',
-    'Brown': '#A3A3A3',
-    'Gray': '#6B7280',
-    'Navy Blue': '#1E3A8A',
-    'Cream': '#FEF3C7',
-    'Beige': '#F5F5DC',
-    'Maroon': '#7F1D1D',
-    'Olive Green': '#84CC16',
-    'Indigo': '#4F46E5',
-    'Silver': '#C0C0C0',
-    'Gold': '#FFD700'
-  };
-  return colorMap[colorCode] || '#f3f4f6';
+  // ถ้าเป็น hex code แล้ว ใช้เลย
+  if (colorCode && colorCode.startsWith('#')) {
+    return colorCode;
+  }
+  // fallback สำหรับสีที่ยังไม่ได้ update
+  return '#f3f4f6';
 };
 
 interface DailyWorkLog {
