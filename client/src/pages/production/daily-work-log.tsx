@@ -1155,7 +1155,8 @@ export default function DailyWorkLog() {
               {/* Debug Info */}
               <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
                 Debug: subJobs count: {previewingLog.subJobs?.length || 0}, 
-                allSubJobsComplete count: {allSubJobsComplete.length}
+                allSubJobsComplete count: {allSubJobsComplete.length},
+                First subJob: {JSON.stringify(previewingLog.subJobs?.[0] || {})}
               </div>
               
               {/* Header Info Cards */}
