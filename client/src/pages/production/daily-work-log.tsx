@@ -1216,8 +1216,38 @@ export default function DailyWorkLog() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {previewingLog.subJobs.map((subJobLog: any, index: number) => {
-                          const subJob = allSubJobsComplete.find(sj => sj.id === subJobLog.subJobId);
+                        {previewingLog.subJobs
+                          .map((subJobLog: any) => ({
+                            ...subJobLog,
+                            subJob: allSubJobsComplete.find(sj => sj.id === subJobLog.subJobId)
+                          }))
+                          .sort((a: any, b: any) => {
+                            if (!a.subJob || !b.subJob) return 0;
+                            
+                            // เรียงตามสีก่อน
+                            const colorA = colors.find(c => c.id === a.subJob.colorId)?.name || '';
+                            const colorB = colors.find(c => c.id === b.subJob.colorId)?.name || '';
+                            if (colorA !== colorB) {
+                              return colorA.localeCompare(colorB, 'th');
+                            }
+                            
+                            // ถ้าสีเหมือนกัน เรียงตามไซส์
+                            const sizeA = sizes.find(s => s.id === a.subJob.sizeId)?.name || '';
+                            const sizeB = sizes.find(s => s.id === b.subJob.sizeId)?.name || '';
+                            if (sizeA !== sizeB) {
+                              const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+                              const indexA = sizeOrder.indexOf(sizeA);
+                              const indexB = sizeOrder.indexOf(sizeB);
+                              if (indexA !== -1 && indexB !== -1) {
+                                return indexA - indexB;
+                              }
+                              return sizeA.localeCompare(sizeB, 'th');
+                            }
+                            
+                            return 0;
+                          })
+                          .map((item: any, index: number) => {
+                          const subJob = item.subJob;
                           return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                               <TableCell className="font-medium">{subJob?.productName || '-'}</TableCell>
@@ -1247,7 +1277,7 @@ export default function DailyWorkLog() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <span className="font-bold text-blue-600 dark:text-blue-400">
-                                  {subJobLog.quantityCompleted?.toLocaleString() || 0}
+                                  {item.quantityCompleted?.toLocaleString() || 0}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
