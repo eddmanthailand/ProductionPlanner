@@ -812,7 +812,10 @@ export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
   id: true,
   createdAt: true,
   updatedAt: true,
-  deletedAt: true
+  deletedAt: true,
+  reportNumber: true // ไม่ต้องส่ง reportNumber มาจาก client จะสร้างใน server
+}).extend({
+  hoursWorked: z.string().optional().default("0") // ทำให้ hoursWorked เป็น string และมีค่า default
 });
 
 // Types

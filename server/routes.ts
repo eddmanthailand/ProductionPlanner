@@ -3476,12 +3476,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       
-      // ระบบจะสร้างเลขที่รายงานอัตโนมัติในส่วน storage layer
-      const logData = { ...req.body, tenantId };
-      
       console.log("API: Creating daily work log (report number will be auto-generated)");
+      console.log("Request body:", req.body);
       
-      const validatedData = insertDailyWorkLogSchema.parse(logData);
+      // ปรับข้อมูลก่อน validate
+      const requestData = {
+        ...req.body,
+        tenantId,
+        // แปลง hoursWorked เป็น string
+        hoursWorked: req.body.hoursWorked ? req.body.hoursWorked.toString() : "0",
+        // ลบ reportNumber ออกเพราะจะสร้างใน storage
+        reportNumber: undefined
+      };
+      
+      const validatedData = insertDailyWorkLogSchema.parse(requestData);
       const log = await storage.createDailyWorkLog(validatedData);
       
       console.log("API: Daily work log created with report number:", log.reportNumber);
