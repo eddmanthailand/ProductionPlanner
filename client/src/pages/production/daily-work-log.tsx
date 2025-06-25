@@ -294,8 +294,8 @@ export default function DailyWorkLog() {
     }
   });
 
-  console.log('Daily logs raw data:', dailyLogs.slice(0, 2));
-  console.log('AllSubJobsComplete data:', allSubJobsComplete.slice(0, 2));
+  // console.log('Daily logs raw data:', dailyLogs.slice(0, 2));
+  // console.log('AllSubJobsComplete data:', allSubJobsComplete.slice(0, 2));
 
   // Group daily logs by unique combinations of date, team, work order
   const groupedLogs = dailyLogs.reduce((acc, log) => {
@@ -320,7 +320,9 @@ export default function DailyWorkLog() {
       };
     }
     
-    // เพิ่ม sub job data โดยตรงจาก daily log (ไม่ต้องหาจาก allSubJobsComplete)
+    // หาข้อมูล sub job เพื่อเอา sortOrder และ quantity
+    const subJobInfo = allSubJobsComplete.find(sj => sj.id === log.subJobId);
+    
     acc[key].subJobs.push({
       subJobId: log.subJobId,
       quantityCompleted: log.quantityCompleted || 0,
@@ -328,7 +330,8 @@ export default function DailyWorkLog() {
       productName: log.productName || 'ไม่ระบุ',
       colorName: log.colorName || 'ไม่ระบุ', 
       sizeName: log.sizeName || 'ไม่ระบุ',
-      sortOrder: 0 // จะได้มาจาก allSubJobsComplete ในขั้นตอนแสดงผล
+      sortOrder: subJobInfo?.sortOrder || 999, // ถ้าไม่เจอให้อยู่ท้ายสุด
+      quantity: subJobInfo?.quantity || 0 // จำนวนที่สั่ง
     });
     acc[key].totalQuantity += log.quantityCompleted || 0;
     
@@ -1165,12 +1168,7 @@ export default function DailyWorkLog() {
           </DialogHeader>
           {previewingLog && (
             <div className="space-y-6 pt-4">
-              {/* Debug Info */}
-              <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
-                Debug: subJobs count: {previewingLog.subJobs?.length || 0}, 
-                allSubJobsComplete count: {allSubJobsComplete.length},
-                First subJob: {JSON.stringify(previewingLog.subJobs?.[0] || {})}
-              </div>
+              {/* Remove debug info */}
               
               {/* Header Info Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1279,7 +1277,7 @@ export default function DailyWorkLog() {
                               // ใช้ข้อมูลจาก item โดยตรง และหา sub job เพื่อดูข้อมูลเพิ่มเติม
                               const subJob = allSubJobsComplete.find(sj => sj.id === item.subJobId);
                               
-                              console.log('Item:', item, 'SubJob found:', subJob);
+                              // console.log('Item:', item, 'SubJob found:', subJob);
 
                               return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -1299,7 +1297,7 @@ export default function DailyWorkLog() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <span className="font-medium text-gray-600 dark:text-gray-400">
-                                  {subJob?.quantity?.toLocaleString() || 0}
+                                  {item.quantity?.toLocaleString() || 0}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
