@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, permissions, pageAccess } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, insertDailyWorkLogSchema, permissions, pageAccess } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -3481,19 +3481,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("API: Creating daily work log (report number will be auto-generated)");
       
-      if (validationResult.rows.length > 0) {
-        const validation = validationResult.rows[0];
-        if (validation.team_dept_id !== validation.work_step_dept_id) {
-          console.log("API: Cross-department work logging attempt blocked:", validation);
-          return res.status(400).json({ 
-            message: `ไม่สามารถบันทึกงานข้ามแผนกได้: ทีม "${validation.team_name}" (${validation.team_dept_name}) ไม่สามารถทำงาน "${validation.work_step_name}" ของ${validation.work_step_dept_name}` 
-          });
-        }
-      }
+      const validatedData = insertDailyWorkLogSchema.parse(logData);
+      const log = await storage.createDailyWorkLog(validatedData);
       
-      const log = await storage.createDailyWorkLog(logData);
-      console.log("API: Successfully created daily work log:", log);
-      res.json(log);
+      console.log("API: Daily work log created with report number:", log.reportNumber);
+      res.status(201).json(log);
     } catch (error) {
       console.error("Create daily work log error:", error);
       res.status(500).json({ message: "Failed to create daily work log" });
