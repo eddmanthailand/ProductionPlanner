@@ -1752,10 +1752,38 @@ export class DatabaseStorage implements IStorage {
       }
 
       const allLogs = await db
-        .select()
+        .select({
+          id: dailyWorkLogs.id,
+          reportNumber: dailyWorkLogs.reportNumber,
+          date: dailyWorkLogs.date,
+          teamId: dailyWorkLogs.teamId,
+          employeeId: dailyWorkLogs.employeeId,
+          workOrderId: dailyWorkLogs.workOrderId,
+          subJobId: dailyWorkLogs.subJobId,
+          hoursWorked: dailyWorkLogs.hoursWorked,
+          quantityCompleted: dailyWorkLogs.quantityCompleted,
+          workDescription: dailyWorkLogs.workDescription,
+          status: dailyWorkLogs.status,
+          notes: dailyWorkLogs.notes,
+          tenantId: dailyWorkLogs.tenantId,
+          createdAt: dailyWorkLogs.createdAt,
+          updatedAt: dailyWorkLogs.updatedAt,
+          deletedAt: dailyWorkLogs.deletedAt,
+          productName: subJobs.productName,
+          colorName: colors.name,
+          sizeName: sizes.name
+        })
         .from(dailyWorkLogs)
+        .leftJoin(subJobs, eq(dailyWorkLogs.subJobId, subJobs.id))
+        .leftJoin(colors, eq(subJobs.colorId, colors.id))
+        .leftJoin(sizes, eq(subJobs.sizeId, sizes.id))
         .where(and(...conditions))
-        .orderBy(desc(dailyWorkLogs.createdAt));
+        .orderBy(
+          desc(dailyWorkLogs.createdAt),
+          asc(subJobs.productName),
+          asc(colors.name),
+          asc(sizes.name)
+        );
 
       // Apply limit after fetching if specified
       const logs = filters?.limit ? allLogs.slice(0, filters.limit) : allLogs;
