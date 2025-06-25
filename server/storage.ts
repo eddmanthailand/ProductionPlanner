@@ -1859,16 +1859,42 @@ export class DatabaseStorage implements IStorage {
     return log;
   }
 
-  // Helper method to generate unique report number using timestamp
+  // Helper method to generate unique report number: RP+YYYY+MM+Sequential Number
   private async generateUniqueReportNumber(tenantId: string): Promise<string> {
     const now = new Date();
-    const datePrefix = format(now, 'yyyyMMdd');
+    const yearMonth = format(now, 'yyyyMM'); // YYYYMM format
     
-    // Use timestamp to ensure uniqueness
-    const timestamp = now.getTime().toString().slice(-6); // Last 6 digits of timestamp
-    const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // 2-digit random
+    // Get count of all reports for this month
+    const existingReports = await db
+      .select({ reportNumber: dailyWorkLogs.reportNumber })
+      .from(dailyWorkLogs)
+      .where(
+        and(
+          eq(dailyWorkLogs.tenantId, tenantId),
+          like(dailyWorkLogs.reportNumber, `RP${yearMonth}%`),
+          isNull(dailyWorkLogs.deletedAt)
+        )
+      );
     
-    const reportNumber = `RPT-${datePrefix}-${timestamp}${randomSuffix}`;
+    // Find highest sequence number for this month
+    let maxSeq = 0;
+    const pattern = new RegExp(`^RP${yearMonth}(\\d+)$`);
+    
+    existingReports.forEach(report => {
+      if (report.reportNumber) {
+        const match = report.reportNumber.match(pattern);
+        if (match) {
+          const seq = parseInt(match[1], 10);
+          if (seq > maxSeq) {
+            maxSeq = seq;
+          }
+        }
+      }
+    });
+    
+    // Generate next sequence number
+    const nextSeq = maxSeq + 1;
+    const reportNumber = `RP${yearMonth}${nextSeq.toString().padStart(4, '0')}`;
     
     return reportNumber;
   }

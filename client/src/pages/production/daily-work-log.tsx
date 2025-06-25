@@ -961,7 +961,16 @@ export default function DailyWorkLog() {
                       {user ? `${user.firstName} ${user.lastName}` : 'กำลังโหลด...'}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500">ระบบจะใช้ชื่อของผู้ที่ล็อกอินเป็นผู้บันทึกอัตโนมัติ</p>
+                  <div className="text-xs text-gray-500 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border">
+                    <span className="font-medium text-blue-700 dark:text-blue-300">เลขที่รายงาน: </span>
+                    <span className="font-mono text-blue-600 dark:text-blue-400">
+                      {(() => {
+                        const now = new Date();
+                        const yearMonth = now.getFullYear().toString() + (now.getMonth() + 1).toString().padStart(2, '0');
+                        return `RP${yearMonth}XXXX (สร้างอัตโนมัติ)`;
+                      })()}
+                    </span>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
