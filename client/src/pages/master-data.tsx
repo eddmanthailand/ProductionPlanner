@@ -541,114 +541,216 @@ export default function MasterData() {
                                   />
                                 )}
                               </div>
-                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                <p className="text-sm font-medium mb-3">เลือกสีจากตัวอย่าง:</p>
-                                <div className="space-y-3">
-                                  {/* กลุ่มสีแดง-ชมพู */}
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีแดง-ชมพู</p>
-                                    <div className="grid grid-cols-10 gap-1">
-                                      {colorPalette.slice(0, 10).map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* กลุ่มสีส้ม-เหลือง */}
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีส้ม-เหลือง</p>
-                                    <div className="grid grid-cols-10 gap-1">
-                                      {colorPalette.slice(10, 20).map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* กลุ่มสีเขียว */}
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีเขียว</p>
-                                    <div className="grid grid-cols-6 gap-1">
-                                      {colorPalette.slice(20, 26).map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* กลุ่มสีฟ้า-น้ำเงิน */}
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีฟ้า-น้ำเงิน</p>
-                                    <div className="grid grid-cols-10 gap-1">
-                                      {colorPalette.slice(26, 36).map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* กลุ่มสีม่วง */}
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีม่วง</p>
-                                    <div className="grid grid-cols-5 gap-1">
-                                      {colorPalette.slice(36, 41).map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        />
-                                      ))}
-                                    </div>
-                                  </div>
-                                  
-                                  {/* กลุ่มสีน้ำตาล-เทา-ขาวดำ */}
-                                  <div>
-                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีน้ำตาล-เทา-ขาวดำ</p>
-                                    <div className="grid grid-cols-10 gap-1">
-                                      {colorPalette.slice(41).map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        />
-                                      ))}
-                                    </div>
+                              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border">
+                                {/* Header with tabs */}
+                                <div className="border-b border-gray-200 dark:border-gray-700">
+                                  <div className="flex space-x-1 p-2">
+                                    <button 
+                                      type="button"
+                                      className="px-3 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded"
+                                    >
+                                      สีมาตรฐาน
+                                    </button>
+                                    <button 
+                                      type="button"
+                                      className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                    >
+                                      สีกำหนดเอง
+                                    </button>
                                   </div>
                                 </div>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
-                                  คลิกสีที่ต้องการเพื่อเลือก หรือใส่รหัส hex เช่น #FF0000 ในช่องด้านบน
-                                </p>
+
+                                <div className="p-4 space-y-4">
+                                  {/* Current Color Preview */}
+                                  <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                                    <div className="relative">
+                                      <div 
+                                        className="w-12 h-12 rounded-lg border-2 border-gray-300 shadow-inner"
+                                        style={{ backgroundColor: field.value || '#f3f4f6' }}
+                                      />
+                                      {field.value && field.value.startsWith('#') && (
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
+                                      )}
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                        สีที่เลือก
+                                      </p>
+                                      <p className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                                        {field.value || 'ยังไม่ได้เลือกสี'}
+                                      </p>
+                                    </div>
+                                  </div>
+
+                                  {/* Primary Colors - Large buttons */}
+                                  <div>
+                                    <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีหลัก</p>
+                                    <div className="grid grid-cols-8 gap-2">
+                                      {[
+                                        { name: 'แดง', hex: '#EF4444' },
+                                        { name: 'ส้ม', hex: '#F97316' },
+                                        { name: 'เหลือง', hex: '#EAB308' },
+                                        { name: 'เขียว', hex: '#22C55E' },
+                                        { name: 'ฟ้า', hex: '#0EA5E9' },
+                                        { name: 'น้ำเงิน', hex: '#3B82F6' },
+                                        { name: 'ม่วง', hex: '#A855F7' },
+                                        { name: 'ชมพู', hex: '#EC4899' }
+                                      ].map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="relative w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all hover:scale-105 shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        >
+                                          {field.value === color.hex && (
+                                            <div className="absolute inset-0 border-2 border-blue-500 rounded-lg" />
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* Extended Palette */}
+                                  <div>
+                                    <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีเพิ่มเติม</p>
+                                    <div className="space-y-2">
+                                      {/* Reds and Pinks */}
+                                      <div className="grid grid-cols-12 gap-1">
+                                        {[
+                                          '#FEE2E2', '#FECACA', '#FCA5A5', '#F87171', '#EF4444', '#DC2626',
+                                          '#FDF2F8', '#FCE7F3', '#FBCFE8', '#F9A8D4', '#EC4899', '#BE185D'
+                                        ].map((hex, index) => (
+                                          <button
+                                            key={`red-pink-${index}`}
+                                            type="button"
+                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                            style={{ backgroundColor: hex }}
+                                            title={hex}
+                                            onClick={() => field.onChange(hex)}
+                                          >
+                                            {field.value === hex && (
+                                              <div className="absolute inset-0 border border-blue-500 rounded" />
+                                            )}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      {/* Oranges and Yellows */}
+                                      <div className="grid grid-cols-12 gap-1">
+                                        {[
+                                          '#FED7AA', '#FDBA74', '#FB923C', '#F97316', '#EA580C', '#C2410C',
+                                          '#FEF3C7', '#FDE68A', '#FCD34D', '#FBBF24', '#F59E0B', '#D97706'
+                                        ].map((hex, index) => (
+                                          <button
+                                            key={`orange-yellow-${index}`}
+                                            type="button"
+                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                            style={{ backgroundColor: hex }}
+                                            title={hex}
+                                            onClick={() => field.onChange(hex)}
+                                          >
+                                            {field.value === hex && (
+                                              <div className="absolute inset-0 border border-blue-500 rounded" />
+                                            )}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      {/* Greens */}
+                                      <div className="grid grid-cols-12 gap-1">
+                                        {[
+                                          '#DCFCE7', '#BBF7D0', '#86EFAC', '#4ADE80', '#22C55E', '#16A34A',
+                                          '#ECFDF5', '#D1FAE5', '#A7F3D0', '#6EE7B7', '#34D399', '#10B981'
+                                        ].map((hex, index) => (
+                                          <button
+                                            key={`green-${index}`}
+                                            type="button"
+                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                            style={{ backgroundColor: hex }}
+                                            title={hex}
+                                            onClick={() => field.onChange(hex)}
+                                          >
+                                            {field.value === hex && (
+                                              <div className="absolute inset-0 border border-blue-500 rounded" />
+                                            )}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      {/* Blues */}
+                                      <div className="grid grid-cols-12 gap-1">
+                                        {[
+                                          '#DBEAFE', '#BFDBFE', '#93C5FD', '#60A5FA', '#3B82F6', '#2563EB',
+                                          '#E0F2FE', '#BAE6FD', '#7DD3FC', '#38BDF8', '#0EA5E9', '#0284C7'
+                                        ].map((hex, index) => (
+                                          <button
+                                            key={`blue-${index}`}
+                                            type="button"
+                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                            style={{ backgroundColor: hex }}
+                                            title={hex}
+                                            onClick={() => field.onChange(hex)}
+                                          >
+                                            {field.value === hex && (
+                                              <div className="absolute inset-0 border border-blue-500 rounded" />
+                                            )}
+                                          </button>
+                                        ))}
+                                      </div>
+
+                                      {/* Purples and Neutrals */}
+                                      <div className="grid grid-cols-12 gap-1">
+                                        {[
+                                          '#F3E8FF', '#E9D5FF', '#C4B5FD', '#A78BFA', '#8B5CF6', '#7C3AED',
+                                          '#F9FAFB', '#F3F4F6', '#E5E7EB', '#D1D5DB', '#9CA3AF', '#6B7280'
+                                        ].map((hex, index) => (
+                                          <button
+                                            key={`purple-neutral-${index}`}
+                                            type="button"
+                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                            style={{ backgroundColor: hex }}
+                                            title={hex}
+                                            onClick={() => field.onChange(hex)}
+                                          >
+                                            {field.value === hex && (
+                                              <div className="absolute inset-0 border border-blue-500 rounded" />
+                                            )}
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* Recently Used Colors */}
+                                  <div>
+                                    <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีที่ใช้ล่าสุด</p>
+                                    <div className="grid grid-cols-10 gap-1">
+                                      {/* Show existing colors from database */}
+                                      {colors?.slice(0, 10).map((color) => (
+                                        <button
+                                          key={`recent-${color.id}`}
+                                          type="button"
+                                          className="relative w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                          style={{ backgroundColor: color.code }}
+                                          title={`${color.name} (${color.code})`}
+                                          onClick={() => field.onChange(color.code)}
+                                        >
+                                          {field.value === color.code && (
+                                            <div className="absolute inset-0 border border-blue-500 rounded" />
+                                          )}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
+                                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                                      💡 เคล็ดลับ: คลิกสีที่ต้องการ หรือใส่รหัส hex ในช่องด้านบน
+                                    </p>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           </FormControl>
