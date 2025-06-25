@@ -1152,6 +1152,12 @@ export default function DailyWorkLog() {
           </DialogHeader>
           {previewingLog && (
             <div className="space-y-6 pt-4">
+              {/* Debug Info */}
+              <div className="text-xs text-gray-500 p-2 bg-gray-100 rounded">
+                Debug: subJobs count: {previewingLog.subJobs?.length || 0}, 
+                allSubJobsComplete count: {allSubJobsComplete.length}
+              </div>
+              
               {/* Header Info Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
                 <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
@@ -1243,16 +1249,25 @@ export default function DailyWorkLog() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {previewingLog.subJobs
-                          .sort((a: any, b: any) => {
-                            // เรียงตาม sortOrder ที่มีอยู่แล้วใน subJob data
-                            return (a.sortOrder || 0) - (b.sortOrder || 0);
-                          })
-                          .map((item: any, index: number) => {
-                            // หา sub job ที่สมบูรณ์จากฐานข้อมูล
-                            const subJob = allSubJobsComplete.find(sj => sj.id === item.subJobId);
+                        {(!previewingLog.subJobs || previewingLog.subJobs.length === 0) ? (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
+                              ไม่พบข้อมูลงานที่บันทึก
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          previewingLog.subJobs
+                            .sort((a: any, b: any) => {
+                              // เรียงตาม sortOrder ที่มีอยู่แล้วใน subJob data
+                              return (a.sortOrder || 0) - (b.sortOrder || 0);
+                            })
+                            .map((item: any, index: number) => {
+                              // หา sub job ที่สมบูรณ์จากฐานข้อมูล
+                              const subJob = allSubJobsComplete.find(sj => sj.id === item.subJobId);
+                              
+                              console.log('Item:', item, 'SubJob found:', subJob);
 
-                          return (
+                              return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                               <TableCell className="font-medium">{subJob?.productName || '-'}</TableCell>
                               <TableCell>
@@ -1321,7 +1336,8 @@ export default function DailyWorkLog() {
                               </TableCell>
                             </TableRow>
                           );
-                        })}
+                        })
+                        )}
                       </TableBody>
                     </Table>
                   </div>
