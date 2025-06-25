@@ -548,6 +548,12 @@ export const subJobs = pgTable("sub_jobs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export type SubJob = typeof subJobs.$inferSelect & {
+  colorName?: string;
+  sizeName?: string;
+};
+export type InsertSubJob = typeof subJobs.$inferInsert;
+
 // Daily Work Logs table
 export const dailyWorkLogs = pgTable("daily_work_logs", {
   id: text("id").primaryKey().$defaultFn(() => `dwl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),

@@ -3663,7 +3663,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         LEFT JOIN sizes s ON sj.size_id = s.id
         WHERE sj.work_order_id = $1
         GROUP BY sj.id, sj.product_name, sj.quantity, sj.color_id, sj.size_id, c.name, s.name, sj.sort_order
-        ORDER BY sj.sort_order
+        ORDER BY c.name, 
+          CASE s.name 
+            WHEN 'XS' THEN 1
+            WHEN 'S' THEN 2
+            WHEN 'M' THEN 3
+            WHEN 'L' THEN 4
+            WHEN 'XL' THEN 5
+            ELSE 6
+          END,
+          sj.sort_order
       `, [workOrderId]);
       
       const progress = result.rows.map((row: any) => ({
