@@ -27,6 +27,7 @@ import WorkOrders from "@/pages/production/work-orders";
 import WorkOrderForm from "@/pages/production/work-order-form";
 import WorkQueuePlanning from "@/pages/production/work-queue-planning";
 import DailyWorkLog from "@/pages/production/daily-work-log";
+import DailyWorkHistory from "@/pages/production/daily-work-history";
 import ProductionReports from "@/pages/production/production-reports";
 import TeamRevenueReport from "@/pages/production/team-revenue-report";
 import WorkQueueTable from "@/pages/production/work-queue-table";
