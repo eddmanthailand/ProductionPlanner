@@ -310,14 +310,44 @@ export default function DailyWorkLog() {
         totalQuantity: 0
       };
     }
+    
+    // เพิ่มข้อมูล sub job พร้อมข้อมูลสำหรับการเรียงลำดับ
+    const subJobInfo = allSubJobsComplete.find(sj => sj.id === log.subJobId);
     acc[key].subJobs.push({
       subJobId: log.subJobId,
       quantityCompleted: log.quantityCompleted || 0,
-      workDescription: log.workDescription
+      workDescription: log.workDescription,
+      productName: log.productName || subJobInfo?.productName || '',
+      colorName: log.colorName || subJobInfo?.colorName || '',
+      sizeName: log.sizeName || subJobInfo?.sizeName || ''
     });
     acc[key].totalQuantity += log.quantityCompleted || 0;
     return acc;
   }, {} as Record<string, any>);
+
+  // เรียงลำดับ sub jobs ภายในแต่ละ grouped log
+  Object.values(groupedLogs).forEach((log: any) => {
+    log.subJobs.sort((a: any, b: any) => {
+      // เรียงตามชื่อสินค้าก่อน
+      if (a.productName !== b.productName) {
+        return a.productName.localeCompare(b.productName, 'th');
+      }
+      
+      // เรียงตามสี
+      if (a.colorName !== b.colorName) {
+        return a.colorName.localeCompare(b.colorName, 'th');
+      }
+      
+      // เรียงตามไซส์
+      const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+      const indexA = sizeOrder.indexOf(a.sizeName);
+      const indexB = sizeOrder.indexOf(b.sizeName);
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
+      return a.sizeName.localeCompare(b.sizeName, 'th');
+    });
+  });
 
   const consolidatedLogs = Object.values(groupedLogs);
 
