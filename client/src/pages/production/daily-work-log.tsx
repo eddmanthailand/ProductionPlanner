@@ -259,9 +259,11 @@ export default function DailyWorkLog() {
   const { data: subJobsProgress = [] } = useQuery<SubJobProgress[]>({
     queryKey: ["/api/sub-jobs/progress", selectedWorkOrder],
     enabled: !!selectedWorkOrder,
+    staleTime: 0, // บังคับให้ fetch ข้อมูลใหม่ทุกครั้ง
+    cacheTime: 0, // ไม่เก็บ cache
     queryFn: async () => {
       if (!selectedWorkOrder) return [];
-      const response = await fetch(`/api/sub-jobs/progress/${selectedWorkOrder}`);
+      const response = await fetch(`/api/sub-jobs/progress/${selectedWorkOrder}?_t=${Date.now()}`);
       if (!response.ok) throw new Error('Failed to fetch sub jobs progress');
       return response.json();
     }
