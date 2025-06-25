@@ -1254,7 +1254,7 @@ export default function DailyWorkLog() {
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded-full border border-gray-300" style={{
-                                    backgroundColor: colors.find(c => c.id === subJob?.colorId)?.code || '#f3f4f6'
+                                    backgroundColor: getColorHex(colors.find(c => c.id === subJob?.colorId)?.code || '')
                                   }}></div>
                                   {subJob?.colorId 
                                     ? colors.find(c => c.id === subJob.colorId)?.name || '-'
