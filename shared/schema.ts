@@ -543,6 +543,7 @@ export const subJobs = pgTable("sub_jobs", {
   productionCost: decimal("production_cost", { precision: 10, scale: 2 }).notNull().default("0.00"),
   totalCost: decimal("total_cost", { precision: 10, scale: 2 }).notNull().default("0.00"),
   status: text("status").notNull().default("pending"), // pending, in_progress, completed
+  sortOrder: integer("sort_order").notNull().default(1),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
