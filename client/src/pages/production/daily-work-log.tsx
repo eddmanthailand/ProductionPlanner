@@ -294,31 +294,44 @@ export default function DailyWorkLog() {
     }
   });
 
+  console.log('Daily logs raw data:', dailyLogs.slice(0, 2));
+  console.log('AllSubJobsComplete data:', allSubJobsComplete.slice(0, 2));
+
   // Group daily logs by unique combinations of date, team, work order
   const groupedLogs = dailyLogs.reduce((acc, log) => {
     const key = `${log.date}-${log.teamId}-${log.workOrderId}`;
     if (!acc[key]) {
       acc[key] = {
-        ...log,
+        id: log.id,
+        reportNumber: log.reportNumber,
+        date: log.date,
+        teamId: log.teamId,
+        teamName: allTeams.find(t => t.id === log.teamId)?.name || "ไม่ระบุ",
+        workOrderId: log.workOrderId,
+        workOrderNumber: workOrders.find(wo => wo.id === log.workOrderId)?.orderNumber || "ไม่ระบุ",
+        customerName: workOrders.find(wo => wo.id === log.workOrderId)?.customerName || "ไม่ระบุ",
+        employeeId: log.employeeId,
+        hoursWorked: log.hoursWorked,
+        status: log.status,
+        notes: log.notes,
+        createdAt: log.createdAt,
         subJobs: [],
         totalQuantity: 0
       };
     }
     
-    // หาข้อมูล sub job ที่สมบูรณ์จากฐานข้อมูล
-    const subJobInfo = allSubJobsComplete.find(sj => sj.id === log.subJobId);
-    if (subJobInfo) {
-      acc[key].subJobs.push({
-        subJobId: log.subJobId,
-        quantityCompleted: log.quantityCompleted || 0,
-        workDescription: log.workDescription,
-        productName: subJobInfo.productName,
-        colorName: subJobInfo.colorName,
-        sizeName: subJobInfo.sizeName,
-        sortOrder: subJobInfo.sortOrder || 0
-      });
-      acc[key].totalQuantity += log.quantityCompleted || 0;
-    }
+    // เพิ่ม sub job data โดยตรงจาก daily log (ไม่ต้องหาจาก allSubJobsComplete)
+    acc[key].subJobs.push({
+      subJobId: log.subJobId,
+      quantityCompleted: log.quantityCompleted || 0,
+      workDescription: log.workDescription,
+      productName: log.productName || 'ไม่ระบุ',
+      colorName: log.colorName || 'ไม่ระบุ', 
+      sizeName: log.sizeName || 'ไม่ระบุ',
+      sortOrder: 0 // จะได้มาจาก allSubJobsComplete ในขั้นตอนแสดงผล
+    });
+    acc[key].totalQuantity += log.quantityCompleted || 0;
+    
     return acc;
   }, {} as Record<string, any>);
 
@@ -1263,31 +1276,25 @@ export default function DailyWorkLog() {
                               return (a.sortOrder || 0) - (b.sortOrder || 0);
                             })
                             .map((item: any, index: number) => {
-                              // หา sub job ที่สมบูรณ์จากฐานข้อมูล
+                              // ใช้ข้อมูลจาก item โดยตรง และหา sub job เพื่อดูข้อมูลเพิ่มเติม
                               const subJob = allSubJobsComplete.find(sj => sj.id === item.subJobId);
                               
                               console.log('Item:', item, 'SubJob found:', subJob);
 
                               return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                              <TableCell className="font-medium">{subJob?.productName || '-'}</TableCell>
+                              <TableCell className="font-medium">{item.productName || subJob?.productName || '-'}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded-full border border-gray-300" style={{
-                                    backgroundColor: getColorHex(colors.find(c => c.id === subJob?.colorId)?.code || '')
+                                    backgroundColor: getColorHex(colors.find(c => c.name === item.colorName)?.code || '')
                                   }}></div>
-                                  {subJob?.colorId 
-                                    ? colors.find(c => c.id === subJob.colorId)?.name || '-'
-                                    : '-'
-                                  }
+                                  {item.colorName || '-'}
                                 </div>
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
-                                  {subJob?.sizeId 
-                                    ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
-                                    : '-'
-                                  }
+                                  {item.sizeName || '-'}
                                 </Badge>
                               </TableCell>
                               <TableCell className="text-right">
