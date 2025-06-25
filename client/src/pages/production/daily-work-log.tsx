@@ -1334,7 +1334,7 @@ export default function DailyWorkLog() {
                               <TableCell className="text-right">
                                 {(() => {
                                   // คำนวณยอดคงเหลือ = จำนวนสั่ง - จำนวนที่ทำรวมจากทุกใบบันทึกงาน
-                                  const subJobQuantity = subJob?.quantity || 0;
+                                  const subJobQuantity = orderQuantity;
                                   
                                   // หาจำนวนที่ทำรวมจากทุกใบบันทึกงาน
                                   const totalCompleted = consolidatedLogs.reduce((total, log) => {
