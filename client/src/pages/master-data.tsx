@@ -75,28 +75,85 @@ export default function MasterData() {
   const [editingSize, setEditingSize] = useState<Size | null>(null);
   const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
 
-  // Predefined color palette
+  // Predefined color palette - เพิ่มสีหลากหลายสำหรับงานผลิต
   const colorPalette = [
+    // สีแดง
     { name: 'แดง', hex: '#EF4444' },
-    { name: 'ชมพู', hex: '#EC4899' },
-    { name: 'ส้ม', hex: '#F97316' },
-    { name: 'เหลือง', hex: '#EAB308' },
-    { name: 'เขียว', hex: '#22C55E' },
-    { name: 'เขียวมะกอก', hex: '#84CC16' },
-    { name: 'ฟ้า', hex: '#0EA5E9' },
-    { name: 'น้ำเงิน', hex: '#3B82F6' },
-    { name: 'ฟ้าคราม', hex: '#4F46E5' },
-    { name: 'ม่วง', hex: '#A855F7' },
-    { name: 'น้ำตาล', hex: '#A3A3A3' },
-    { name: 'เทา', hex: '#6B7280' },
-    { name: 'กรมท่า', hex: '#1E3A8A' },
+    { name: 'แดงเข้ม', hex: '#DC2626' },
+    { name: 'แดงอ่อน', hex: '#F87171' },
     { name: 'แดงเลือดหมู', hex: '#7F1D1D' },
-    { name: 'ขาว', hex: '#FFFFFF' },
-    { name: 'ดำ', hex: '#000000' },
-    { name: 'ครีม', hex: '#FEF3C7' },
+    { name: 'แดงส้ม', hex: '#EA580C' },
+    
+    // สีชมพู
+    { name: 'ชมพู', hex: '#EC4899' },
+    { name: 'ชมพูอ่อน', hex: '#F9A8D4' },
+    { name: 'ชมพูเข้ม', hex: '#BE185D' },
+    { name: 'ชมพูฟูเซีย', hex: '#D946EF' },
+    { name: 'ชมพูกุหลาบ', hex: '#FB7185' },
+    
+    // สีส้ม
+    { name: 'ส้ม', hex: '#F97316' },
+    { name: 'ส้มอ่อน', hex: '#FDBA74' },
+    { name: 'ส้มเข้ม', hex: '#C2410C' },
+    { name: 'ส้มแดง', hex: '#EA580C' },
+    { name: 'ส้มทอง', hex: '#F59E0B' },
+    
+    // สีเหลือง
+    { name: 'เหลือง', hex: '#EAB308' },
+    { name: 'เหลืองอ่อน', hex: '#FDE047' },
+    { name: 'เหลืองเข้ม', hex: '#A16207' },
+    { name: 'เหลืองทอง', hex: '#FFD700' },
+    { name: 'เหลืองครีม', hex: '#FEF3C7' },
+    
+    // สีเขียว
+    { name: 'เขียว', hex: '#22C55E' },
+    { name: 'เขียวอ่อน', hex: '#86EFAC' },
+    { name: 'เขียวเข้ม', hex: '#15803D' },
+    { name: 'เขียวมะกอก', hex: '#84CC16' },
+    { name: 'เขียวมิ้นท์', hex: '#6EE7B7' },
+    { name: 'เขียวป่า', hex: '#166534' },
+    
+    // สีฟ้า
+    { name: 'ฟ้า', hex: '#0EA5E9' },
+    { name: 'ฟ้าอ่อน', hex: '#7DD3FC' },
+    { name: 'ฟ้าเข้ม', hex: '#0284C7' },
+    { name: 'ฟ้าคราม', hex: '#4F46E5' },
+    { name: 'ฟ้าอมเขียว', hex: '#06B6D4' },
+    
+    // สีน้ำเงิน
+    { name: 'น้ำเงิน', hex: '#3B82F6' },
+    { name: 'น้ำเงินอ่อน', hex: '#93C5FD' },
+    { name: 'น้ำเงินเข้ม', hex: '#1D4ED8' },
+    { name: 'กรมท่า', hex: '#1E3A8A' },
+    { name: 'น้ำเงินม่วง', hex: '#6366F1' },
+    
+    // สีม่วง
+    { name: 'ม่วง', hex: '#A855F7' },
+    { name: 'ม่วงอ่อน', hex: '#C084FC' },
+    { name: 'ม่วงเข้ม', hex: '#7C3AED' },
+    { name: 'ม่วงแดง', hex: '#BE185D' },
+    { name: 'ม่วงราชินี', hex: '#9333EA' },
+    
+    // สีน้ำตาล
+    { name: 'น้ำตาล', hex: '#A3A3A3' },
+    { name: 'น้ำตาลอ่อน', hex: '#D6D3D1' },
+    { name: 'น้ำตาลเข้ม', hex: '#57534E' },
+    { name: 'น้ำตาลกาแฟ', hex: '#78716C' },
     { name: 'เบจ', hex: '#F5F5DC' },
+    
+    // สีเทา
+    { name: 'เทา', hex: '#6B7280' },
+    { name: 'เทาอ่อน', hex: '#D1D5DB' },
+    { name: 'เทาเข้ม', hex: '#374151' },
     { name: 'เงิน', hex: '#C0C0C0' },
-    { name: 'ทอง', hex: '#FFD700' }
+    { name: 'เทาเมฆ', hex: '#9CA3AF' },
+    
+    // สีขาวดำ
+    { name: 'ขาว', hex: '#FFFFFF' },
+    { name: 'ครีม', hex: '#FFFBEB' },
+    { name: 'ขาวนวล', hex: '#FAFAFA' },
+    { name: 'ดำ', hex: '#000000' },
+    { name: 'ดำเทา', hex: '#1F2937' }
   ];
 
   // Queries
@@ -485,21 +542,112 @@ export default function MasterData() {
                                 )}
                               </div>
                               <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                                <p className="text-sm font-medium mb-2">เลือกสีจากตัวอย่าง:</p>
-                                <div className="grid grid-cols-10 gap-1">
-                                  {colorPalette.map((color) => (
-                                    <button
-                                      key={color.hex}
-                                      type="button"
-                                      className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                      style={{ backgroundColor: color.hex }}
-                                      title={`${color.name} (${color.hex})`}
-                                      onClick={() => field.onChange(color.hex)}
-                                    />
-                                  ))}
+                                <p className="text-sm font-medium mb-3">เลือกสีจากตัวอย่าง:</p>
+                                <div className="space-y-3">
+                                  {/* กลุ่มสีแดง-ชมพู */}
+                                  <div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีแดง-ชมพู</p>
+                                    <div className="grid grid-cols-10 gap-1">
+                                      {colorPalette.slice(0, 10).map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* กลุ่มสีส้ม-เหลือง */}
+                                  <div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีส้ม-เหลือง</p>
+                                    <div className="grid grid-cols-10 gap-1">
+                                      {colorPalette.slice(10, 20).map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* กลุ่มสีเขียว */}
+                                  <div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีเขียว</p>
+                                    <div className="grid grid-cols-6 gap-1">
+                                      {colorPalette.slice(20, 26).map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* กลุ่มสีฟ้า-น้ำเงิน */}
+                                  <div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีฟ้า-น้ำเงิน</p>
+                                    <div className="grid grid-cols-10 gap-1">
+                                      {colorPalette.slice(26, 36).map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* กลุ่มสีม่วง */}
+                                  <div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีม่วง</p>
+                                    <div className="grid grid-cols-5 gap-1">
+                                      {colorPalette.slice(36, 41).map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* กลุ่มสีน้ำตาล-เทา-ขาวดำ */}
+                                  <div>
+                                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">สีน้ำตาล-เทา-ขาวดำ</p>
+                                    <div className="grid grid-cols-10 gap-1">
+                                      {colorPalette.slice(41).map((color) => (
+                                        <button
+                                          key={color.hex}
+                                          type="button"
+                                          className="w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform shadow-sm"
+                                          style={{ backgroundColor: color.hex }}
+                                          title={`${color.name} (${color.hex})`}
+                                          onClick={() => field.onChange(color.hex)}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
                                 </div>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
-                                  คลิกสีที่ต้องการเพื่อเลือก หรือใส่รหัส hex เช่น #FF0000
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-3">
+                                  คลิกสีที่ต้องการเพื่อเลือก หรือใส่รหัส hex เช่น #FF0000 ในช่องด้านบน
                                 </p>
                               </div>
                             </div>
