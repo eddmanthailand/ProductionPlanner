@@ -550,6 +550,7 @@ export const subJobs = pgTable("sub_jobs", {
 // Daily Work Logs table
 export const dailyWorkLogs = pgTable("daily_work_logs", {
   id: text("id").primaryKey().$defaultFn(() => `dwl_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`),
+  reportNumber: text("report_number").notNull(),
   date: date("date").notNull(),
   teamId: text("team_id").references(() => teams.id).notNull(),
   employeeId: text("employee_id").references(() => employees.id).notNull(),

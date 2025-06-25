@@ -3463,9 +3463,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/daily-work-logs", async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
-      const logData = { ...req.body, tenantId };
       
-      console.log("API: Creating daily work log:", logData);
+      // สร้างเลขที่รายงานแบบ DR+YYYY+MM+DD+เลขตามลำดับ
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      const datePrefix = `DR${year}${month}${day}`;
+      
+      // หาเลขที่รายงานที่มีอยู่แล้วในวันนี้
+      const existingReportsResult = await pool.query(`
+        SELECT report_number 
+        FROM daily_work_logs 
+        WHERE report_number LIKE $1 
+        ORDER BY report_number DESC 
+        LIMIT 1
+      `, [`${datePrefix}%`]);
+      
+      let sequenceNumber = 1;
+      if (existingReportsResult.rows.length > 0) {
+        const lastReportNumber = existingReportsResult.rows[0].report_number;
+        const lastSequence = parseInt(lastReportNumber.substring(datePrefix.length));
+        sequenceNumber = lastSequence + 1;
+      }
+      
+      const reportNumber = `${datePrefix}${String(sequenceNumber).padStart(3, '0')}`;
+      const logData = { ...req.body, tenantId, reportNumber };
+      
+      console.log("API: Creating daily work log with report number:", reportNumber);
       
       // ตรวจสอบการบันทึกข้ามแผนก
       const validationResult = await pool.query(`

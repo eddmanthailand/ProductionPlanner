@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 
 interface DailyWorkLog {
   id: string;
+  reportNumber: string;
   date: string;
   teamId: string;
   employeeId: string;
