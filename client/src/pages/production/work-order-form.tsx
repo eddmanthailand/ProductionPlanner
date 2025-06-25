@@ -206,9 +206,9 @@ export default function WorkOrderForm() {
   const createWorkOrderMutation = useMutation({
     mutationFn: async (data: any) => {
       if (isEditMode && workOrderId) {
-        return await apiRequest(`/api/work-orders/${workOrderId}`, "PUT", data);
+        return await apiRequest("PUT", `/api/work-orders/${workOrderId}`, data);
       } else {
-        return await apiRequest("/api/work-orders", "POST", data);
+        return await apiRequest("POST", "/api/work-orders", data);
       }
     },
     onSuccess: (responseData: any) => {
