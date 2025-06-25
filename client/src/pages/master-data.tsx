@@ -15,7 +15,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertColorSchema, insertSizeSchema, insertWorkTypeSchema, type Color, type Size, type WorkType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Palette, Ruler, GripVertical } from "lucide-react";
+import { Plus, Edit, Trash2, Palette, Ruler, GripVertical, Pipette } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
@@ -74,6 +74,30 @@ export default function MasterData() {
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [editingSize, setEditingSize] = useState<Size | null>(null);
   const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
+
+  // Predefined color palette
+  const colorPalette = [
+    { name: 'แดง', hex: '#EF4444' },
+    { name: 'ชมพู', hex: '#EC4899' },
+    { name: 'ส้ม', hex: '#F97316' },
+    { name: 'เหลือง', hex: '#EAB308' },
+    { name: 'เขียว', hex: '#22C55E' },
+    { name: 'เขียวมะกอก', hex: '#84CC16' },
+    { name: 'ฟ้า', hex: '#0EA5E9' },
+    { name: 'น้ำเงิน', hex: '#3B82F6' },
+    { name: 'ฟ้าคราม', hex: '#4F46E5' },
+    { name: 'ม่วง', hex: '#A855F7' },
+    { name: 'น้ำตาล', hex: '#A3A3A3' },
+    { name: 'เทา', hex: '#6B7280' },
+    { name: 'กรมท่า', hex: '#1E3A8A' },
+    { name: 'แดงเลือดหมู', hex: '#7F1D1D' },
+    { name: 'ขาว', hex: '#FFFFFF' },
+    { name: 'ดำ', hex: '#000000' },
+    { name: 'ครีม', hex: '#FEF3C7' },
+    { name: 'เบจ', hex: '#F5F5DC' },
+    { name: 'เงิน', hex: '#C0C0C0' },
+    { name: 'ทอง', hex: '#FFD700' }
+  ];
 
   // Queries
   const { data: colors, isLoading: colorsLoading } = useQuery<Color[]>({
@@ -434,23 +458,51 @@ export default function MasterData() {
                       name="code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>ชื่อสีภาษาอังกฤษ (เช่น Red, Blue, Green)</FormLabel>
+                          <FormLabel className="flex items-center gap-2">
+                            <Pipette className="h-4 w-4" />
+                            รหัสสี (Hex Color Code)
+                          </FormLabel>
                           <FormControl>
-                            <Input 
-                              {...field} 
-                              placeholder="ใส่ชื่อสีภาษาอังกฤษ"
-                              onChange={(e) => {
-                                // แปลงเป็นภาษาอังกฤษโดยอัตโนมัติ
-                                const englishValue = e.target.value
-                                  .toLowerCase()
-                                  .replace(/[^a-z\s]/g, '') // เอาเฉพาะตัวอักษรและช่องว่าง
-                                  .replace(/\s+/g, ' ') // ลดช่องว่างซ้ำ
-                                  .split(' ')
-                                  .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-                                  .join(' ');
-                                field.onChange(englishValue);
-                              }}
-                            />
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-2">
+                                <Input 
+                                  {...field} 
+                                  placeholder="#000000"
+                                  pattern="^#[0-9A-Fa-f]{6}$"
+                                  onChange={(e) => {
+                                    let value = e.target.value;
+                                    if (value && !value.startsWith('#')) {
+                                      value = '#' + value;
+                                    }
+                                    field.onChange(value.toUpperCase());
+                                  }}
+                                />
+                                {field.value && field.value.startsWith('#') && (
+                                  <div 
+                                    className="w-8 h-8 rounded border border-gray-300"
+                                    style={{ backgroundColor: field.value }}
+                                  />
+                                )}
+                              </div>
+                              <div className="p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                                <p className="text-sm font-medium mb-2">เลือกสีจากตัวอย่าง:</p>
+                                <div className="grid grid-cols-10 gap-1">
+                                  {colorPalette.map((color) => (
+                                    <button
+                                      key={color.hex}
+                                      type="button"
+                                      className="w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                      style={{ backgroundColor: color.hex }}
+                                      title={`${color.name} (${color.hex})`}
+                                      onClick={() => field.onChange(color.hex)}
+                                    />
+                                  ))}
+                                </div>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+                                  คลิกสีที่ต้องการเพื่อเลือก หรือใส่รหัส hex เช่น #FF0000
+                                </p>
+                              </div>
+                            </div>
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -495,7 +547,7 @@ export default function MasterData() {
                     <TableRow>
                       <TableHead className="w-8"></TableHead>
                       <TableHead>ชื่อสี</TableHead>
-                      <TableHead>ชื่อภาษาอังกฤษ</TableHead>
+                      <TableHead>รหัสสี</TableHead>
                       <TableHead>คำอธิบาย</TableHead>
                       <TableHead>จัดการ</TableHead>
                     </TableRow>
@@ -511,7 +563,17 @@ export default function MasterData() {
                             <GripVertical className="h-4 w-4 text-gray-400" />
                           </TableCell>
                           <TableCell className="font-medium">{color.name}</TableCell>
-                          <TableCell>{color.code || "-"}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              {color.code && color.code.startsWith('#') && (
+                                <div 
+                                  className="w-4 h-4 rounded border border-gray-300"
+                                  style={{ backgroundColor: color.code }}
+                                />
+                              )}
+                              <span className="font-mono text-sm">{color.code || "-"}</span>
+                            </div>
+                          </TableCell>
                           <TableCell>{color.description || "-"}</TableCell>
                           <TableCell>
                             <div className="flex space-x-2">
