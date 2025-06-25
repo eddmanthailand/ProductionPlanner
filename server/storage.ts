@@ -1821,10 +1821,30 @@ export class DatabaseStorage implements IStorage {
   async getSubJobsByWorkOrder(workOrderId: string): Promise<SubJob[]> {
     try {
       const jobs = await db
-        .select()
+        .select({
+          id: subJobs.id,
+          workOrderId: subJobs.workOrderId,
+          productName: subJobs.productName,
+          departmentId: subJobs.departmentId,
+          workStepId: subJobs.workStepId,
+          colorId: subJobs.colorId,
+          sizeId: subJobs.sizeId,
+          quantity: subJobs.quantity,
+          unitPrice: subJobs.unitPrice,
+          productionCost: subJobs.productionCost,
+          totalCost: subJobs.totalCost,
+          status: subJobs.status,
+          sortOrder: subJobs.sortOrder,
+          createdAt: subJobs.createdAt,
+          updatedAt: subJobs.updatedAt,
+          colorName: colors.name,
+          sizeName: sizes.name
+        })
         .from(subJobs)
+        .leftJoin(colors, eq(subJobs.colorId, colors.id))
+        .leftJoin(sizes, eq(subJobs.sizeId, sizes.id))
         .where(eq(subJobs.workOrderId, workOrderId))
-        .orderBy(asc(subJobs.sortOrder));
+        .orderBy(asc(colors.name), asc(sizes.name), asc(subJobs.sortOrder));
       return jobs;
     } catch (error) {
       console.error('Get sub jobs by work order error:', error);

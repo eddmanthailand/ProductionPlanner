@@ -218,7 +218,31 @@ export default function DailyWorkLog() {
       // Filter by work step - ป้องกันการบันทึกข้ามแผนก
       return allSubJobs
         .filter((job: SubJob) => job.workStepId === selectedWorkStep)
-        .sort((a: SubJob, b: SubJob) => (a.sortOrder || 0) - (b.sortOrder || 0));
+        .sort((a: SubJob, b: SubJob) => {
+          // เรียงตามสีก่อน
+          const colorA = a.colorName || '';
+          const colorB = b.colorName || '';
+          if (colorA !== colorB) {
+            return colorA.localeCompare(colorB, 'th');
+          }
+          
+          // ถ้าสีเหมือนกัน เรียงตามไซส์
+          const sizeA = a.sizeName || '';  
+          const sizeB = b.sizeName || '';
+          if (sizeA !== sizeB) {
+            // เรียงไซส์ตามลำดับ XS, S, M, L, XL
+            const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+            const indexA = sizeOrder.indexOf(sizeA);
+            const indexB = sizeOrder.indexOf(sizeB);
+            if (indexA !== -1 && indexB !== -1) {
+              return indexA - indexB;
+            }
+            return sizeA.localeCompare(sizeB, 'th');
+          }
+          
+          // ถ้าทุกอย่างเหมือนกัน เรียงตาม sortOrder
+          return (a.sortOrder || 0) - (b.sortOrder || 0);
+        });
     }
   });
 
