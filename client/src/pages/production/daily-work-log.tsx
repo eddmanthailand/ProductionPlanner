@@ -320,9 +320,6 @@ export default function DailyWorkLog() {
       };
     }
     
-    // หาข้อมูล sub job เพื่อเอา sortOrder และ quantity
-    const subJobInfo = allSubJobsComplete.find(sj => sj.id === log.subJobId);
-    
     acc[key].subJobs.push({
       subJobId: log.subJobId,
       quantityCompleted: log.quantityCompleted || 0,
@@ -330,8 +327,7 @@ export default function DailyWorkLog() {
       productName: log.productName || 'ไม่ระบุ',
       colorName: log.colorName || 'ไม่ระบุ', 
       sizeName: log.sizeName || 'ไม่ระบุ',
-      sortOrder: subJobInfo?.sortOrder || 999, // ถ้าไม่เจอให้อยู่ท้ายสุด
-      quantity: subJobInfo?.quantity || 0 // จำนวนที่สั่ง
+      quantity: 0 // จะเอาจาก API แยกต่างหาก
     });
     acc[key].totalQuantity += log.quantityCompleted || 0;
     
@@ -1270,18 +1266,36 @@ export default function DailyWorkLog() {
                         ) : (
                           previewingLog.subJobs
                             .sort((a: any, b: any) => {
-                              // เรียงตาม sortOrder ที่มีอยู่แล้วใน subJob data
-                              return (a.sortOrder || 0) - (b.sortOrder || 0);
+                              // เรียงตาม product → color → size ตามลำดับที่ต้องการ
+                              // 1. เรียงตาม productName
+                              if (a.productName !== b.productName) {
+                                return a.productName.localeCompare(b.productName, 'th');
+                              }
+                              
+                              // 2. เรียงตาม colorName (ฟ้า, ชมพู, เหลือง)
+                              const colorOrder = ['ฟ้า', 'ชมพู', 'เหลือง'];
+                              const aColorIndex = colorOrder.indexOf(a.colorName) !== -1 ? colorOrder.indexOf(a.colorName) : 999;
+                              const bColorIndex = colorOrder.indexOf(b.colorName) !== -1 ? colorOrder.indexOf(b.colorName) : 999;
+                              
+                              if (aColorIndex !== bColorIndex) {
+                                return aColorIndex - bColorIndex;
+                              }
+                              
+                              // 3. เรียงตาม sizeName (XS, S, M, L, XL)
+                              const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+                              const aSizeIndex = sizeOrder.indexOf(a.sizeName) !== -1 ? sizeOrder.indexOf(a.sizeName) : 999;
+                              const bSizeIndex = sizeOrder.indexOf(b.sizeName) !== -1 ? sizeOrder.indexOf(b.sizeName) : 999;
+                              
+                              return aSizeIndex - bSizeIndex;
                             })
                             .map((item: any, index: number) => {
-                              // ใช้ข้อมูลจาก item โดยตรง และหา sub job เพื่อดูข้อมูลเพิ่มเติม
-                              const subJob = allSubJobsComplete.find(sj => sj.id === item.subJobId);
-                              
-                              // console.log('Item:', item, 'SubJob found:', subJob);
+                              // หาข้อมูล quantity จาก sub jobs
+                              const subJobData = subJobsWithQuantity.find((sj: any) => sj.id === item.subJobId);
+                              const orderQuantity = subJobData?.quantity || 0;
 
                               return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                              <TableCell className="font-medium">{item.productName || subJob?.productName || '-'}</TableCell>
+                              <TableCell className="font-medium">{item.productName || '-'}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <div className="w-4 h-4 rounded-full border border-gray-300" style={{
@@ -1297,7 +1311,7 @@ export default function DailyWorkLog() {
                               </TableCell>
                               <TableCell className="text-right">
                                 <span className="font-medium text-gray-600 dark:text-gray-400">
-                                  {item.quantity?.toLocaleString() || 0}
+                                  {orderQuantity.toLocaleString()}
                                 </span>
                               </TableCell>
                               <TableCell className="text-right">
