@@ -256,14 +256,16 @@ export default function DailyWorkLog() {
     }
   });
 
-  // Get all sub-jobs with complete data for preview display
+  // Get all sub-jobs with complete data for the selected work order
   const { data: allSubJobsComplete = [] } = useQuery<SubJob[]>({
-    queryKey: ["/api/sub-jobs/complete"],
+    queryKey: ["/api/sub-jobs/by-work-order", selectedWorkOrder],
     queryFn: async () => {
-      const response = await fetch('/api/sub-jobs/complete');
-      if (!response.ok) throw new Error('Failed to fetch complete sub jobs');
+      if (!selectedWorkOrder) return [];
+      const response = await fetch(`/api/sub-jobs/by-work-order/${selectedWorkOrder}`);
+      if (!response.ok) throw new Error('Failed to fetch sub jobs');
       return response.json();
-    }
+    },
+    enabled: !!selectedWorkOrder
   });
 
   const { data: subJobsProgress = [] } = useQuery<SubJobProgress[]>({
@@ -311,41 +313,27 @@ export default function DailyWorkLog() {
       };
     }
     
-    // เพิ่มข้อมูล sub job พร้อมข้อมูลสำหรับการเรียงลำดับ
+    // หาข้อมูล sub job ที่สมบูรณ์จากฐานข้อมูล
     const subJobInfo = allSubJobsComplete.find(sj => sj.id === log.subJobId);
-    acc[key].subJobs.push({
-      subJobId: log.subJobId,
-      quantityCompleted: log.quantityCompleted || 0,
-      workDescription: log.workDescription,
-      productName: log.productName || subJobInfo?.productName || '',
-      colorName: log.colorName || subJobInfo?.colorName || '',
-      sizeName: log.sizeName || subJobInfo?.sizeName || ''
-    });
-    acc[key].totalQuantity += log.quantityCompleted || 0;
+    if (subJobInfo) {
+      acc[key].subJobs.push({
+        subJobId: log.subJobId,
+        quantityCompleted: log.quantityCompleted || 0,
+        workDescription: log.workDescription,
+        productName: subJobInfo.productName,
+        colorName: subJobInfo.colorName,
+        sizeName: subJobInfo.sizeName,
+        sortOrder: subJobInfo.sortOrder || 0
+      });
+      acc[key].totalQuantity += log.quantityCompleted || 0;
+    }
     return acc;
   }, {} as Record<string, any>);
 
-  // เรียงลำดับ sub jobs ภายในแต่ละ grouped log
+  // เรียงลำดับ sub jobs ภายในแต่ละ grouped log ตาม sort_order
   Object.values(groupedLogs).forEach((log: any) => {
     log.subJobs.sort((a: any, b: any) => {
-      // เรียงตามชื่อสินค้าก่อน
-      if (a.productName !== b.productName) {
-        return a.productName.localeCompare(b.productName, 'th');
-      }
-      
-      // เรียงตามสี
-      if (a.colorName !== b.colorName) {
-        return a.colorName.localeCompare(b.colorName, 'th');
-      }
-      
-      // เรียงตามไซส์
-      const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
-      const indexA = sizeOrder.indexOf(a.sizeName);
-      const indexB = sizeOrder.indexOf(b.sizeName);
-      if (indexA !== -1 && indexB !== -1) {
-        return indexA - indexB;
-      }
-      return a.sizeName.localeCompare(b.sizeName, 'th');
+      return a.sortOrder - b.sortOrder;
     });
   });
 
