@@ -1,0 +1,40 @@
+subJobsWithQuantity is not defined
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2121:34
+at Array.map (<anonymous>)
+at DailyWorkLog (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2120:16)
+at renderWithHooks (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:11548:26)
+at updateFunctionComponent (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:14582:28)
+at beginWork (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:15924:22)
+at HTMLUnknownElement.callCallback2 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:3674:22)
+at Object.invokeGuardedCallbackDev (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:3699:24)
+at invokeGuardedCallback (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:3733:39)
+at beginWork$1 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:19765:15)
+The above error occurred in the <DailyWorkLog> component:
+
+    at DailyWorkLog (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:49:21)
+    at div
+    at main
+    at div
+    at div
+    at MainLayout (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/layout/main-layout.tsx:21:38)
+    at Route (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=22ed5ad9:323:16)
+    at Switch (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=22ed5ad9:379:17)
+    at Router (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/App.tsx?v=pRRjCe1mhsRnmRAEp-vjM:60:49)
+    at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=22ed5ad9:38:15)
+    at TooltipProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=22ed5ad9:61:5)
+    at QueryClientProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=22ed5ad9:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+subJobsWithQuantity is not defined
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2121:34
+at Array.map (<anonymous>)
+at DailyWorkLog (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2120:16)
+at renderWithHooks (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:11548:26)
+at updateFunctionComponent (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:14582:28)
+at beginWork (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:15924:22)
+at beginWork$1 (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:19753:22)
+at performUnitOfWork (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:19198:20)
+at workLoopSync (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:19137:13)
+at renderRootSync (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:19116:15)

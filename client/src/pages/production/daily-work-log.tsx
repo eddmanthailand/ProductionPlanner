@@ -260,6 +260,18 @@ export default function DailyWorkLog() {
     cacheTime: 0 // ไม่เก็บ cache
   });
 
+  // Fetch sub jobs for quantity information in preview dialog
+  const { data: subJobsWithQuantity = [] } = useQuery({
+    queryKey: ['/api/sub-jobs/by-work-order', previewingLog?.workOrderId],
+    queryFn: async () => {
+      if (!previewingLog?.workOrderId) return [];
+      const response = await fetch(`/api/sub-jobs/by-work-order/${previewingLog.workOrderId}`);
+      if (!response.ok) throw new Error('Failed to fetch sub jobs');
+      return response.json();
+    },
+    enabled: !!previewingLog?.workOrderId
+  });
+
   const { data: subJobsProgress = [] } = useQuery<SubJobProgress[]>({
     queryKey: ["/api/sub-jobs/progress", selectedWorkOrder],
     enabled: !!selectedWorkOrder,
