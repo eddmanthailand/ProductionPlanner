@@ -1842,20 +1842,25 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDailyWorkLog(id: string, tenantId: string): Promise<boolean> {
     try {
-      console.log('Storage: Deleting daily work log:', { id, tenantId });
-      const [deleted] = await db
-        .delete(dailyWorkLogs)
+      console.log('Storage: Soft deleting daily work log:', { id, tenantId });
+      const [updated] = await db
+        .update(dailyWorkLogs)
+        .set({ 
+          deletedAt: new Date(),
+          updatedAt: new Date()
+        })
         .where(and(
           eq(dailyWorkLogs.id, id),
-          eq(dailyWorkLogs.tenantId, tenantId)
+          eq(dailyWorkLogs.tenantId, tenantId),
+          isNull(dailyWorkLogs.deletedAt) // Only update if not already deleted
         ))
         .returning();
       
-      const success = !!deleted;
-      console.log('Storage: Delete result:', success);
+      const success = !!updated;
+      console.log('Storage: Soft delete result:', success);
       return success;
     } catch (error) {
-      console.error('Delete daily work log error:', error);
+      console.error('Soft delete daily work log error:', error);
       return false;
     }
   }
