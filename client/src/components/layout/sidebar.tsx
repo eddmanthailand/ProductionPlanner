@@ -306,7 +306,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           )}
 
           {/* Production Reports with Submenu */}
-          {(canAccessPage('/production/team-revenue-report') || canAccessPage('/production/work-queue-table') || canAccessPage('/production/daily-work-history')) && (
+          {(canAccessPage('/production/team-revenue-report') || canAccessPage('/production/work-queue-table')) && (
             <div className="relative">
               <button
                 onClick={() => {
@@ -314,7 +314,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   setExpandedReports(!expandedReports);
                 }}
                 className={`w-full flex items-center justify-between py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
-                  location.startsWith('/production/team-revenue-report') || location.startsWith('/production/work-queue-table') || location.startsWith('/production/daily-work-history') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                  location.startsWith('/production/team-revenue-report') || location.startsWith('/production/work-queue-table') ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
                 }`}
               >
                 <div className="flex items-center">
@@ -350,23 +350,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                       ตารางคิวงาน
                     </Link>
                   )}
-                  {(canAccessPage('/production/daily-work-history') || canAccessPage('/production/daily-work-log')) && (
-                    <div className="space-y-1">
-                      <div className="text-xs font-medium text-gray-500 dark:text-gray-400 px-3 py-1">
-                        บันทึกประจำวัน
-                      </div>
-                      {canAccessPage('/production/daily-work-history') && (
-                        <Link
-                          href="/production/daily-work-history"
-                          className={`block py-2 px-3 ml-4 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
-                            location === '/production/daily-work-history' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
-                          }`}
-                        >
-                          ประวัติบันทึกทั้งหมด
-                        </Link>
-                      )}
-                    </div>
-                  )}
+
                 </div>
               )}
             </div>
