@@ -1824,7 +1824,7 @@ export class DatabaseStorage implements IStorage {
         .select()
         .from(subJobs)
         .where(eq(subJobs.workOrderId, workOrderId))
-        .orderBy(asc(subJobs.id));
+        .orderBy(asc(subJobs.sortOrder));
       return jobs;
     } catch (error) {
       console.error('Get sub jobs by work order error:', error);
