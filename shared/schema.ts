@@ -571,6 +571,7 @@ export const dailyWorkLogs = pgTable("daily_work_logs", {
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }),
 });
 
 // Insert schemas
@@ -810,7 +811,8 @@ export const insertWorkOrderItemSchema = createInsertSchema(workOrderItems).omit
 export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
   id: true,
   createdAt: true,
-  updatedAt: true
+  updatedAt: true,
+  deletedAt: true
 });
 
 // Types

@@ -1718,7 +1718,7 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
-      const conditions = [eq(dailyWorkLogs.tenantId, tenantId)];
+      const conditions = [eq(dailyWorkLogs.tenantId, tenantId), isNull(dailyWorkLogs.deletedAt)];
 
       if (filters?.date) {
         console.log('Storage: Adding date filter:', filters.date);
@@ -1804,6 +1804,7 @@ export class DatabaseStorage implements IStorage {
         WHERE dwl.team_id = ${teamId}
           AND dwl.date >= ${startDate}
           AND dwl.date <= ${endDate}
+          AND dwl.deleted_at IS NULL
         ORDER BY dwl.date ASC, wo.order_number ASC, c.name ASC, s.name ASC, ws.name ASC
       `);
       
