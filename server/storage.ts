@@ -92,6 +92,7 @@ import {
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull } from "drizzle-orm";
+import { format } from "date-fns";
 import { nanoid } from "nanoid";
 
 export interface IStorage {
@@ -1817,11 +1818,37 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDailyWorkLog(insertLog: InsertDailyWorkLog): Promise<DailyWorkLog> {
+    // Generate unique report number for each entry
+    const reportNumber = await this.generateUniqueReportNumber(insertLog.tenantId);
+    
     const [log] = await db
       .insert(dailyWorkLogs)
-      .values(insertLog)
+      .values({
+        ...insertLog,
+        reportNumber
+      })
       .returning();
     return log;
+  }
+
+  // Helper method to generate unique report number
+  private async generateUniqueReportNumber(tenantId: string): Promise<string> {
+    const today = new Date();
+    const datePrefix = format(today, 'yyyyMMdd');
+    
+    // Get count of all logs created today (including soft deleted ones for accurate numbering)
+    const todayCount = await db
+      .select({ count: count() })
+      .from(dailyWorkLogs)
+      .where(and(
+        eq(dailyWorkLogs.tenantId, tenantId),
+        eq(dailyWorkLogs.date, format(today, 'yyyy-MM-dd'))
+      ));
+    
+    const sequenceNumber = (todayCount[0]?.count || 0) + 1;
+    const reportNumber = `RPT-${datePrefix}-${sequenceNumber.toString().padStart(4, '0')}`;
+    
+    return reportNumber;
   }
 
   async updateDailyWorkLog(id: string, updateData: Partial<InsertDailyWorkLog>, tenantId: string): Promise<DailyWorkLog | undefined> {

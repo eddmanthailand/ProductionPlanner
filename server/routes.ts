@@ -3476,50 +3476,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
       
-      // สร้างเลขที่รายงานแบบ DR+YYYY+MM+DD+เลขตามลำดับ
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      const datePrefix = `DR${year}${month}${day}`;
+      // ระบบจะสร้างเลขที่รายงานอัตโนมัติในส่วน storage layer
+      const logData = { ...req.body, tenantId };
       
-      // หาเลขที่รายงานที่มีอยู่แล้วในวันนี้
-      const existingReportsResult = await pool.query(`
-        SELECT report_number 
-        FROM daily_work_logs 
-        WHERE report_number LIKE $1 
-        ORDER BY report_number DESC 
-        LIMIT 1
-      `, [`${datePrefix}%`]);
-      
-      let sequenceNumber = 1;
-      if (existingReportsResult.rows.length > 0) {
-        const lastReportNumber = existingReportsResult.rows[0].report_number;
-        const lastSequence = parseInt(lastReportNumber.substring(datePrefix.length));
-        sequenceNumber = lastSequence + 1;
-      }
-      
-      const reportNumber = `${datePrefix}${String(sequenceNumber).padStart(3, '0')}`;
-      const logData = { ...req.body, tenantId, reportNumber };
-      
-      console.log("API: Creating daily work log with report number:", reportNumber);
-      
-      // ตรวจสอบการบันทึกข้ามแผนก
-      const validationResult = await pool.query(`
-        SELECT 
-          t.department_id as team_dept_id,
-          ws.department_id as work_step_dept_id,
-          t.name as team_name,
-          ws.name as work_step_name,
-          d1.name as team_dept_name,
-          d2.name as work_step_dept_name
-        FROM teams t
-        LEFT JOIN sub_jobs sj ON sj.id = $1
-        LEFT JOIN work_steps ws ON sj.work_step_id = ws.id
-        LEFT JOIN departments d1 ON t.department_id = d1.id
-        LEFT JOIN departments d2 ON ws.department_id = d2.id
-        WHERE t.id = $2
-      `, [logData.subJobId, logData.teamId]);
+      console.log("API: Creating daily work log (report number will be auto-generated)");
       
       if (validationResult.rows.length > 0) {
         const validation = validationResult.rows[0];
