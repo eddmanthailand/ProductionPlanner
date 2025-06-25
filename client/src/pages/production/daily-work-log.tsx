@@ -308,28 +308,16 @@ export default function DailyWorkLog() {
     // หาข้อมูล sub job ที่สมบูรณ์จากฐานข้อมูล
     const subJobInfo = allSubJobsComplete.find(sj => sj.id === log.subJobId);
     if (subJobInfo) {
-      // กรองให้แสดงเฉพาะ sub jobs ที่เป็นขั้นตอนตัด (sort_order คี่) สำหรับทีมตัด
-      const selectedTeamInfo = allTeams.find(t => t.id === log.teamId);
-      const isTeamCut = selectedTeamInfo?.name?.includes('ตัด');
-      
-      // ถ้าเป็นทีมตัด ให้แสดงเฉพาะ sort_order คี่ (ขั้นตอนตัด)
-      // ถ้าเป็นทีมเย็บ ให้แสดงเฉพาะ sort_order คู่ (ขั้นตอนเย็บ)
-      const shouldShow = isTeamCut ? 
-        (subJobInfo.sortOrder % 2 === 1) : // ทีมตัด = sort_order คี่
-        (subJobInfo.sortOrder % 2 === 0);  // ทีมเย็บ = sort_order คู่
-      
-      if (shouldShow) {
-        acc[key].subJobs.push({
-          subJobId: log.subJobId,
-          quantityCompleted: log.quantityCompleted || 0,
-          workDescription: log.workDescription,
-          productName: subJobInfo.productName,
-          colorName: subJobInfo.colorName,
-          sizeName: subJobInfo.sizeName,
-          sortOrder: subJobInfo.sortOrder || 0
-        });
-        acc[key].totalQuantity += log.quantityCompleted || 0;
-      }
+      acc[key].subJobs.push({
+        subJobId: log.subJobId,
+        quantityCompleted: log.quantityCompleted || 0,
+        workDescription: log.workDescription,
+        productName: subJobInfo.productName,
+        colorName: subJobInfo.colorName,
+        sizeName: subJobInfo.sizeName,
+        sortOrder: subJobInfo.sortOrder || 0
+      });
+      acc[key].totalQuantity += log.quantityCompleted || 0;
     }
     return acc;
   }, {} as Record<string, any>);
@@ -1256,18 +1244,14 @@ export default function DailyWorkLog() {
                       </TableHeader>
                       <TableBody>
                         {previewingLog.subJobs
-                          .map((subJobLog: any) => ({
-                            ...subJobLog,
-                            subJob: allSubJobsComplete.find(sj => sj.id === subJobLog.subJobId)
-                          }))
                           .sort((a: any, b: any) => {
-                            if (!a.subJob || !b.subJob) return 0;
-                            
-                            // เรียงตาม sortOrder จากฐานข้อมูล
-                            return (a.subJob.sortOrder || 0) - (b.subJob.sortOrder || 0);
+                            // เรียงตาม sortOrder ที่มีอยู่แล้วใน subJob data
+                            return (a.sortOrder || 0) - (b.sortOrder || 0);
                           })
                           .map((item: any, index: number) => {
-                          const subJob = item.subJob;
+                            // หา sub job ที่สมบูรณ์จากฐานข้อมูล
+                            const subJob = allSubJobsComplete.find(sj => sj.id === item.subJobId);
+
                           return (
                             <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                               <TableCell className="font-medium">{subJob?.productName || '-'}</TableCell>
