@@ -1846,7 +1846,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDailyWorkLog(insertLog: InsertDailyWorkLog): Promise<DailyWorkLog> {
-    // Generate unique report number for each entry
+    // Generate unique report number for each entry using timestamp
     const reportNumber = await this.generateUniqueReportNumber(insertLog.tenantId);
     
     const [log] = await db
@@ -1859,22 +1859,16 @@ export class DatabaseStorage implements IStorage {
     return log;
   }
 
-  // Helper method to generate unique report number
+  // Helper method to generate unique report number using timestamp
   private async generateUniqueReportNumber(tenantId: string): Promise<string> {
-    const today = new Date();
-    const datePrefix = format(today, 'yyyyMMdd');
+    const now = new Date();
+    const datePrefix = format(now, 'yyyyMMdd');
     
-    // Get count of all logs created today (including soft deleted ones for accurate numbering)
-    const todayCount = await db
-      .select({ count: count() })
-      .from(dailyWorkLogs)
-      .where(and(
-        eq(dailyWorkLogs.tenantId, tenantId),
-        eq(dailyWorkLogs.date, format(today, 'yyyy-MM-dd'))
-      ));
+    // Use timestamp to ensure uniqueness
+    const timestamp = now.getTime().toString().slice(-6); // Last 6 digits of timestamp
+    const randomSuffix = Math.floor(Math.random() * 100).toString().padStart(2, '0'); // 2-digit random
     
-    const sequenceNumber = (todayCount[0]?.count || 0) + 1;
-    const reportNumber = `RPT-${datePrefix}-${sequenceNumber.toString().padStart(4, '0')}`;
+    const reportNumber = `RPT-${datePrefix}-${timestamp}${randomSuffix}`;
     
     return reportNumber;
   }
