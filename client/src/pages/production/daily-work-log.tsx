@@ -956,6 +956,7 @@ export default function DailyWorkLog() {
             <Table>
               <TableHeader>
                 <TableRow style={{ fontSize: '12px' }}>
+                  <TableHead className="w-[120px]">เลขที่รายงาน</TableHead>
                   <TableHead className="w-[120px]">วันเวลา</TableHead>
                   <TableHead className="w-[100px]">ทีม</TableHead>
                   <TableHead className="w-[140px]">ใบสั่งงาน</TableHead>
@@ -970,6 +971,12 @@ export default function DailyWorkLog() {
                   <TableRow key={`${log.date}-${log.teamId}-${log.workOrderId}-${index}`} 
                            style={{ fontSize: '12px' }}
                            className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    <TableCell className="font-mono text-xs">
+                      <div className="flex flex-col">
+                        <span className="font-bold text-blue-600">{log.reportNumber || 'N/A'}</span>
+                        <span className="text-gray-500 text-xs">เลขที่รายงาน</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="font-mono text-xs">
                       <div className="flex flex-col">
                         <span>{format(new Date(log.createdAt), 'dd/MM/yyyy')}</span>
@@ -1093,7 +1100,20 @@ export default function DailyWorkLog() {
           {previewingLog && (
             <div className="space-y-6 pt-4">
               {/* Header Info Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <Label className="text-xs font-medium text-indigo-600 dark:text-indigo-400">เลขที่รายงาน</Label>
+                      <p className="font-bold text-indigo-900 dark:text-indigo-100">{previewingLog.reportNumber || 'N/A'}</p>
+                      <p className="text-xs text-indigo-700 dark:text-indigo-300">สร้างอัตโนมัติ</p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
@@ -1123,7 +1143,7 @@ export default function DailyWorkLog() {
                 <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-white" />
+                      <ClipboardList className="w-5 h-5 text-white" />
                     </div>
                     <div>
                       <Label className="text-xs font-medium text-purple-600 dark:text-purple-400">ใบสั่งงาน</Label>
