@@ -1259,27 +1259,8 @@ export default function DailyWorkLog() {
                           .sort((a: any, b: any) => {
                             if (!a.subJob || !b.subJob) return 0;
                             
-                            // เรียงตามสีก่อน
-                            const colorA = colors.find(c => c.id === a.subJob.colorId)?.name || '';
-                            const colorB = colors.find(c => c.id === b.subJob.colorId)?.name || '';
-                            if (colorA !== colorB) {
-                              return colorA.localeCompare(colorB, 'th');
-                            }
-                            
-                            // ถ้าสีเหมือนกัน เรียงตามไซส์
-                            const sizeA = sizes.find(s => s.id === a.subJob.sizeId)?.name || '';
-                            const sizeB = sizes.find(s => s.id === b.subJob.sizeId)?.name || '';
-                            if (sizeA !== sizeB) {
-                              const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
-                              const indexA = sizeOrder.indexOf(sizeA);
-                              const indexB = sizeOrder.indexOf(sizeB);
-                              if (indexA !== -1 && indexB !== -1) {
-                                return indexA - indexB;
-                              }
-                              return sizeA.localeCompare(sizeB, 'th');
-                            }
-                            
-                            return 0;
+                            // เรียงตาม sortOrder จากฐานข้อมูล
+                            return (a.subJob.sortOrder || 0) - (b.subJob.sortOrder || 0);
                           })
                           .map((item: any, index: number) => {
                           const subJob = item.subJob;
