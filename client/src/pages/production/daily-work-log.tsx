@@ -215,7 +215,9 @@ export default function DailyWorkLog() {
       const allSubJobs = await response.json();
       
       // Filter by work step - ป้องกันการบันทึกข้ามแผนก
-      return allSubJobs.filter((job: SubJob) => job.workStepId === selectedWorkStep);
+      return allSubJobs
+        .filter((job: SubJob) => job.workStepId === selectedWorkStep)
+        .sort((a: SubJob, b: SubJob) => (a.sortOrder || 0) - (b.sortOrder || 0));
     }
   });
 
