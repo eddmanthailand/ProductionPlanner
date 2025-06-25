@@ -24,6 +24,33 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
+// Color mapping สำหรับแสดงสีที่ถูกต้อง
+const getColorHex = (colorCode: string): string => {
+  const colorMap: { [key: string]: string } = {
+    'White': '#FFFFFF',
+    'Black': '#000000', 
+    'Red': '#EF4444',
+    'Yellow': '#EAB308',
+    'Blue': '#3B82F6',
+    'Green': '#22C55E',
+    'Orange': '#F97316',
+    'Purple': '#A855F7',
+    'Pink': '#EC4899',
+    'Sky Blue': '#0EA5E9',
+    'Brown': '#A3A3A3',
+    'Gray': '#6B7280',
+    'Navy Blue': '#1E3A8A',
+    'Cream': '#FEF3C7',
+    'Beige': '#F5F5DC',
+    'Maroon': '#7F1D1D',
+    'Olive Green': '#84CC16',
+    'Indigo': '#4F46E5',
+    'Silver': '#C0C0C0',
+    'Gold': '#FFD700'
+  };
+  return colorMap[colorCode] || '#f3f4f6';
+};
+
 interface DailyWorkLog {
   id: string;
   reportNumber: string;
@@ -784,10 +811,17 @@ export default function DailyWorkLog() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            {subJob.colorId 
-                              ? colors.find(c => c.id === subJob.colorId)?.name || '-'
-                              : '-'
-                            }
+                            <div className="flex items-center gap-2">
+                              {subJob.colorId && (
+                                <div className="w-3 h-3 rounded-full border border-gray-300" style={{
+                                  backgroundColor: getColorHex(colors.find(c => c.id === subJob.colorId)?.code || '')
+                                }}></div>
+                              )}
+                              {subJob.colorId 
+                                ? colors.find(c => c.id === subJob.colorId)?.name || '-'
+                                : '-'
+                              }
+                            </div>
                           </TableCell>
                           <TableCell>
                             {subJob.sizeId 
