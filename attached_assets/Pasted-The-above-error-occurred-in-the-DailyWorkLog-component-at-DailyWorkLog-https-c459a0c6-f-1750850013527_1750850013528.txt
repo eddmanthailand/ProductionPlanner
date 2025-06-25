@@ -1,0 +1,50 @@
+The above error occurred in the <DailyWorkLog> component:
+
+    at DailyWorkLog (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:43:21)
+    at div
+    at main
+    at div
+    at div
+    at MainLayout (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/layout/main-layout.tsx:21:38)
+    at Route (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=22ed5ad9:323:16)
+    at Switch (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=22ed5ad9:379:17)
+    at Router (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/App.tsx?v=DAQhJeCmKw7Hy6yexiB4F:60:49)
+    at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=22ed5ad9:38:15)
+    at TooltipProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=22ed5ad9:61:5)
+    at QueryClientProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=22ed5ad9:2805:3)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+
+at DailyWorkLog (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:43:21)
+at div
+at main
+at div
+at div
+at MainLayout (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/components/layout/main-layout.tsx:21:38)
+at Route (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=22ed5ad9:323:16)
+at Switch (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=22ed5ad9:379:17)
+at Router (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/App.tsx?v=DAQhJeCmKw7Hy6yexiB4F:60:49)
+at Provider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js?v=22ed5ad9:38:15)
+at TooltipProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=22ed5ad9:61:5)
+at QueryClientProvider (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=22ed5ad9:2805:3)
+at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+at t.value (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+subJobLog is not defined
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2138:82
+at Array.find (<anonymous>)
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2138:53
+at Array.reduce (<anonymous>)
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2137:59
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2164:19
+at Array.map (<anonymous>)
+at DailyWorkLog (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/daily-work-log.tsx:2082:16)
+at renderWithHooks (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:11548:26)
+at updateFunctionComponent (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=22ed5ad9:14582:28)

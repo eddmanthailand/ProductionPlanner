@@ -1287,7 +1287,7 @@ export default function DailyWorkLog() {
                                   
                                   // หาจำนวนที่ทำรวมจากทุกใบบันทึกงาน
                                   const totalCompleted = consolidatedLogs.reduce((total, log) => {
-                                    const subJobInLog = log.subJobs.find((sj: any) => sj.subJobId === subJobLog.subJobId);
+                                    const subJobInLog = log.subJobs.find((sj: any) => sj.subJobId === item.subJobId);
                                     return total + (subJobInLog?.quantityCompleted || 0);
                                   }, 0);
                                   
