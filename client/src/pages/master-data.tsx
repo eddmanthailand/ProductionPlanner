@@ -15,7 +15,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { insertColorSchema, insertSizeSchema, insertWorkTypeSchema, type Color, type Size, type WorkType } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { Plus, Edit, Trash2, Palette, Ruler, GripVertical, Pipette } from "lucide-react";
+import { useMemo } from "react";
+import { Plus, Edit, Trash2, Palette, Ruler, GripVertical, Pipette, Search } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { useSortable } from "@dnd-kit/sortable";
@@ -74,87 +75,111 @@ export default function MasterData() {
   const [editingColor, setEditingColor] = useState<Color | null>(null);
   const [editingSize, setEditingSize] = useState<Size | null>(null);
   const [editingWorkType, setEditingWorkType] = useState<WorkType | null>(null);
+  const [colorSearchQuery, setColorSearchQuery] = useState('');
 
-  // Predefined color palette - เพิ่มสีหลากหลายสำหรับงานผลิต
-  const colorPalette = [
-    // สีแดง
-    { name: 'แดง', hex: '#EF4444' },
-    { name: 'แดงเข้ม', hex: '#DC2626' },
-    { name: 'แดงอ่อน', hex: '#F87171' },
-    { name: 'แดงเลือดหมู', hex: '#7F1D1D' },
-    { name: 'แดงส้ม', hex: '#EA580C' },
+  // Comprehensive color database with search keywords
+  const colorDatabase = [
+    // สีแดง (Red family)
+    { name: 'แดง', hex: '#EF4444', keywords: ['แดง', 'red', 'สีแดง'], family: 'red', shade: 'medium' },
+    { name: 'แดงอ่อน', hex: '#FCA5A5', keywords: ['แดงอ่อน', 'แดงพาสเทล', 'light red'], family: 'red', shade: 'light' },
+    { name: 'แดงเข้ม', hex: '#DC2626', keywords: ['แดงเข้ม', 'แดงเก่า', 'dark red'], family: 'red', shade: 'dark' },
+    { name: 'แดงเลือดหมู', hex: '#7F1D1D', keywords: ['แดงเลือดหมู', 'แดงม่วง', 'maroon'], family: 'red', shade: 'dark' },
+    { name: 'แดงส้ม', hex: '#EA580C', keywords: ['แดงส้ม', 'ส้มแดง', 'orange red'], family: 'red', shade: 'medium' },
+    { name: 'แดงอิฐ', hex: '#B91C1C', keywords: ['แดงอิฐ', 'แดงดิน', 'brick red'], family: 'red', shade: 'dark' },
     
-    // สีชมพู
-    { name: 'ชมพู', hex: '#EC4899' },
-    { name: 'ชมพูอ่อน', hex: '#F9A8D4' },
-    { name: 'ชมพูเข้ม', hex: '#BE185D' },
-    { name: 'ชมพูฟูเซีย', hex: '#D946EF' },
-    { name: 'ชมพูกุหลาบ', hex: '#FB7185' },
+    // สีชมพู (Pink family)
+    { name: 'ชมพู', hex: '#EC4899', keywords: ['ชมพู', 'pink', 'สีชมพู'], family: 'pink', shade: 'medium' },
+    { name: 'ชมพูอ่อน', hex: '#F9A8D4', keywords: ['ชมพูอ่อน', 'ชมพูพาสเทล', 'light pink'], family: 'pink', shade: 'light' },
+    { name: 'ชมพูเข้ม', hex: '#BE185D', keywords: ['ชมพูเข้ม', 'ชมพูเก่า', 'dark pink'], family: 'pink', shade: 'dark' },
+    { name: 'ชมพูกุหลาบ', hex: '#FB7185', keywords: ['ชมพูกุหลาบ', 'กุหลาบ', 'rose pink'], family: 'pink', shade: 'medium' },
+    { name: 'ชมพูฟูเซีย', hex: '#D946EF', keywords: ['ฟูเซีย', 'ชมพูม่วง', 'fuchsia'], family: 'pink', shade: 'bright' },
     
-    // สีส้ม
-    { name: 'ส้ม', hex: '#F97316' },
-    { name: 'ส้มอ่อน', hex: '#FDBA74' },
-    { name: 'ส้มเข้ม', hex: '#C2410C' },
-    { name: 'ส้มแดง', hex: '#EA580C' },
-    { name: 'ส้มทอง', hex: '#F59E0B' },
+    // สีส้ม (Orange family)
+    { name: 'ส้ม', hex: '#F97316', keywords: ['ส้ม', 'orange', 'สีส้ม'], family: 'orange', shade: 'medium' },
+    { name: 'ส้มอ่อน', hex: '#FDBA74', keywords: ['ส้มอ่อน', 'ส้มพาสเทล', 'light orange'], family: 'orange', shade: 'light' },
+    { name: 'ส้มเข้ม', hex: '#C2410C', keywords: ['ส้มเข้ม', 'ส้มเก่า', 'dark orange'], family: 'orange', shade: 'dark' },
+    { name: 'ส้มทอง', hex: '#F59E0B', keywords: ['ส้มทอง', 'ทองส้ม', 'golden orange'], family: 'orange', shade: 'bright' },
     
-    // สีเหลือง
-    { name: 'เหลือง', hex: '#EAB308' },
-    { name: 'เหลืองอ่อน', hex: '#FDE047' },
-    { name: 'เหลืองเข้ม', hex: '#A16207' },
-    { name: 'เหลืองทอง', hex: '#FFD700' },
-    { name: 'เหลืองครีม', hex: '#FEF3C7' },
+    // สีเหลือง (Yellow family)
+    { name: 'เหลือง', hex: '#EAB308', keywords: ['เหลือง', 'yellow', 'สีเหลือง'], family: 'yellow', shade: 'medium' },
+    { name: 'เหลืองอ่อน', hex: '#FDE047', keywords: ['เหลืองอ่อน', 'เหลืองพาสเทล', 'light yellow'], family: 'yellow', shade: 'light' },
+    { name: 'เหลืองเข้ม', hex: '#A16207', keywords: ['เหลืองเข้ม', 'เหลืองเก่า', 'dark yellow'], family: 'yellow', shade: 'dark' },
+    { name: 'เหลืองทอง', hex: '#FFD700', keywords: ['ทอง', 'เหลืองทอง', 'gold'], family: 'yellow', shade: 'bright' },
+    { name: 'เหลืองครีม', hex: '#FEF3C7', keywords: ['ครีม', 'เหลืองครีม', 'cream'], family: 'yellow', shade: 'light' },
     
-    // สีเขียว
-    { name: 'เขียว', hex: '#22C55E' },
-    { name: 'เขียวอ่อน', hex: '#86EFAC' },
-    { name: 'เขียวเข้ม', hex: '#15803D' },
-    { name: 'เขียวมะกอก', hex: '#84CC16' },
-    { name: 'เขียวมิ้นท์', hex: '#6EE7B7' },
-    { name: 'เขียวป่า', hex: '#166534' },
+    // สีเขียว (Green family)
+    { name: 'เขียว', hex: '#22C55E', keywords: ['เขียว', 'green', 'สีเขียว'], family: 'green', shade: 'medium' },
+    { name: 'เขียวอ่อน', hex: '#86EFAC', keywords: ['เขียวอ่อน', 'เขียวพาสเทล', 'light green'], family: 'green', shade: 'light' },
+    { name: 'เขียวเข้ม', hex: '#15803D', keywords: ['เขียวเข้ม', 'เขียวเก่า', 'dark green'], family: 'green', shade: 'dark' },
+    { name: 'เขียวมะกอก', hex: '#84CC16', keywords: ['เขียวมะกอก', 'มะกอก', 'olive green'], family: 'green', shade: 'medium' },
+    { name: 'เขียวมิ้นท์', hex: '#6EE7B7', keywords: ['มิ้นท์', 'เขียวมิ้นท์', 'mint green'], family: 'green', shade: 'light' },
+    { name: 'เขียวป่า', hex: '#166534', keywords: ['เขียวป่า', 'เขียวดง', 'forest green'], family: 'green', shade: 'dark' },
     
-    // สีฟ้า
-    { name: 'ฟ้า', hex: '#0EA5E9' },
-    { name: 'ฟ้าอ่อน', hex: '#7DD3FC' },
-    { name: 'ฟ้าเข้ม', hex: '#0284C7' },
-    { name: 'ฟ้าคราม', hex: '#4F46E5' },
-    { name: 'ฟ้าอมเขียว', hex: '#06B6D4' },
+    // สีฟ้า (Cyan/Light Blue family)
+    { name: 'ฟ้า', hex: '#0EA5E9', keywords: ['ฟ้า', 'cyan', 'สีฟ้า'], family: 'cyan', shade: 'medium' },
+    { name: 'ฟ้าอ่อน', hex: '#7DD3FC', keywords: ['ฟ้าอ่อน', 'ฟ้าพาสเทล', 'light cyan'], family: 'cyan', shade: 'light' },
+    { name: 'ฟ้าเข้ม', hex: '#0284C7', keywords: ['ฟ้าเข้ม', 'ฟ้าเก่า', 'dark cyan'], family: 'cyan', shade: 'dark' },
+    { name: 'ฟ้าอมเขียว', hex: '#06B6D4', keywords: ['ฟ้าเขียว', 'เขียวฟ้า', 'turquoise'], family: 'cyan', shade: 'medium' },
     
-    // สีน้ำเงิน
-    { name: 'น้ำเงิน', hex: '#3B82F6' },
-    { name: 'น้ำเงินอ่อน', hex: '#93C5FD' },
-    { name: 'น้ำเงินเข้ม', hex: '#1D4ED8' },
-    { name: 'กรมท่า', hex: '#1E3A8A' },
-    { name: 'น้ำเงินม่วง', hex: '#6366F1' },
+    // สีน้ำเงิน (Blue family)
+    { name: 'น้ำเงิน', hex: '#3B82F6', keywords: ['น้ำเงิน', 'blue', 'สีน้ำเงิน'], family: 'blue', shade: 'medium' },
+    { name: 'น้ำเงินอ่อน', hex: '#93C5FD', keywords: ['น้ำเงินอ่อน', 'น้ำเงินพาสเทล', 'light blue'], family: 'blue', shade: 'light' },
+    { name: 'น้ำเงินเข้ม', hex: '#1D4ED8', keywords: ['น้ำเงินเข้ม', 'น้ำเงินเก่า', 'dark blue'], family: 'blue', shade: 'dark' },
+    { name: 'กรมท่า', hex: '#1E3A8A', keywords: ['กรมท่า', 'น้ำเงินกรม', 'navy blue'], family: 'blue', shade: 'dark' },
+    { name: 'ฟ้าคราม', hex: '#4F46E5', keywords: ['ฟ้าคราม', 'น้ำเงินม่วง', 'royal blue'], family: 'blue', shade: 'medium' },
     
-    // สีม่วง
-    { name: 'ม่วง', hex: '#A855F7' },
-    { name: 'ม่วงอ่อน', hex: '#C084FC' },
-    { name: 'ม่วงเข้ม', hex: '#7C3AED' },
-    { name: 'ม่วงแดง', hex: '#BE185D' },
-    { name: 'ม่วงราชินี', hex: '#9333EA' },
+    // สีม่วง (Purple family)
+    { name: 'ม่วง', hex: '#A855F7', keywords: ['ม่วง', 'purple', 'สีม่วง'], family: 'purple', shade: 'medium' },
+    { name: 'ม่วงอ่อน', hex: '#C084FC', keywords: ['ม่วงอ่อน', 'ม่วงพาสเทล', 'light purple'], family: 'purple', shade: 'light' },
+    { name: 'ม่วงเข้ม', hex: '#7C3AED', keywords: ['ม่วงเข้ม', 'ม่วงเก่า', 'dark purple'], family: 'purple', shade: 'dark' },
+    { name: 'ม่วงราชินี', hex: '#9333EA', keywords: ['ม่วงราชินี', 'ม่วงเจ้า', 'royal purple'], family: 'purple', shade: 'medium' },
     
-    // สีน้ำตาล
-    { name: 'น้ำตาล', hex: '#A3A3A3' },
-    { name: 'น้ำตาลอ่อน', hex: '#D6D3D1' },
-    { name: 'น้ำตาลเข้ม', hex: '#57534E' },
-    { name: 'น้ำตาลกาแฟ', hex: '#78716C' },
-    { name: 'เบจ', hex: '#F5F5DC' },
+    // สีน้ำตาล (Brown family)
+    { name: 'น้ำตาล', hex: '#A3A3A3', keywords: ['น้ำตาล', 'brown', 'สีน้ำตาล'], family: 'brown', shade: 'medium' },
+    { name: 'น้ำตาลอ่อน', hex: '#D6D3D1', keywords: ['น้ำตาลอ่อน', 'เบจ', 'light brown'], family: 'brown', shade: 'light' },
+    { name: 'น้ำตาลเข้ม', hex: '#57534E', keywords: ['น้ำตาลเข้ม', 'น้ำตาลดำ', 'dark brown'], family: 'brown', shade: 'dark' },
+    { name: 'น้ำตาลกาแฟ', hex: '#78716C', keywords: ['กาแฟ', 'น้ำตาลกาแฟ', 'coffee brown'], family: 'brown', shade: 'medium' },
+    { name: 'เบจ', hex: '#F5F5DC', keywords: ['เบจ', 'ครีม', 'beige'], family: 'brown', shade: 'light' },
     
-    // สีเทา
-    { name: 'เทา', hex: '#6B7280' },
-    { name: 'เทาอ่อน', hex: '#D1D5DB' },
-    { name: 'เทาเข้ม', hex: '#374151' },
-    { name: 'เงิน', hex: '#C0C0C0' },
-    { name: 'เทาเมฆ', hex: '#9CA3AF' },
+    // สีเทา (Gray family)
+    { name: 'เทา', hex: '#6B7280', keywords: ['เทา', 'gray', 'สีเทา'], family: 'gray', shade: 'medium' },
+    { name: 'เทาอ่อน', hex: '#D1D5DB', keywords: ['เทาอ่อน', 'เทาพาสเทล', 'light gray'], family: 'gray', shade: 'light' },
+    { name: 'เทาเข้ม', hex: '#374151', keywords: ['เทาเข้ม', 'เทาดำ', 'dark gray'], family: 'gray', shade: 'dark' },
+    { name: 'เงิน', hex: '#C0C0C0', keywords: ['เงิน', 'เทาเงิน', 'silver'], family: 'gray', shade: 'light' },
+    { name: 'เทาเมฆ', hex: '#9CA3AF', keywords: ['เทาเมฆ', 'เทาอ่อน', 'cloud gray'], family: 'gray', shade: 'light' },
     
-    // สีขาวดำ
-    { name: 'ขาว', hex: '#FFFFFF' },
-    { name: 'ครีม', hex: '#FFFBEB' },
-    { name: 'ขาวนวล', hex: '#FAFAFA' },
-    { name: 'ดำ', hex: '#000000' },
-    { name: 'ดำเทา', hex: '#1F2937' }
+    // สีขาวดำ (Black & White)
+    { name: 'ขาว', hex: '#FFFFFF', keywords: ['ขาว', 'white', 'สีขาว'], family: 'white', shade: 'pure' },
+    { name: 'ขาวนวล', hex: '#FAFAFA', keywords: ['ขาวนวล', 'ขาวอ่อน', 'off white'], family: 'white', shade: 'soft' },
+    { name: 'ดำ', hex: '#000000', keywords: ['ดำ', 'black', 'สีดำ'], family: 'black', shade: 'pure' },
+    { name: 'ดำเทา', hex: '#1F2937', keywords: ['ดำเทา', 'เทาดำ', 'charcoal'], family: 'black', shade: 'soft' }
   ];
+
+  // Filter colors based on search query
+  const filteredColors = useMemo(() => {
+    if (!colorSearchQuery.trim()) return colorDatabase;
+    
+    const query = colorSearchQuery.toLowerCase();
+    return colorDatabase.filter(color => 
+      color.keywords.some(keyword => keyword.toLowerCase().includes(query)) ||
+      color.name.toLowerCase().includes(query) ||
+      color.family.toLowerCase().includes(query)
+    );
+  }, [colorSearchQuery]);
+
+  // Group filtered colors by family and shade
+  const groupedColors = useMemo(() => {
+    const groups: Record<string, { light: any[], medium: any[], dark: any[], bright: any[], pure: any[], soft: any[] }> = {};
+    
+    filteredColors.forEach(color => {
+      if (!groups[color.family]) {
+        groups[color.family] = { light: [], medium: [], dark: [], bright: [], pure: [], soft: [] };
+      }
+      groups[color.family][color.shade as keyof typeof groups[string]].push(color);
+    });
+    
+    return groups;
+  }, [filteredColors]);
 
   // Queries
   const { data: colors, isLoading: colorsLoading } = useQuery<Color[]>({
@@ -542,24 +567,6 @@ export default function MasterData() {
                                 )}
                               </div>
                               <div className="bg-gray-50 dark:bg-gray-800 rounded-lg border">
-                                {/* Header with tabs */}
-                                <div className="border-b border-gray-200 dark:border-gray-700">
-                                  <div className="flex space-x-1 p-2">
-                                    <button 
-                                      type="button"
-                                      className="px-3 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded"
-                                    >
-                                      สีมาตรฐาน
-                                    </button>
-                                    <button 
-                                      type="button"
-                                      className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                                    >
-                                      สีกำหนดเอง
-                                    </button>
-                                  </div>
-                                </div>
-
                                 <div className="p-4 space-y-4">
                                   {/* Current Color Preview */}
                                   <div className="flex items-center gap-3 p-3 bg-white dark:bg-gray-900 rounded-lg border">
@@ -582,172 +589,254 @@ export default function MasterData() {
                                     </div>
                                   </div>
 
-                                  {/* Primary Colors - Large buttons */}
-                                  <div>
-                                    <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีหลัก</p>
-                                    <div className="grid grid-cols-8 gap-2">
-                                      {[
-                                        { name: 'แดง', hex: '#EF4444' },
-                                        { name: 'ส้ม', hex: '#F97316' },
-                                        { name: 'เหลือง', hex: '#EAB308' },
-                                        { name: 'เขียว', hex: '#22C55E' },
-                                        { name: 'ฟ้า', hex: '#0EA5E9' },
-                                        { name: 'น้ำเงิน', hex: '#3B82F6' },
-                                        { name: 'ม่วง', hex: '#A855F7' },
-                                        { name: 'ชมพู', hex: '#EC4899' }
-                                      ].map((color) => (
-                                        <button
-                                          key={color.hex}
-                                          type="button"
-                                          className="relative w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all hover:scale-105 shadow-sm"
-                                          style={{ backgroundColor: color.hex }}
-                                          title={`${color.name} (${color.hex})`}
-                                          onClick={() => field.onChange(color.hex)}
-                                        >
-                                          {field.value === color.hex && (
-                                            <div className="absolute inset-0 border-2 border-blue-500 rounded-lg" />
-                                          )}
-                                        </button>
-                                      ))}
-                                    </div>
+                                  {/* Color Search */}
+                                  <div className="relative">
+                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                    <Input
+                                      placeholder="ค้นหาสี เช่น แดง, เขียว, ฟ้า, เข้ม, อ่อน..."
+                                      value={colorSearchQuery}
+                                      onChange={(e) => setColorSearchQuery(e.target.value)}
+                                      className="pl-10"
+                                    />
                                   </div>
 
-                                  {/* Extended Palette */}
-                                  <div>
-                                    <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีเพิ่มเติม</p>
-                                    <div className="space-y-2">
-                                      {/* Reds and Pinks */}
-                                      <div className="grid grid-cols-12 gap-1">
-                                        {[
-                                          '#FEE2E2', '#FECACA', '#FCA5A5', '#F87171', '#EF4444', '#DC2626',
-                                          '#FDF2F8', '#FCE7F3', '#FBCFE8', '#F9A8D4', '#EC4899', '#BE185D'
-                                        ].map((hex, index) => (
+                                  {/* Search Results */}
+                                  {colorSearchQuery && (
+                                    <div className="bg-white dark:bg-gray-900 rounded-lg border p-3">
+                                      <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">
+                                        ผลการค้นหา "{colorSearchQuery}" ({filteredColors.length} สี)
+                                      </p>
+                                      <div className="grid grid-cols-8 gap-2">
+                                        {filteredColors.slice(0, 16).map((color) => (
                                           <button
-                                            key={`red-pink-${index}`}
+                                            key={color.hex}
                                             type="button"
-                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                            style={{ backgroundColor: hex }}
-                                            title={hex}
-                                            onClick={() => field.onChange(hex)}
+                                            className="relative group"
+                                            onClick={() => field.onChange(color.hex)}
                                           >
-                                            {field.value === hex && (
-                                              <div className="absolute inset-0 border border-blue-500 rounded" />
+                                            <div 
+                                              className="w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all hover:scale-110 shadow-sm"
+                                              style={{ backgroundColor: color.hex }}
+                                            />
+                                            {field.value === color.hex && (
+                                              <div className="absolute inset-0 border-2 border-blue-500 rounded-lg" />
                                             )}
+                                            <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                              {color.name}
+                                            </div>
                                           </button>
                                         ))}
                                       </div>
+                                      {filteredColors.length > 16 && (
+                                        <p className="text-xs text-gray-500 mt-2">
+                                          แสดง 16 สีแรก จากทั้งหมด {filteredColors.length} สี
+                                        </p>
+                                      )}
+                                    </div>
+                                  )}
 
-                                      {/* Oranges and Yellows */}
-                                      <div className="grid grid-cols-12 gap-1">
-                                        {[
-                                          '#FED7AA', '#FDBA74', '#FB923C', '#F97316', '#EA580C', '#C2410C',
-                                          '#FEF3C7', '#FDE68A', '#FCD34D', '#FBBF24', '#F59E0B', '#D97706'
-                                        ].map((hex, index) => (
-                                          <button
-                                            key={`orange-yellow-${index}`}
-                                            type="button"
-                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                            style={{ backgroundColor: hex }}
-                                            title={hex}
-                                            onClick={() => field.onChange(hex)}
-                                          >
-                                            {field.value === hex && (
-                                              <div className="absolute inset-0 border border-blue-500 rounded" />
-                                            )}
-                                          </button>
-                                        ))}
+                                  {/* Color Groups by Family and Shade */}
+                                  {!colorSearchQuery && (
+                                    <div className="space-y-4">
+                                      {/* Quick Colors */}
+                                      <div>
+                                        <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีด่วน</p>
+                                        <div className="grid grid-cols-8 gap-2">
+                                          {[
+                                            { name: 'แดง', hex: '#EF4444' },
+                                            { name: 'ส้ม', hex: '#F97316' },
+                                            { name: 'เหลือง', hex: '#EAB308' },
+                                            { name: 'เขียว', hex: '#22C55E' },
+                                            { name: 'ฟ้า', hex: '#0EA5E9' },
+                                            { name: 'น้ำเงิน', hex: '#3B82F6' },
+                                            { name: 'ม่วง', hex: '#A855F7' },
+                                            { name: 'ชมพู', hex: '#EC4899' }
+                                          ].map((color) => (
+                                            <button
+                                              key={color.hex}
+                                              type="button"
+                                              className="relative group w-8 h-8 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-all hover:scale-105 shadow-sm"
+                                              style={{ backgroundColor: color.hex }}
+                                              onClick={() => {
+                                                field.onChange(color.hex);
+                                                setColorSearchQuery(color.name);
+                                              }}
+                                            >
+                                              {field.value === color.hex && (
+                                                <div className="absolute inset-0 border-2 border-blue-500 rounded-lg" />
+                                              )}
+                                              <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                ค้นหา "{color.name}"
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
 
-                                      {/* Greens */}
-                                      <div className="grid grid-cols-12 gap-1">
-                                        {[
-                                          '#DCFCE7', '#BBF7D0', '#86EFAC', '#4ADE80', '#22C55E', '#16A34A',
-                                          '#ECFDF5', '#D1FAE5', '#A7F3D0', '#6EE7B7', '#34D399', '#10B981'
-                                        ].map((hex, index) => (
-                                          <button
-                                            key={`green-${index}`}
-                                            type="button"
-                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                            style={{ backgroundColor: hex }}
-                                            title={hex}
-                                            onClick={() => field.onChange(hex)}
-                                          >
-                                            {field.value === hex && (
-                                              <div className="absolute inset-0 border border-blue-500 rounded" />
-                                            )}
-                                          </button>
-                                        ))}
+                                      {/* Suggestion buttons */}
+                                      <div>
+                                        <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">คำแนะนำ</p>
+                                        <div className="flex flex-wrap gap-2">
+                                          {['อ่อน', 'เข้ม', 'พาสเทล', 'เก่า', 'สด', 'ทอง', 'เงิน'].map((suggestion) => (
+                                            <button
+                                              key={suggestion}
+                                              type="button"
+                                              className="px-3 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                                              onClick={() => setColorSearchQuery(suggestion)}
+                                            >
+                                              {suggestion}
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
 
-                                      {/* Blues */}
-                                      <div className="grid grid-cols-12 gap-1">
-                                        {[
-                                          '#DBEAFE', '#BFDBFE', '#93C5FD', '#60A5FA', '#3B82F6', '#2563EB',
-                                          '#E0F2FE', '#BAE6FD', '#7DD3FC', '#38BDF8', '#0EA5E9', '#0284C7'
-                                        ].map((hex, index) => (
-                                          <button
-                                            key={`blue-${index}`}
-                                            type="button"
-                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                            style={{ backgroundColor: hex }}
-                                            title={hex}
-                                            onClick={() => field.onChange(hex)}
-                                          >
-                                            {field.value === hex && (
-                                              <div className="absolute inset-0 border border-blue-500 rounded" />
-                                            )}
-                                          </button>
-                                        ))}
-                                      </div>
-
-                                      {/* Purples and Neutrals */}
-                                      <div className="grid grid-cols-12 gap-1">
-                                        {[
-                                          '#F3E8FF', '#E9D5FF', '#C4B5FD', '#A78BFA', '#8B5CF6', '#7C3AED',
-                                          '#F9FAFB', '#F3F4F6', '#E5E7EB', '#D1D5DB', '#9CA3AF', '#6B7280'
-                                        ].map((hex, index) => (
-                                          <button
-                                            key={`purple-neutral-${index}`}
-                                            type="button"
-                                            className="relative w-5 h-5 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                            style={{ backgroundColor: hex }}
-                                            title={hex}
-                                            onClick={() => field.onChange(hex)}
-                                          >
-                                            {field.value === hex && (
-                                              <div className="absolute inset-0 border border-blue-500 rounded" />
-                                            )}
-                                          </button>
-                                        ))}
+                                      {/* Recently Used Colors */}
+                                      <div>
+                                        <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีที่ใช้ล่าสุด</p>
+                                        <div className="grid grid-cols-10 gap-2">
+                                          {colors?.slice(0, 10).map((color) => (
+                                            <button
+                                              key={`recent-${color.id}`}
+                                              type="button"
+                                              className="relative group w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                              style={{ backgroundColor: color.code }}
+                                              onClick={() => field.onChange(color.code)}
+                                            >
+                                              {field.value === color.code && (
+                                                <div className="absolute inset-0 border border-blue-500 rounded" />
+                                              )}
+                                              <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                {color.name}
+                                              </div>
+                                            </button>
+                                          ))}
+                                        </div>
                                       </div>
                                     </div>
-                                  </div>
+                                  )}
 
-                                  {/* Recently Used Colors */}
-                                  <div>
-                                    <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100">สีที่ใช้ล่าสุด</p>
-                                    <div className="grid grid-cols-10 gap-1">
-                                      {/* Show existing colors from database */}
-                                      {colors?.slice(0, 10).map((color) => (
-                                        <button
-                                          key={`recent-${color.id}`}
-                                          type="button"
-                                          className="relative w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
-                                          style={{ backgroundColor: color.code }}
-                                          title={`${color.name} (${color.code})`}
-                                          onClick={() => field.onChange(color.code)}
-                                        >
-                                          {field.value === color.code && (
-                                            <div className="absolute inset-0 border border-blue-500 rounded" />
-                                          )}
-                                        </button>
-                                      ))}
+                                  {/* Display color families when searching */}
+                                  {colorSearchQuery && Object.keys(groupedColors).length > 0 && (
+                                    <div className="space-y-3">
+                                      {Object.entries(groupedColors).map(([family, shades]) => {
+                                        const allShades = [...shades.light, ...shades.medium, ...shades.dark, ...shades.bright, ...shades.pure, ...shades.soft];
+                                        if (allShades.length === 0) return null;
+                                        
+                                        return (
+                                          <div key={family} className="bg-white dark:bg-gray-900 rounded-lg border p-3">
+                                            <p className="text-sm font-medium mb-2 text-gray-900 dark:text-gray-100 capitalize">
+                                              กลุ่มสี{family === 'red' ? 'แดง' : family === 'blue' ? 'น้ำเงิน' : family === 'green' ? 'เขียว' : family === 'yellow' ? 'เหลือง' : family === 'orange' ? 'ส้ม' : family === 'purple' ? 'ม่วง' : family === 'pink' ? 'ชมพู' : family === 'cyan' ? 'ฟ้า' : family === 'brown' ? 'น้ำตาล' : family === 'gray' ? 'เทา' : family === 'white' ? 'ขาว' : family === 'black' ? 'ดำ' : family}
+                                            </p>
+                                            <div className="space-y-2">
+                                              {/* Light shades */}
+                                              {shades.light.length > 0 && (
+                                                <div>
+                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">เฉดอ่อน</p>
+                                                  <div className="grid grid-cols-8 gap-1">
+                                                    {shades.light.map((color) => (
+                                                      <button
+                                                        key={`light-${color.hex}`}
+                                                        type="button"
+                                                        className="relative group w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                                        style={{ backgroundColor: color.hex }}
+                                                        onClick={() => field.onChange(color.hex)}
+                                                      >
+                                                        {field.value === color.hex && (
+                                                          <div className="absolute inset-0 border border-blue-500 rounded" />
+                                                        )}
+                                                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                          {color.name}
+                                                        </div>
+                                                      </button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              
+                                              {/* Medium shades */}
+                                              {shades.medium.length > 0 && (
+                                                <div>
+                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">เฉดกลาง</p>
+                                                  <div className="grid grid-cols-8 gap-1">
+                                                    {shades.medium.map((color) => (
+                                                      <button
+                                                        key={`medium-${color.hex}`}
+                                                        type="button"
+                                                        className="relative group w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                                        style={{ backgroundColor: color.hex }}
+                                                        onClick={() => field.onChange(color.hex)}
+                                                      >
+                                                        {field.value === color.hex && (
+                                                          <div className="absolute inset-0 border border-blue-500 rounded" />
+                                                        )}
+                                                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                          {color.name}
+                                                        </div>
+                                                      </button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                              
+                                              {/* Dark shades */}
+                                              {shades.dark.length > 0 && (
+                                                <div>
+                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">เฉดเข้ม</p>
+                                                  <div className="grid grid-cols-8 gap-1">
+                                                    {shades.dark.map((color) => (
+                                                      <button
+                                                        key={`dark-${color.hex}`}
+                                                        type="button"
+                                                        className="relative group w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                                        style={{ backgroundColor: color.hex }}
+                                                        onClick={() => field.onChange(color.hex)}
+                                                      >
+                                                        {field.value === color.hex && (
+                                                          <div className="absolute inset-0 border border-blue-500 rounded" />
+                                                        )}
+                                                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                          {color.name}
+                                                        </div>
+                                                      </button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+
+                                              {/* Bright/Pure/Soft shades */}
+                                              {(shades.bright.length > 0 || shades.pure.length > 0 || shades.soft.length > 0) && (
+                                                <div>
+                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">เฉดพิเศษ</p>
+                                                  <div className="grid grid-cols-8 gap-1">
+                                                    {[...shades.bright, ...shades.pure, ...shades.soft].map((color) => (
+                                                      <button
+                                                        key={`special-${color.hex}`}
+                                                        type="button"
+                                                        className="relative group w-6 h-6 rounded border border-gray-300 hover:scale-110 transition-transform"
+                                                        style={{ backgroundColor: color.hex }}
+                                                        onClick={() => field.onChange(color.hex)}
+                                                      >
+                                                        {field.value === color.hex && (
+                                                          <div className="absolute inset-0 border border-blue-500 rounded" />
+                                                        )}
+                                                        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 bg-black text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
+                                                          {color.name}
+                                                        </div>
+                                                      </button>
+                                                    ))}
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
-                                  </div>
+                                  )}
 
                                   <div className="border-t border-gray-200 dark:border-gray-700 pt-3">
                                     <p className="text-xs text-gray-600 dark:text-gray-400">
-                                      💡 เคล็ดลับ: คลิกสีที่ต้องการ หรือใส่รหัส hex ในช่องด้านบน
+                                      💡 เคล็ดลับ: ค้นหาสีด้วยคำ เช่น "แดง", "อ่อน", "เข้ม" หรือใส่รหัส hex ในช่องด้านบน
                                     </p>
                                   </div>
                                 </div>
