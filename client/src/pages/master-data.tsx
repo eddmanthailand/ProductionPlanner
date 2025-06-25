@@ -231,6 +231,12 @@ export default function MasterData() {
       queryClient.invalidateQueries({ queryKey: ["/api/colors"] });
       setIsColorDialogOpen(false);
       colorForm.reset();
+    },
+    onError: (error: any) => {
+      // Show error message to user
+      if (error.message?.includes('ชื่อสีนี้มีอยู่แล้ว')) {
+        colorForm.setError('name', { message: 'ชื่อสีนี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น' });
+      }
     }
   });
 
@@ -242,6 +248,12 @@ export default function MasterData() {
       setIsColorDialogOpen(false);
       setEditingColor(null);
       colorForm.reset();
+    },
+    onError: (error: any) => {
+      // Show error message to user
+      if (error.message?.includes('ชื่อสีนี้มีอยู่แล้ว')) {
+        colorForm.setError('name', { message: 'ชื่อสีนี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น' });
+      }
     }
   });
 
@@ -259,6 +271,12 @@ export default function MasterData() {
       queryClient.invalidateQueries({ queryKey: ["/api/sizes"] });
       setIsSizeDialogOpen(false);
       sizeForm.reset();
+    },
+    onError: (error: any) => {
+      // Show error message to user
+      if (error.message?.includes('ชื่อไซส์นี้มีอยู่แล้ว')) {
+        sizeForm.setError('name', { message: 'ชื่อไซส์นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น' });
+      }
     }
   });
 
@@ -270,6 +288,12 @@ export default function MasterData() {
       setIsSizeDialogOpen(false);
       setEditingSize(null);
       sizeForm.reset();
+    },
+    onError: (error: any) => {
+      // Show error message to user
+      if (error.message?.includes('ชื่อไซส์นี้มีอยู่แล้ว')) {
+        sizeForm.setError('name', { message: 'ชื่อไซส์นี้มีอยู่แล้ว กรุณาใช้ชื่ออื่น' });
+      }
     }
   });
 

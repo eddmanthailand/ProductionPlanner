@@ -813,12 +813,33 @@ export class DatabaseStorage implements IStorage {
     return color || undefined;
   }
 
+  async getColorByName(name: string, tenantId: string): Promise<Color | undefined> {
+    const [color] = await db.select().from(colors).where(
+      and(eq(colors.name, name), eq(colors.tenantId, tenantId))
+    );
+    return color || undefined;
+  }
+
   async createColor(insertColor: InsertColor): Promise<Color> {
+    // Check for existing color name
+    const existingColor = await this.getColorByName(insertColor.name, insertColor.tenantId);
+    if (existingColor) {
+      throw new Error('Color name already exists');
+    }
+    
     const [color] = await db.insert(colors).values(insertColor).returning();
     return color;
   }
 
   async updateColor(id: number, updateData: Partial<InsertColor>, tenantId: string): Promise<Color | undefined> {
+    // Check for existing color name if name is being updated
+    if (updateData.name) {
+      const existingColor = await this.getColorByName(updateData.name, tenantId);
+      if (existingColor && existingColor.id !== id) {
+        throw new Error('Color name already exists');
+      }
+    }
+    
     const [color] = await db.update(colors)
       .set({ ...updateData, updatedAt: new Date() })
       .where(and(eq(colors.id, id), eq(colors.tenantId, tenantId)))
@@ -845,12 +866,33 @@ export class DatabaseStorage implements IStorage {
     return size || undefined;
   }
 
+  async getSizeByName(name: string, tenantId: string): Promise<Size | undefined> {
+    const [size] = await db.select().from(sizes).where(
+      and(eq(sizes.name, name), eq(sizes.tenantId, tenantId))
+    );
+    return size || undefined;
+  }
+
   async createSize(insertSize: InsertSize): Promise<Size> {
+    // Check for existing size name
+    const existingSize = await this.getSizeByName(insertSize.name, insertSize.tenantId);
+    if (existingSize) {
+      throw new Error('Size name already exists');
+    }
+    
     const [size] = await db.insert(sizes).values(insertSize).returning();
     return size;
   }
 
   async updateSize(id: number, updateData: Partial<InsertSize>, tenantId: string): Promise<Size | undefined> {
+    // Check for existing size name if name is being updated
+    if (updateData.name) {
+      const existingSize = await this.getSizeByName(updateData.name, tenantId);
+      if (existingSize && existingSize.id !== id) {
+        throw new Error('Size name already exists');
+      }
+    }
+    
     const [size] = await db.update(sizes)
       .set({ ...updateData, updatedAt: new Date() })
       .where(and(eq(sizes.id, id), eq(sizes.tenantId, tenantId)))

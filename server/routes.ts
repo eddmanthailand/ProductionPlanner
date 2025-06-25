@@ -767,7 +767,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const color = await storage.createColor(validatedData);
       res.status(201).json(color);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'Color name already exists') {
+        return res.status(400).json({ message: "ชื่อสีนี้มีอยู่แล้ว" });
+      }
       res.status(400).json({ message: "Failed to create color", error });
     }
   });
@@ -783,7 +786,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(color);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'Color name already exists') {
+        return res.status(400).json({ message: "ชื่อสีนี้มีอยู่แล้ว" });
+      }
       res.status(400).json({ message: "Failed to update color", error });
     }
   });
@@ -837,7 +843,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
       const size = await storage.createSize(validatedData);
       res.status(201).json(size);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'Size name already exists') {
+        return res.status(400).json({ message: "ชื่อไซส์นี้มีอยู่แล้ว" });
+      }
       res.status(400).json({ message: "Failed to create size", error });
     }
   });
@@ -853,7 +862,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       res.json(size);
-    } catch (error) {
+    } catch (error: any) {
+      if (error.message === 'Size name already exists') {
+        return res.status(400).json({ message: "ชื่อไซส์นี้มีอยู่แล้ว" });
+      }
       res.status(400).json({ message: "Failed to update size", error });
     }
   });
