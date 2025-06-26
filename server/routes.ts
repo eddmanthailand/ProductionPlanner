@@ -3813,6 +3813,98 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // =================== DAILY WORK LOGS ARCHIVE API ===================
+
+  // Archive soft deleted logs for a specific work order
+  app.post("/api/daily-work-logs/archive/:workOrderId", requireAuth, async (req: any, res: any) => {
+    try {
+      const { workOrderId } = req.params;
+      const { workOrderStatus = 'completed' } = req.body;
+      
+      console.log(`API: Archive request for work order ${workOrderId} with status ${workOrderStatus}`);
+      
+      const archivedCount = await storage.archiveSoftDeletedLogs(workOrderId, workOrderStatus);
+      
+      res.json({ 
+        message: `Successfully archived ${archivedCount} soft deleted records`,
+        archivedCount: archivedCount
+      });
+    } catch (error) {
+      console.error("Archive soft deleted logs error:", error);
+      res.status(500).json({ message: "Failed to archive soft deleted logs" });
+    }
+  });
+
+  // Cleanup old soft deleted logs (3+ months old for completed work orders)
+  app.post("/api/daily-work-logs/cleanup", requireAuth, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user?.tenantId || req.body?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+      
+      console.log(`API: Cleanup request for tenant ${tenantId}`);
+      
+      const cleanedCount = await storage.cleanupOldSoftDeletedLogs(tenantId);
+      
+      res.json({ 
+        message: `Successfully cleaned up ${cleanedCount} old soft deleted records`,
+        cleanedCount: cleanedCount
+      });
+    } catch (error) {
+      console.error("Cleanup old soft deleted logs error:", error);
+      res.status(500).json({ message: "Failed to cleanup old soft deleted logs" });
+    }
+  });
+
+  // Get archived daily work logs
+  app.get("/api/daily-work-logs/archive", requireAuth, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user?.tenantId;
+      const { workOrderId } = req.query;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+      
+      console.log(`API: Get archive request for tenant ${tenantId}, workOrderId: ${workOrderId || 'all'}`);
+      
+      const archives = await storage.getDailyWorkLogsArchive(tenantId, workOrderId);
+      
+      res.json(archives);
+    } catch (error) {
+      console.error("Get daily work logs archive error:", error);
+      res.status(500).json({ message: "Failed to get archived logs" });
+    }
+  });
+
+  // Scheduled cleanup endpoint (can be called by cron job)
+  app.post("/api/daily-work-logs/scheduled-cleanup", async (req: any, res: any) => {
+    try {
+      console.log('API: Scheduled cleanup started');
+      
+      // Get all tenants for cleanup
+      const tenants = await storage.getTenants();
+      let totalCleaned = 0;
+      
+      for (const tenant of tenants) {
+        const cleanedCount = await storage.cleanupOldSoftDeletedLogs(tenant.id);
+        totalCleaned += cleanedCount;
+        console.log(`Scheduled cleanup: Cleaned ${cleanedCount} records for tenant ${tenant.id}`);
+      }
+      
+      res.json({ 
+        message: `Scheduled cleanup completed. Total cleaned: ${totalCleaned} records`,
+        totalCleaned: totalCleaned,
+        tenantsProcessed: tenants.length
+      });
+    } catch (error) {
+      console.error("Scheduled cleanup error:", error);
+      res.status(500).json({ message: "Scheduled cleanup failed" });
+    }
+  });
+
   const httpServer = createServer(app);
   // Daily Work Logs API for Team Revenue Report
   app.get("/api/daily-work-logs", async (req: any, res: any) => {

@@ -2199,19 +2199,17 @@ export class DatabaseStorage implements IStorage {
 
   async getDailyWorkLogsArchive(tenantId: string, workOrderId?: string): Promise<DailyWorkLogArchive[]> {
     try {
-      let query = db
+      const baseCondition = eq(dailyWorkLogsArchive.tenantId, tenantId);
+      const conditions = workOrderId 
+        ? and(baseCondition, eq(dailyWorkLogsArchive.workOrderId, workOrderId))
+        : baseCondition;
+
+      const archives = await db
         .select()
         .from(dailyWorkLogsArchive)
-        .where(eq(dailyWorkLogsArchive.tenantId, tenantId));
-
-      if (workOrderId) {
-        query = query.where(and(
-          eq(dailyWorkLogsArchive.tenantId, tenantId),
-          eq(dailyWorkLogsArchive.workOrderId, workOrderId)
-        ));
-      }
-
-      const archives = await query.orderBy(desc(dailyWorkLogsArchive.archivedAt));
+        .where(conditions)
+        .orderBy(desc(dailyWorkLogsArchive.archivedAt));
+        
       return archives;
     } catch (error) {
       console.error('Get daily work logs archive error:', error);

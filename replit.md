@@ -129,6 +129,17 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Performance**: React Query caching and request deduplication
 - **Security**: CSRF protection, secure sessions, and input validation
 
+## Recent Changes
+- June 26, 2025: ✅ แก้ไขปัญหาคอลัมน์ "ทำแล้ว" ไม่อัปเดตหลังลบข้อมูล
+  - เพิ่มการกรอง soft delete ใน API endpoint /api/sub-jobs/progress/:workOrderId
+  - ปรับ SQL JOIN condition: `LEFT JOIN daily_work_logs dwl ON sj.id = dwl.sub_job_id AND dwl.deleted_at IS NULL`
+  
+- June 26, 2025: ✅ สร้าง Archive Strategy สำหรับใบบันทึกประจำวันที่ลบแล้ว
+  - เพิ่มตาราง `daily_work_logs_archive` สำหรับเก็บข้อมูลที่ถูกลบมากกว่า 3 เดือน
+  - สร้างฟังก์ชัน `archiveSoftDeletedLogs()`, `cleanupOldSoftDeletedLogs()`, `getDailyWorkLogsArchive()`
+  - เพิ่ม API endpoints: POST /api/daily-work-logs/archive/:workOrderId, POST /api/daily-work-logs/cleanup, GET /api/daily-work-logs/archive
+  - ระบบจะ archive ข้อมูล soft delete อัตโนมัติเมื่อใบสั่งงานเสร็จแล้วและข้อมูลเก่ากว่า 3 เดือน
+
 ## Changelog
 - June 25, 2025. Initial setup
 
