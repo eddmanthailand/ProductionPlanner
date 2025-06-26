@@ -1306,132 +1306,167 @@ export default function DailyWorkLog() {
                 </div>
               </div>
 
-              {/* Work Details Section */}
+              {/* Work Details Section - แสดงแต่ละรอบการบันทึก */}
               <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg">
                 <div className="bg-gray-50 dark:bg-gray-800 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
                   <h3 className="text-lg font-semibold flex items-center gap-2">
                     <ClipboardList className="w-5 h-5 text-blue-600" />
-                    รายการงานที่ทำ
+                    รายการงานที่ทำ - แยกตามรอบการบันทึก
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">รายละเอียดงานทั้งหมดที่บันทึกในวันนี้</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">แสดงรายละเอียดแต่ละครั้งที่มีการบันทึกงาน เรียงตามลำดับเวลา</p>
                 </div>
-                <div className="p-6">
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-gray-50 dark:bg-gray-800">
-                          <TableHead className="font-semibold">ชื่อสินค้า</TableHead>
-                          <TableHead className="font-semibold">สี</TableHead>
-                          <TableHead className="font-semibold">ไซส์</TableHead>
-                          <TableHead className="font-semibold text-right">จำนวนสั่ง</TableHead>
-                          <TableHead className="font-semibold text-right">จำนวนที่ทำ</TableHead>
-                          <TableHead className="font-semibold text-right">คงเหลือ</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(!previewingLog.subJobs || previewingLog.subJobs.length === 0) ? (
-                          <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-gray-500">
-                              ไม่พบข้อมูลงานที่บันทึก
-                            </TableCell>
-                          </TableRow>
-                        ) : (
-                          previewingLog.subJobs
-                            .sort((a: any, b: any) => {
-                              // เรียงตาม product → color → size ตามลำดับที่ต้องการ
-                              // 1. เรียงตาม productName
-                              if (a.productName !== b.productName) {
-                                return a.productName.localeCompare(b.productName, 'th');
-                              }
-                              
-                              // 2. เรียงตาม colorName (ฟ้า, ชมพู, เหลือง)
-                              const colorOrder = ['ฟ้า', 'ชมพู', 'เหลือง'];
-                              const aColorIndex = colorOrder.indexOf(a.colorName) !== -1 ? colorOrder.indexOf(a.colorName) : 999;
-                              const bColorIndex = colorOrder.indexOf(b.colorName) !== -1 ? colorOrder.indexOf(b.colorName) : 999;
-                              
-                              if (aColorIndex !== bColorIndex) {
-                                return aColorIndex - bColorIndex;
-                              }
-                              
-                              // 3. เรียงตาม sizeName (XS, S, M, L, XL)
-                              const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
-                              const aSizeIndex = sizeOrder.indexOf(a.sizeName) !== -1 ? sizeOrder.indexOf(a.sizeName) : 999;
-                              const bSizeIndex = sizeOrder.indexOf(b.sizeName) !== -1 ? sizeOrder.indexOf(b.sizeName) : 999;
-                              
-                              return aSizeIndex - bSizeIndex;
-                            })
-                            .map((item: any, index: number) => {
-                              // หาข้อมูล quantity จาก sub jobs
-                              const subJobData = subJobsWithQuantity.find((sj: any) => sj.id === item.subJobId);
-                              const orderQuantity = subJobData?.quantity || 0;
-
-                              return (
-                            <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                              <TableCell className="font-medium">{item.productName || '-'}</TableCell>
-                              <TableCell>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-4 h-4 rounded-full border border-gray-300" style={{
-                                    backgroundColor: getColorHex(colors.find(c => c.name === item.colorName)?.code || '')
-                                  }}></div>
-                                  {item.colorName || '-'}
+                <div className="p-6 space-y-6">
+                  {/* แสดงแต่ละรอบการบันทึก */}
+                  {previewingLog.recordingSessions && previewingLog.recordingSessions.length > 0 ? (
+                    previewingLog.recordingSessions.map((session: any, sessionIndex: number) => (
+                      <div key={session.reportNumber} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                        {/* หัวข้อของแต่ละรอบ */}
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
+                                {sessionIndex + 1}
+                              </div>
+                              <div>
+                                <h4 className="font-semibold text-blue-900 dark:text-blue-100">
+                                  การบันทึกครั้งที่ {sessionIndex + 1}
+                                </h4>
+                                <div className="flex items-center gap-4 text-sm text-blue-700 dark:text-blue-300">
+                                  <span>เลขที่: {session.reportNumber}</span>
+                                  <span>•</span>
+                                  <span>เวลา: {format(new Date(session.createdAt), 'HH:mm น.')}</span>
+                                  <span>•</span>
+                                  <span>ผู้บันทึก: {session.employeeName}</span>
                                 </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="text-xs">
-                                  {item.sizeName || '-'}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className="font-medium text-gray-600 dark:text-gray-400">
-                                  {orderQuantity.toLocaleString()}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                <span className="font-bold text-blue-600 dark:text-blue-400">
-                                  {item.quantityCompleted?.toLocaleString() || 0}
-                                </span>
-                              </TableCell>
-                              <TableCell className="text-right">
-                                {(() => {
-                                  // คำนวณยอดคงเหลือ = จำนวนสั่ง - จำนวนที่ทำรวมจากทุกใบบันทึกงาน
-                                  const subJobQuantity = orderQuantity;
-                                  
-                                  // หาจำนวนที่ทำรวมจากทุกใบบันทึกงาน
-                                  const totalCompleted = consolidatedLogs.reduce((total, log) => {
-                                    const subJobInLog = log.subJobs.find((sj: any) => sj.subJobId === item.subJobId);
-                                    return total + (subJobInLog?.quantityCompleted || 0);
-                                  }, 0);
-                                  
-                                  const remaining = subJobQuantity - totalCompleted;
-                                  
-                                  let colorClass = '';
-                                  let label = '';
-                                  
-                                  if (remaining === 0) {
-                                    colorClass = 'text-green-600 dark:text-green-400';
-                                  } else if (remaining > 0) {
-                                    colorClass = 'text-orange-600 dark:text-orange-400';
-                                  } else {
-                                    colorClass = 'text-green-600 dark:text-green-400';
-                                    label = '(เกิน)';
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                {session.sessionQuantity.toLocaleString()} ชิ้น
+                              </p>
+                              <p className="text-xs text-blue-500 dark:text-blue-400">
+                                {session.subJobs.length} รายการ
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* ตารางงานในรอบนี้ */}
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-gray-50 dark:bg-gray-800">
+                                <TableHead className="font-semibold">ชื่อสินค้า</TableHead>
+                                <TableHead className="font-semibold">สี</TableHead>
+                                <TableHead className="font-semibold">ไซส์</TableHead>
+                                <TableHead className="font-semibold text-right">จำนวนสั่ง</TableHead>
+                                <TableHead className="font-semibold text-right">จำนวนที่ทำ</TableHead>
+                                <TableHead className="font-semibold">รายละเอียดงาน</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {session.subJobs
+                                .sort((a: any, b: any) => {
+                                  // เรียงตาม product → color → size
+                                  if (a.productName !== b.productName) {
+                                    return a.productName.localeCompare(b.productName, 'th');
                                   }
                                   
+                                  const colorOrder = ['ฟ้า', 'ชมพู', 'เหลือง'];
+                                  const aColorIndex = colorOrder.indexOf(a.colorName) !== -1 ? colorOrder.indexOf(a.colorName) : 999;
+                                  const bColorIndex = colorOrder.indexOf(b.colorName) !== -1 ? colorOrder.indexOf(b.colorName) : 999;
+                                  
+                                  if (aColorIndex !== bColorIndex) {
+                                    return aColorIndex - bColorIndex;
+                                  }
+                                  
+                                  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL'];
+                                  const aSizeIndex = sizeOrder.indexOf(a.sizeName) !== -1 ? sizeOrder.indexOf(a.sizeName) : 999;
+                                  const bSizeIndex = sizeOrder.indexOf(b.sizeName) !== -1 ? sizeOrder.indexOf(b.sizeName) : 999;
+                                  
+                                  return aSizeIndex - bSizeIndex;
+                                })
+                                .map((item: any, index: number) => {
+                                  const subJobData = subJobsWithQuantity.find((sj: any) => sj.id === item.subJobId);
+                                  const orderQuantity = subJobData?.quantity || 0;
+
                                   return (
-                                    <span className={`font-bold ${colorClass}`}>
-                                      {remaining.toLocaleString()}
-                                      {label && (
-                                        <span className="text-xs text-green-500 ml-1">{label}</span>
-                                      )}
-                                    </span>
+                                    <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                      <TableCell className="font-medium">{item.productName || '-'}</TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2">
+                                          <div className="w-4 h-4 rounded-full border border-gray-300" style={{
+                                            backgroundColor: getColorHex(colors.find(c => c.name === item.colorName)?.code || '')
+                                          }}></div>
+                                          {item.colorName || '-'}
+                                        </div>
+                                      </TableCell>
+                                      <TableCell>
+                                        <Badge variant="outline" className="text-xs">
+                                          {item.sizeName || '-'}
+                                        </Badge>
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <span className="font-medium text-gray-600 dark:text-gray-400">
+                                          {orderQuantity.toLocaleString()}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell className="text-right">
+                                        <span className="font-bold text-green-600 dark:text-green-400">
+                                          {item.quantityCompleted?.toLocaleString() || 0}
+                                        </span>
+                                      </TableCell>
+                                      <TableCell>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                                          {item.workDescription || '-'}
+                                        </p>
+                                      </TableCell>
+                                    </TableRow>
                                   );
-                                })()}
-                              </TableCell>
-                            </TableRow>
-                          );
-                        })
-                        )}
-                      </TableBody>
-                    </Table>
+                                })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      ไม่พบข้อมูลการบันทึกงาน
+                    </div>
+                  )}
+
+                  {/* สรุปรวมของทุกรอบ */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border">
+                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-blue-600" />
+                      สรุปรวมทุกรอบการบันทึก
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <div className="text-center p-3 bg-white dark:bg-gray-900 rounded border">
+                        <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                          {previewingLog.recordingSessions?.length || 0}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">รอบการบันทึก</p>
+                      </div>
+                      <div className="text-center p-3 bg-white dark:bg-gray-900 rounded border">
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                          {previewingLog.subJobs?.length || 0}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">รายการงานรวม</p>
+                      </div>
+                      <div className="text-center p-3 bg-white dark:bg-gray-900 rounded border">
+                        <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                          {previewingLog.totalQuantity?.toLocaleString() || 0}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">ชิ้นงานรวม</p>
+                      </div>
+                      <div className="text-center p-3 bg-white dark:bg-gray-900 rounded border">
+                        <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+                          {Math.round((previewingLog.totalQuantity || 0) / (previewingLog.subJobs?.length || 1)) || 0}
+                        </p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">เฉลี่ยต่อรายการ</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1451,31 +1486,7 @@ export default function DailyWorkLog() {
                 </div>
               )}
 
-              {/* Summary Stats */}
-              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600" />
-                  สรุปผลงาน
-                </h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="text-center p-4 bg-white dark:bg-gray-900 rounded-lg border">
-                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{previewingLog.subJobs.length}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">รายการงาน</p>
-                  </div>
-                  <div className="text-center p-4 bg-white dark:bg-gray-900 rounded-lg border">
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {previewingLog.totalQuantity?.toLocaleString() || 0}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">ชิ้นงานรวม</p>
-                  </div>
-                  <div className="text-center p-4 bg-white dark:bg-gray-900 rounded-lg border">
-                    <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                      {Math.round((previewingLog.totalQuantity || 0) / previewingLog.subJobs.length) || 0}
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">เฉลี่ยต่อรายการ</p>
-                  </div>
-                </div>
-              </div>
+
             </div>
           )}
         </DialogContent>
