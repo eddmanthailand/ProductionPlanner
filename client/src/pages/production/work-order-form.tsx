@@ -129,10 +129,7 @@ export default function WorkOrderForm() {
         const month = String(now.getMonth() + 1).padStart(2, '0');
         
         // Get current count for this month using apiRequest
-        const data = await apiRequest('/api/work-orders/count', {
-          method: 'POST',
-          body: { year, month }
-        });
+        const data = await apiRequest('POST', '/api/work-orders/count', { year, month });
         
         const sequence = String(data.count + 1).padStart(3, '0');
         return `JB${year}${month}${sequence}`;

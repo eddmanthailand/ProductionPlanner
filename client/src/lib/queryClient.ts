@@ -7,26 +7,48 @@ async function throwIfResNotOk(res: Response) {
   }
 }
 
+// Overloaded function to support both old and new calling patterns
 export async function apiRequest(
-  method: string,
-  url: string,
-  data?: unknown | undefined,
-): Promise<Response> {
-  const headers: Record<string, string> = {};
-  
-  if (data) {
-    headers["Content-Type"] = "application/json";
+  urlOrMethod: string,
+  urlOrOptions?: string | {
+    method?: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+  },
+  data?: unknown
+): Promise<any> {
+  let url: string;
+  let method: string;
+  let body: unknown;
+  let headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+  };
+
+  // Handle old calling pattern: apiRequest(method, url, data)
+  if (typeof urlOrOptions === 'string') {
+    method = urlOrMethod;
+    url = urlOrOptions;
+    body = data;
+  } 
+  // Handle new calling pattern: apiRequest(url, options)
+  else {
+    url = urlOrMethod;
+    const options = urlOrOptions || {};
+    method = options.method || 'GET';
+    body = options.body;
+    headers = { ...headers, ...options.headers };
   }
   
   const res = await fetch(url, {
     method,
     headers,
-    body: data ? JSON.stringify(data) : undefined,
+    body: body ? JSON.stringify(body) : undefined,
     credentials: "include", // Include session cookies
   });
 
   await throwIfResNotOk(res);
-  return res;
+  return res.json();
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
