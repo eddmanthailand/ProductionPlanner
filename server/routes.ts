@@ -3630,7 +3630,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ELSE 0 
           END as progress_percentage
         FROM sub_jobs sj
-        LEFT JOIN daily_work_logs dwl ON sj.id = dwl.sub_job_id
+        LEFT JOIN daily_work_logs dwl ON sj.id = dwl.sub_job_id AND dwl.deleted_at IS NULL
         LEFT JOIN colors c ON sj.color_id = c.id
         LEFT JOIN sizes s ON sj.size_id = s.id
         WHERE sj.work_order_id = $1
