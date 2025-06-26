@@ -51,8 +51,7 @@ export default function LoginPage() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: LoginFormData) => {
-      const res = await apiRequest("POST", "/api/auth/login", data);
-      return res.json();
+      return await apiRequest("POST", "/api/auth/login", data);
     },
     onSuccess: (data) => {
       // Session-based auth - no token storage needed
