@@ -322,12 +322,12 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
                 {attachments.map((attachment: WorkOrderAttachment) => (
                   <div
                     key={attachment.id}
-                    className="px-4 py-3 hover:bg-gray-50 grid grid-cols-12 gap-4 items-center"
+                    className="px-4 py-3 hover:bg-gray-50 grid grid-cols-12 gap-3 items-center"
                   >
                     <div className="col-span-1 flex justify-center">
                       {getFileIcon(attachment.mimeType)}
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-3">
                       <p className="text-sm font-medium truncate" title={attachment.originalName}>
                         {attachment.originalName}
                       </p>
@@ -355,7 +355,7 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
                         <span className="text-xs text-gray-400">-</span>
                       )}
                     </div>
-                    <div className="col-span-1 flex space-x-1">
+                    <div className="col-span-2 flex justify-center space-x-1">
                       {canPreview(attachment.mimeType) && (
                         <Button
                           variant="outline"
