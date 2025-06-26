@@ -41,7 +41,7 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
 
   // ดึงรายการไฟล์แนบ
   const { data: attachments = [], isLoading } = useQuery({
-    queryKey: ["/api/work-orders", workOrderId, "attachments"],
+    queryKey: [`/api/work-orders/${workOrderId}/attachments`],
     queryFn: async () => {
       const response = await fetch(`/api/work-orders/${workOrderId}/attachments`, {
         credentials: 'include',
@@ -51,6 +51,7 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
       }
       return response.json();
     },
+    enabled: !!workOrderId,
   });
 
   // Upload mutation
@@ -74,7 +75,7 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/work-orders", workOrderId, "attachments"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}/attachments`] });
       setDescription("");
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -106,7 +107,7 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
       return response.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/work-orders", workOrderId, "attachments"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}/attachments`] });
       toast({
         title: "สำเร็จ",
         description: "ลบไฟล์แนบเรียบร้อยแล้ว",
