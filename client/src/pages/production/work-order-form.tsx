@@ -128,21 +128,16 @@ export default function WorkOrderForm() {
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         
-        // Get current count for this month
-        const response = await fetch('/api/work-orders/count', {
+        // Get current count for this month using apiRequest
+        const data = await apiRequest('/api/work-orders/count', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ year, month })
+          body: { year, month }
         });
         
-        let sequence = "001";
-        if (response.ok) {
-          const data = await response.json();
-          sequence = String(data.count + 1).padStart(3, '0');
-        }
-        
+        const sequence = String(data.count + 1).padStart(3, '0');
         return `JB${year}${month}${sequence}`;
       } catch (error) {
+        console.error('Failed to generate order number:', error);
         // Fallback to simple sequence if API fails
         const now = new Date();
         const year = now.getFullYear();
@@ -157,6 +152,8 @@ export default function WorkOrderForm() {
           ...prev,
           orderNumber
         }));
+      }).catch(error => {
+        console.error('Error setting order number:', error);
       });
     }
   }, [formData.orderNumber]);

@@ -1,0 +1,18 @@
+Failed to generate order number: 
+TypeError {message: "Failed to execute 'fetch' on 'Window': '/api/work-orders/count' is not a valid HTTP method."}
+
+at t.value (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:17465)
+at new t (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:12630)
+at t.value (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:32766)
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:34400
+Failed to execute 'fetch' on 'Window': '/api/work-orders/count' is not a valid HTTP method.
+at window.fetch (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/__replco/static/devtools/eruda/3.2.3/eruda.js:2:218642)
+at apiRequest (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/lib/queryClient.ts:13:21)
+at generateOrderNumber (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/work-order-form.tsx:344:30)
+at https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/src/pages/production/work-order-form.tsx:253:7
+at commitHookEffectListMount (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=38c28c55:16915:34)
+at commitPassiveMountOnFiber (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=38c28c55:18156:19)
+at commitPassiveMountEffects_complete (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=38c28c55:18129:17)
+at commitPassiveMountEffects_begin (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=38c28c55:18119:15)
+at commitPassiveMountEffects (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=38c28c55:18109:11)
+at flushPassiveEffectsImpl (https://c459a0c6-fb97-4345-a713-640b7ff09dd4-00-3arafwf0xifpv.spock.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-RPCDYKBN.js?v=38c28c55:19490:11)
