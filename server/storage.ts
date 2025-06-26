@@ -24,6 +24,7 @@ import {
   productionPlans,
   productionPlanItems,
   dailyWorkLogs,
+  dailyWorkLogsArchive,
   replitAuthUsers,
   roles,
   permissions,
@@ -2091,6 +2092,130 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Storage: Error in full sync:', error);
       throw error;
+    }
+  }
+  // =================== DAILY WORK LOGS ARCHIVE FUNCTIONS ===================
+
+  async archiveSoftDeletedLogs(workOrderId: string, workOrderStatus: string): Promise<number> {
+    try {
+      console.log(`Archive: Processing soft deleted logs for work order ${workOrderId} with status ${workOrderStatus}`);
+      
+      // หาข้อมูล soft deleted logs ที่ต้อง archive
+      const softDeletedLogs = await db
+        .select()
+        .from(dailyWorkLogs)
+        .where(and(
+          eq(dailyWorkLogs.workOrderId, workOrderId),
+          sql`${dailyWorkLogs.deletedAt} IS NOT NULL`
+        ));
+
+      if (softDeletedLogs.length === 0) {
+        console.log('Archive: No soft deleted logs found for archiving');
+        return 0;
+      }
+
+      console.log(`Archive: Found ${softDeletedLogs.length} soft deleted logs to archive`);
+
+      // ย้ายข้อมูลไป archive table
+      const archiveData = softDeletedLogs.map(log => ({
+        id: log.id,
+        reportNumber: log.reportNumber,
+        date: log.date,
+        teamId: log.teamId,
+        employeeId: log.employeeId,
+        workOrderId: log.workOrderId,
+        subJobId: log.subJobId,
+        hoursWorked: log.hoursWorked,
+        quantityCompleted: log.quantityCompleted,
+        workDescription: log.workDescription,
+        status: log.status,
+        notes: log.notes,
+        tenantId: log.tenantId,
+        originalCreatedAt: log.createdAt,
+        originalUpdatedAt: log.updatedAt,
+        originalDeletedAt: log.deletedAt!,
+        workOrderStatus: workOrderStatus
+      }));
+
+      // Insert ลง archive table
+      await db.insert(dailyWorkLogsArchive).values(archiveData);
+
+      // ลบข้อมูลจากตารางหลัก (permanently delete)
+      const deletedCount = await db
+        .delete(dailyWorkLogs)
+        .where(and(
+          eq(dailyWorkLogs.workOrderId, workOrderId),
+          sql`${dailyWorkLogs.deletedAt} IS NOT NULL`
+        ));
+
+      console.log(`Archive: Successfully archived and deleted ${softDeletedLogs.length} records`);
+      return softDeletedLogs.length;
+    } catch (error) {
+      console.error('Archive soft deleted logs error:', error);
+      return 0;
+    }
+  }
+
+  async cleanupOldSoftDeletedLogs(tenantId: string): Promise<number> {
+    try {
+      console.log(`Archive: Cleaning up old soft deleted logs for tenant ${tenantId}`);
+      
+      // คำนวณวันที่ 3 เดือนที่แล้ว
+      const threeMonthsAgo = new Date();
+      threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+      
+      console.log(`Archive: Looking for logs deleted before ${threeMonthsAgo.toISOString()}`);
+
+      // หาใบสั่งงานที่เสร็จแล้วและมี soft deleted logs เก่ากว่า 3 เดือน
+      const candidateLogs = await db
+        .select({
+          workOrderId: dailyWorkLogs.workOrderId,
+          workOrderStatus: workOrders.status
+        })
+        .from(dailyWorkLogs)
+        .innerJoin(workOrders, eq(dailyWorkLogs.workOrderId, workOrders.id))
+        .where(and(
+          eq(dailyWorkLogs.tenantId, tenantId),
+          eq(workOrders.status, 'completed'), // เฉพาะใบสั่งงานที่เสร็จแล้ว
+          sql`${dailyWorkLogs.deletedAt} IS NOT NULL`,
+          sql`${dailyWorkLogs.deletedAt} < ${threeMonthsAgo.toISOString()}`
+        ))
+        .groupBy(dailyWorkLogs.workOrderId, workOrders.status);
+
+      let totalArchived = 0;
+
+      for (const log of candidateLogs) {
+        const archivedCount = await this.archiveSoftDeletedLogs(log.workOrderId, log.workOrderStatus || 'completed');
+        totalArchived += archivedCount;
+      }
+
+      console.log(`Archive: Total archived records: ${totalArchived}`);
+      return totalArchived;
+    } catch (error) {
+      console.error('Cleanup old soft deleted logs error:', error);
+      return 0;
+    }
+  }
+
+  async getDailyWorkLogsArchive(tenantId: string, workOrderId?: string): Promise<DailyWorkLogArchive[]> {
+    try {
+      let query = db
+        .select()
+        .from(dailyWorkLogsArchive)
+        .where(eq(dailyWorkLogsArchive.tenantId, tenantId));
+
+      if (workOrderId) {
+        query = query.where(and(
+          eq(dailyWorkLogsArchive.tenantId, tenantId),
+          eq(dailyWorkLogsArchive.workOrderId, workOrderId)
+        ));
+      }
+
+      const archives = await query.orderBy(desc(dailyWorkLogsArchive.archivedAt));
+      return archives;
+    } catch (error) {
+      console.error('Get daily work logs archive error:', error);
+      return [];
     }
   }
 }
