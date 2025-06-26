@@ -88,7 +88,9 @@ import {
   type ProductionPlanItem,
   type InsertProductionPlanItem,
   type DailyWorkLog,
-  type InsertDailyWorkLog
+  type InsertDailyWorkLog,
+  type DailyWorkLogArchive,
+  type InsertDailyWorkLogArchive
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull } from "drizzle-orm";
@@ -295,6 +297,11 @@ export interface IStorage {
   updateDailyWorkLog(id: string, log: Partial<InsertDailyWorkLog>, tenantId: string): Promise<DailyWorkLog | undefined>;
   deleteDailyWorkLog(id: string, tenantId: string): Promise<boolean>;
   getSubJobsByWorkOrder(workOrderId: string): Promise<SubJob[]>;
+
+  // Daily Work Logs Archive
+  archiveSoftDeletedLogs(workOrderId: string, workOrderStatus: string): Promise<number>;
+  cleanupOldSoftDeletedLogs(tenantId: string): Promise<number>;
+  getDailyWorkLogsArchive(tenantId: string, workOrderId?: string): Promise<DailyWorkLogArchive[]>;
 }
 
 export class DatabaseStorage implements IStorage {

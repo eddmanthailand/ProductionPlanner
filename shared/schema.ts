@@ -548,11 +548,7 @@ export const subJobs = pgTable("sub_jobs", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
-export type SubJob = typeof subJobs.$inferSelect & {
-  colorName?: string;
-  sizeName?: string;
-};
-export type InsertSubJob = typeof subJobs.$inferInsert;
+// Removed duplicate SubJob types - moved to end of file
 
 // Daily Work Logs table
 export const dailyWorkLogs = pgTable("daily_work_logs", {
@@ -572,6 +568,28 @@ export const dailyWorkLogs = pgTable("daily_work_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
+});
+
+// Daily Work Logs Archive table - สำหรับเก็บข้อมูลที่ถูกลบแล้วมากกว่า 3 เดือน
+export const dailyWorkLogsArchive = pgTable("daily_work_logs_archive", {
+  id: text("id").primaryKey(),
+  reportNumber: text("report_number").notNull(),
+  date: date("date").notNull(),
+  teamId: text("team_id").notNull(),
+  employeeId: text("employee_id").notNull(),
+  workOrderId: text("work_order_id").notNull(),
+  subJobId: integer("sub_job_id").notNull(),
+  hoursWorked: decimal("hours_worked", { precision: 4, scale: 1 }).notNull(),
+  quantityCompleted: integer("quantity_completed").default(0),
+  workDescription: text("work_description").notNull(),
+  status: text("status").notNull().default("in_progress"),
+  notes: text("notes"),
+  tenantId: uuid("tenant_id").notNull(),
+  originalCreatedAt: timestamp("original_created_at").notNull(),
+  originalUpdatedAt: timestamp("original_updated_at").notNull(),
+  originalDeletedAt: timestamp("original_deleted_at").notNull(),
+  archivedAt: timestamp("archived_at").defaultNow().notNull(),
+  workOrderStatus: text("work_order_status"), // สถานะของใบสั่งงานเมื่อถูก archive
 });
 
 // Insert schemas
@@ -901,11 +919,19 @@ export type SubJob = typeof subJobs.$inferSelect & {
   customerName?: string;
   deliveryDate?: string;
   jobName?: string;
+  colorName?: string;
+  sizeName?: string;
 };
 export type InsertSubJob = z.infer<typeof insertSubJobSchema>;
 
+export const insertDailyWorkLogArchiveSchema = createInsertSchema(dailyWorkLogsArchive).omit({
+  archivedAt: true
+});
+
 export type DailyWorkLog = typeof dailyWorkLogs.$inferSelect;
 export type InsertDailyWorkLog = z.infer<typeof insertDailyWorkLogSchema>;
+export type DailyWorkLogArchive = typeof dailyWorkLogsArchive.$inferSelect;
+export type InsertDailyWorkLogArchive = z.infer<typeof insertDailyWorkLogArchiveSchema>;
 
 // Production Plans table
 export const productionPlans = pgTable("production_plans", {
