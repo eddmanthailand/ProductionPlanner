@@ -130,6 +130,10 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 26, 2025: ✅ แก้ไขปัญหาตารางรายละเอียดรายได้แสดงข้อมูล soft delete
+  - เพิ่มเงื่อนไข `AND dwl.deleted_at IS NULL` ใน API endpoint /api/team-revenue-report
+  - ตารางรายได้จะไม่แสดงข้อมูลจากใบบันทึกประจำวันที่ถูก soft delete แล้ว
+
 - June 26, 2025: ✅ แก้ไขปัญหาคอลัมน์ "ทำแล้ว" ไม่อัปเดตหลังลบข้อมูล
   - เพิ่มการกรอง soft delete ใน API endpoint /api/sub-jobs/progress/:workOrderId
   - ปรับ SQL JOIN condition: `LEFT JOIN daily_work_logs dwl ON sj.id = dwl.sub_job_id AND dwl.deleted_at IS NULL`

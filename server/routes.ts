@@ -3978,6 +3978,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         WHERE dwl.team_id = $1
           AND dwl.date >= $2
           AND dwl.date <= $3
+          AND dwl.deleted_at IS NULL
         ORDER BY dwl.date ASC, wo.order_number ASC, COALESCE(c.name, '') ASC, COALESCE(s.name, '') ASC, COALESCE(ws.name, '') ASC
       `, [teamId, startDate, endDate]);
 
