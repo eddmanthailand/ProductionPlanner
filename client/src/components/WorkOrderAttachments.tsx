@@ -218,63 +218,100 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
           </div>
         </div>
 
-        {/* Attachments List */}
-        <div className="space-y-2">
-          <h4 className="font-medium">ไฟล์แนบ ({attachments.length})</h4>
+        {/* Attachments List - ตารางแสดงรายการไฟล์แนบ */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-lg">รายการไฟล์แนบ</h4>
+            <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              {attachments.length} ไฟล์
+            </span>
+          </div>
           
           {isLoading ? (
-            <div className="text-center py-4 text-gray-500">กำลังโหลด...</div>
-          ) : attachments.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <Upload className="h-12 w-12 mx-auto mb-2 opacity-50" />
-              ยังไม่มีไฟล์แนบ
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+              กำลังโหลดข้อมูลไฟล์แนบ...
+            </div>
+          ) : attachments.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 border-2 border-dashed border-gray-200 rounded-lg">
+              <Upload className="h-16 w-16 mx-auto mb-3 opacity-40" />
+              <p className="text-lg font-medium mb-1">ยังไม่มีไฟล์แนบ</p>
+              <p className="text-sm">อัปโหลดไฟล์เพื่อแนบกับใบสั่งงานนี้</p>
             </div>
           ) : (
-            <div className="space-y-2">
-              {attachments.map((attachment: WorkOrderAttachment) => (
-                <div
-                  key={attachment.id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    {getFileIcon(attachment.mimeType)}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">
+            <div className="border rounded-lg overflow-hidden">
+              {/* Table Header */}
+              <div className="bg-gray-50 px-4 py-3 border-b font-medium text-sm text-gray-700 grid grid-cols-12 gap-4">
+                <div className="col-span-1">ประเภท</div>
+                <div className="col-span-4">ชื่อไฟล์</div>
+                <div className="col-span-2">ขนาด</div>
+                <div className="col-span-2">วันที่อัปโหลด</div>
+                <div className="col-span-2">รายละเอียด</div>
+                <div className="col-span-1">จัดการ</div>
+              </div>
+              
+              {/* Table Body */}
+              <div className="divide-y divide-gray-200">
+                {attachments.map((attachment: WorkOrderAttachment) => (
+                  <div
+                    key={attachment.id}
+                    className="px-4 py-3 hover:bg-gray-50 grid grid-cols-12 gap-4 items-center"
+                  >
+                    <div className="col-span-1 flex justify-center">
+                      {getFileIcon(attachment.mimeType)}
+                    </div>
+                    <div className="col-span-4">
+                      <p className="text-sm font-medium truncate" title={attachment.originalName}>
                         {attachment.originalName}
                       </p>
-                      <p className="text-xs text-gray-500">
-                        {formatFileSize(attachment.fileSize)} • 
-                        {new Date(attachment.createdAt!).toLocaleDateString('th-TH')}
-                      </p>
-                      {attachment.description && (
-                        <p className="text-xs text-gray-600 mt-1">
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-sm text-gray-600">
+                        {formatFileSize(attachment.fileSize)}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      <span className="text-sm text-gray-600">
+                        {new Date(attachment.createdAt!).toLocaleDateString('th-TH', {
+                          day: '2-digit',
+                          month: '2-digit',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="col-span-2">
+                      {attachment.description ? (
+                        <p className="text-xs text-gray-600 truncate" title={attachment.description}>
                           {attachment.description}
                         </p>
+                      ) : (
+                        <span className="text-xs text-gray-400">-</span>
                       )}
                     </div>
+                    <div className="col-span-1 flex space-x-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDownload(attachment)}
+                        className="h-7 w-7 p-0"
+                        title="ดาวน์โหลด"
+                      >
+                        <Download className="h-3 w-3" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(attachment.id)}
+                        disabled={deleteMutation.isPending}
+                        className="h-7 w-7 p-0 text-red-600 hover:text-red-700"
+                        title="ลบ"
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
-                  
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDownload(attachment)}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDelete(attachment.id)}
-                      disabled={deleteMutation.isPending}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </div>
