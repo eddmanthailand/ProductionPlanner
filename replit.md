@@ -130,6 +130,19 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 26, 2025: ✅ สร้างระบบการแนบไฟล์สำหรับใบสั่งงาน
+  - เพิ่มตาราง `work_order_attachments` สำหรับจัดเก็บข้อมูลไฟล์แนบ
+  - สร้าง FileStorage service สำหรับจัดการไฟล์ (Local Storage)
+  - เพิ่ม API endpoints: POST, GET, DELETE สำหรับการจัดการไฟล์แนบ
+  - เพิ่มแท็บ "ไฟล์แนบ" ในหน้าแก้ไขใบสั่งงาน
+  - รองรับไฟล์หลายประเภท (รูปภาพ, PDF, เอกสาร) ขนาดสูงสุด 50MB
+
+- June 26, 2025: ✅ แก้ไขระบบสร้างเลขที่ใบสั่งงานและการ login
+  - อัปเดต apiRequest function ให้รองรับการเรียกใช้แบบใหม่
+  - แก้ไขปัญหา "Failed to execute fetch" ในการสร้างเลขที่ใบสั่งงาน
+  - อัปเดตรหัสผ่าน admin เป็น A0971-exp11 ตามที่ผู้ใช้กำหนด
+  - ระบบสร้างเลขที่อัตโนมัติ (JB202506XXX) ทำงานได้สมบูรณ์
+
 - June 26, 2025: ✅ แก้ไขปัญหาตารางรายละเอียดรายได้แสดงข้อมูล soft delete
   - เพิ่มเงื่อนไข `AND dwl.deleted_at IS NULL` ใน API endpoint /api/team-revenue-report
   - เพิ่ม cache-busting mechanism ในหน้า team-revenue-report.tsx
@@ -144,6 +157,11 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
   - สร้างฟังก์ชัน `archiveSoftDeletedLogs()`, `cleanupOldSoftDeletedLogs()`, `getDailyWorkLogsArchive()`
   - เพิ่ม API endpoints: POST /api/daily-work-logs/archive/:workOrderId, POST /api/daily-work-logs/cleanup, GET /api/daily-work-logs/archive
   - ระบบจะ archive ข้อมูล soft delete อัตโนมัติเมื่อใบสั่งงานเสร็จแล้วและข้อมูลเก่ากว่า 3 เดือน
+
+## Authentication Information
+- Username: admin
+- Password: A0971-exp11
+- Role: ผู้ดูแลระบบ (Admin)
 
 ## Changelog
 - June 25, 2025. Initial setup
