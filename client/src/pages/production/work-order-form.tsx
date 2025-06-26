@@ -420,7 +420,7 @@ export default function WorkOrderForm() {
       const year = currentDate.getFullYear();
       const month = String(currentDate.getMonth() + 1).padStart(2, '0');
       
-      const response = await apiRequest("/api/work-orders/count", "POST", {
+      const response = await apiRequest("POST", "/api/work-orders/count", {
         year: year,
         month: month
       });
