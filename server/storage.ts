@@ -2216,6 +2216,119 @@ export class DatabaseStorage implements IStorage {
       return [];
     }
   }
+
+  // Work Order Attachments methods
+  async createWorkOrderAttachment(attachment: InsertWorkOrderAttachment): Promise<WorkOrderAttachment> {
+    try {
+      const result = await db
+        .insert(workOrderAttachments)
+        .values({
+          ...attachment,
+          createdAt: new Date(),
+          updatedAt: new Date()
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Create work order attachment error:', error);
+      throw error;
+    }
+  }
+
+  async getWorkOrderAttachments(workOrderId: string, tenantId: string): Promise<WorkOrderAttachment[]> {
+    try {
+      const attachments = await db
+        .select()
+        .from(workOrderAttachments)
+        .where(
+          and(
+            eq(workOrderAttachments.workOrderId, workOrderId),
+            eq(workOrderAttachments.tenantId, tenantId),
+            isNull(workOrderAttachments.deletedAt)
+          )
+        )
+        .orderBy(desc(workOrderAttachments.createdAt));
+      
+      return attachments;
+    } catch (error) {
+      console.error('Get work order attachments error:', error);
+      return [];
+    }
+  }
+
+  async getWorkOrderAttachment(attachmentId: string, tenantId: string): Promise<WorkOrderAttachment | null> {
+    try {
+      const attachment = await db
+        .select()
+        .from(workOrderAttachments)
+        .where(
+          and(
+            eq(workOrderAttachments.id, attachmentId),
+            eq(workOrderAttachments.tenantId, tenantId),
+            isNull(workOrderAttachments.deletedAt)
+          )
+        )
+        .limit(1);
+      
+      return attachment[0] || null;
+    } catch (error) {
+      console.error('Get work order attachment error:', error);
+      return null;
+    }
+  }
+
+  async updateWorkOrderAttachment(
+    attachmentId: string, 
+    tenantId: string, 
+    updates: Partial<WorkOrderAttachment>
+  ): Promise<WorkOrderAttachment | null> {
+    try {
+      const result = await db
+        .update(workOrderAttachments)
+        .set({
+          ...updates,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(workOrderAttachments.id, attachmentId),
+            eq(workOrderAttachments.tenantId, tenantId),
+            isNull(workOrderAttachments.deletedAt)
+          )
+        )
+        .returning();
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error('Update work order attachment error:', error);
+      return null;
+    }
+  }
+
+  async deleteWorkOrderAttachment(attachmentId: string, tenantId: string): Promise<boolean> {
+    try {
+      const result = await db
+        .update(workOrderAttachments)
+        .set({
+          deletedAt: new Date(),
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(workOrderAttachments.id, attachmentId),
+            eq(workOrderAttachments.tenantId, tenantId),
+            isNull(workOrderAttachments.deletedAt)
+          )
+        )
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error('Delete work order attachment error:', error);
+      return false;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

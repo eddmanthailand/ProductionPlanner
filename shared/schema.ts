@@ -836,6 +836,32 @@ export const insertDailyWorkLogSchema = createInsertSchema(dailyWorkLogs).omit({
   hoursWorked: z.string().optional().default("0") // ทำให้ hoursWorked เป็น string และมีค่า default
 });
 
+// Work Order Attachments table
+export const workOrderAttachments = pgTable("work_order_attachments", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  workOrderId: text("work_order_id").notNull().references(() => workOrders.id, { onDelete: "cascade" }),
+  fileName: text("file_name").notNull(), // ชื่อไฟล์เดิม
+  originalName: text("original_name").notNull(), // ชื่อไฟล์ที่ผู้ใช้อัปโหลด
+  fileSize: integer("file_size").notNull(), // ขนาดไฟล์ในไบต์
+  mimeType: text("mime_type").notNull(), // ประเภทไฟล์
+  storageType: text("storage_type").notNull().default("local"), // local, google_cloud, aws_s3
+  storagePath: text("storage_path").notNull(), // path หรือ key ในระบบจัดเก็บ
+  fileUrl: text("file_url"), // URL สำหรับเข้าถึงไฟล์
+  uploadedBy: integer("uploaded_by").notNull().references(() => users.id),
+  description: text("description"), // รายละเอียดไฟล์
+  tenantId: uuid("tenant_id").notNull().references(() => tenants.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  deletedAt: timestamp("deleted_at") // soft delete
+});
+
+export const insertWorkOrderAttachmentSchema = createInsertSchema(workOrderAttachments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  deletedAt: true
+});
+
 // Types
 export type Tenant = typeof tenants.$inferSelect;
 export type InsertTenant = z.infer<typeof insertTenantSchema>;
@@ -898,6 +924,9 @@ export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
 export type WorkStep = typeof workSteps.$inferSelect;
 export type InsertWorkStep = z.infer<typeof insertWorkStepSchema>;
+
+export type WorkOrderAttachment = typeof workOrderAttachments.$inferSelect;
+export type InsertWorkOrderAttachment = z.infer<typeof insertWorkOrderAttachmentSchema>;
 
 export type ProductionCapacity = typeof productionCapacity.$inferSelect;
 export type InsertProductionCapacity = z.infer<typeof insertProductionCapacitySchema>;
