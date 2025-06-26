@@ -4023,6 +4023,165 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Work Order Attachments API endpoints
+  const multer = (await import('multer')).default;
+  const path = (await import('path')).default;
+  
+  // Configure multer for memory storage
+  const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 50 * 1024 * 1024, // 50MB limit
+    },
+    fileFilter: (req: any, file: any, cb: any) => {
+      // ประเภทไฟล์ที่อนุญาต
+      const allowedMimes = [
+        'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'text/csv',
+        'text/plain'
+      ];
+      
+      if (allowedMimes.includes(file.mimetype)) {
+        cb(null, true);
+      } else {
+        cb(new Error('ประเภทไฟล์ไม่ได้รับอนุญาต'), false);
+      }
+    }
+  });
+
+  // อัปโหลดไฟล์แนบสำหรับใบสั่งงาน
+  app.post("/api/work-orders/:workOrderId/attachments", upload.single('file'), async (req: any, res: any) => {
+    try {
+      const { workOrderId } = req.params;
+      const { description } = req.body;
+      const user = req.user;
+
+      if (!req.file) {
+        return res.status(400).json({ message: "ไม่พบไฟล์ที่อัปโหลด" });
+      }
+
+      if (!user?.tenantId) {
+        return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้" });
+      }
+
+      console.log('API: Uploading file for work order:', workOrderId);
+
+      // อัปโหลดไฟล์ไปยัง storage
+      const fileInfo = await fileStorageService.upload(req.file, workOrderId);
+
+      // บันทึกข้อมูลไฟล์ลงฐานข้อมูล
+      const attachment = await storage.createWorkOrderAttachment({
+        workOrderId,
+        fileName: fileInfo.fileName,
+        originalName: fileInfo.originalName,
+        fileSize: fileInfo.fileSize,
+        mimeType: fileInfo.mimeType,
+        storageType: 'local',
+        storagePath: fileInfo.storagePath,
+        fileUrl: fileInfo.fileUrl,
+        uploadedBy: user.id,
+        description: description || '',
+        tenantId: user.tenantId
+      });
+
+      console.log('API: File uploaded successfully:', attachment.id);
+      res.json(attachment);
+    } catch (error) {
+      console.error("Upload file error:", error);
+      res.status(500).json({ 
+        message: "ไม่สามารถอัปโหลดไฟล์ได้", 
+        error: error instanceof Error ? error.message : String(error) 
+      });
+    }
+  });
+
+  // ดึงรายการไฟล์แนับของใบสั่งงาน
+  app.get("/api/work-orders/:workOrderId/attachments", async (req: any, res: any) => {
+    try {
+      const { workOrderId } = req.params;
+      const user = req.user;
+
+      if (!user?.tenantId) {
+        return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้" });
+      }
+
+      console.log('API: Getting attachments for work order:', workOrderId);
+
+      const attachments = await storage.getWorkOrderAttachments(workOrderId, user.tenantId);
+      
+      console.log('API: Found attachments:', attachments.length);
+      res.json(attachments);
+    } catch (error) {
+      console.error("Get attachments error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงรายการไฟล์ได้" });
+    }
+  });
+
+  // ดาวน์โหลดไฟล์แนบ
+  app.get("/api/files/:storagePath(*)", async (req: any, res: any) => {
+    try {
+      const storagePath = req.params.storagePath;
+      const user = req.user;
+
+      if (!user?.tenantId) {
+        return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้" });
+      }
+
+      console.log('API: Downloading file:', storagePath);
+
+      // ตรวจสอบสิทธิ์การเข้าถึงไฟล์
+      const attachmentId = req.query.id;
+      if (attachmentId) {
+        const attachment = await storage.getWorkOrderAttachment(attachmentId, user.tenantId);
+        if (!attachment) {
+          return res.status(404).json({ message: "ไม่พบไฟล์ที่ร้องขอ" });
+        }
+      }
+
+      // ดาวน์โหลดไฟล์
+      const fileBuffer = await fileStorageService.download(storagePath);
+      
+      // ส่งไฟล์กลับไปให้ผู้ใช้
+      res.setHeader('Content-Type', 'application/octet-stream');
+      res.setHeader('Content-Disposition', `attachment; filename="${path.basename(storagePath)}"`);
+      res.send(fileBuffer);
+    } catch (error) {
+      console.error("Download file error:", error);
+      res.status(500).json({ message: "ไม่สามารถดาวน์โหลดไฟล์ได้" });
+    }
+  });
+
+  // ลบไฟล์แนบ (soft delete)
+  app.delete("/api/work-orders/:workOrderId/attachments/:attachmentId", async (req: any, res: any) => {
+    try {
+      const { workOrderId, attachmentId } = req.params;
+      const user = req.user;
+
+      if (!user?.tenantId) {
+        return res.status(401).json({ message: "ไม่พบข้อมูลผู้ใช้" });
+      }
+
+      console.log('API: Deleting attachment:', attachmentId);
+
+      const deleted = await storage.deleteWorkOrderAttachment(attachmentId, user.tenantId);
+      
+      if (deleted) {
+        console.log('API: Attachment deleted successfully');
+        res.json({ message: "ลบไฟล์แนบเรียบร้อยแล้ว" });
+      } else {
+        res.status(404).json({ message: "ไม่พบไฟล์แนบที่ต้องการลบ" });
+      }
+    } catch (error) {
+      console.error("Delete attachment error:", error);
+      res.status(500).json({ message: "ไม่สามารถลบไฟล์แนบได้" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
