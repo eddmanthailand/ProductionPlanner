@@ -25,6 +25,7 @@ import {
   productionPlanItems,
   dailyWorkLogs,
   dailyWorkLogsArchive,
+  workOrderAttachments,
   replitAuthUsers,
   roles,
   permissions,
@@ -91,7 +92,9 @@ import {
   type DailyWorkLog,
   type InsertDailyWorkLog,
   type DailyWorkLogArchive,
-  type InsertDailyWorkLogArchive
+  type InsertDailyWorkLogArchive,
+  type WorkOrderAttachment,
+  type InsertWorkOrderAttachment
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull } from "drizzle-orm";

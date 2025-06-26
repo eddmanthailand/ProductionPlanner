@@ -13,7 +13,7 @@ export interface FileInfo {
 }
 
 export interface FileStorageService {
-  upload(file: Express.Multer.File, workOrderId: string): Promise<FileInfo>;
+  upload(file: multer.File, workOrderId: string): Promise<FileInfo>;
   download(storagePath: string): Promise<Buffer>;
   delete(storagePath: string): Promise<boolean>;
   getFileUrl(storagePath: string): string;
@@ -34,7 +34,7 @@ export class LocalFileStorage implements FileStorageService {
     }
   }
 
-  async upload(file: Express.Multer.File, workOrderId: string): Promise<FileInfo> {
+  async upload(file: multer.File, workOrderId: string): Promise<FileInfo> {
     try {
       // สร้าง directory สำหรับ work order
       const workOrderDir = path.join(this.baseUploadPath, workOrderId);
