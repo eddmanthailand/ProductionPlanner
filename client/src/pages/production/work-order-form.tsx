@@ -17,8 +17,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { usePermissions } from "@/hooks/usePermissions";
-
-
+import WorkOrderAttachments from "@/components/WorkOrderAttachments";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import type { 
   Customer, 
@@ -1137,29 +1137,52 @@ export default function WorkOrderForm() {
               </CardContent>
             </Card>
 
-            {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button 
-                variant="outline" 
-                onClick={() => navigate("/production/work-orders")} 
-                className="px-6"
-              >
-                ยกเลิก
-              </Button>
-              {((isEditMode && canAccess("work_orders", "update")) || (!isEditMode && canAccess("work_orders", "create"))) && (
-                <Button 
-                  onClick={handleSubmit} 
-                  className="px-6 bg-blue-600 hover:bg-blue-700" 
-                  disabled={createWorkOrderMutation.isPending}
-                >
-                  <Save className="h-4 w-4 mr-2" />
-                  {createWorkOrderMutation.isPending 
-                    ? (isEditMode ? "กำลังแก้ไข..." : "กำลังบันทึก...") 
-                    : (isEditMode ? "แก้ไขใบสั่งงาน" : "บันทึกใบสั่งงาน")
-                  }
-                </Button>
-              )}
-            </div>
+            {/* Tabs for File Attachments */}
+            <Tabs defaultValue="details" className="mt-6">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">รายละเอียดใบสั่งงาน</TabsTrigger>
+                <TabsTrigger value="attachments" disabled={!isEditMode && !workOrderId}>
+                  ไฟล์แนบ
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="mt-0">
+                {/* Action Buttons */}
+                <div className="flex justify-end space-x-3 mt-6">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => navigate("/production/work-orders")} 
+                    className="px-6"
+                  >
+                    ยกเลิก
+                  </Button>
+                  {((isEditMode && canAccess("work_orders", "update")) || (!isEditMode && canAccess("work_orders", "create"))) && (
+                    <Button 
+                      onClick={handleSubmit} 
+                      className="px-6 bg-blue-600 hover:bg-blue-700" 
+                      disabled={createWorkOrderMutation.isPending}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {createWorkOrderMutation.isPending 
+                        ? (isEditMode ? "กำลังแก้ไข..." : "กำลังบันทึก...") 
+                        : (isEditMode ? "แก้ไขใบสั่งงาน" : "บันทึกใบสั่งงาน")
+                      }
+                    </Button>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="attachments" className="mt-4">
+                {(isEditMode || workOrderId) && (
+                  <WorkOrderAttachments workOrderId={workOrderId || ""} />
+                )}
+                {!isEditMode && !workOrderId && (
+                  <div className="text-center py-8 text-gray-500">
+                    กรุณาบันทึกใบสั่งงานก่อนเพื่อแนบไฟล์
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </div>
