@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { Upload, FileText, Image, Download, Trash2, File } from "lucide-react";
+import { Upload, FileText, Image, Download, Trash2, File, Eye } from "lucide-react";
 import { WorkOrderAttachment } from "@shared/schema";
 
 interface WorkOrderAttachmentsProps {
@@ -35,6 +36,7 @@ function formatFileSize(bytes: number): string {
 export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmentsProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [description, setDescription] = useState("");
+  const [previewFile, setPreviewFile] = useState<WorkOrderAttachment | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -179,6 +181,71 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
     }
   };
 
+  // ตรวจสอบว่าไฟล์สามารถ preview ได้หรือไม่
+  const canPreview = (mimeType: string) => {
+    return (
+      mimeType.startsWith('image/') ||
+      mimeType === 'application/pdf' ||
+      mimeType.startsWith('text/')
+    );
+  };
+
+  // แสดง preview content ตามประเภทไฟล์
+  const renderPreviewContent = (attachment: WorkOrderAttachment) => {
+    const { mimeType, fileUrl, originalName } = attachment;
+
+    if (!fileUrl) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          <File className="h-16 w-16 mx-auto mb-2 opacity-50" />
+          <p>ไม่สามารถโหลดไฟล์ได้</p>
+        </div>
+      );
+    }
+
+    if (mimeType.startsWith('image/')) {
+      return (
+        <div className="flex justify-center">
+          <img
+            src={fileUrl}
+            alt={originalName}
+            className="max-w-full max-h-96 object-contain rounded-lg"
+          />
+        </div>
+      );
+    }
+
+    if (mimeType === 'application/pdf') {
+      return (
+        <iframe
+          src={fileUrl}
+          className="w-full h-96 border rounded-lg"
+          title={`PDF: ${originalName}`}
+        />
+      );
+    }
+
+    if (mimeType.startsWith('text/')) {
+      return (
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <iframe
+            src={fileUrl}
+            className="w-full h-64 border-0"
+            title={`Text: ${originalName}`}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-center py-8 text-gray-500">
+        <File className="h-16 w-16 mx-auto mb-2 opacity-50" />
+        <p>ไม่สามารถแสดงตัวอย่างไฟล์ประเภทนี้ได้</p>
+        <p className="text-sm">กรุณาดาวน์โหลดไฟล์เพื่อดูเนื้อหา</p>
+      </div>
+    );
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -241,13 +308,13 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
           ) : (
             <div className="border rounded-lg overflow-hidden">
               {/* Table Header */}
-              <div className="bg-gray-50 px-4 py-3 border-b font-medium text-sm text-gray-700 grid grid-cols-12 gap-4">
-                <div className="col-span-1">ประเภท</div>
-                <div className="col-span-4">ชื่อไฟล์</div>
+              <div className="bg-gray-50 px-4 py-3 border-b font-medium text-sm text-gray-700 grid grid-cols-12 gap-3">
+                <div className="col-span-1 text-center">ประเภท</div>
+                <div className="col-span-3">ชื่อไฟล์</div>
                 <div className="col-span-2">ขนาด</div>
                 <div className="col-span-2">วันที่อัปโหลด</div>
                 <div className="col-span-2">รายละเอียด</div>
-                <div className="col-span-1">จัดการ</div>
+                <div className="col-span-2 text-center">จัดการ</div>
               </div>
               
               {/* Table Body */}
@@ -289,6 +356,17 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
                       )}
                     </div>
                     <div className="col-span-1 flex space-x-1">
+                      {canPreview(attachment.mimeType) && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setPreviewFile(attachment)}
+                          className="h-7 w-7 p-0"
+                          title="ดูตัวอย่าง"
+                        >
+                          <Eye className="h-3 w-3" />
+                        </Button>
+                      )}
                       <Button
                         variant="outline"
                         size="sm"
@@ -315,6 +393,45 @@ export default function WorkOrderAttachments({ workOrderId }: WorkOrderAttachmen
             </div>
           )}
         </div>
+
+        {/* Preview Dialog */}
+        {previewFile && (
+          <Dialog open={!!previewFile} onOpenChange={() => setPreviewFile(null)}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Eye className="h-5 w-5" />
+                  ตัวอย่างไฟล์: {previewFile.originalName}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                {renderPreviewContent(previewFile)}
+              </div>
+              <div className="mt-4 pt-4 border-t">
+                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
+                  <div>
+                    <strong>ขนาดไฟล์:</strong> {formatFileSize(previewFile.fileSize)}
+                  </div>
+                  <div>
+                    <strong>วันที่อัปโหลด:</strong>{' '}
+                    {new Date(previewFile.createdAt!).toLocaleDateString('th-TH', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </div>
+                  {previewFile.description && (
+                    <div className="col-span-2">
+                      <strong>รายละเอียด:</strong> {previewFile.description}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
       </CardContent>
     </Card>
   );
