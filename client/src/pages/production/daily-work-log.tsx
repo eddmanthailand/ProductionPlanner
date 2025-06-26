@@ -328,10 +328,36 @@ export default function DailyWorkLog() {
         notes: log.notes,
         createdAt: log.createdAt,
         subJobs: [],
+        recordingSessions: [], // เก็บแต่ละรอบการบันทึก
         totalQuantity: 0
       };
     }
     
+    // จัดกลุ่มตาม reportNumber เพื่อแสดงแต่ละรอบการบันทึก
+    let session = acc[key].recordingSessions.find((s: any) => s.reportNumber === log.reportNumber);
+    if (!session) {
+      session = {
+        reportNumber: log.reportNumber,
+        createdAt: log.createdAt,
+        employeeId: log.employeeId,
+        employeeName: log.employeeName || 'ไม่ระบุ',
+        subJobs: [],
+        sessionQuantity: 0
+      };
+      acc[key].recordingSessions.push(session);
+    }
+    
+    session.subJobs.push({
+      subJobId: log.subJobId,
+      quantityCompleted: log.quantityCompleted || 0,
+      workDescription: log.workDescription,
+      productName: log.productName || 'ไม่ระบุ',
+      colorName: log.colorName || 'ไม่ระบุ', 
+      sizeName: log.sizeName || 'ไม่ระบุ'
+    });
+    session.sessionQuantity += log.quantityCompleted || 0;
+    
+    // เก็บข้อมูลเดิมไว้เพื่อ backward compatibility
     acc[key].subJobs.push({
       subJobId: log.subJobId,
       quantityCompleted: log.quantityCompleted || 0,
@@ -346,8 +372,21 @@ export default function DailyWorkLog() {
     return acc;
   }, {} as Record<string, any>);
 
-  // เรียงลำดับ sub jobs ภายในแต่ละ grouped log ตาม sort_order
+  // เรียงลำดับข้อมูลในแต่ละ grouped log
   Object.values(groupedLogs).forEach((log: any) => {
+    // เรียงลำดับ recording sessions ตามเวลา (เก่าไปใหม่)
+    log.recordingSessions.sort((a: any, b: any) => {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    });
+    
+    // เรียงลำดับ sub jobs ภายในแต่ละ session
+    log.recordingSessions.forEach((session: any) => {
+      session.subJobs.sort((a: any, b: any) => {
+        return a.sortOrder - b.sortOrder;
+      });
+    });
+    
+    // เรียงลำดับ sub jobs รวม (เพื่อ backward compatibility)
     log.subJobs.sort((a: any, b: any) => {
       return a.sortOrder - b.sortOrder;
     });
