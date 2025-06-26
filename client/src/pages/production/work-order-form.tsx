@@ -91,8 +91,8 @@ export default function WorkOrderForm() {
     }
   ]);
   const [originalSubJobs, setOriginalSubJobs] = useState<SubJob[]>([]);
-
-
+  const [savedWorkOrderId, setSavedWorkOrderId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("details");
 
   const [formData, setFormData] = useState({
     orderNumber: "",
@@ -207,6 +207,13 @@ export default function WorkOrderForm() {
     },
     onSuccess: (responseData: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      
+      // If creating new work order, save the workOrderId and enable attachments tab
+      if (!isEditMode && responseData?.id) {
+        setSavedWorkOrderId(responseData.id);
+        setActiveTab("attachments");
+      }
+      
       if (isEditMode && workOrderId) {
         queryClient.invalidateQueries({ queryKey: [`/api/work-orders/${workOrderId}`] });
         // Force refetch data immediately
@@ -229,7 +236,11 @@ export default function WorkOrderForm() {
           title: "สำเร็จ",
           description: isEditMode ? "แก้ไขใบสั่งงานเรียบร้อยแล้ว" : "สร้างใบสั่งงานแล้ว",
         });
-        navigate("/production/work-orders");
+        
+        // Don't navigate away if we just created a new work order (let user upload files)
+        if (isEditMode) {
+          navigate("/production/work-orders");
+        }
       }
     },
     onError: () => {
@@ -1138,10 +1149,10 @@ export default function WorkOrderForm() {
             </Card>
 
             {/* Tabs for File Attachments */}
-            <Tabs defaultValue="details" className="mt-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="details">รายละเอียดใบสั่งงาน</TabsTrigger>
-                <TabsTrigger value="attachments" disabled={!isEditMode && !workOrderId}>
+                <TabsTrigger value="attachments" disabled={!isEditMode && !savedWorkOrderId}>
                   ไฟล์แนบ
                 </TabsTrigger>
               </TabsList>
@@ -1173,10 +1184,9 @@ export default function WorkOrderForm() {
               </TabsContent>
               
               <TabsContent value="attachments" className="mt-4">
-                {(isEditMode || workOrderId) && (
-                  <WorkOrderAttachments workOrderId={workOrderId || ""} />
-                )}
-                {!isEditMode && !workOrderId && (
+                {(isEditMode && workOrderId) || (!isEditMode && savedWorkOrderId) ? (
+                  <WorkOrderAttachments workOrderId={workOrderId || savedWorkOrderId || ""} />
+                ) : (
                   <div className="text-center py-8 text-gray-500">
                     กรุณาบันทึกใบสั่งงานก่อนเพื่อแนบไฟล์
                   </div>
