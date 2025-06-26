@@ -3905,7 +3905,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  const httpServer = createServer(app);
   // Daily Work Logs API for Team Revenue Report
   app.get("/api/daily-work-logs", async (req: any, res: any) => {
     try {
@@ -3986,7 +3985,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(result.rows);
     } catch (error) {
       console.error("Get team revenue report error:", error);
-      res.status(500).json({ message: "Failed to fetch team revenue report", error: error.message });
+      res.status(500).json({ message: "Failed to fetch team revenue report", error: error instanceof Error ? error.message : String(error) });
     }
   });
 
@@ -4023,6 +4022,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  const httpServer = createServer(app);
   return httpServer;
 }
 
