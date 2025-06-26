@@ -132,6 +132,7 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 ## Recent Changes
 - June 26, 2025: ✅ แก้ไขปัญหาตารางรายละเอียดรายได้แสดงข้อมูล soft delete
   - เพิ่มเงื่อนไข `AND dwl.deleted_at IS NULL` ใน API endpoint /api/team-revenue-report
+  - เพิ่ม cache-busting mechanism ในหน้า team-revenue-report.tsx
   - ตารางรายได้จะไม่แสดงข้อมูลจากใบบันทึกประจำวันที่ถูก soft delete แล้ว
 
 - June 26, 2025: ✅ แก้ไขปัญหาคอลัมน์ "ทำแล้ว" ไม่อัปเดตหลังลบข้อมูล

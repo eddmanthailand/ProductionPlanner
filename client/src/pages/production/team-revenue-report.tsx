@@ -70,7 +70,7 @@ export default function TeamRevenueReport() {
   });
 
   // ดึงข้อมูลรายงานรายได้ที่มีข้อมูลครบถ้วน
-  const { data: workLogs, isLoading } = useQuery<DailyWorkLog[]>({
+  const { data: workLogs, isLoading, refetch } = useQuery<DailyWorkLog[]>({
     queryKey: ["/api/team-revenue-report", selectedTeam, startDate, endDate],
     enabled: !!selectedTeam && !!startDate && !!endDate,
     staleTime: 0,
@@ -79,10 +79,16 @@ export default function TeamRevenueReport() {
       const params = new URLSearchParams({
         teamId: selectedTeam,
         startDate: format(startDate!, "yyyy-MM-dd"),
-        endDate: format(endDate!, "yyyy-MM-dd")
+        endDate: format(endDate!, "yyyy-MM-dd"),
+        _t: Date.now().toString()
       });
       const response = await fetch(`/api/team-revenue-report?${params}`, {
-        cache: 'no-cache'
+        cache: 'no-cache',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
       });
       if (!response.ok) throw new Error('Failed to fetch revenue report');
       return response.json();
