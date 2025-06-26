@@ -2,13 +2,16 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, insertDailyWorkLogSchema, permissions, pageAccess } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, insertDailyWorkLogSchema, permissions, pageAccess, workOrderAttachments } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import memorystore from "memorystore";
+import multer from "multer";
+import path from "path";
+import { fileStorageService } from "./fileStorage.js";
 
 // Initialize default permissions for all pages in the system
 async function initializeDefaultPermissions() {
@@ -4024,8 +4027,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Work Order Attachments API endpoints
-  const multer = (await import('multer')).default;
-  const path = (await import('path')).default;
   
   // Configure multer for memory storage
   const upload = multer({

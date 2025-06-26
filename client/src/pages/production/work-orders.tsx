@@ -765,124 +765,142 @@ export default function WorkOrders() {
 
       {/* Edit Work Order Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>แก้ไขใบสั่งงาน</DialogTitle>
           </DialogHeader>
           {editingWorkOrder && (
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              <div>
-                <label className="text-sm font-medium">ชื่องาน</label>
-                <Input
-                  value={editingWorkOrder.title}
-                  onChange={(e) => setEditingWorkOrder({...editingWorkOrder, title: e.target.value})}
-                />
-              </div>
+            <Tabs defaultValue="details" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="details">ข้อมูลงาน</TabsTrigger>
+                <TabsTrigger value="attachments">
+                  <Upload className="w-4 h-4 mr-2" />
+                  ไฟล์แนบ
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="details" className="mt-4">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
+                  <div>
+                    <label className="text-sm font-medium">ชื่องาน</label>
+                    <Input
+                      value={editingWorkOrder.title}
+                      onChange={(e) => setEditingWorkOrder({...editingWorkOrder, title: e.target.value})}
+                    />
+                  </div>
 
-              <div>
-                <label className="text-sm font-medium">รายละเอียด</label>
-                <Input
-                  value={editingWorkOrder.description || ""}
-                  onChange={(e) => setEditingWorkOrder({...editingWorkOrder, description: e.target.value})}
-                />
-              </div>
+                  <div>
+                    <label className="text-sm font-medium">รายละเอียด</label>
+                    <Input
+                      value={editingWorkOrder.description || ""}
+                      onChange={(e) => setEditingWorkOrder({...editingWorkOrder, description: e.target.value})}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">สถานะ</label>
-                  <Select 
-                    value={editingWorkOrder.status} 
-                    onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, status: value})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">ร่าง</SelectItem>
-                      <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
-                      <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
-                      <SelectItem value="completed">เสร็จแล้ว</SelectItem>
-                      <SelectItem value="cancelled">ยกเลิก</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">สถานะ</label>
+                      <Select 
+                        value={editingWorkOrder.status} 
+                        onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, status: value})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="draft">ร่าง</SelectItem>
+                          <SelectItem value="approved">อนุมัติแล้ว</SelectItem>
+                          <SelectItem value="in_progress">กำลังดำเนินการ</SelectItem>
+                          <SelectItem value="completed">เสร็จแล้ว</SelectItem>
+                          <SelectItem value="cancelled">ยกเลิก</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">ลำดับความสำคัญ</label>
+                      <Select 
+                        value={editingWorkOrder.priority.toString()} 
+                        onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, priority: parseInt(value)})}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 - สูงสุด</SelectItem>
+                          <SelectItem value="2">2 - สูง</SelectItem>
+                          <SelectItem value="3">3 - ปานกลาง</SelectItem>
+                          <SelectItem value="4">4 - ต่ำ</SelectItem>
+                          <SelectItem value="5">5 - ต่ำสุด</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">ทีมที่รับผิดชอบ</label>
+                    <Select 
+                      value={editingWorkOrder.assignedTeamId || ""} 
+                      onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, assignedTeamId: value})}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="เลือกทีม" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {teams.map((team) => (
+                          <SelectItem key={team.id} value={team.id}>
+                            {team.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium">วันที่เริ่ม</label>
+                      <Input
+                        type="date"
+                        value={editingWorkOrder.startDate || ""}
+                        onChange={(e) => setEditingWorkOrder({...editingWorkOrder, startDate: e.target.value})}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium">วันที่กำหนดเสร็จ</label>
+                      <Input
+                        type="date"
+                        value={editingWorkOrder.dueDate || ""}
+                        onChange={(e) => setEditingWorkOrder({...editingWorkOrder, dueDate: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">หมายเหตุ</label>
+                    <Input
+                      value={editingWorkOrder.notes || ""}
+                      onChange={(e) => setEditingWorkOrder({...editingWorkOrder, notes: e.target.value})}
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-4">
+                    <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                      ยกเลิก
+                    </Button>
+                    <Button onClick={handleUpdateWorkOrder} disabled={updateWorkOrderMutation.isPending}>
+                      {updateWorkOrderMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
+                    </Button>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="text-sm font-medium">ลำดับความสำคัญ</label>
-                  <Select 
-                    value={editingWorkOrder.priority.toString()} 
-                    onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, priority: parseInt(value)})}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 - สูงสุด</SelectItem>
-                      <SelectItem value="2">2 - สูง</SelectItem>
-                      <SelectItem value="3">3 - ปานกลาง</SelectItem>
-                      <SelectItem value="4">4 - ต่ำ</SelectItem>
-                      <SelectItem value="5">5 - ต่ำสุด</SelectItem>
-                    </SelectContent>
-                  </Select>
+              </TabsContent>
+              
+              <TabsContent value="attachments" className="mt-4">
+                <div className="max-h-96 overflow-y-auto">
+                  <WorkOrderAttachments workOrderId={editingWorkOrder.id} />
                 </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">ทีมที่รับผิดชอบ</label>
-                <Select 
-                  value={editingWorkOrder.assignedTeamId || ""} 
-                  onValueChange={(value) => setEditingWorkOrder({...editingWorkOrder, assignedTeamId: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="เลือกทีม" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {teams.map((team) => (
-                      <SelectItem key={team.id} value={team.id}>
-                        {team.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">วันที่เริ่ม</label>
-                  <Input
-                    type="date"
-                    value={editingWorkOrder.startDate || ""}
-                    onChange={(e) => setEditingWorkOrder({...editingWorkOrder, startDate: e.target.value})}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium">วันที่กำหนดเสร็จ</label>
-                  <Input
-                    type="date"
-                    value={editingWorkOrder.dueDate || ""}
-                    onChange={(e) => setEditingWorkOrder({...editingWorkOrder, dueDate: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium">หมายเหตุ</label>
-                <Input
-                  value={editingWorkOrder.notes || ""}
-                  onChange={(e) => setEditingWorkOrder({...editingWorkOrder, notes: e.target.value})}
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setIsEditOpen(false)}>
-                  ยกเลิก
-                </Button>
-                <Button onClick={handleUpdateWorkOrder} disabled={updateWorkOrderMutation.isPending}>
-                  {updateWorkOrderMutation.isPending ? "กำลังบันทึก..." : "บันทึก"}
-                </Button>
-              </div>
-            </div>
+              </TabsContent>
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
