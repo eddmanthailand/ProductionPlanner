@@ -1153,7 +1153,7 @@ export default function WorkOrderForm() {
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="details">รายละเอียดใบสั่งงาน</TabsTrigger>
                 <TabsTrigger value="attachments" disabled={!isEditMode && !savedWorkOrderId}>
-                  ไฟล์แนบ
+                  ไฟล์แนบ {!isEditMode && !savedWorkOrderId && "(บันทึกก่อน)"}
                 </TabsTrigger>
               </TabsList>
               
