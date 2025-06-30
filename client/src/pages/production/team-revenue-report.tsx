@@ -64,16 +64,19 @@ function TeamRevenueReport() {
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
+  const [startDateOpen, setStartDateOpen] = useState(false);
+  const [endDateOpen, setEndDateOpen] = useState(false);
+  const [manualGenerate, setManualGenerate] = useState(false);
 
   // ดึงข้อมูลทีม
   const { data: teams } = useQuery<Team[]>({
     queryKey: ["/api/teams"],
   });
 
-  // ดึงข้อมูลรายงานรายได้ที่มีข้อมูลครบถ้วน
+  // ดึงข้อมูลรายงานรายได้ที่มีข้อมูลครบถ้วน (เฉพาะเมื่อกดปุ่มสร้างรายงาน)
   const { data: workLogs, isLoading, refetch } = useQuery<DailyWorkLog[]>({
     queryKey: ["/api/team-revenue-report", selectedTeam, startDate, endDate],
-    enabled: !!selectedTeam && !!startDate && !!endDate,
+    enabled: !!selectedTeam && !!startDate && !!endDate && manualGenerate,
     staleTime: 0,
     gcTime: 0,
     queryFn: async () => {
@@ -172,6 +175,7 @@ function TeamRevenueReport() {
       alert("กรุณาเลือกทีม วันที่เริ่มต้น และวันที่สิ้นสุด");
       return;
     }
+    setManualGenerate(true);
   };
 
   return (
@@ -223,7 +227,7 @@ function TeamRevenueReport() {
             {/* วันที่เริ่มต้น */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">วันที่เริ่มต้น</label>
-              <Popover>
+              <Popover open={startDateOpen} onOpenChange={setStartDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -240,7 +244,10 @@ function TeamRevenueReport() {
                   <Calendar
                     mode="single"
                     selected={startDate}
-                    onSelect={setStartDate}
+                    onSelect={(date) => {
+                      setStartDate(date);
+                      setStartDateOpen(false);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -250,7 +257,7 @@ function TeamRevenueReport() {
             {/* วันที่สิ้นสุด */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-700">วันที่สิ้นสุด</label>
-              <Popover>
+              <Popover open={endDateOpen} onOpenChange={setEndDateOpen}>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
@@ -267,7 +274,10 @@ function TeamRevenueReport() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
+                    onSelect={(date) => {
+                      setEndDate(date);
+                      setEndDateOpen(false);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
@@ -391,7 +401,7 @@ function TeamRevenueReport() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {workLogs?.map((log, index) => {
+                  {workLogs?.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((log, index) => {
                     const quantity = Number(log.quantity) || 0;
                     const unitPrice = Number(log.unitPrice) || 0;
                     const revenue = quantity * unitPrice;
@@ -440,9 +450,5 @@ function TeamRevenueReport() {
 }
 
 export default function TeamRevenueReportPage() {
-  return (
-    <MainLayout>
-      <TeamRevenueReport />
-    </MainLayout>
-  );
+  return <TeamRevenueReport />;
 }
