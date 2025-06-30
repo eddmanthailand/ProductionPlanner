@@ -130,6 +130,14 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ แก้ไขระบบ Multi-tenant AI ให้ใช้ข้อมูลผู้ใช้จริง
+  - ลบ placeholder tenantId ออกจาก AI-related endpoints ทั้งหมด
+  - ใช้ `req.user?.tenantId` จากการ authentication จริง
+  - เพิ่มการตรวจสอบข้อมูลผู้ใช้ก่อนเข้าถึง AI services
+  - แก้ไข Chat API endpoints ให้ใช้ requireAuth middleware
+  - ลบข้อความเตือน MASTER_ENCRYPTION_KEY ที่ไม่จำเป็นออกจากหน้า AI Settings
+  - ระบบ Multi-tenant BYOK ใช้ข้อมูลผู้ใช้จริง 100% แล้ว
+
 - June 30, 2025: ✅ เพิ่มระบบ AI Settings (Multi-tenant BYOK) สำเร็จและทดสอบแล้ว
   - อัปเกรดระบบ encryption เป็น AES-256-GCM ระดับ Enterprise
   - สร้างหน้า AI Settings สำหรับจัดการ API key ของแต่ละ tenant
