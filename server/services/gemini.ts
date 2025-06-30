@@ -1,14 +1,13 @@
 import { GoogleGenAI } from "@google/genai";
-import { EncryptionService } from "./encryption";
 
 export class GeminiService {
   private apiKey: string;
   private ai: GoogleGenAI;
 
-  constructor(encryptedApiKey?: string) {
-    if (encryptedApiKey) {
-      // Decrypt tenant-specific API key
-      this.apiKey = EncryptionService.decrypt(encryptedApiKey);
+  constructor(apiKey?: string) {
+    if (apiKey) {
+      // Use provided API key (already decrypted if needed)
+      this.apiKey = apiKey;
     } else {
       // Use system-wide API key for development
       this.apiKey = process.env.GEMINI_API_KEY || "";

@@ -2463,6 +2463,75 @@ export class DatabaseStorage implements IStorage {
       throw new Error('Failed to delete conversation');
     }
   }
+
+  // ===== AI CONFIGURATIONS MANAGEMENT =====
+  
+  async saveOrUpdateAiConfiguration(
+    tenantId: string,
+    provider: string,
+    encryptedApiKey: string
+  ): Promise<any> {
+    try {
+      const result = await db.insert(aiConfigurations)
+        .values({
+          tenantId,
+          aiProvider: provider,
+          encryptedApiKey,
+        })
+        .onConflictDoUpdate({
+          target: aiConfigurations.tenantId,
+          set: {
+            aiProvider: provider,
+            encryptedApiKey,
+            updatedAt: new Date(),
+          },
+        })
+        .returning();
+      
+      return result[0];
+    } catch (error) {
+      console.error('Save AI configuration error:', error);
+      throw new Error('Failed to save AI configuration');
+    }
+  }
+
+  async getAiConfiguration(tenantId: string): Promise<any | null> {
+    try {
+      const result = await db
+        .select()
+        .from(aiConfigurations)
+        .where(
+          and(
+            eq(aiConfigurations.tenantId, tenantId),
+            eq(aiConfigurations.isActive, true)
+          )
+        )
+        .limit(1);
+      
+      return result[0] || null;
+    } catch (error) {
+      console.error('Get AI configuration error:', error);
+      return null;
+    }
+  }
+
+  async deleteAiConfiguration(tenantId: string): Promise<boolean> {
+    try {
+      const result = await db
+        .update(aiConfigurations)
+        .set({
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(eq(aiConfigurations.tenantId, tenantId))
+        .returning();
+      
+      return result.length > 0;
+    } catch (error) {
+      console.error('Delete AI configuration error:', error);
+      return false;
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

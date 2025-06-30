@@ -1,0 +1,83 @@
+// ========================================================================
+// ส่วนที่ 1: เพิ่ม Schema ตารางใหม่ในไฟล์ shared/schema.ts
+// Instructions: คัดลอกโค้ดนี้ไปวางต่อท้ายไฟล์ schema.ts ของคุณ
+// ========================================================================
+
+export const tenantIntegrations = pgTable("tenant_integrations", {
+  id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull().unique(),
+  aiProvider: varchar("ai_provider", { length: 50 }), // e.g., 'gemini', 'openai'
+  encryptedApiKey: text("encrypted_api_key").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+
+// ========================================================================
+// ส่วนที่ 2: สร้างไฟล์ใหม่ชื่อ server/encryption.ts
+// Instructions: สร้างไฟล์ใหม่ตามชื่อนี้ แล้วคัดลอกโค้ดทั้งหมดด้านล่างไปวาง
+// ========================================================================
+
+import * as crypto from 'crypto';
+
+const ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 16;
+const AUTH_TAG_LENGTH = 16;
+
+const masterKey = Buffer.from(process.env.MASTER_ENCRYPTION_KEY!, 'hex');
+
+if (!process.env.MASTER_ENCRYPTION_KEY || masterKey.length !== 32) {
+  throw new Error('Invalid MASTER_ENCRYPTION_KEY. Please set a 64-character hex key in Replit Secrets.');
+}
+
+export function encrypt(text: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, masterKey, iv);
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return Buffer.concat([iv, authTag, encrypted]).toString('hex');
+}
+
+export function decrypt(encryptedText: string): string {
+  const data = Buffer.from(encryptedText, 'hex');
+  const iv = data.slice(0, IV_LENGTH);
+  const authTag = data.slice(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
+  const encrypted = data.slice(IV_LENGTH + AUTH_TAG_LENGTH);
+  const decipher = crypto.createDecipheriv(ALGORITHM, masterKey, iv);
+  decipher.setAuthTag(authTag);
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+  return decrypted.toString('utf8');
+}
+
+
+// ========================================================================
+// ส่วนที่ 3: เพิ่มฟังก์ชันใหม่ในไฟล์ server/storage.ts
+// Instructions: คัดลอกฟังก์ชันนี้ไปวางเพิ่มเติมในไฟล์ storage.ts
+// ========================================================================
+
+import { tenantIntegrations } from "../shared/schema"; // Ensure this import exists
+import { eq } from "drizzle-orm"; // Ensure this import exists
+
+// ... (โค้ด storage เดิมของคุณ) ...
+
+export async function saveOrUpdateTenantIntegration(
+  tenantId: string,
+  provider: string,
+  encryptedApiKey: string
+) {
+  return db.insert(tenantIntegrations)
+    .values({
+      tenantId,
+      aiProvider: provider,
+      encryptedApiKey,
+    })
+    .onConflictDoUpdate({
+      target: tenantIntegrations.tenantId,
+      set: {
+        aiProvider: provider,
+        encryptedApiKey,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+}

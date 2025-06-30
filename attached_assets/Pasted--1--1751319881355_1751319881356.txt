@@ -1,0 +1,136 @@
+// ========================================================================
+// ส่วนที่ 1: ปรับปรุง Schema ในไฟล์ shared/schema.ts
+// Instructions: ค้นหาตาราง ai_configurations เดิมของคุณ แล้วแทนที่ด้วยโค้ดด้านล่างนี้
+// การเปลี่ยนแปลงหลัก:
+// 1. เพิ่มคอลัมน์ tenantId เพื่อรองรับ Multi-tenant
+// 2. เปลี่ยนชื่อคอลัมน์ apiKey เป็น encryptedApiKey และเปลี่ยนประเภทเป็น text
+// 3. ทำให้ tenantId เป็น unique เพื่อให้ 1 ผู้เช่ามีได้ 1 การตั้งค่า
+// ========================================================================
+
+// สมมติว่านี่คือ Schema เดิมของคุณ (หรือคล้ายๆ กัน)
+/*
+export const aiConfigurations = pgTable("ai_configurations", {
+  id: serial("id").primaryKey(),
+  provider: varchar("provider", { length: 50 }),
+  apiKey: varchar("api_key", { length: 255 }).notNull(),
+});
+*/
+
+// Schema ที่ปรับปรุงใหม่
+export const aiConfigurations = pgTable("ai_configurations", {
+  id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull().unique(),
+  provider: varchar("provider", { length: 50 }),
+  encryptedApiKey: text("encrypted_api_key").notNull(), // Changed from apiKey
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+
+// ========================================================================
+// ส่วนที่ 2: สร้างไฟล์ใหม่ชื่อ server/encryption.ts
+// Instructions: ส่วนนี้ยังคงเหมือนเดิมครับ สร้างไฟล์ใหม่ตามชื่อนี้
+// แล้วคัดลอกโค้ดทั้งหมดด้านล่างไปวาง (อย่าลืมตั้งค่า MASTER_ENCRYPTION_KEY ใน Secrets)
+// ========================================================================
+
+import * as crypto from 'crypto';
+
+const ALGORITHM = 'aes-256-gcm';
+const IV_LENGTH = 16;
+const AUTH_TAG_LENGTH = 16;
+
+// Make sure to set MASTER_ENCRYPTION_KEY in Replit Secrets
+// It should be a 64-character hex string (32 bytes)
+const masterKeyHex = process.env.MASTER_ENCRYPTION_KEY;
+
+if (!masterKeyHex || Buffer.from(masterKeyHex, 'hex').length !== 32) {
+  throw new Error('Invalid MASTER_ENCRYPTION_KEY. Please set a 64-character hex key in Replit Secrets.');
+}
+
+const masterKey = Buffer.from(masterKeyHex, 'hex');
+
+export function encrypt(text: string): string {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv(ALGORITHM, masterKey, iv);
+  const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  return Buffer.concat([iv, authTag, encrypted]).toString('hex');
+}
+
+export function decrypt(encryptedText: string): string {
+  const data = Buffer.from(encryptedText, 'hex');
+  const iv = data.slice(0, IV_LENGTH);
+  const authTag = data.slice(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
+  const encrypted = data.slice(IV_LENGTH + AUTH_TAG_LENGTH);
+  const decipher = crypto.createDecipheriv(ALGORITHM, masterKey, iv);
+  decipher.setAuthTag(authTag);
+  const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
+  return decrypted.toString('utf8');
+}
+
+
+// ========================================================================
+// ส่วนที่ 3: ปรับปรุงฟังก์ชันในไฟล์ server/storage.ts
+// Instructions: เราจะสร้างฟังก์ชันใหม่ที่ทำงานกับตาราง aiConfigurations ที่อัปเดตแล้ว
+// ========================================================================
+
+import { aiConfigurations } from "../shared/schema"; // Ensure this import exists
+import { eq } from "drizzle-orm"; // Ensure this import exists
+
+// ... (โค้ด storage เดิมของคุณ) ...
+
+export async function saveOrUpdateAiConfiguration(
+  tenantId: string,
+  provider: string,
+  encryptedApiKey: string
+) {
+  return db.insert(aiConfigurations)
+    .values({
+      tenantId,
+      provider: provider,
+      encryptedApiKey,
+    })
+    .onConflictDoUpdate({
+      target: aiConfigurations.tenantId, // Use tenantId as the conflict target
+      set: {
+        provider: provider,
+        encryptedApiKey,
+        updatedAt: new Date(),
+      },
+    })
+    .returning();
+}
+
+
+// ========================================================================
+// ส่วนที่ 4: ปรับปรุง API Route ในไฟล์ server/routes.ts
+// Instructions: เราจะใช้ API เดิม แต่เปลี่ยน Logic ภายในให้เรียกใช้ฟังก์ชันใหม่
+// ========================================================================
+
+import { encrypt } from "./encryption"; // Import the encryption service
+
+// ... (โค้ด routes เดิมของคุณ) ...
+
+// API to save/update AI configuration for a tenant
+app.post("/api/integrations/ai", isAuthenticated, async (req: any, res) => {
+    try {
+        const { provider, apiKey } = req.body;
+        if (!provider || !apiKey) {
+            return res.status(400).json({ message: "Provider and API Key are required." });
+        }
+
+        // This is a placeholder. You need to implement logic to get the tenantId from the authenticated user.
+        const tenantId = "550e8400-e29b-41d4-a716-446655440000"; 
+        
+        const encryptedApiKey = encrypt(apiKey);
+
+        // Call the new storage function that works with the 'ai_configurations' table
+        await storage.saveOrUpdateAiConfiguration(tenantId, provider, encryptedApiKey);
+
+        res.status(200).json({ message: "AI settings saved successfully." });
+
+    } catch (error) {
+        console.error("Save AI integration error:", error);
+        res.status(500).json({ message: "Failed to save AI settings." });
+    }
+});

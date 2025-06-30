@@ -4292,7 +4292,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // เรียก Gemini AI เพื่อสร้างการตอบกลับ
       const { GeminiService } = await import('./services/gemini');
-      const geminiService = new GeminiService(); // Use system API key for now
+      
+      // ดึง API key จาก tenant configuration
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const aiConfig = await storage.getAiConfiguration(tenantId);
+      
+      let geminiService;
+      if (aiConfig && aiConfig.encryptedApiKey) {
+        // ใช้ API key ของ tenant (decrypt ก่อนใช้)
+        const { decrypt } = await import('./encryption');
+        const decryptedApiKey = decrypt(aiConfig.encryptedApiKey);
+        geminiService = new GeminiService(decryptedApiKey);
+      } else {
+        // Fallback ใช้ system API key
+        geminiService = new GeminiService();
+      }
       
       // ดึงประวัติการสนทนา
       const recentMessages = await storage.getChatMessages(parseInt(conversationId));
@@ -4342,6 +4356,127 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete conversation error:", error);
       res.status(500).json({ message: "ไม่สามารถลบการสนทนาได้" });
+    }
+  });
+
+  // ===== AI CONFIGURATION ENDPOINTS =====
+  
+  // บันทึก/อัปเดต AI configuration สำหรับ tenant
+  app.post("/api/integrations/ai", requireAuth, async (req: any, res: any) => {
+    try {
+      const { provider, apiKey } = req.body;
+      
+      if (!provider || !apiKey) {
+        return res.status(400).json({ message: "Provider และ API Key จำเป็นต้องระบุ" });
+      }
+
+      // ดึง tenant ID จาก session
+      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      
+      // เข้ารหัส API key
+      const { encrypt } = await import('./encryption');
+      const encryptedApiKey = encrypt(apiKey);
+
+      // บันทึกลงฐานข้อมูล
+      const configuration = await storage.saveOrUpdateAiConfiguration(tenantId, provider, encryptedApiKey);
+
+      res.status(200).json({ 
+        message: "บันทึกการตั้งค่า AI สำเร็จ",
+        id: configuration.id,
+        provider: configuration.aiProvider 
+      });
+
+    } catch (error) {
+      console.error("Save AI integration error:", error);
+      res.status(500).json({ message: "ไม่สามารถบันทึกการตั้งค่า AI ได้" });
+    }
+  });
+
+  // ดึงการตั้งค่า AI ของ tenant (ไม่ส่ง API key กลับ)
+  app.get("/api/integrations/ai", requireAuth, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      
+      const configuration = await storage.getAiConfiguration(tenantId);
+      
+      if (!configuration) {
+        return res.status(404).json({ message: "ไม่พบการตั้งค่า AI" });
+      }
+
+      // ส่งข้อมูลโดยไม่รวม API key
+      res.json({
+        id: configuration.id,
+        provider: configuration.aiProvider,
+        isActive: configuration.isActive,
+        createdAt: configuration.createdAt,
+        updatedAt: configuration.updatedAt
+      });
+
+    } catch (error) {
+      console.error("Get AI configuration error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงการตั้งค่า AI ได้" });
+    }
+  });
+
+  // ทดสอบการตั้งค่า AI
+  app.post("/api/integrations/ai/test", requireAuth, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      
+      const configuration = await storage.getAiConfiguration(tenantId);
+      
+      if (!configuration) {
+        return res.status(404).json({ message: "ไม่พบการตั้งค่า AI" });
+      }
+
+      // ถอดรหัส API key สำหรับทดสอบ
+      const { decrypt } = await import('./encryption');
+      const apiKey = decrypt(configuration.encryptedApiKey);
+
+      // ทดสอบเรียก AI (Gemini)
+      if (configuration.aiProvider === 'gemini') {
+        const { GeminiService } = await import('./services/gemini');
+        const geminiService = new GeminiService(apiKey);
+        
+        const response = await geminiService.generateChatResponse(
+          "สวัสดี โปรดตอบสั้นๆ เพื่อทดสอบการเชื่อมต่อ",
+          []
+        );
+        
+        res.json({ 
+          success: true, 
+          message: "การเชื่อมต่อ AI สำเร็จ",
+          testResponse: response 
+        });
+      } else {
+        res.status(400).json({ message: "AI Provider ไม่รองรับ" });
+      }
+
+    } catch (error) {
+      console.error("Test AI configuration error:", error);
+      res.status(500).json({ 
+        message: "การทดสอบ AI ไม่สำเร็จ",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+
+  // ลบการตั้งค่า AI
+  app.delete("/api/integrations/ai", requireAuth, async (req: any, res: any) => {
+    try {
+      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      
+      const deleted = await storage.deleteAiConfiguration(tenantId);
+      
+      if (deleted) {
+        res.json({ message: "ลบการตั้งค่า AI เรียบร้อยแล้ว" });
+      } else {
+        res.status(404).json({ message: "ไม่พบการตั้งค่า AI ที่ต้องการลบ" });
+      }
+
+    } catch (error) {
+      console.error("Delete AI configuration error:", error);
+      res.status(500).json({ message: "ไม่สามารถลบการตั้งค่า AI ได้" });
     }
   });
 
