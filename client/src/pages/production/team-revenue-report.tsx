@@ -572,18 +572,18 @@ function PrintableReport({
       </div>
 
       {/* Summary Statistics */}
-      <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="text-center p-4 border border-slate-200 rounded-lg">
-          <div className="text-2xl font-bold text-blue-600">{totalJobs}</div>
-          <div className="text-sm text-slate-600">งานทั้งหมด</div>
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        <div className="text-center p-2 border border-slate-200 rounded-lg">
+          <div className="text-lg font-bold text-blue-600">{totalJobs}</div>
+          <div className="text-xs text-slate-600">งานทั้งหมด</div>
         </div>
-        <div className="text-center p-4 border border-slate-200 rounded-lg">
-          <div className="text-2xl font-bold text-green-600">{totalQuantity.toLocaleString()}</div>
-          <div className="text-sm text-slate-600">ชิ้นงานทั้งหมด</div>
+        <div className="text-center p-2 border border-slate-200 rounded-lg">
+          <div className="text-lg font-bold text-green-600">{totalQuantity.toLocaleString()}</div>
+          <div className="text-xs text-slate-600">ชิ้นงานทั้งหมด</div>
         </div>
-        <div className="text-center p-4 border border-slate-200 rounded-lg">
-          <div className="text-2xl font-bold text-purple-600">{formatCurrency(totalRevenue)}</div>
-          <div className="text-sm text-slate-600">รายได้รวม</div>
+        <div className="text-center p-2 border border-slate-200 rounded-lg">
+          <div className="text-lg font-bold text-purple-600">{formatCurrency(totalRevenue)}</div>
+          <div className="text-xs text-slate-600">รายได้รวม</div>
         </div>
       </div>
 
