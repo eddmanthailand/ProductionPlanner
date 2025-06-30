@@ -31,7 +31,7 @@ import DailyWorkHistory from "@/pages/production/daily-work-history";
 import ProductionReports from "@/pages/production/production-reports";
 import TeamRevenueReport from "@/pages/production/team-revenue-report";
 import WorkQueueTable from "@/pages/production/work-queue-table";
-import WorkOrderView from "@/pages/production/work-order-view";
+import WorkOrderReadonly from "@/pages/production/work-order-readonly";
 import WorkOrderDetailView from "@/pages/production/work-order-detail-view";
 import WorkOrderPrint from "@/pages/production/work-order-print";
 import Accounting from "@/pages/accounting";
@@ -131,7 +131,10 @@ function Router() {
       <Route path="/production/work-steps">
         <MainLayout><WorkSteps /></MainLayout>
       </Route>
-      <Route path="/production/work-orders">
+      <Route path="/production/work-orders/view">
+        <MainLayout><WorkOrderReadonly /></MainLayout>
+      </Route>
+      <Route path="/production/work-orders/manage">
         <MainLayout><WorkOrders /></MainLayout>
       </Route>
       <Route path="/production/work-orders/new">
@@ -148,9 +151,6 @@ function Router() {
       </Route>
       <Route path="/production/work-queue-table">
         <MainLayout><WorkQueueTable /></MainLayout>
-      </Route>
-      <Route path="/production/work-orders">
-        <MainLayout><WorkOrderView /></MainLayout>
       </Route>
       <Route path="/production/work-orders/:id/view">
         <MainLayout><WorkOrderDetailView /></MainLayout>

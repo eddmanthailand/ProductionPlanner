@@ -9,7 +9,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, Printer, Search, FileText, Calendar, User, Package, Clock, Info } from "lucide-react";
 import { WorkOrder, Customer, WorkType } from "@shared/schema";
 
-export default function WorkOrderView() {
+export default function WorkOrderReadonly() {
   const [searchTerm, setSearchTerm] = useState("");
   const [, setLocation] = useLocation();
 

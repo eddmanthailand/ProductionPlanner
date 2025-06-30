@@ -352,9 +352,9 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   )}
                   {canAccessPage('/production/work-orders') && (
                     <Link
-                      href="/production/work-orders"
+                      href="/production/work-orders/view"
                       className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
-                        location === '/production/work-orders' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                        location === '/production/work-orders/view' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
                       }`}
                     >
                       ดูใบสั่งงาน
