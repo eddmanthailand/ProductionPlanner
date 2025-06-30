@@ -140,6 +140,16 @@ export default function WorkOrderDetailView() {
     return size?.name || 'ไม่ระบุ';
   };
 
+  // Group sub jobs by department
+  const groupedSubJobs = subJobs.reduce((groups: any, subJob: any) => {
+    const departmentName = getDepartmentName(subJob.department_id);
+    if (!groups[departmentName]) {
+      groups[departmentName] = [];
+    }
+    groups[departmentName].push(subJob);
+    return groups;
+  }, {});
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -181,125 +191,119 @@ export default function WorkOrderDetailView() {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-8">
-          {/* ข้อมูลทั่วไป */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Package className="w-5 h-5" />
-              ข้อมูลทั่วไป
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">วันที่สร้าง:</label>
-                  <p className="mt-1 text-gray-900 flex items-center gap-2">
-                    <Calendar className="w-4 h-4" />
-                    {formatDate(workOrder.createdAt)}
-                  </p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">กำหนดส่ง:</label>
-                  <p className="mt-1 text-gray-900 flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    {formatDate(workOrder.deliveryDate)}
-                  </p>
+          {/* ข้อมูลทั่วไปและลูกค้า */}
+          <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">วันที่สร้าง</label>
+                <p className="mt-1 text-gray-900 font-medium">{formatDate(workOrder.createdAt)}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">กำหนดส่ง</label>
+                <p className="mt-1 text-gray-900 font-medium">{formatDate(workOrder.deliveryDate)}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">ประเภทงาน</label>
+                <p className="mt-1 text-gray-900 font-medium">{workType?.name || 'ไม่ระบุ'}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">สถานะ</label>
+                <div className="mt-1">
+                  <Badge className={getStatusColor(workOrder.status)} variant="secondary">
+                    {getStatusText(workOrder.status)}
+                  </Badge>
                 </div>
               </div>
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">ประเภทงาน:</label>
-                  <p className="mt-1 text-gray-900">{workType?.name || 'ไม่ระบุ'}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">สถานะ:</label>
-                  <div className="mt-1">
-                    <Badge className={getStatusColor(workOrder.status)}>
-                      {getStatusText(workOrder.status)}
-                    </Badge>
-                  </div>
-                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4 text-sm mt-3 pt-3 border-t border-blue-200">
+              <div>
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">ชื่อลูกค้า</label>
+                <p className="mt-1 text-gray-900 font-medium">{customer?.name || 'ไม่ระบุ'}</p>
+              </div>
+              <div>
+                <label className="text-xs font-medium text-gray-600 uppercase tracking-wide">บริษัท</label>
+                <p className="mt-1 text-gray-900 font-medium">{customer?.companyName || 'ไม่ระบุ'}</p>
               </div>
             </div>
           </div>
 
           <Separator />
 
-          {/* ข้อมูลลูกค้า */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <User className="w-5 h-5" />
-              ข้อมูลลูกค้า
-            </h3>
-            {customer ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">ชื่อลูกค้า:</label>
-                    <p className="mt-1 text-gray-900">{customer.name}</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">บริษัท:</label>
-                    <p className="mt-1 text-gray-900">{customer.companyName || 'ไม่ระบุ'}</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-gray-500">ไม่พบข้อมูลลูกค้า</p>
-            )}
-          </div>
-
-          <Separator />
-
           {/* รายการสินค้า */}
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center gap-2">
               <Package className="w-5 h-5" />
               รายการสินค้า
             </h3>
-            {subJobs.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse border border-gray-300">
-                  <thead>
-                    <tr className="bg-gray-50">
-                      <th className="border border-gray-300 px-4 py-2 text-left">ชื่อสินค้า</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">แผนก</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">ขั้นตอน</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">สี</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">ขนาด</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">จำนวน</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {subJobs.map((subJob: any, index: number) => {
-                      return (
-                        <tr key={subJob.id} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 px-4 py-2">
-                            {subJob.product_name || 'ไม่ระบุ'}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {getDepartmentName(subJob.department_id)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {getWorkStepName(subJob.work_step_id)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {getColorName(subJob.color_id)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2">
-                            {getSizeName(subJob.size_id)}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2 text-center">
-                            {subJob.quantity}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            {Object.keys(groupedSubJobs).length > 0 ? (
+              <div className="space-y-6">
+                {Object.entries(groupedSubJobs).map(([departmentName, departmentSubJobs]: [string, any]) => (
+                  <div key={departmentName} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    {/* Department Header */}
+                    <div className="bg-gradient-to-r from-indigo-500 to-purple-600 px-6 py-4">
+                      <h4 className="text-white font-semibold text-lg flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        แผนก {departmentName}
+                      </h4>
+                    </div>
+                    
+                    {/* Products Table */}
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-gray-50 border-b border-gray-200">
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ชื่อสินค้า</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ขั้นตอน</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">สี</th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ขนาด</th>
+                            <th className="px-6 py-4 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">จำนวน</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {departmentSubJobs.map((subJob: any, index: number) => (
+                            <tr key={subJob.id} className="hover:bg-blue-50 transition-colors duration-200">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-medium text-gray-900">
+                                  {subJob.product_name || 'ไม่ระบุ'}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                  {getWorkStepName(subJob.work_step_id)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-4 h-4 rounded-full border border-gray-300"
+                                    style={{ backgroundColor: colors.find(c => c.id === subJob.color_id)?.code || '#f3f4f6' }}
+                                  ></div>
+                                  <span className="text-sm text-gray-900">{getColorName(subJob.color_id)}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                  {getSizeName(subJob.size_id)}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-center">
+                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-800 text-sm font-semibold">
+                                  {subJob.quantity}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
-              <p className="text-gray-500">ไม่มีรายการสินค้า</p>
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
+                <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg">ไม่มีรายการสินค้า</p>
+              </div>
             )}
           </div>
 
