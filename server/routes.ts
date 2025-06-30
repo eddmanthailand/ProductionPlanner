@@ -4371,7 +4371,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // ดึง tenant ID จาก session
-      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
+        });
+      }
       
       // เข้ารหัส API key
       const { encrypt } = await import('./encryption');
@@ -4407,7 +4412,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ดึงการตั้งค่า AI ของ tenant (ไม่ส่ง API key กลับ)
   app.get("/api/integrations/ai", requireAuth, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
+        });
+      }
       
       const configuration = await storage.getAiConfiguration(tenantId);
       
@@ -4433,7 +4443,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ทดสอบการตั้งค่า AI
   app.post("/api/integrations/ai/test", requireAuth, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
+        });
+      }
       
       const configuration = await storage.getAiConfiguration(tenantId);
       
