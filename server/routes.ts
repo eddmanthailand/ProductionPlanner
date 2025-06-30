@@ -4374,32 +4374,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
       
       // เข้ารหัส API key
-      const { encrypt, isEncryptionAvailable } = await import('./encryption');
+      const { encrypt } = await import('./encryption');
       
-      console.log("Checking encryption availability...");
-      console.log("MASTER_ENCRYPTION_KEY exists:", !!process.env.MASTER_ENCRYPTION_KEY);
-      console.log("MASTER_ENCRYPTION_KEY length:", process.env.MASTER_ENCRYPTION_KEY?.length);
-      
-      const encryptionAvailable = isEncryptionAvailable();
-      console.log("isEncryptionAvailable():", encryptionAvailable);
-      
-      if (!encryptionAvailable) {
-        console.log("Encryption check failed, trying direct encryption...");
-        try {
-          // Try direct encryption test
-          const testEncrypted = encrypt("test");
-          console.log("Direct encryption test successful");
-        } catch (directError) {
-          console.log("Direct encryption failed:", directError.message);
-          return res.status(500).json({ 
-            message: "ระบบเข้ารหัสยังไม่พร้อมใช้งาน กรุณาตั้งค่า MASTER_ENCRYPTION_KEY ใน Replit Secrets",
-            error: "ENCRYPTION_NOT_AVAILABLE",
-            details: directError.message
-          });
-        }
+      let encryptedApiKey: string;
+      try {
+        encryptedApiKey = encrypt(apiKey);
+        console.log("API key encrypted successfully");
+      } catch (encryptionError) {
+        const errorMessage = encryptionError instanceof Error ? encryptionError.message : String(encryptionError);
+        console.error("Encryption error:", errorMessage);
+        return res.status(500).json({ 
+          message: "ไม่สามารถเข้ารหัส API key ได้: " + errorMessage,
+          error: "ENCRYPTION_FAILED"
+        });
       }
-      
-      const encryptedApiKey = encrypt(apiKey);
 
       // บันทึกลงฐานข้อมูล
       const configuration = await storage.saveOrUpdateAiConfiguration(tenantId, provider, encryptedApiKey);
