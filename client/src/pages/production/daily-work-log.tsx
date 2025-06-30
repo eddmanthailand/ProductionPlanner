@@ -1293,80 +1293,80 @@ export default function DailyWorkLog() {
               {/* Remove debug info */}
               
               {/* Header Info Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-white" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-white" />
                     </div>
-                    <div>
-                      <Label className="text-xs font-medium text-purple-600 dark:text-purple-400">เลขที่บันทึก</Label>
-                      <p className="font-bold text-purple-900 dark:text-purple-100">{previewingLog.id || 'กำลังสร้าง...'}</p>
-                      <p className="text-xs text-purple-700 dark:text-purple-300">WL Format</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-4 rounded-lg border border-indigo-200 dark:border-indigo-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-500 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-medium text-indigo-600 dark:text-indigo-400">เลขที่รายงาน</Label>
-                      <p className="font-bold text-indigo-900 dark:text-indigo-100">{previewingLog.reportNumber || 'N/A'}</p>
-                      <p className="text-xs text-indigo-700 dark:text-indigo-300">สร้างอัตโนมัติ</p>
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-[10px] font-medium text-purple-600 dark:text-purple-400 block">เลขที่บันทึก</Label>
+                      <p className="font-bold text-xs text-purple-900 dark:text-purple-100 truncate" title={previewingLog.id}>{previewingLog.id || 'กำลังสร้าง...'}</p>
+                      <p className="text-[9px] text-purple-700 dark:text-purple-300">WL Format</p>
                     </div>
                   </div>
                 </div>
-
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-lg border border-blue-200 dark:border-blue-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-lg flex items-center justify-center">
-                      <Calendar className="w-5 h-5 text-white" />
+                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 p-3 rounded-lg border border-indigo-200 dark:border-indigo-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-4 h-4 text-white" />
                     </div>
-                    <div>
-                      <Label className="text-xs font-medium text-blue-600 dark:text-blue-400">วันที่บันทึก</Label>
-                      <p className="font-bold text-blue-900 dark:text-blue-100">{format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}</p>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">{format(new Date(previewingLog.createdAt), 'HH:mm น.')}</p>
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-[10px] font-medium text-indigo-600 dark:text-indigo-400 block">เลขที่รายงาน</Label>
+                      <p className="font-bold text-xs text-indigo-900 dark:text-indigo-100 truncate" title={previewingLog.reportNumber}>{previewingLog.reportNumber || 'N/A'}</p>
+                      <p className="text-[9px] text-indigo-700 dark:text-indigo-300">RP Format</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                      <Users className="w-5 h-5 text-white" />
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Calendar className="w-4 h-4 text-white" />
                     </div>
-                    <div>
-                      <Label className="text-xs font-medium text-green-600 dark:text-green-400">ทีมงาน</Label>
-                      <p className="font-bold text-green-900 dark:text-green-100">{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
-                      <p className="text-xs text-green-700 dark:text-green-300">แผนก{departments.find(d => d.id === allTeams.find(t => t.id === previewingLog.teamId)?.departmentId)?.name}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-4 rounded-lg border border-purple-200 dark:border-purple-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-500 rounded-lg flex items-center justify-center">
-                      <ClipboardList className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <Label className="text-xs font-medium text-purple-600 dark:text-purple-400">ใบสั่งงาน</Label>
-                      <p className="font-bold text-purple-900 dark:text-purple-100">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.orderNumber || previewingLog.workOrderId}</p>
-                      <p className="text-xs text-purple-700 dark:text-purple-300">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.customerName}</p>
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-[10px] font-medium text-blue-600 dark:text-blue-400 block">วันที่บันทึก</Label>
+                      <p className="font-bold text-xs text-blue-900 dark:text-blue-100">{format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}</p>
+                      <p className="text-[9px] text-blue-700 dark:text-blue-300">{format(new Date(previewingLog.createdAt), 'HH:mm น.')}</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-4 rounded-lg border border-orange-200 dark:border-orange-700">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-orange-500 rounded-lg flex items-center justify-center">
-                      <BarChart3 className="w-5 h-5 text-white" />
+                <div className="bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-3 rounded-lg border border-green-200 dark:border-green-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <Users className="w-4 h-4 text-white" />
                     </div>
-                    <div>
-                      <Label className="text-xs font-medium text-orange-600 dark:text-orange-400">จำนวนรวม</Label>
-                      <p className="font-bold text-orange-900 dark:text-orange-100">{previewingLog.totalQuantity?.toLocaleString() || 0} ชิ้น</p>
-                      <p className="text-xs text-orange-700 dark:text-orange-300">{previewingLog.subJobs.length} รายการงาน</p>
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-[10px] font-medium text-green-600 dark:text-green-400 block">ทีมงาน</Label>
+                      <p className="font-bold text-xs text-green-900 dark:text-green-100 truncate" title={allTeams.find(t => t.id === previewingLog.teamId)?.name}>{allTeams.find(t => t.id === previewingLog.teamId)?.name || previewingLog.teamId}</p>
+                      <p className="text-[9px] text-green-700 dark:text-green-300 truncate">แผนก{departments.find(d => d.id === allTeams.find(t => t.id === previewingLog.teamId)?.departmentId)?.name}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 p-3 rounded-lg border border-purple-200 dark:border-purple-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <ClipboardList className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-[10px] font-medium text-purple-600 dark:text-purple-400 block">ใบสั่งงาน</Label>
+                      <p className="font-bold text-xs text-purple-900 dark:text-purple-100 truncate" title={workOrders.find(wo => wo.id === previewingLog.workOrderId)?.orderNumber}>{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.orderNumber || previewingLog.workOrderId}</p>
+                      <p className="text-[9px] text-purple-700 dark:text-purple-300 truncate">{workOrders.find(wo => wo.id === previewingLog.workOrderId)?.customerName}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 p-3 rounded-lg border border-orange-200 dark:border-orange-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <BarChart3 className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Label className="text-[10px] font-medium text-orange-600 dark:text-orange-400 block">จำนวนรวม</Label>
+                      <p className="font-bold text-xs text-orange-900 dark:text-orange-100">{previewingLog.totalQuantity?.toLocaleString() || 0} ชิ้น</p>
+                      <p className="text-[9px] text-orange-700 dark:text-orange-300">{previewingLog.subJobs.length} รายการงาน</p>
                     </div>
                   </div>
                 </div>
