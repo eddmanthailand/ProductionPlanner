@@ -15,7 +15,6 @@ function getMasterKey(): Buffer {
   }
   
   // Always create a consistent 32-byte key from any input using SHA-256
-  const crypto = require('crypto');
   const hash = crypto.createHash('sha256').update(masterKeyInput, 'utf8').digest();
   return hash;
 }
