@@ -1301,8 +1301,8 @@ export default function DailyWorkLog() {
                     </div>
                     <div>
                       <Label className="text-xs font-medium text-purple-600 dark:text-purple-400">เลขที่บันทึก</Label>
-                      <p className="font-bold text-purple-900 dark:text-purple-100">{previewingLog.reportNumber || 'กำลังสร้าง...'}</p>
-                      <p className="text-xs text-purple-700 dark:text-purple-300">อัตโนมัติ</p>
+                      <p className="font-bold text-purple-900 dark:text-purple-100">{previewingLog.id || 'กำลังสร้าง...'}</p>
+                      <p className="text-xs text-purple-700 dark:text-purple-300">WL Format</p>
                     </div>
                   </div>
                 </div>
@@ -1398,7 +1398,7 @@ export default function DailyWorkLog() {
                                   การบันทึกครั้งที่ {sessionIndex + 1}
                                 </h4>
                                 <div className="flex items-center gap-4 text-sm text-blue-700 dark:text-blue-300">
-                                  <span>เลขที่: {session.reportNumber}</span>
+                                  <span>เลขที่รายงาน: {session.reportNumber}</span>
                                   <span>•</span>
                                   <span>เวลา: {format(new Date(session.createdAt), 'HH:mm น.')}</span>
                                   <span>•</span>
