@@ -52,7 +52,7 @@ export default function AIChatbot() {
 
   // Create new conversation
   const createConversationMutation = useMutation({
-    mutationFn: () => apiRequest('/api/chat/conversations', 'POST', { title: 'การสนทนาใหม่' }),
+    mutationFn: () => apiRequest('POST', '/api/chat/conversations', { title: 'การสนทนาใหม่' }),
     onSuccess: (newConversation) => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setSelectedConversation(newConversation.id);
@@ -69,7 +69,7 @@ export default function AIChatbot() {
   // Send message
   const sendMessageMutation = useMutation({
     mutationFn: (content: string) => 
-      apiRequest(`/api/chat/conversations/${selectedConversation}/messages`, 'POST', { content }),
+      apiRequest('POST', `/api/chat/conversations/${selectedConversation}/messages`, { content }),
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ['/api/chat/conversations', selectedConversation, 'messages'] 
@@ -91,7 +91,7 @@ export default function AIChatbot() {
   // Delete conversation
   const deleteConversationMutation = useMutation({
     mutationFn: (conversationId: number) => 
-      apiRequest(`/api/chat/conversations/${conversationId}`, 'DELETE'),
+      apiRequest('DELETE', `/api/chat/conversations/${conversationId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setSelectedConversation(null);

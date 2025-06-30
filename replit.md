@@ -130,6 +130,15 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ เพิ่มระบบ AI Chatbot ด้วย Gemini AI สำเร็จ
+  - สร้างตาราง ai_configurations, chat_conversations, chat_messages
+  - เพิ่ม GeminiService พร้อม encryption service สำหรับ API key
+  - สร้าง API endpoints: GET/POST conversations, POST/GET messages
+  - เพิ่มหน้า AI Chatbot UI ที่สมบูรณ์พร้อม real-time chat
+  - เพิ่มเมนู "AI ผู้ช่วย" ใน sidebar
+  - ระบบใช้ Gemini API key จาก environment variable
+  - AI ตอบกลับเป็นภาษาไทยและให้คำแนะนำเกี่ยวกับระบบได้ถูกต้อง
+
 - June 30, 2025: ✅ ปรับปรุงรูปแบบรายงานพิมพ์ให้กระชับและเหมาะสำหรับการพิมพ์
   - ลดขนาดส่วนหัว 60%: หัวเรื่อง text-lg, รายละเอียด text-xs, ลด padding/margin
   - ย้ายปุ่มพิมพ์และปิดไปแถวบนสุดข้างหัวเรื่อง ลดขนาดเป็น text-xs
