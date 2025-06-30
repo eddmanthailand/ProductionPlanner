@@ -43,6 +43,7 @@ import Users from "@/pages/users";
 import UserManagement from "@/pages/user-management";
 import PageAccessManagement from "@/pages/page-access-management";
 import AccessDemo from "@/pages/access-demo";
+import AIChatbot from "@/pages/ai-chatbot";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();

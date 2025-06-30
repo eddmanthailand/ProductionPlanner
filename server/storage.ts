@@ -2360,6 +2360,109 @@ export class DatabaseStorage implements IStorage {
       return false;
     }
   }
+
+  // ===== AI CHATBOT IMPLEMENTATION =====
+  
+  async createChatConversation(conversation: InsertChatConversation): Promise<ChatConversation> {
+    try {
+      const [newConversation] = await db
+        .insert(chatConversations)
+        .values(conversation)
+        .returning();
+      
+      return newConversation;
+    } catch (error) {
+      console.error('Create chat conversation error:', error);
+      throw new Error('Failed to create conversation');
+    }
+  }
+
+  async getChatConversations(tenantId: string, userId: number): Promise<ChatConversation[]> {
+    try {
+      const conversations = await db
+        .select()
+        .from(chatConversations)
+        .where(
+          and(
+            eq(chatConversations.tenantId, tenantId),
+            eq(chatConversations.userId, userId),
+            eq(chatConversations.isActive, true)
+          )
+        )
+        .orderBy(desc(chatConversations.updatedAt));
+      
+      return conversations;
+    } catch (error) {
+      console.error('Get chat conversations error:', error);
+      return [];
+    }
+  }
+
+  async getChatMessages(conversationId: number): Promise<ChatMessage[]> {
+    try {
+      const messages = await db
+        .select()
+        .from(chatMessages)
+        .where(eq(chatMessages.conversationId, conversationId))
+        .orderBy(asc(chatMessages.createdAt));
+      
+      return messages;
+    } catch (error) {
+      console.error('Get chat messages error:', error);
+      return [];
+    }
+  }
+
+  async createChatMessage(message: InsertChatMessage): Promise<ChatMessage> {
+    try {
+      const [newMessage] = await db
+        .insert(chatMessages)
+        .values(message)
+        .returning();
+      
+      // Update conversation timestamp
+      await db
+        .update(chatConversations)
+        .set({ updatedAt: new Date() })
+        .where(eq(chatConversations.id, message.conversationId));
+      
+      return newMessage;
+    } catch (error) {
+      console.error('Create chat message error:', error);
+      throw new Error('Failed to create message');
+    }
+  }
+
+  async updateChatConversationTitle(conversationId: number, title: string): Promise<void> {
+    try {
+      await db
+        .update(chatConversations)
+        .set({ 
+          title: title,
+          updatedAt: new Date() 
+        })
+        .where(eq(chatConversations.id, conversationId));
+    } catch (error) {
+      console.error('Update conversation title error:', error);
+      throw new Error('Failed to update conversation title');
+    }
+  }
+
+  async deleteChatConversation(conversationId: number): Promise<void> {
+    try {
+      // Soft delete conversation
+      await db
+        .update(chatConversations)
+        .set({ 
+          isActive: false,
+          updatedAt: new Date() 
+        })
+        .where(eq(chatConversations.id, conversationId));
+    } catch (error) {
+      console.error('Delete conversation error:', error);
+      throw new Error('Failed to delete conversation');
+    }
+  }
 }
 
 export const storage = new DatabaseStorage();

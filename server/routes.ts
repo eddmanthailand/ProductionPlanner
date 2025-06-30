@@ -4298,7 +4298,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const recentMessages = await storage.getChatMessages(parseInt(conversationId));
       const conversationHistory = recentMessages
         .slice(-10) // เอา 10 ข้อความล่าสุด
-        .map(msg => ({ role: msg.role, content: msg.content }));
+        .map((msg: any) => ({ role: msg.role, content: msg.content }));
 
       // สร้างการตอบกลับจาก AI
       const aiResponse = await geminiService.generateChatResponse(
