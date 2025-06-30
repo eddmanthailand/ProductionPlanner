@@ -4,10 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, Printer, User, Calendar, Package, Clock, Phone, Mail, MapPin } from "lucide-react";
+import { ArrowLeft, Printer, User, Calendar, Package, Clock, Phone, Mail, MapPin, FileText } from "lucide-react";
 import { WorkOrder, Customer, WorkType, SubJob } from "@shared/schema";
-import WorkOrderAttachments from "@/components/WorkOrderAttachments";
+import { format } from "date-fns";
+import { th } from "date-fns/locale";
 
 export default function WorkOrderDetailView() {
   const [, params] = useRoute("/production/work-orders/:id/view");
@@ -15,7 +15,7 @@ export default function WorkOrderDetailView() {
   const workOrderId = params?.id;
 
   // Fetch work order
-  const { data: workOrder, isLoading } = useQuery<WorkOrder>({
+  const { data: workOrder, isLoading: isLoadingWorkOrder } = useQuery<WorkOrder>({
     queryKey: ["/api/work-orders", workOrderId],
     enabled: !!workOrderId,
   });
@@ -36,7 +36,7 @@ export default function WorkOrderDetailView() {
     enabled: !!workOrderId,
   });
 
-  if (isLoading) {
+  if (isLoadingWorkOrder) {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="text-lg">กำลังโหลดข้อมูล...</div>
@@ -73,7 +73,7 @@ export default function WorkOrderDetailView() {
       case 'in_production': return 'กำลังผลิต';
       case 'completed': return 'เสร็จสิ้น';
       case 'cancelled': return 'ยกเลิก';
-      default: return status;
+      default: return status || 'ไม่ระบุ';
     }
   };
 
@@ -84,13 +84,26 @@ export default function WorkOrderDetailView() {
       case 3: return 'ปานกลาง';
       case 4: return 'ต่ำ';
       case 5: return 'ต่ำมาก';
-      default: return 'ไม่ระบุ';
+      default: return 'ปานกลาง';
+    }
+  };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return 'ไม่ระบุ';
+    try {
+      return format(new Date(dateString), 'dd MMMM yyyy', { locale: th });
+    } catch (error) {
+      return 'ไม่ระบุ';
     }
   };
 
   const handlePrint = () => {
     window.open(`/production/work-orders/${workOrderId}/print`, '_blank');
   };
+
+  const totalAmount = subJobs.reduce((sum, subJob) => 
+    sum + (subJob.quantity * parseFloat(subJob.unitPrice || '0')), 0
+  );
 
   return (
     <div className="space-y-6">
@@ -100,7 +113,7 @@ export default function WorkOrderDetailView() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setLocation('/production/work-orders')}
+            onClick={() => setLocation('/production/work-orders/view')}
             className="flex items-center gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -110,207 +123,212 @@ export default function WorkOrderDetailView() {
             <h1 className="text-2xl font-bold text-gray-900">
               รายละเอียดใบสั่งงาน: {workOrder.orderNumber}
             </h1>
-            <p className="text-gray-600 mt-1">{workOrder.title}</p>
+            <p className="text-gray-600">
+              โหมดดูอย่างเดียว - ไม่สามารถแก้ไขได้
+            </p>
           </div>
         </div>
-        <Button 
+        <Button
           onClick={handlePrint}
-          className="flex items-center gap-2"
+          className="bg-green-600 hover:bg-green-700 text-white flex items-center gap-2"
         >
           <Printer className="w-4 h-4" />
           พิมพ์
         </Button>
       </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview">ข้อมูลทั่วไป</TabsTrigger>
-          <TabsTrigger value="customer">ข้อมูลลูกค้า</TabsTrigger>
-          <TabsTrigger value="sub-jobs">รายการสินค้า</TabsTrigger>
-          <TabsTrigger value="attachments">ไฟล์แนบ</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>ข้อมูลใบสั่งงาน</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">สถานะ:</span>
-                  <Badge className={getStatusColor(workOrder.status)}>
-                    {getStatusText(workOrder.status)}
-                  </Badge>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">ความสำคัญ:</span>
-                  <span>{getPriorityText(workOrder.priority)}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium">ประเภทงาน:</span>
-                  <span>{workType?.name || 'ไม่ระบุ'}</span>
-                </div>
-                <Separator />
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Calendar className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">วันที่สร้าง:</span>
-                    <span>{new Date(workOrder.createdAt).toLocaleDateString('th-TH')}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">กำหนดส่ง:</span>
-                    <span>{workOrder.deliveryDate ? new Date(workOrder.deliveryDate).toLocaleDateString('th-TH') : 'ไม่ระบุ'}</span>
+      {/* Combined Information Card */}
+      <Card className="border-l-4 border-l-blue-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <FileText className="w-5 h-5" />
+            ข้อมูลใบสั่งงาน
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-8">
+          {/* ข้อมูลทั่วไป */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              ข้อมูลทั่วไป
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">สถานะ:</label>
+                  <div className="mt-1">
+                    <Badge className={getStatusColor(workOrder.status)}>
+                      {getStatusText(workOrder.status)}
+                    </Badge>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <div className="text-sm">
-                    <span className="font-medium">ยอดรวมทั้งหมด:</span>
-                    <span className="text-lg font-bold text-green-600 ml-2">
-                      ฿{parseFloat(workOrder.totalAmount).toLocaleString()}
-                    </span>
-                  </div>
-                  {workOrder.completedDate && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="w-4 h-4 text-gray-500" />
-                      <span className="font-medium">วันที่เสร็จสิ้น:</span>
-                      <span>{new Date(workOrder.completedDate).toLocaleDateString('th-TH')}</span>
-                    </div>
-                  )}
+                <div>
+                  <label className="text-sm font-medium text-gray-700">ความสำคัญ:</label>
+                  <p className="mt-1 text-gray-900">{getPriorityText(workOrder.priority)}</p>
                 </div>
-
-                {workOrder.description && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h3 className="font-medium mb-2">รายละเอียดงาน</h3>
-                      <p className="text-gray-600 whitespace-pre-wrap">{workOrder.description}</p>
-                    </div>
-                  </>
-                )}
-
-                {workOrder.notes && (
-                  <>
-                    <Separator />
-                    <div>
-                      <h3 className="font-medium mb-2">หมายเหตุ</h3>
-                      <p className="text-gray-600 whitespace-pre-wrap">{workOrder.notes}</p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">ประเภทงาน:</label>
+                  <p className="mt-1 text-gray-900">{workType?.name || 'ไม่ระบุ'}</p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-gray-700">วันที่สร้าง:</label>
+                  <p className="mt-1 text-gray-900 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    {formatDate(workOrder.createdAt)}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">กำหนดส่ง:</label>
+                  <p className="mt-1 text-gray-900 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    {formatDate(workOrder.dueDate)}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">ยอดรวมทั้งหมด:</label>
+                  <p className="mt-1 text-gray-900 font-semibold text-green-600">
+                    ฿{totalAmount.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
-        </TabsContent>
 
-        <TabsContent value="customer">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Separator />
+
+          {/* ข้อมูลลูกค้า */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <User className="w-5 h-5" />
+              ข้อมูลลูกค้า
+            </h3>
             {customer ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    ข้อมูลลูกค้า
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <h3 className="font-semibold text-lg">{customer.name}</h3>
-                      {customer.companyName && (
-                        <p className="text-gray-600">{customer.companyName}</p>
-                      )}
-                      {customer.taxId && (
-                        <p className="text-sm text-gray-500">เลขประจำตัวผู้เสียภาษี: {customer.taxId}</p>
-                      )}
-                    </div>
-                    <div className="space-y-2">
-                      {customer.phone && (
-                        <div className="flex items-center gap-2">
-                          <Phone className="w-4 h-4 text-gray-500" />
-                          <span>{customer.phone}</span>
-                        </div>
-                      )}
-                      {customer.email && (
-                        <div className="flex items-center gap-2">
-                          <Mail className="w-4 h-4 text-gray-500" />
-                          <span>{customer.email}</span>
-                        </div>
-                      )}
-                      {customer.address && (
-                        <div className="flex items-start gap-2">
-                          <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
-                          <span className="text-sm">{customer.address}</span>
-                        </div>
-                      )}
-                    </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">ชื่อลูกค้า:</label>
+                    <p className="mt-1 text-gray-900">{customer.name}</p>
                   </div>
-                </CardContent>
-              </Card>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">บริษัท:</label>
+                    <p className="mt-1 text-gray-900">{customer.companyName || 'ไม่ระบุ'}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">เลขประจำตัวผู้เสียภาษี:</label>
+                    <p className="mt-1 text-gray-900">{customer.taxId || 'ไม่ระบุ'}</p>
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">เบอร์โทร:</label>
+                    <p className="mt-1 text-gray-900 flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      {customer.phone || 'ไม่ระบุ'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">อีเมล:</label>
+                    <p className="mt-1 text-gray-900 flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      {customer.email || 'ไม่ระบุ'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">ที่อยู่:</label>
+                    <p className="mt-1 text-gray-900 flex items-start gap-2">
+                      <MapPin className="w-4 h-4 mt-0.5" />
+                      {customer.address || 'ไม่ระบุ'}
+                    </p>
+                  </div>
+                </div>
+              </div>
             ) : (
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-8 text-gray-500">
-                    ไม่มีข้อมูลลูกค้า
-                  </div>
-                </CardContent>
-              </Card>
+              <p className="text-gray-500">ไม่พบข้อมูลลูกค้า</p>
             )}
           </div>
-        </TabsContent>
 
-        <TabsContent value="sub-jobs">
-          <Card>
-            <CardHeader>
-              <CardTitle>รายการสินค้า</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {subJobs.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  ยังไม่มีรายการสินค้า
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-3 px-4">สินค้า</th>
-                        <th className="text-center py-3 px-4">จำนวน</th>
-                        <th className="text-right py-3 px-4">ราคาต่อหน่วย</th>
-                        <th className="text-right py-3 px-4">รวม</th>
-                        <th className="text-center py-3 px-4">สถานะ</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {subJobs.map((subJob) => (
-                        <tr key={subJob.id} className="border-b hover:bg-gray-50">
-                          <td className="py-3 px-4 font-medium">{subJob.productName}</td>
-                          <td className="py-3 px-4 text-center">{subJob.quantity}</td>
-                          <td className="py-3 px-4 text-right">฿{parseFloat(subJob.unitPrice).toLocaleString()}</td>
-                          <td className="py-3 px-4 text-right font-medium">
-                            ฿{(subJob.quantity * parseFloat(subJob.unitPrice)).toLocaleString()}
+          <Separator />
+
+          {/* รายการสินค้า */}
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <Package className="w-5 h-5" />
+              รายการสินค้า
+            </h3>
+            {subJobs.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse border border-gray-300">
+                  <thead>
+                    <tr className="bg-gray-50">
+                      <th className="border border-gray-300 px-4 py-2 text-left">รายการ</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">รายละเอียด</th>
+                      <th className="border border-gray-300 px-4 py-2 text-center">จำนวน</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">ราคาต่อหน่วย</th>
+                      <th className="border border-gray-300 px-4 py-2 text-right">รวม</th>
+                      <th className="border border-gray-300 px-4 py-2 text-center">สถานะ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {subJobs.map((subJob, index) => {
+                      const itemTotal = subJob.quantity * parseFloat(subJob.unitPrice || '0');
+                      return (
+                        <tr key={subJob.id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-4 py-2">
+                            {subJob.title || `รายการที่ ${index + 1}`}
                           </td>
-                          <td className="py-3 px-4 text-center">
+                          <td className="border border-gray-300 px-4 py-2">
+                            {subJob.description || 'ไม่มีรายละเอียด'}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
+                            {subJob.quantity}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right">
+                            ฿{parseFloat(subJob.unitPrice || '0').toLocaleString()}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
+                            ฿{itemTotal.toLocaleString()}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2 text-center">
                             <Badge className={getStatusColor(subJob.status)}>
                               {getStatusText(subJob.status)}
                             </Badge>
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                      );
+                    })}
+                    <tr className="bg-gray-50 font-semibold">
+                      <td colSpan={4} className="border border-gray-300 px-4 py-2 text-right">
+                        ยอดรวมทั้งหมด:
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2 text-right text-green-600">
+                        ฿{totalAmount.toLocaleString()}
+                      </td>
+                      <td className="border border-gray-300 px-4 py-2"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="text-gray-500">ไม่มีรายการสินค้า</p>
+            )}
+          </div>
 
-        <TabsContent value="attachments">
-          <WorkOrderAttachments workOrderId={workOrderId!} />
-        </TabsContent>
-      </Tabs>
+          {/* หมายเหตุ */}
+          {workOrder.notes && (
+            <>
+              <Separator />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">หมายเหตุ</h3>
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <p className="text-gray-700 whitespace-pre-wrap">{workOrder.notes}</p>
+                </div>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
