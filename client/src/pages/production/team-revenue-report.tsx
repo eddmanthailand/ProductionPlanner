@@ -6,7 +6,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarIcon, DollarSign, TrendingUp, Users, FileText, BarChart3, ClipboardList } from "lucide-react";
+import { CalendarIcon, DollarSign, TrendingUp, Users, FileText, BarChart3, ClipboardList, Printer, Eye } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, parseISO } from "date-fns";
 import { th } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -66,6 +67,7 @@ function TeamRevenueReport() {
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
   const [manualGenerate, setManualGenerate] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // ดึงข้อมูลทีม
   const { data: teams } = useQuery<Team[]>({
@@ -177,6 +179,18 @@ function TeamRevenueReport() {
     setManualGenerate(true);
   };
 
+  const handlePrintPreview = () => {
+    if (!workLogs || workLogs.length === 0) {
+      alert("กรุณาสร้างรายงานก่อนพิมพ์");
+      return;
+    }
+    setShowPrintPreview(true);
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
       {/* Modern Header */}
@@ -286,14 +300,26 @@ function TeamRevenueReport() {
             {/* ปุ่มสร้างรายงาน */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-slate-700">&nbsp;</label>
-              <Button 
-                onClick={handleGenerateReport}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
-                disabled={!selectedTeam || !startDate || !endDate || isLoading}
-              >
-                <BarChart3 className="mr-2 h-4 w-4" />
-                สร้างรายงาน
-              </Button>
+              <div className="grid grid-cols-2 gap-2">
+                <Button 
+                  onClick={handleGenerateReport}
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  disabled={!selectedTeam || !startDate || !endDate || isLoading}
+                >
+                  <BarChart3 className="mr-2 h-4 w-4" />
+                  สร้างรายงาน
+                </Button>
+                
+                <Button 
+                  onClick={handlePrintPreview}
+                  variant="outline"
+                  className="border-green-600 text-green-600 hover:bg-green-50 font-medium py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
+                  disabled={!workLogs || workLogs.length === 0}
+                >
+                  <Eye className="mr-2 h-4 w-4" />
+                  ดูก่อนพิมพ์
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -444,6 +470,45 @@ function TeamRevenueReport() {
           </CardContent>
         </Card>
       )}
+
+      {/* Print Preview Dialog */}
+      <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              ดูก่อนพิมพ์ - รายงานรายได้ทีม
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Print Action Buttons */}
+            <div className="flex justify-end gap-2 border-b pb-4">
+              <Button
+                onClick={handlePrint}
+                className="bg-green-600 hover:bg-green-700 text-white"
+              >
+                <Printer className="mr-2 h-4 w-4" />
+                พิมพ์
+              </Button>
+              <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
+                ปิด
+              </Button>
+            </div>
+
+            {/* Print Content */}
+            <PrintableReport 
+              selectedTeamName={selectedTeamName}
+              startDate={startDate}
+              endDate={endDate}
+              workLogs={workLogs}
+              totalRevenue={totalRevenue}
+              totalQuantity={totalQuantity}
+              totalJobs={totalJobs}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
