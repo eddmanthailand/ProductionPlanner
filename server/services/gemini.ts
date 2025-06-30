@@ -1,0 +1,181 @@
+import { GoogleGenAI } from "@google/genai";
+import { EncryptionService } from "./encryption";
+
+export class GeminiService {
+  private apiKey: string;
+  private ai: GoogleGenAI;
+
+  constructor(encryptedApiKey?: string) {
+    if (encryptedApiKey) {
+      // Decrypt tenant-specific API key
+      this.apiKey = EncryptionService.decrypt(encryptedApiKey);
+    } else {
+      // Use system-wide API key for development
+      this.apiKey = process.env.GEMINI_API_KEY || "";
+    }
+    
+    if (!this.apiKey) {
+      throw new Error("Gemini API key not found");
+    }
+    
+    this.ai = new GoogleGenAI({ apiKey: this.apiKey });
+  }
+
+  /**
+   * Generate chat response for support chatbot
+   */
+  async generateChatResponse(
+    userMessage: string, 
+    conversationHistory: Array<{role: string, content: string}> = [],
+    systemContext?: any
+  ): Promise<string> {
+    try {
+      const systemPrompt = this.buildSystemPrompt(systemContext);
+      
+      // Build conversation context
+      const conversationContext = conversationHistory
+        .slice(-10) // Keep only last 10 messages for context
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n');
+
+      const fullPrompt = `${systemPrompt}
+
+Previous conversation:
+${conversationContext}
+
+Current user message: ${userMessage}
+
+Please provide a helpful response as a production management system assistant:`;
+
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: fullPrompt,
+      });
+
+      return response.text || "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้";
+    } catch (error) {
+      console.error("Gemini API error:", error);
+      throw new Error(`Failed to generate response: ${error.message}`);
+    }
+  }
+
+  /**
+   * Analyze user intent and suggest actions
+   */
+  async analyzeUserIntent(userMessage: string): Promise<{
+    intent: string;
+    confidence: number;
+    suggestedAction?: string;
+    parameters?: any;
+  }> {
+    try {
+      const prompt = `Analyze the following user message and determine the intent related to a production management system.
+
+User message: "${userMessage}"
+
+Classify the intent into one of these categories:
+- work_order_query: asking about work orders
+- production_status: asking about production status
+- team_performance: asking about team performance
+- system_help: asking for help with system features
+- data_search: looking for specific data
+- report_request: requesting reports
+- general_chat: general conversation
+
+Respond in JSON format:
+{
+  "intent": "category_name",
+  "confidence": 0.95,
+  "suggestedAction": "specific_action_if_applicable",
+  "parameters": {}
+}`;
+
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              intent: { type: "string" },
+              confidence: { type: "number" },
+              suggestedAction: { type: "string" },
+              parameters: { type: "object" }
+            },
+            required: ["intent", "confidence"]
+          }
+        },
+        contents: prompt,
+      });
+
+      const result = JSON.parse(response.text || "{}");
+      return result;
+    } catch (error) {
+      console.error("Intent analysis error:", error);
+      return {
+        intent: "general_chat",
+        confidence: 0.5
+      };
+    }
+  }
+
+  /**
+   * Build system prompt with context about the production system
+   */
+  private buildSystemPrompt(systemContext?: any): string {
+    return `You are an AI assistant for a production planning and management system. Your role is to help users with:
+
+1. **Work Order Management**: Help users understand work orders, sub-jobs, and production planning
+2. **Team Performance**: Answer questions about team productivity, revenue reports, and daily work logs
+3. **System Navigation**: Guide users through different features and modules
+4. **Data Interpretation**: Explain reports, statistics, and system data
+5. **Troubleshooting**: Help with common system issues and workflows
+
+**System Context:**
+- Multi-tenant SaaS production management system
+- Features: Work Orders, Production Planning, Team Management, Revenue Reports
+- Modules: Production, Sales, Inventory, Master Data, Accounting
+- Role-based access control with 8 permission levels
+- Thai language interface with production terminology
+
+**Guidelines:**
+- Be helpful, professional, and concise
+- Use Thai language when appropriate
+- Provide step-by-step instructions when needed
+- Reference specific system features accurately
+- If you don't know something, admit it and suggest alternatives
+- Always prioritize user safety and data security
+
+**Available Data Context:**
+${systemContext ? JSON.stringify(systemContext, null, 2) : 'No specific context provided'}
+
+Remember: You're here to make the production management system easier to use and understand.`;
+  }
+
+  /**
+   * Generate summary of conversation
+   */
+  async generateConversationSummary(messages: Array<{role: string, content: string}>): Promise<string> {
+    try {
+      const conversation = messages
+        .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
+        .join('\n');
+
+      const prompt = `Summarize this conversation in a concise title (max 50 characters):
+
+${conversation}
+
+Generate a short, descriptive title in Thai that captures the main topic discussed.`;
+
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+      });
+
+      return response.text?.trim() || "การสนทนาเกี่ยวกับระบบ";
+    } catch (error) {
+      console.error("Summary generation error:", error);
+      return "การสนทนาเกี่ยวกับระบบ";
+    }
+  }
+}

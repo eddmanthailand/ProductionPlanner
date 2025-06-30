@@ -1058,3 +1058,75 @@ export const ACTIONS = {
 // Page Access types
 export type PageAccess = typeof pageAccess.$inferSelect;
 export type InsertPageAccess = z.infer<typeof insertPageAccessSchema>;
+
+// ===== AI CHATBOT TABLES =====
+// AI Configuration table for storing tenant-specific AI settings
+export const aiConfigurations = pgTable("ai_configurations", {
+  id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull().unique(),
+  aiProvider: varchar("ai_provider", { length: 50 }).notNull(), // 'gemini', 'openai', etc.
+  encryptedApiKey: text("encrypted_api_key").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Chat conversations table
+export const chatConversations = pgTable("chat_conversations", {
+  id: serial("id").primaryKey(),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Chat messages table
+export const chatMessages = pgTable("chat_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => chatConversations.id).notNull(),
+  role: varchar("role", { length: 20 }).notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  metadata: jsonb("metadata"), // For storing additional context
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI Relations
+export const aiConfigurationsRelations = relations(aiConfigurations, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [aiConfigurations.tenantId],
+    references: [tenants.id]
+  })
+}));
+
+export const chatConversationsRelations = relations(chatConversations, ({ one, many }) => ({
+  tenant: one(tenants, {
+    fields: [chatConversations.tenantId],
+    references: [tenants.id]
+  }),
+  user: one(users, {
+    fields: [chatConversations.userId],
+    references: [users.id]
+  }),
+  messages: many(chatMessages)
+}));
+
+export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
+  conversation: one(chatConversations, {
+    fields: [chatMessages.conversationId],
+    references: [chatConversations.id]
+  })
+}));
+
+// AI Schema types
+export const insertAiConfigurationSchema = createInsertSchema(aiConfigurations);
+export const insertChatConversationSchema = createInsertSchema(chatConversations);
+export const insertChatMessageSchema = createInsertSchema(chatMessages);
+
+export type AiConfiguration = typeof aiConfigurations.$inferSelect;
+export type InsertAiConfiguration = z.infer<typeof insertAiConfigurationSchema>;
+export type ChatConversation = typeof chatConversations.$inferSelect;
+export type InsertChatConversation = z.infer<typeof insertChatConversationSchema>;
+export type ChatMessage = typeof chatMessages.$inferSelect;
+export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
