@@ -130,6 +130,15 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ เพิ่มระบบ AI Settings (Multi-tenant BYOK) สำเร็จ
+  - อัปเกรดระบบ encryption เป็น AES-256-GCM ระดับ Enterprise
+  - สร้างหน้า AI Settings สำหรับจัดการ API key ของแต่ละ tenant
+  - ปรับปรุง GeminiService ให้รองรับ multi-tenant API key
+  - เพิ่มเมนู "การตั้งค่า AI" ใน sidebar
+  - เพิ่ม MASTER_ENCRYPTION_KEY system สำหรับเข้ารหัส tenant API keys
+  - แยกระบบ AI ให้เป็น "Bring Your Own Key" model
+  - มีการจัดการ error และ validation ที่ครอบคลุม
+
 - June 30, 2025: ✅ เพิ่มระบบ AI Chatbot ด้วย Gemini AI สำเร็จ
   - สร้างตาราง ai_configurations, chat_conversations, chat_messages
   - เพิ่ม GeminiService พร้อม encryption service สำหรับ API key
@@ -137,7 +146,7 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
   - เพิ่มหน้า AI Chatbot UI ที่สมบูรณ์พร้อม real-time chat
   - เพิ่มเมนู "AI ผู้ช่วย" ใน sidebar
   - ระบบใช้ Gemini API key จาก environment variable
-  - AI ตอบกลับเป็นภาษาไทยและให้คำแนะนำเกี่ยวกับระบบได้ถูกต้อง
+  - AI ตอบกลับเป็นภาษาไทยและให้คำแนะนำเกี่ยวกับระบบได้ถูกต่อง
 
 - June 30, 2025: ✅ ปรับปรุงรูปแบบรายงานพิมพ์ให้กระชับและเหมาะสำหรับการพิมพ์
   - ลดขนาดส่วนหัว 60%: หัวเรื่อง text-lg, รายละเอียด text-xs, ลด padding/margin
@@ -242,3 +251,17 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## AI System Setup Instructions
+
+### MASTER_ENCRYPTION_KEY Setup (Required)
+1. ไปที่ Secrets 🔒 ใน Replit
+2. สร้าง Secret ใหม่ชื่อ: `MASTER_ENCRYPTION_KEY`
+3. ใส่ค่า: `c712c339d375dd72506f0d5d9976e1a51788d75469628658a9002293b9abcfec`
+4. บันทึกและ restart แอปพลิเคชัน
+
+### Multi-tenant AI Configuration
+- ระบบใช้ "Bring Your Own Key" model
+- แต่ละ tenant สามารถตั้งค่า Gemini API key ของตัวเองได้
+- API keys จะถูกเข้ารหัสด้วย AES-256-GCM ก่อนบันทึก
+- เข้าไปตั้งค่าที่เมนู "การตั้งค่า AI"
