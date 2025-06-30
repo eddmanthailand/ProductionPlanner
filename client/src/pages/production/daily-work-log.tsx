@@ -813,16 +813,16 @@ export default function DailyWorkLog() {
               <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow style={{ fontSize: '12px' }}>
-                      <TableHead className="w-16">เลือก</TableHead>
-                      <TableHead>ชื่อสินค้า</TableHead>
-                      <TableHead>สี</TableHead>
-                      <TableHead>ไซส์</TableHead>
-                      <TableHead className="text-right">จำนวนสั่ง</TableHead>
-                      <TableHead className="text-right">ทำแล้ว</TableHead>
-                      <TableHead className="text-right">คงเหลือ</TableHead>
-                      <TableHead>สถานะ</TableHead>
-                      <TableHead className="w-32">จำนวนที่ทำ</TableHead>
+                    <TableRow style={{ fontSize: '11px' }}>
+                      <TableHead className="w-16 py-2 px-3">เลือก</TableHead>
+                      <TableHead className="py-2 px-3">ชื่อสินค้า</TableHead>
+                      <TableHead className="py-2 px-3">สี</TableHead>
+                      <TableHead className="py-2 px-3">ไซส์</TableHead>
+                      <TableHead className="text-right py-2 px-3">จำนวนสั่ง</TableHead>
+                      <TableHead className="text-right py-2 px-3">ทำแล้ว</TableHead>
+                      <TableHead className="text-right py-2 px-3">คงเหลือ</TableHead>
+                      <TableHead className="py-2 px-3">สถานะ</TableHead>
+                      <TableHead className="w-32 py-2 px-3">จำนวนที่ทำ</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -842,63 +842,66 @@ export default function DailyWorkLog() {
                       return (
                         <TableRow 
                           key={subJob.id} 
-                          className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 ${
+                          className={`cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 h-12 ${
                             selectedSubJobs[subJob.id.toString()] ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                           }`}
-                          style={{ fontSize: '12px' }}
+                          style={{ fontSize: '11px' }}
                         >
-                          <TableCell>
+                          <TableCell className="py-2 px-3">
                             <Checkbox
                               checked={selectedSubJobs[subJob.id.toString()] || false}
                               onCheckedChange={(checked) => handleSubJobSelection(subJob.id.toString(), checked as boolean)}
+                              className="scale-90"
                             />
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-2 px-3">
                             <div className="space-y-1">
-                              <div>{subJob.productName}</div>
+                              <div className="text-xs font-medium">{subJob.productName}</div>
                               {progressPercentage > 0 && (
-                                <div className="flex items-center gap-2">
-                                  <Progress value={progressPercentage} className="h-2 flex-1" />
-                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400 min-w-[40px]">
+                                <div className="flex items-center gap-1.5">
+                                  <Progress value={progressPercentage} className="h-1.5 flex-1" />
+                                  <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 min-w-[35px]">
                                     {progressPercentage.toFixed(1)}%
                                   </span>
                                 </div>
                               )}
                             </div>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
+                          <TableCell className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
                               {subJob.colorId && (
-                                <div className="w-3 h-3 rounded-full border border-gray-300" style={{
+                                <div className="w-2.5 h-2.5 rounded-full border border-gray-300" style={{
                                   backgroundColor: getColorHex(colors.find(c => c.id === subJob.colorId)?.code || '')
                                 }}></div>
                               )}
-                              {subJob.colorId 
-                                ? colors.find(c => c.id === subJob.colorId)?.name || '-'
-                                : '-'
-                              }
+                              <span className="text-xs">
+                                {subJob.colorId 
+                                  ? colors.find(c => c.id === subJob.colorId)?.name || '-'
+                                  : '-'
+                                }
+                              </span>
                             </div>
                           </TableCell>
-                          <TableCell>
-                            {subJob.sizeId 
-                              ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
-                              : '-'
-                            }
+                          <TableCell className="py-2 px-3">
+                            <span className="text-xs">
+                              {subJob.sizeId 
+                                ? sizes.find(s => s.id === subJob.sizeId)?.name || '-'
+                                : '-'
+                              }
+                            </span>
                           </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {subJob.quantity?.toLocaleString() || 0}
+                          <TableCell className="text-right font-medium py-2 px-3">
+                            <span className="text-xs">{subJob.quantity?.toLocaleString() || 0}</span>
                           </TableCell>
-                          <TableCell className="text-right">
-                            <span className={`font-medium ${quantityCompleted > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
+                          <TableCell className="text-right py-2 px-3">
+                            <span className={`font-medium text-xs ${quantityCompleted > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-500'}`}>
                               {quantityCompleted.toLocaleString()}
                             </span>
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right py-2 px-3">
                             {(() => {
                               let colorClass = '';
                               let label = '';
-                              
-
                               
                               if (quantityRemaining === 0) {
                                 colorClass = 'text-green-600 dark:text-green-400';
@@ -910,18 +913,18 @@ export default function DailyWorkLog() {
                               }
                               
                               return (
-                                <span className={`font-bold ${colorClass}`}>
+                                <span className={`font-bold text-xs ${colorClass}`}>
                                   {quantityRemaining.toLocaleString()}
                                   {label && (
-                                    <span className="text-xs text-green-500 ml-1">{label}</span>
+                                    <span className="text-[10px] text-green-500 ml-1">{label}</span>
                                   )}
                                 </span>
                               );
                             })()}
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <Circle className={`h-2 w-2 fill-current ${
+                          <TableCell className="py-2 px-3">
+                            <div className="flex items-center gap-1.5">
+                              <Circle className={`h-1.5 w-1.5 fill-current ${
                                 progressPercentage >= 100 ? 'text-green-500' : 
                                 progressPercentage > 0 ? 'text-yellow-500' : 
                                 'text-gray-400'
@@ -930,21 +933,21 @@ export default function DailyWorkLog() {
                                 progressPercentage >= 100 ? 'default' : 
                                 progressPercentage > 0 ? 'secondary' : 
                                 'outline'
-                              } className="text-xs">
+                              } className="text-[10px] px-1.5 py-0.5 h-5">
                                 {progressPercentage >= 100 ? 'เสร็จสิ้น' : 
                                  progressPercentage > 0 ? 'กำลังดำเนินการ' : 
                                  'รอดำเนินการ'}
                               </Badge>
                             </div>
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="py-2 px-3">
                             {selectedSubJobs[subJob.id.toString()] && (
                               <Input
                                 type="number"
                                 placeholder="จำนวน"
                                 value={selectedQuantities[subJob.id.toString()] || ""}
                                 onChange={(e) => handleQuantityChange(subJob.id.toString(), e.target.value)}
-                                className="w-20 h-8 text-xs"
+                                className="w-16 h-6 text-xs px-2"
                                 min="0"
                                 max={quantityRemaining > 0 ? quantityRemaining : 999}
                               />
@@ -1080,65 +1083,65 @@ export default function DailyWorkLog() {
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
-                <TableRow style={{ fontSize: '12px' }}>
-                  <TableHead className="w-[120px]">เลขที่รายงาน</TableHead>
-                  <TableHead className="w-[120px]">วันเวลา</TableHead>
-                  <TableHead className="w-[100px]">ทีม</TableHead>
-                  <TableHead className="w-[140px]">ใบสั่งงาน</TableHead>
-                  <TableHead className="w-[100px] text-center">จำนวนงาน</TableHead>
-                  <TableHead className="w-[100px] text-right">จำนวนรวม</TableHead>
-                  <TableHead className="w-[120px]">สถานะ</TableHead>
-                  <TableHead className="w-[80px] text-center">การดำเนินการ</TableHead>
+                <TableRow style={{ fontSize: '11px' }}>
+                  <TableHead className="w-[120px] py-2 px-3">เลขที่รายงาน</TableHead>
+                  <TableHead className="w-[120px] py-2 px-3">วันเวลา</TableHead>
+                  <TableHead className="w-[100px] py-2 px-3">ทีม</TableHead>
+                  <TableHead className="w-[140px] py-2 px-3">ใบสั่งงาน</TableHead>
+                  <TableHead className="w-[100px] text-center py-2 px-3">จำนวนงาน</TableHead>
+                  <TableHead className="w-[100px] text-right py-2 px-3">จำนวนรวม</TableHead>
+                  <TableHead className="w-[120px] py-2 px-3">สถานะ</TableHead>
+                  <TableHead className="w-[80px] text-center py-2 px-3">การดำเนินการ</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {consolidatedLogs.map((log, index) => (
                   <TableRow key={`${log.date}-${log.teamId}-${log.workOrderId}-${index}`} 
-                           style={{ fontSize: '12px' }}
-                           className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
-                    <TableCell className="font-mono text-xs">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-blue-600">{log.reportNumber || 'N/A'}</span>
-                        <span className="text-gray-500 text-xs">เลขที่รายงาน</span>
+                           style={{ fontSize: '11px' }}
+                           className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors h-12">
+                    <TableCell className="font-mono text-xs py-2 px-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-bold text-blue-600 text-xs">{log.reportNumber || 'N/A'}</span>
+                        <span className="text-gray-500 text-[10px]">เลขที่รายงาน</span>
                       </div>
                     </TableCell>
-                    <TableCell className="font-mono text-xs">
-                      <div className="flex flex-col">
-                        <span>{format(new Date(log.createdAt), 'dd/MM/yyyy')}</span>
-                        <span className="text-gray-500">{format(new Date(log.createdAt), 'HH:mm')}</span>
+                    <TableCell className="font-mono text-xs py-2 px-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-xs">{format(new Date(log.createdAt), 'dd/MM/yyyy')}</span>
+                        <span className="text-gray-500 text-[10px]">{format(new Date(log.createdAt), 'HH:mm')}</span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                        <span className="font-medium text-sm">
+                    <TableCell className="py-2 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                        <span className="font-medium text-xs">
                           {allTeams.find(t => t.id === log.teamId)?.name || log.teamId}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-medium text-sm">
+                    <TableCell className="py-2 px-3">
+                      <div className="flex flex-col gap-0.5">
+                        <span className="font-medium text-xs">
                           {workOrders.find(wo => wo.id === log.workOrderId)?.orderNumber || log.workOrderId}
                         </span>
-                        <span className="text-xs text-gray-500">
+                        <span className="text-[10px] text-gray-500">
                           {workOrders.find(wo => wo.id === log.workOrderId)?.customerName || ''}
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="text-xs">
+                    <TableCell className="text-center py-2 px-3">
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0.5 h-5">
                         {log.subJobs.length} รายการ
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <span className="font-bold text-blue-600 dark:text-blue-400">
+                    <TableCell className="text-right py-2 px-3">
+                      <span className="font-bold text-blue-600 dark:text-blue-400 text-xs">
                         {log.totalQuantity?.toLocaleString() || 0}
                       </span>
                     </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Circle className={`h-2 w-2 fill-current ${
+                    <TableCell className="py-2 px-3">
+                      <div className="flex items-center gap-1.5">
+                        <Circle className={`h-1.5 w-1.5 fill-current ${
                           log.status === 'completed' ? 'text-green-500' : 
                           log.status === 'in_progress' ? 'text-yellow-500' : 
                           'text-red-500'
@@ -1147,18 +1150,18 @@ export default function DailyWorkLog() {
                           log.status === 'completed' ? 'default' : 
                           log.status === 'in_progress' ? 'secondary' : 
                           'outline'
-                        } className="text-xs">
+                        } className="text-[10px] px-1.5 py-0.5 h-5">
                           {log.status === 'completed' ? 'เสร็จสิ้น' : 
                            log.status === 'in_progress' ? 'กำลังดำเนินการ' : 
                            'หยุดชั่วคราว'}
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="py-2 px-3">
                       <div className="flex gap-1 justify-center">
                         <Button variant="ghost" size="sm" onClick={() => handlePreview(log)} 
                                title="ดูรายละเอียด"
-                               className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900">
+                               className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900">
                           <Eye className="h-3 w-3 text-blue-600" />
                         </Button>
                       </div>
