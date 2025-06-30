@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, Printer, Search, FileText, Calendar, User, Package, Clock, Info } from "lucide-react";
 import { WorkOrder, Customer, WorkType } from "@shared/schema";
 
