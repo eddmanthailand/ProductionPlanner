@@ -1871,7 +1871,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Helper method to generate unique report number: RP+YYYY+MM+Sequential Number
-  private async generateUniqueReportNumber(tenantId: string): Promise<string> {
+  async generateUniqueReportNumber(tenantId: string): Promise<string> {
     const now = new Date();
     const yearMonth = format(now, 'yyyyMM'); // YYYYMM format
     

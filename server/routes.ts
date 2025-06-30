@@ -3475,6 +3475,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Single daily work log creation
   app.post("/api/daily-work-logs", async (req: any, res: any) => {
     try {
       const tenantId = "550e8400-e29b-41d4-a716-446655440000";
@@ -3500,6 +3501,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Create daily work log error:", error);
       res.status(500).json({ message: "Failed to create daily work log" });
+    }
+  });
+
+  // Batch daily work logs creation with same report number
+  app.post("/api/daily-work-logs/batch", async (req: any, res: any) => {
+    try {
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000";
+      const { subJobs } = req.body; // Array of sub job data
+      
+      console.log("API: Creating batch daily work logs (same report number)");
+      console.log("Request body:", { subJobsCount: subJobs?.length });
+      
+      if (!subJobs || !Array.isArray(subJobs) || subJobs.length === 0) {
+        return res.status(400).json({ message: "Sub jobs array is required and cannot be empty" });
+      }
+
+      // Generate ONE report number for all entries
+      const reportNumber = await storage.generateUniqueReportNumber(tenantId);
+      console.log("API: Using shared report number:", reportNumber);
+      
+      const createdLogs = [];
+      
+      // Create all logs with the same report number
+      for (const subJobData of subJobs) {
+        const requestData = {
+          ...subJobData,
+          tenantId,
+          reportNumber, // Use the shared report number
+          hoursWorked: subJobData.hoursWorked ? subJobData.hoursWorked.toString() : "0",
+        };
+        
+        const validatedData = insertDailyWorkLogSchema.parse(requestData);
+        const log = await storage.createDailyWorkLogWithReportNumber(validatedData);
+        createdLogs.push(log);
+      }
+      
+      console.log("API: Created", createdLogs.length, "daily work logs with report number:", reportNumber);
+      res.status(201).json({
+        reportNumber,
+        count: createdLogs.length,
+        logs: createdLogs
+      });
+    } catch (error) {
+      console.error("Create batch daily work logs error:", error);
+      res.status(500).json({ message: "Failed to create batch daily work logs" });
     }
   });
 
