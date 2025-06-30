@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Plus, Send, Bot, User, MessageSquare } from 'lucide-react';
+import { Trash2, Plus, Send, Bot, User, MessageSquare, Copy, Check } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +33,7 @@ export default function AIChatbot() {
   const [selectedConversation, setSelectedConversation] = useState<number | null>(null);
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -157,6 +158,28 @@ export default function AIChatbot() {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const copyToClipboard = async (text: string, messageId: number) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedMessageId(messageId);
+      toast({
+        title: "คัดลอกแล้ว",
+        description: "คัดลอกข้อความไปยัง clipboard แล้ว",
+      });
+      setTimeout(() => setCopiedMessageId(null), 2000);
+    } catch (error) {
+      toast({
+        title: "ข้อผิดพลาด",
+        description: "ไม่สามารถคัดลอกข้อความได้",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const isCodeBlock = (content: string) => {
+    return content.includes('```') || content.includes('SELECT') || content.includes('JSON') || content.includes('{') || content.includes('[');
   };
 
   return (
@@ -293,51 +316,132 @@ export default function AIChatbot() {
                     messages.map((message: ChatMessage) => (
                       <div
                         key={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
                       >
                         <div
-                          className={`max-w-[70%] rounded-lg p-3 ${
+                          className={`relative group max-w-[70%] rounded-2xl shadow-sm ${
                             message.role === 'user'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white border border-gray-200'
+                              ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white ml-12'
+                              : 'bg-white border border-gray-200 mr-12'
                           }`}
                         >
-                          <div className="flex items-start gap-2">
-                            {message.role === 'assistant' && (
-                              <Bot className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                            )}
-                            <div className="flex-1">
-                              <p className="text-sm whitespace-pre-wrap">
-                                {message.content}
-                              </p>
-                              <p
-                                className={`text-xs mt-2 ${
-                                  message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
-                                }`}
-                              >
-                                {formatMessageTime(message.createdAt)}
-                              </p>
+                          {/* Avatar */}
+                          {message.role === 'assistant' && (
+                            <div className="absolute -left-10 top-0">
+                              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                                <Bot className="h-4 w-4 text-white" />
+                              </div>
                             </div>
-                            {message.role === 'user' && (
-                              <User className="h-5 w-5 text-blue-100 mt-0.5 flex-shrink-0" />
-                            )}
+                          )}
+                          {message.role === 'user' && (
+                            <div className="absolute -right-10 top-0">
+                              <div className="w-8 h-8 bg-gradient-to-r from-green-400 to-blue-500 rounded-full flex items-center justify-center">
+                                <User className="h-4 w-4 text-white" />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="p-4">
+                            {/* Message Content */}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex-1">
+                                {isCodeBlock(message.content) ? (
+                                  <div className="bg-gray-900 rounded-lg p-3 text-sm font-mono text-green-400 overflow-x-auto">
+                                    <pre className="whitespace-pre-wrap">{message.content}</pre>
+                                  </div>
+                                ) : (
+                                  <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                                    message.role === 'user' ? 'text-white' : 'text-gray-800'
+                                  }`}>
+                                    {message.content}
+                                  </p>
+                                )}
+                              </div>
+                              
+                              {/* Copy Button */}
+                              {message.role === 'assistant' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => copyToClipboard(message.content, message.id)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto hover:bg-gray-100"
+                                >
+                                  {copiedMessageId === message.id ? (
+                                    <Check className="h-3 w-3 text-green-600" />
+                                  ) : (
+                                    <Copy className="h-3 w-3 text-gray-500" />
+                                  )}
+                                </Button>
+                              )}
+                            </div>
+
+                            {/* Timestamp */}
+                            <p className={`text-xs mt-2 ${
+                              message.role === 'user' ? 'text-blue-100' : 'text-gray-500'
+                            }`}>
+                              {formatMessageTime(message.createdAt)}
+                            </p>
                           </div>
                         </div>
                       </div>
                     ))
                   )}
 
+                  {/* Loading Indicator */}
                   {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="bg-white border border-gray-200 rounded-lg p-3 max-w-[70%]">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-5 w-5 text-blue-600" />
-                          <div className="flex gap-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    <div className="flex justify-start mb-4">
+                      <div className="relative bg-white border border-gray-200 rounded-2xl shadow-sm mr-12">
+                        {/* AI Avatar */}
+                        <div className="absolute -left-10 top-0">
+                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                            <Bot className="h-4 w-4 text-white" />
                           </div>
                         </div>
+                        
+                        <div className="p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                            </div>
+                            <span className="text-sm text-gray-600">AI กำลังคิดคำตอบ...</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Suggested Prompts (show when no messages and not loading) */}
+                  {messages.length === 0 && !isLoading && selectedConversation && (
+                    <div className="space-y-3 mb-6">
+                      <h4 className="text-sm font-medium text-gray-700 text-center">💡 คำถามที่พบบ่อย</h4>
+                      <div className="grid grid-cols-1 gap-2">
+                        {[
+                          "สรุปใบสั่งงานที่ค้างอยู่",
+                          "วิเคราะห์ประสิทธิภาพการผลิตเดือนที่แล้ว", 
+                          "แสดงรายได้ทีมสำหรับสัปดาห์นี้",
+                          "ช่วยแก้ปัญหาการใช้งานระบบ"
+                        ].map((prompt, index) => (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            onClick={() => {
+                              setInputMessage(prompt);
+                              // Auto send the message
+                              if (selectedConversation) {
+                                setIsLoading(true);
+                                sendMessageMutation.mutate({ 
+                                  content: prompt, 
+                                  conversationId: selectedConversation 
+                                });
+                              }
+                            }}
+                            className="text-left justify-start text-sm py-3 px-4 h-auto bg-gradient-to-r from-blue-50 to-purple-50 border-blue-200 hover:from-blue-100 hover:to-purple-100 text-gray-700"
+                          >
+                            {prompt}
+                          </Button>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -347,30 +451,44 @@ export default function AIChatbot() {
               </ScrollArea>
 
               {/* Message Input */}
-              <div className="p-4 bg-white border-t border-gray-200">
-                <div className="flex gap-3">
+              <div className="p-4 bg-gradient-to-r from-gray-50 to-blue-50 border-t border-gray-200">
+                <div className="flex gap-3 items-end">
                   <div className="flex-1 relative">
-                    <Input
-                      value={inputMessage}
-                      onChange={(e) => setInputMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder="พิมพ์ข้อความ..."
-                      disabled={isLoading}
-                      className="pr-12"
-                    />
-                    <Button
-                      onClick={handleSendMessage}
-                      disabled={!inputMessage.trim() || isLoading}
-                      size="sm"
-                      className="absolute right-1 top-1 h-8 w-8 p-0 bg-blue-600 hover:bg-blue-700"
-                    >
-                      <Send className="h-4 w-4" />
-                    </Button>
+                    <div className="relative">
+                      <Input
+                        value={inputMessage}
+                        onChange={(e) => setInputMessage(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="พิมพ์ข้อความของคุณ..."
+                        disabled={isLoading}
+                        className="pr-14 py-3 rounded-2xl border-2 border-gray-200 focus:border-blue-400 bg-white shadow-sm min-h-[48px] resize-none"
+                      />
+                      <Button
+                        onClick={handleSendMessage}
+                        disabled={!inputMessage.trim() || isLoading}
+                        size="sm"
+                        className={`absolute right-2 top-1/2 transform -translate-y-1/2 h-8 w-8 p-0 rounded-full transition-all ${
+                          inputMessage.trim() && !isLoading
+                            ? 'bg-blue-600 hover:bg-blue-700 scale-100'
+                            : 'bg-gray-400 scale-95'
+                        }`}
+                      >
+                        <Send className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500 mt-2">
-                  กด Enter เพื่อส่งข้อความ • Shift + Enter เพื่อขึ้นบรรทัดใหม่
-                </p>
+                <div className="flex items-center justify-between mt-2">
+                  <p className="text-xs text-gray-500">
+                    💡 กด Enter เพื่อส่ง • Shift + Enter เพื่อขึ้นบรรทัดใหม่
+                  </p>
+                  {isLoading && (
+                    <div className="flex items-center gap-2 text-xs text-blue-600">
+                      <div className="w-1 h-1 bg-blue-600 rounded-full animate-pulse"></div>
+                      กำลังประมวลผล...
+                    </div>
+                  )}
+                </div>
               </div>
             </>
           ) : (
