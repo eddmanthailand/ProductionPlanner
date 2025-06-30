@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChartLine, Calculator, Package, Users, Settings, Shield, ChevronRight, ChevronDown, ShoppingCart, Settings2, Network, Calendar, ClipboardList, FileText, UserCheck, X, BarChart3 } from "lucide-react";
+import { ChartLine, Calculator, Package, Users, Settings, Shield, ChevronRight, ChevronDown, ShoppingCart, Settings2, Network, Calendar, ClipboardList, FileText, UserCheck, X, BarChart3, Bot } from "lucide-react";
 import { useLocation } from "wouter";
 import { useLanguage } from "@/hooks/use-language";
 import { usePageNavigation } from "@/hooks/usePageNavigation";
@@ -365,6 +365,17 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
               )}
             </div>
           )}
+
+          {/* AI Chatbot */}
+          <Link
+            href="/ai-chatbot"
+            className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+              location === '/ai-chatbot' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+            }`}
+          >
+            <Bot className="w-5 h-5" />
+            {!isCollapsed && <span className="ml-3">AI ผู้ช่วย</span>}
+          </Link>
 
           {/* User Management - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
           {canAccessPage('/user-management') && (

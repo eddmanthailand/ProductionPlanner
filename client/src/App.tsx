@@ -187,6 +187,9 @@ function Router() {
       <Route path="/access-demo">
         <MainLayout><AccessDemo /></MainLayout>
       </Route>
+      <Route path="/ai-chatbot">
+        <MainLayout><AIChatbot /></MainLayout>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
