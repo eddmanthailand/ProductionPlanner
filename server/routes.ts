@@ -4628,7 +4628,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
 }
 
 // ฟังก์ชันคำนวณ check digit สำหรับเลขที่ผู้เสียภาษีไทย
-
 function calculateTaxIdCheckDigit(first12Digits: string): number {
   const multipliers = [13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2];
   let sum = 0;
@@ -4645,9 +4644,4 @@ function calculateTaxIdCheckDigit(first12Digits: string): number {
   }
   
   return checkDigit;
-}
-
-  // Create HTTP server
-  const httpServer = createServer(app);
-  return httpServer;
 }
