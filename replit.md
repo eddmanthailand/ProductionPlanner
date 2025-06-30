@@ -130,6 +130,12 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ แก้ไขปัญหาเลขที่รายงานไม่เหมือนกันและปรับปรุงรูปแบบหมายเลข
+  - แก้ race condition ในการสร้างเลขที่รายงาน ใช้ batch API สำหรับการบันทึกหลายงาน
+  - สร้าง /api/daily-work-logs/batch endpoint ให้หลาย sub jobs ใช้เลขที่รายงานเดียวกัน
+  - เปลี่ยนรูปแบบเลขที่บันทึก: `WL12345678ABCD` (แตกต่างจากเลขที่รายงาน `RP202507010001`)
+  - ลบข้อมูลทดสอบทั้งหมด 80 รายการ เพื่อเริ่มทดสอบระบบใหม่
+
 - June 30, 2025: ✅ ปรับปรุงดีไซน์หน้า "ดูใบสั่งงาน" ให้ทันสมัยและเป็นระเบียบ
   - รวมข้อมูลทั่วไปและลูกค้าในกล่องเดียว ใช้ 2 แถว ขนาดเล็กลง
   - ใช้สีไล่เฉดสีน้ำเงิน-อินดิโก้ พร้อม typography ที่ทันสมัย
