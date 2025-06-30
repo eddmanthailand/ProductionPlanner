@@ -6,15 +6,19 @@ const AUTH_TAG_LENGTH = 16;
 
 // Make sure to set MASTER_ENCRYPTION_KEY in Replit Secrets
 // It should be a 64-character hex string (32 bytes)
-const masterKeyHex = process.env.MASTER_ENCRYPTION_KEY;
 
-if (!masterKeyHex || Buffer.from(masterKeyHex, 'hex').length !== 32) {
-  throw new Error('Invalid MASTER_ENCRYPTION_KEY. Please set a 64-character hex key in Replit Secrets.');
+function getMasterKey(): Buffer {
+  const masterKeyHex = process.env.MASTER_ENCRYPTION_KEY;
+  
+  if (!masterKeyHex || Buffer.from(masterKeyHex, 'hex').length !== 32) {
+    throw new Error('Invalid MASTER_ENCRYPTION_KEY. Please set a 64-character hex key in Replit Secrets.');
+  }
+  
+  return Buffer.from(masterKeyHex, 'hex');
 }
 
-const masterKey = Buffer.from(masterKeyHex, 'hex');
-
 export function encrypt(text: string): string {
+  const masterKey = getMasterKey(); // Get key when needed
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, masterKey, iv);
   const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
@@ -23,6 +27,7 @@ export function encrypt(text: string): string {
 }
 
 export function decrypt(encryptedText: string): string {
+  const masterKey = getMasterKey(); // Get key when needed
   const data = Buffer.from(encryptedText, 'hex');
   const iv = data.slice(0, IV_LENGTH);
   const authTag = data.slice(IV_LENGTH, IV_LENGTH + AUTH_TAG_LENGTH);
@@ -31,4 +36,14 @@ export function decrypt(encryptedText: string): string {
   decipher.setAuthTag(authTag);
   const decrypted = Buffer.concat([decipher.update(encrypted), decipher.final()]);
   return decrypted.toString('utf8');
+}
+
+// Check if encryption is available (key is set)
+export function isEncryptionAvailable(): boolean {
+  try {
+    getMasterKey();
+    return true;
+  } catch {
+    return false;
+  }
 }

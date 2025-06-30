@@ -4374,7 +4374,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
       
       // เข้ารหัส API key
-      const { encrypt } = await import('./encryption');
+      const { encrypt, isEncryptionAvailable } = await import('./encryption');
+      
+      if (!isEncryptionAvailable()) {
+        return res.status(500).json({ 
+          message: "ระบบเข้ารหัสยังไม่พร้อมใช้งาน กรุณาตั้งค่า MASTER_ENCRYPTION_KEY ใน Replit Secrets",
+          error: "ENCRYPTION_NOT_AVAILABLE" 
+        });
+      }
+      
       const encryptedApiKey = encrypt(apiKey);
 
       // บันทึกลงฐานข้อมูล
