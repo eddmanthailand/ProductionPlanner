@@ -140,6 +140,8 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
   - มีการจัดการ error และ validation ที่ครอบคลุม
   - **แก้ไขปัญหา CommonJS/ES6 module compatibility ในระบบ encryption**
   - **แก้ไขปัญหา React Query cache invalidation ใน AI Chatbot**
+  - **ปรับปรุงหน้า AI Settings ให้เหมาะสำหรับ Multi-tenant: เพิ่มข้อมูล tenant, security notice, visual improvements**
+  - **ลบ error message เกี่ยวกับ MASTER_ENCRYPTION_KEY ที่ไม่จำเป็นแล้ว**
   - **ทดสอบเรียบร้อย: บันทึก API key, เข้ารหัส, ทดสอบ API, และ AI Chatbot โต้ตอบได้สมบูรณ์**
   - **ระบบ Multi-tenant BYOK พร้อมใช้งานใน production**
 

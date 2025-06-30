@@ -79,16 +79,10 @@ export default function AiSettings() {
     },
     onError: (error: any) => {
       const errorMessage = error.message || "ไม่สามารถบันทึกการตั้งค่าได้";
-      let description = errorMessage;
-      
-      // Check for specific encryption error
-      if (error.message && error.message.includes("MASTER_ENCRYPTION_KEY")) {
-        description = "กรุณาตั้งค่า MASTER_ENCRYPTION_KEY ใน Replit Secrets ก่อนใช้งาน";
-      }
       
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: description,
+        description: errorMessage,
         variant: "destructive",
       });
     }
@@ -388,35 +382,6 @@ export default function AiSettings() {
                 </Button>
               </div>
             </form>
-          </CardContent>
-        </Card>
-
-        {/* Encryption Warning Card */}
-        <Card className="bg-red-50 border-red-200">
-          <CardHeader>
-            <CardTitle className="text-red-800 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              คำเตือนสำคัญ
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-red-700">
-            <div className="space-y-3 text-sm">
-              <p className="font-medium">
-                ⚠️ กรุณาตั้งค่า MASTER_ENCRYPTION_KEY ใน Replit Secrets ก่อนใช้งาน
-              </p>
-              <div className="bg-red-100 p-3 rounded-md border border-red-200">
-                <p className="font-medium mb-2">ขั้นตอนการตั้งค่า:</p>
-                <ol className="list-decimal list-inside space-y-1">
-                  <li>ไปที่ Secrets 🔒 ใน Replit</li>
-                  <li>สร้าง Secret ใหม่ชื่อ: <code className="bg-white px-1 rounded">MASTER_ENCRYPTION_KEY</code></li>
-                  <li>ใส่ค่า: <code className="bg-white px-1 rounded text-xs">c712c339d375dd72506f0d5d9976e1a51788d75469628658a9002293b9abcfec</code></li>
-                  <li>บันทึกและ restart แอปพลิเคชัน</li>
-                </ol>
-              </div>
-              <p className="text-xs text-red-600">
-                หากไม่ตั้งค่านี้ ระบบจะไม่สามารถเข้ารหัส API Key ของคุณได้ และจะแสดงข้อผิดพลาดเมื่อบันทึกการตั้งค่า
-              </p>
-            </div>
           </CardContent>
         </Card>
 
