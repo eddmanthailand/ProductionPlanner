@@ -572,16 +572,27 @@ function PrintableReport({
         </div>
         
         {/* Inline buttons */}
-        <div className="flex gap-2 ml-4" style={{display: 'block'}} data-print-hide>
-          <style dangerouslySetInnerHTML={{
-            __html: `
-              @media print {
-                [data-print-hide] { display: none !important; }
-              }
-            `
-          }} />
+        <div 
+          className="flex gap-2 ml-4 no-print" 
+          id="print-buttons"
+        >
           <Button
-            onClick={() => window.print()}
+            onClick={() => {
+              // Hide buttons before printing
+              const buttonDiv = document.getElementById('print-buttons');
+              const footerDiv = document.getElementById('print-footer');
+              if (buttonDiv) buttonDiv.style.display = 'none';
+              if (footerDiv) footerDiv.style.display = 'none';
+              
+              setTimeout(() => {
+                window.print();
+                // Show buttons back after printing
+                setTimeout(() => {
+                  if (buttonDiv) buttonDiv.style.display = 'flex';
+                  if (footerDiv) footerDiv.style.display = 'block';
+                }, 100);
+              }, 50);
+            }}
             size="sm"
             className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs"
           >
@@ -670,14 +681,7 @@ function PrintableReport({
       </div>
 
       {/* Footer */}
-      <div className="border-t-2 border-slate-300 pt-4 text-sm text-slate-600" data-print-hide>
-        <style dangerouslySetInnerHTML={{
-          __html: `
-            @media print {
-              [data-print-hide] { display: none !important; }
-            }
-          `
-        }} />
+      <div className="border-t-2 border-slate-300 pt-4 text-sm text-slate-600 no-print" id="print-footer">
         <div className="flex justify-between">
           <div>
             <p>ระบบการจัดการการผลิต</p>
