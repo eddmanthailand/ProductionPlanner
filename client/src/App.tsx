@@ -31,6 +31,9 @@ import DailyWorkHistory from "@/pages/production/daily-work-history";
 import ProductionReports from "@/pages/production/production-reports";
 import TeamRevenueReport from "@/pages/production/team-revenue-report";
 import WorkQueueTable from "@/pages/production/work-queue-table";
+import WorkOrderView from "@/pages/production/work-order-view";
+import WorkOrderDetailView from "@/pages/production/work-order-detail-view";
+import WorkOrderPrint from "@/pages/production/work-order-print";
 import Accounting from "@/pages/accounting";
 import Inventory from "@/pages/inventory";
 import Customers from "@/pages/customers";
@@ -146,6 +149,9 @@ function Router() {
       <Route path="/production/work-queue-table">
         <MainLayout><WorkQueueTable /></MainLayout>
       </Route>
+      <Route path="/production/work-orders" component={WorkOrderView} />
+      <Route path="/production/work-orders/:id/view" component={WorkOrderDetailView} />
+      <Route path="/production/work-orders/:id/print" component={WorkOrderPrint} />
       <Route path="/production/daily-work-log">
         <MainLayout><DailyWorkLog /></MainLayout>
       </Route>
