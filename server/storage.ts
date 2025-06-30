@@ -1782,12 +1782,14 @@ export class DatabaseStorage implements IStorage {
           deletedAt: dailyWorkLogs.deletedAt,
           productName: subJobs.productName,
           colorName: colors.name,
-          sizeName: sizes.name
+          sizeName: sizes.name,
+          employeeName: sql<string>`CONCAT(${employees.firstName}, ' ', ${employees.lastName})`.as('employeeName')
         })
         .from(dailyWorkLogs)
         .leftJoin(subJobs, eq(dailyWorkLogs.subJobId, subJobs.id))
         .leftJoin(colors, eq(subJobs.colorId, colors.id))
         .leftJoin(sizes, eq(subJobs.sizeId, sizes.id))
+        .leftJoin(employees, eq(dailyWorkLogs.employeeId, employees.id))
         .where(and(...conditions))
         .orderBy(
           desc(dailyWorkLogs.createdAt),
