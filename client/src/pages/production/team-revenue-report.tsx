@@ -563,7 +563,7 @@ function PrintableReport({
         </div>
         
         {/* Inline buttons */}
-        <div className="flex gap-2 ml-4">
+        <div className="flex gap-2 ml-4 print:hidden">
           <Button
             onClick={() => window.print()}
             size="sm"
@@ -654,7 +654,7 @@ function PrintableReport({
       </div>
 
       {/* Footer */}
-      <div className="border-t-2 border-slate-300 pt-4 text-sm text-slate-600">
+      <div className="border-t-2 border-slate-300 pt-4 text-sm text-slate-600 print:hidden">
         <div className="flex justify-between">
           <div>
             <p>ระบบการจัดการการผลิต</p>
