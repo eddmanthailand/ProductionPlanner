@@ -4225,6 +4225,126 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== AI CHATBOT ENDPOINTS =====
+  
+  // เริ่มการสนทนาใหม่
+  app.post("/api/chat/conversations", async (req: any, res: any) => {
+    try {
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const userId = 1; // Default admin user for dev
+      
+      const conversation = await storage.createChatConversation({
+        tenantId,
+        userId,
+        title: 'การสนทนาใหม่'
+      });
+      
+      res.json(conversation);
+    } catch (error) {
+      console.error("Create conversation error:", error);
+      res.status(500).json({ message: "ไม่สามารถเริ่มการสนทนาได้" });
+    }
+  });
+
+  // ดึงรายการการสนทนา
+  app.get("/api/chat/conversations", async (req: any, res: any) => {
+    try {
+      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const userId = 1;
+      
+      const conversations = await storage.getChatConversations(tenantId, userId);
+      res.json(conversations);
+    } catch (error) {
+      console.error("Get conversations error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงรายการการสนทนาได้" });
+    }
+  });
+
+  // ดึงข้อความในการสนทนา
+  app.get("/api/chat/conversations/:conversationId/messages", async (req: any, res: any) => {
+    try {
+      const { conversationId } = req.params;
+      
+      const messages = await storage.getChatMessages(parseInt(conversationId));
+      res.json(messages);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงข้อความได้" });
+    }
+  });
+
+  // ส่งข้อความและรับการตอบกลับจาก AI
+  app.post("/api/chat/conversations/:conversationId/messages", async (req: any, res: any) => {
+    try {
+      const { conversationId } = req.params;
+      const { content } = req.body;
+      
+      if (!content || content.trim() === '') {
+        return res.status(400).json({ message: "กรุณาใส่ข้อความ" });
+      }
+
+      // บันทึกข้อความของผู้ใช้
+      const userMessage = await storage.createChatMessage({
+        conversationId: parseInt(conversationId),
+        role: 'user',
+        content: content.trim()
+      });
+
+      // เรียก Gemini AI เพื่อสร้างการตอบกลับ
+      const { GeminiService } = require('./services/gemini');
+      const geminiService = new GeminiService(); // Use system API key for now
+      
+      // ดึงประวัติการสนทนา
+      const recentMessages = await storage.getChatMessages(parseInt(conversationId));
+      const conversationHistory = recentMessages
+        .slice(-10) // เอา 10 ข้อความล่าสุด
+        .map(msg => ({ role: msg.role, content: msg.content }));
+
+      // สร้างการตอบกลับจาก AI
+      const aiResponse = await geminiService.generateChatResponse(
+        content.trim(),
+        conversationHistory
+      );
+
+      // บันทึกการตอบกลับของ AI
+      const assistantMessage = await storage.createChatMessage({
+        conversationId: parseInt(conversationId),
+        role: 'assistant',
+        content: aiResponse
+      });
+
+      // อัปเดตชื่อการสนทนาถ้าเป็นข้อความแรก
+      if (recentMessages.length <= 2) {
+        const summary = await geminiService.generateConversationSummary([
+          { role: 'user', content: content.trim() },
+          { role: 'assistant', content: aiResponse }
+        ]);
+        await storage.updateChatConversationTitle(parseInt(conversationId), summary);
+      }
+
+      res.json({
+        userMessage,
+        assistantMessage
+      });
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(500).json({ message: "ไม่สามารถส่งข้อความได้" });
+    }
+  });
+
+  // ลบการสนทนา
+  app.delete("/api/chat/conversations/:conversationId", async (req: any, res: any) => {
+    try {
+      const { conversationId } = req.params;
+      
+      await storage.deleteChatConversation(parseInt(conversationId));
+      res.json({ message: "ลบการสนทนาเรียบร้อยแล้ว" });
+    } catch (error) {
+      console.error("Delete conversation error:", error);
+      res.status(500).json({ message: "ไม่สามารถลบการสนทนาได้" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

@@ -27,6 +27,9 @@ import {
   dailyWorkLogsArchive,
   workOrderAttachments,
   replitAuthUsers,
+  aiConfigurations,
+  chatConversations,
+  chatMessages,
   roles,
   permissions,
   rolePermissions,
@@ -94,7 +97,13 @@ import {
   type DailyWorkLogArchive,
   type InsertDailyWorkLogArchive,
   type WorkOrderAttachment,
-  type InsertWorkOrderAttachment
+  type InsertWorkOrderAttachment,
+  type AiConfiguration,
+  type InsertAiConfiguration,
+  type ChatConversation,
+  type InsertChatConversation,
+  type ChatMessage,
+  type InsertChatMessage
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, and, desc, sql, asc, gte, lte, sum, count, like, ilike, isNull } from "drizzle-orm";
@@ -306,6 +315,14 @@ export interface IStorage {
   archiveSoftDeletedLogs(workOrderId: string, workOrderStatus: string): Promise<number>;
   cleanupOldSoftDeletedLogs(tenantId: string): Promise<number>;
   getDailyWorkLogsArchive(tenantId: string, workOrderId?: string): Promise<DailyWorkLogArchive[]>;
+
+  // AI Chatbot functions
+  createChatConversation(conversation: InsertChatConversation): Promise<ChatConversation>;
+  getChatConversations(tenantId: string, userId: number): Promise<ChatConversation[]>;
+  getChatMessages(conversationId: number): Promise<ChatMessage[]>;
+  createChatMessage(message: InsertChatMessage): Promise<ChatMessage>;
+  updateChatConversationTitle(conversationId: number, title: string): Promise<void>;
+  deleteChatConversation(conversationId: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {

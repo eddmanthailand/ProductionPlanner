@@ -53,9 +53,9 @@ Please provide a helpful response as a production management system assistant:`;
       });
 
       return response.text || "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้";
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gemini API error:", error);
-      throw new Error(`Failed to generate response: ${error.message}`);
+      throw new Error(`Failed to generate response: ${error?.message || 'Unknown error'}`);
     }
   }
 
