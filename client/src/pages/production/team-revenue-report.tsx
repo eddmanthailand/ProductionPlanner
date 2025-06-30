@@ -562,18 +562,18 @@ function PrintableReport({
       }} />
 
       {/* Header */}
-      <div className="text-center border-b-2 border-slate-300 pb-4 mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">
+      <div className="text-center border-b border-slate-300 pb-2 mb-3">
+        <h1 className="text-lg font-bold text-slate-800 mb-1">
           รายงานรายได้ทีมการผลิต
         </h1>
-        <div className="text-base text-slate-600 space-y-0">
-          <p><strong>ทีม:</strong> {selectedTeamName} | <strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)} | <strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.</p>
+        <div className="text-xs text-slate-600">
+          <strong>ทีม:</strong> {selectedTeamName} | <strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)} | <strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.
         </div>
       </div>
 
       {/* Summary Statistics */}
-      <div className="text-center py-2 mb-4 border-b border-slate-200">
-        <div className="text-sm text-slate-600">
+      <div className="text-center py-1 mb-2 border-b border-slate-200">
+        <div className="text-xs text-slate-600">
           <span className="text-blue-600 font-bold">{totalJobs}</span> งานทั้งหมด | 
           <span className="text-green-600 font-bold ml-1">{totalQuantity.toLocaleString()}</span> ชิ้นงานทั้งหมด | 
           <span className="text-purple-600 font-bold ml-1">{formatCurrency(totalRevenue)}</span> รายได้รวม
