@@ -4376,11 +4376,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // เข้ารหัส API key
       const { encrypt, isEncryptionAvailable } = await import('./encryption');
       
-      if (!isEncryptionAvailable()) {
-        return res.status(500).json({ 
-          message: "ระบบเข้ารหัสยังไม่พร้อมใช้งาน กรุณาตั้งค่า MASTER_ENCRYPTION_KEY ใน Replit Secrets",
-          error: "ENCRYPTION_NOT_AVAILABLE" 
-        });
+      console.log("Checking encryption availability...");
+      console.log("MASTER_ENCRYPTION_KEY exists:", !!process.env.MASTER_ENCRYPTION_KEY);
+      console.log("MASTER_ENCRYPTION_KEY length:", process.env.MASTER_ENCRYPTION_KEY?.length);
+      
+      const encryptionAvailable = isEncryptionAvailable();
+      console.log("isEncryptionAvailable():", encryptionAvailable);
+      
+      if (!encryptionAvailable) {
+        console.log("Encryption check failed, trying direct encryption...");
+        try {
+          // Try direct encryption test
+          const testEncrypted = encrypt("test");
+          console.log("Direct encryption test successful");
+        } catch (directError) {
+          console.log("Direct encryption failed:", directError.message);
+          return res.status(500).json({ 
+            message: "ระบบเข้ารหัสยังไม่พร้อมใช้งาน กรุณาตั้งค่า MASTER_ENCRYPTION_KEY ใน Replit Secrets",
+            error: "ENCRYPTION_NOT_AVAILABLE",
+            details: directError.message
+          });
+        }
       }
       
       const encryptedApiKey = encrypt(apiKey);
