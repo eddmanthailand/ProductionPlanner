@@ -594,10 +594,10 @@ function PrintableReport({
           <table className="w-full border border-slate-300">
             <thead>
               <tr className="bg-slate-100">
-                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ลำดับ</th>
-                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">วันที่</th>
-                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">เลขที่ใบสั่งงาน</th>
-                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ลูกค้า</th>
+                <th className="border border-slate-300 px-1 py-2 text-left text-xs font-semibold w-12">ลำดับ</th>
+                <th className="border border-slate-300 px-1 py-2 text-left text-xs font-semibold w-20">วันที่</th>
+                <th className="border border-slate-300 px-1 py-2 text-left text-xs font-semibold w-24">เลขที่ใบสั่งงาน</th>
+                <th className="border border-slate-300 px-4 py-2 text-left text-xs font-semibold w-32">ลูกค้า</th>
                 <th className="border border-slate-300 px-4 py-2 text-left text-xs font-semibold">สินค้า</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">สี</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ขนาด</th>
@@ -615,12 +615,12 @@ function PrintableReport({
 
                 return (
                   <tr key={log.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-300 px-2 py-1 text-xs">{index + 1}</td>
-                    <td className="border border-slate-300 px-2 py-1 text-xs">
+                    <td className="border border-slate-300 px-1 py-1 text-xs">{index + 1}</td>
+                    <td className="border border-slate-300 px-1 py-1 text-xs">
                       {format(parseISO(log.date), 'dd/MM/yyyy', { locale: th })}
                     </td>
-                    <td className="border border-slate-300 px-2 py-1 text-xs font-medium">{log.orderNumber}</td>
-                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.customerName}</td>
+                    <td className="border border-slate-300 px-1 py-1 text-xs font-medium">{log.orderNumber}</td>
+                    <td className="border border-slate-300 px-4 py-1 text-xs">{log.customerName}</td>
                     <td className="border border-slate-300 px-4 py-1 text-xs">{log.productName}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs">
                       <div className="flex items-center gap-1">
