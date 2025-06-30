@@ -99,8 +99,8 @@ export default function WorkOrderDetailView() {
     window.open(`/production/work-orders/${workOrderId}/print`, '_blank');
   };
 
-  const totalAmount = subJobs.reduce((sum, subJob) => 
-    sum + (subJob.quantity * parseFloat(subJob.unitPrice || '0')), 0
+  const totalAmount = subJobs.reduce((sum: number, subJob: any) => 
+    sum + (subJob.quantity * parseFloat(subJob.unit_price || '0')), 0
   );
 
   return (
