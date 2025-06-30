@@ -10,6 +10,7 @@ import { CalendarIcon, DollarSign, TrendingUp, Users, FileText, BarChart3, Clipb
 import { format, parseISO } from "date-fns";
 import { th } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import MainLayout from "@/components/layout/main-layout";
 
 interface Team {
   id: string;
@@ -59,7 +60,7 @@ interface RevenueData {
   }>;
 }
 
-export default function TeamRevenueReport() {
+function TeamRevenueReport() {
   const [selectedTeam, setSelectedTeam] = useState<string>("");
   const [startDate, setStartDate] = useState<Date>();
   const [endDate, setEndDate] = useState<Date>();
@@ -362,29 +363,31 @@ export default function TeamRevenueReport() {
         </div>
       )}
 
-      {/* Revenue Table */}
+      {/* Modern Revenue Table */}
       {workLogs && workLogs.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
+        <Card className="border-0 shadow-xl bg-white/90 backdrop-blur-sm">
+          <CardHeader className="bg-gradient-to-r from-slate-50 to-blue-50 rounded-t-lg pb-6">
+            <CardTitle className="flex items-center gap-3 text-xl">
+              <div className="w-8 h-8 bg-gradient-to-br from-slate-600 to-slate-700 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
               ตารางรายละเอียดรายได้ - ทีม {selectedTeamName}
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>วันที่</TableHead>
-                    <TableHead>ใบสั่งงาน</TableHead>
-                    <TableHead>ชื่อลูกค้า</TableHead>
-                    <TableHead>ชื่อสินค้า</TableHead>
-                    <TableHead>สี</TableHead>
-                    <TableHead>ไซส์</TableHead>
-                    <TableHead>จำนวนที่ทำ</TableHead>
-                    <TableHead>ราคา/ชิ้น</TableHead>
-                    <TableHead>รายได้</TableHead>
+                  <TableRow className="bg-gradient-to-r from-slate-100 to-slate-50 border-none">
+                    <TableHead className="font-semibold text-slate-700 py-4">วันที่</TableHead>
+                    <TableHead className="font-semibold text-slate-700">ใบสั่งงาน</TableHead>
+                    <TableHead className="font-semibold text-slate-700">ชื่อลูกค้า</TableHead>
+                    <TableHead className="font-semibold text-slate-700">ชื่อสินค้า</TableHead>
+                    <TableHead className="font-semibold text-slate-700">สี</TableHead>
+                    <TableHead className="font-semibold text-slate-700">ไซส์</TableHead>
+                    <TableHead className="font-semibold text-slate-700 text-center">จำนวนที่ทำ</TableHead>
+                    <TableHead className="font-semibold text-slate-700 text-right">ราคา/ชิ้น</TableHead>
+                    <TableHead className="font-semibold text-slate-700 text-right">รายได้</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -394,18 +397,18 @@ export default function TeamRevenueReport() {
                     const revenue = quantity * unitPrice;
                     
                     return (
-                      <TableRow key={`${log.id}-${index}`}>
-                        <TableCell className="font-medium">
+                      <TableRow key={`${log.id}-${index}`} className="hover:bg-slate-50/50 transition-colors border-slate-100">
+                        <TableCell className="font-medium text-slate-700 py-4">
                           {format(parseISO(log.date), "dd/MM/yyyy", { locale: th })}
                         </TableCell>
-                        <TableCell>{log.orderNumber || 'ไม่ระบุ'}</TableCell>
-                        <TableCell>{log.customerName || 'ไม่ระบุลูกค้า'}</TableCell>
-                        <TableCell>{log.productName || 'ไม่ระบุสินค้า'}</TableCell>
-                        <TableCell>{log.colorName || 'ไม่ระบุสี'}</TableCell>
-                        <TableCell>{log.sizeName || 'ไม่ระบุไซส์'}</TableCell>
-                        <TableCell className="text-center">{quantity.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">฿{parseFloat(log.unitPrice).toLocaleString()}</TableCell>
-                        <TableCell className="font-semibold text-green-600 text-right">
+                        <TableCell className="text-slate-600">{log.orderNumber || 'ไม่ระบุ'}</TableCell>
+                        <TableCell className="text-slate-600">{log.customerName || 'ไม่ระบุลูกค้า'}</TableCell>
+                        <TableCell className="text-slate-600">{log.productName || 'ไม่ระบุสินค้า'}</TableCell>
+                        <TableCell className="text-slate-600">{log.colorName || 'ไม่ระบุสี'}</TableCell>
+                        <TableCell className="text-slate-600">{log.sizeName || 'ไม่ระบุไซส์'}</TableCell>
+                        <TableCell className="text-center font-medium text-blue-600">{quantity.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-medium text-slate-700">฿{parseFloat(log.unitPrice).toLocaleString()}</TableCell>
+                        <TableCell className="font-bold text-green-600 text-right">
                           ฿{revenue.toLocaleString()}
                         </TableCell>
                       </TableRow>
@@ -418,18 +421,28 @@ export default function TeamRevenueReport() {
         </Card>
       )}
 
-      {/* Empty State */}
+      {/* Modern Empty State */}
       {selectedTeam && startDate && endDate && (!workLogs || workLogs.length === 0) && !isLoading && (
-        <Card>
-          <CardContent className="text-center py-12">
-            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 mb-2">ไม่พบข้อมูลในช่วงเวลาที่เลือก</p>
-            <p className="text-sm text-gray-400">
+        <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+          <CardContent className="text-center py-16">
+            <div className="w-20 h-20 bg-gradient-to-br from-slate-200 to-slate-300 rounded-full flex items-center justify-center mx-auto mb-6">
+              <FileText className="w-10 h-10 text-slate-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-slate-700 mb-2">ไม่พบข้อมูลในช่วงเวลาที่เลือก</h3>
+            <p className="text-slate-500 max-w-md mx-auto">
               กรุณาตรวจสอบการเลือกทีมและช่วงเวลา หรือลองเปลี่ยนเงื่อนไขการค้นหา
             </p>
           </CardContent>
         </Card>
       )}
     </div>
+  );
+}
+
+export default function TeamRevenueReportPage() {
+  return (
+    <MainLayout>
+      <TeamRevenueReport />
+    </MainLayout>
   );
 }
