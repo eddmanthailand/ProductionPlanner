@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
-import { Settings, Key, CheckCircle, AlertCircle, TestTube, Trash2 } from 'lucide-react';
+import { Settings, Key, CheckCircle, AlertCircle, TestTube, Trash2, Building2, Shield, Info } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useAuth } from '@/hooks/useAuth';
 
 // Validation schema for AI configuration
 const aiConfigSchema = z.object({
@@ -39,6 +40,7 @@ interface ApiError {
 export default function AiSettings() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string; response?: string } | null>(null);
 
@@ -53,6 +55,12 @@ export default function AiSettings() {
   // Query to get current AI configuration
   const { data: aiConfig, isLoading: isLoadingConfig } = useQuery<AiConfiguration>({
     queryKey: ['/api/integrations/ai'],
+    retry: false,
+  });
+
+  // Query to get tenant information
+  const { data: tenants = [] } = useQuery<any[]>({
+    queryKey: ['/api/tenants'],
     retry: false,
   });
 
@@ -160,6 +168,9 @@ export default function AiSettings() {
     }
   };
 
+  // Get current tenant info
+  const currentTenant = (tenants as any[]).find((t: any) => t.id === user?.tenantId);
+
   return (
     <div className="container mx-auto p-6 max-w-4xl">
       <div className="mb-6">
@@ -168,9 +179,60 @@ export default function AiSettings() {
           <h1 className="text-2xl font-bold text-gray-900">การตั้งค่า AI</h1>
         </div>
         <p className="text-gray-600">
-          จัดการการเชื่อมต่อ AI สำหรับระบบ Chatbot และคุณสมบัติอื่นๆ
+          จัดการการเชื่อมต่อ AI สำหรับระบบ Chatbot และคุณสมบัติอื่นๆ (Multi-tenant BYOK)
         </p>
       </div>
+
+      {/* Tenant Information */}
+      <Card className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-blue-800">
+            <Building2 className="h-5 w-5" />
+            ข้อมูลองค์กร (Tenant)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">ชื่อองค์กร:</span>
+                <Badge variant="outline" className="text-blue-700 border-blue-300">
+                  {currentTenant?.name || 'ไม่ระบุ'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">ผู้ใช้งาน:</span>
+                <span className="text-sm font-medium text-gray-800">
+                  {user?.firstName} {user?.lastName}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-600">Tenant ID:</span>
+                <code className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  {user?.tenantId?.substring(0, 8)}...
+                </code>
+              </div>
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-600" />
+                <span className="text-xs text-green-700 font-medium">
+                  ข้อมูลแยกต่างหากและปลอดภัย
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Security Notice */}
+      <Alert className="mb-6 border-amber-200 bg-amber-50">
+        <Info className="h-4 w-4 text-amber-600" />
+        <AlertDescription className="text-amber-800">
+          <strong>BYOK (Bring Your Own Key):</strong> API Key ของคุณจะถูกเข้ารหัสด้วย AES-256-GCM และจัดเก็บแยกตาม Tenant 
+          ไม่มีการใช้งานร่วมกับองค์กรอื่น รับประกันความปลอดภัยสูงสุด
+        </AlertDescription>
+      </Alert>
 
       <div className="grid gap-6">
         {/* Current Configuration Status */}
@@ -179,7 +241,7 @@ export default function AiSettings() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5 text-green-600" />
-                การตั้งค่าปัจจุบัน
+                การตั้งค่า AI ขององค์กรนี้
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -195,6 +257,12 @@ export default function AiSettings() {
                     <span className="text-sm text-gray-600">สถานะ:</span>
                     <Badge variant={aiConfig.isActive ? "default" : "secondary"}>
                       {aiConfig.isActive ? "ใช้งาน" : "ไม่ใช้งาน"}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">เฉพาะ Tenant:</span>
+                    <Badge variant="outline" className="text-green-700 border-green-300">
+                      {currentTenant?.name || 'องค์กรนี้'}
                     </Badge>
                   </div>
                   <div className="text-xs text-gray-500">

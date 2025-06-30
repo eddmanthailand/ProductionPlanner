@@ -139,7 +139,9 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
   - แยกระบบ AI ให้เป็น "Bring Your Own Key" model
   - มีการจัดการ error และ validation ที่ครอบคลุม
   - **แก้ไขปัญหา CommonJS/ES6 module compatibility ในระบบ encryption**
-  - **ทดสอบเรียบร้อย: บันทึก API key, เข้ารหัส, ทดสอบ API, และ AI Chatbot ทำงานได้สมบูรณ์**
+  - **แก้ไขปัญหา React Query cache invalidation ใน AI Chatbot**
+  - **ทดสอบเรียบร้อย: บันทึก API key, เข้ารหัส, ทดสอบ API, และ AI Chatbot โต้ตอบได้สมบูรณ์**
+  - **ระบบ Multi-tenant BYOK พร้อมใช้งานใน production**
 
 - June 30, 2025: ✅ เพิ่มระบบ AI Chatbot ด้วย Gemini AI สำเร็จ
   - สร้างตาราง ai_configurations, chat_conversations, chat_messages
