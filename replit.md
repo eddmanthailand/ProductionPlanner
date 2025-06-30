@@ -130,6 +130,17 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ ปรับปรุงดีไซน์หน้า "ดูใบสั่งงาน" ให้ทันสมัยและเป็นระเบียบ
+  - รวมข้อมูลทั่วไปและลูกค้าในกล่องเดียว ใช้ 2 แถว ขนาดเล็กลง
+  - ใช้สีไล่เฉดสีน้ำเงิน-อินดิโก้ พร้อม typography ที่ทันสมัย
+  - เรียงรายการสินค้าตามกลุ่มแผนก แต่ละแผนกมีส่วนหัวสีไล่เฉดเฉพาะ
+  - ออกแบบตารางทันสมัย: เงาลึก มุมโค้ง สีสันน่าสนใจ
+  - เพิ่ม visual elements: สีจริงของสินค้า badges สำหรับขั้นตอนและขนาด
+  - เพิ่มการเน้นย้ำข้อมูลสำคัญด้วยตัวเลขในวงกลม
+  - ใช้ hover effects และ transitions เพื่อความลื่นไหล
+  - แก้ไขปัญหาหน้าใบสั่งงานหลักหายไป โดยคืน route เป็น /production/work-orders
+  - Push โค้ดทั้งหมดไปยัง GitHub repository สำเร็จแล้ว
+
 - June 30, 2025: ✅ สร้างหน้า "ดูใบสั่งงาน" แบบ read-only ในเมนูรายงานการผลิต
   - สร้างหน้ารายการใบสั่งงานแบบ read-only ที่ /production/work-orders
   - เพิ่ม info banner แจ้งว่าเป็น "โหมดดูอย่างเดียว" 
