@@ -502,13 +502,178 @@ function TeamRevenueReport() {
               startDate={startDate}
               endDate={endDate}
               workLogs={workLogs}
-              totalRevenue={totalRevenue}
-              totalQuantity={totalQuantity}
-              totalJobs={totalJobs}
+              totalRevenue={workLogs?.reduce((sum, log) => sum + (Number(log.quantity) * Number(log.unitPrice)), 0) || 0}
+              totalQuantity={workLogs?.reduce((sum, log) => sum + Number(log.quantity), 0) || 0}
+              totalJobs={workLogs?.length || 0}
             />
           </div>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+// Print Component สำหรับการพิมพ์
+interface PrintableReportProps {
+  selectedTeamName: string;
+  startDate?: Date;
+  endDate?: Date;
+  workLogs?: DailyWorkLog[];
+  totalRevenue: number;
+  totalQuantity: number;
+  totalJobs: number;
+}
+
+function PrintableReport({ 
+  selectedTeamName, 
+  startDate, 
+  endDate, 
+  workLogs, 
+  totalRevenue, 
+  totalQuantity, 
+  totalJobs 
+}: PrintableReportProps) {
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('th-TH', {
+      style: 'currency',
+      currency: 'THB',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const formatDate = (date?: Date) => {
+    if (!date) return '';
+    return format(date, 'dd MMMM yyyy', { locale: th });
+  };
+
+  return (
+    <div className="print:p-8 p-4 bg-white">
+      {/* Print Styles */}
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          @media print {
+            body { font-size: 12px; }
+            .no-print { display: none !important; }
+            .print-break { page-break-after: always; }
+            table { font-size: 11px; }
+            th, td { padding: 4px 6px; }
+          }
+        `
+      }} />
+
+      {/* Header */}
+      <div className="text-center border-b-2 border-slate-300 pb-6 mb-6">
+        <h1 className="text-2xl font-bold text-slate-800 mb-2">
+          รายงานรายได้ทีมการผลิต
+        </h1>
+        <div className="text-lg text-slate-600 space-y-1">
+          <p><strong>ทีม:</strong> {selectedTeamName}</p>
+          <p><strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)}</p>
+          <p><strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.</p>
+        </div>
+      </div>
+
+      {/* Summary Statistics */}
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="text-center p-4 border border-slate-200 rounded-lg">
+          <div className="text-2xl font-bold text-blue-600">{totalJobs}</div>
+          <div className="text-sm text-slate-600">งานทั้งหมด</div>
+        </div>
+        <div className="text-center p-4 border border-slate-200 rounded-lg">
+          <div className="text-2xl font-bold text-green-600">{totalQuantity.toLocaleString()}</div>
+          <div className="text-sm text-slate-600">ชิ้นงานทั้งหมด</div>
+        </div>
+        <div className="text-center p-4 border border-slate-200 rounded-lg">
+          <div className="text-2xl font-bold text-purple-600">{formatCurrency(totalRevenue)}</div>
+          <div className="text-sm text-slate-600">รายได้รวม</div>
+        </div>
+      </div>
+
+      {/* Detailed Report Table */}
+      <div className="mb-8">
+        <h2 className="text-lg font-bold text-slate-800 mb-4">รายละเอียดรายได้</h2>
+        
+        {workLogs && workLogs.length > 0 ? (
+          <table className="w-full border border-slate-300">
+            <thead>
+              <tr className="bg-slate-100">
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ลำดับ</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">วันที่</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">เลขที่ใบสั่งงาน</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ลูกค้า</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">สินค้า</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">สี</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ขนาด</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ขั้นตอน</th>
+                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">พนักงาน</th>
+                <th className="border border-slate-300 px-2 py-2 text-right text-xs font-semibold">จำนวน</th>
+                <th className="border border-slate-300 px-2 py-2 text-right text-xs font-semibold">ราคา/ชิ้น</th>
+                <th className="border border-slate-300 px-2 py-2 text-right text-xs font-semibold">รายได้</th>
+              </tr>
+            </thead>
+            <tbody>
+              {workLogs.sort((a, b) => Number(a.id) - Number(b.id)).map((log, index) => {
+                const quantity = Number(log.quantity) || 0;
+                const unitPrice = Number(log.unitPrice) || 0;
+                const revenue = quantity * unitPrice;
+
+                return (
+                  <tr key={log.id} className="hover:bg-slate-50">
+                    <td className="border border-slate-300 px-2 py-1 text-xs">{index + 1}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">
+                      {format(parseISO(log.date), 'dd/MM/yyyy', { locale: th })}
+                    </td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs font-medium">{log.orderNumber}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.customerName}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.productName}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">
+                      <div className="flex items-center gap-1">
+                        <div 
+                          className="w-3 h-3 rounded-full border border-gray-300"
+                          style={{ backgroundColor: log.colorCode }}
+                        ></div>
+                        {log.colorName}
+                      </div>
+                    </td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.sizeName}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.workStepName}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.workerName}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs text-right">{quantity.toLocaleString()}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs text-right">{formatCurrency(unitPrice)}</td>
+                    <td className="border border-slate-300 px-2 py-1 text-xs text-right font-medium">{formatCurrency(revenue)}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="bg-slate-200 font-bold">
+                <td colSpan={9} className="border border-slate-300 px-2 py-2 text-xs text-right">รวมทั้งหมด:</td>
+                <td className="border border-slate-300 px-2 py-2 text-xs text-right">{totalQuantity.toLocaleString()}</td>
+                <td className="border border-slate-300 px-2 py-2 text-xs"></td>
+                <td className="border border-slate-300 px-2 py-2 text-xs text-right">{formatCurrency(totalRevenue)}</td>
+              </tr>
+            </tfoot>
+          </table>
+        ) : (
+          <div className="text-center py-8 text-slate-500">
+            ไม่พบข้อมูลในช่วงเวลาที่เลือก
+          </div>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="border-t-2 border-slate-300 pt-4 text-sm text-slate-600">
+        <div className="flex justify-between">
+          <div>
+            <p>ระบบการจัดการการผลิต</p>
+            <p>สร้างโดย: ระบบอัตโนมัติ</p>
+          </div>
+          <div className="text-right">
+            <p>หน้า: 1/1</p>
+            <p>รายงานสร้างเมื่อ: {format(new Date(), 'dd/MM/yyyy HH:mm', { locale: th })}</p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
