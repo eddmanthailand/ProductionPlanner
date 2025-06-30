@@ -130,6 +130,12 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ แก้ไขปัญหาเลขที่รายงานซ้ำกันและชื่อพนักงานไม่แสดง
+  - แก้ไขข้อมูลเก่า 18 รายการให้ใช้เลขที่รายงานเดียวกัน RP2025070001
+  - เชื่อมโยงตาราง users แทน employees ใน daily work logs query 
+  - ระบบแสดงชื่อพนักงาน "ผู้ดูแล ระบบ" แทน "ไม่ระบุ" ถูกต้องแล้ว
+  - ระบบ batch API ทำงานปกติ สร้างหลายรายการด้วยเลขที่รายงานเดียวกัน
+
 - June 30, 2025: ✅ แก้ไขปัญหา Cache ทั้งระบบ
   - เพิ่ม anti-cache headers ใน Express middleware สำหรับ API routes
   - ปรับ React Query configuration: staleTime=0, cache busting timestamps
