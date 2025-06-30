@@ -23,7 +23,7 @@ async function initializeDefaultPermissions() {
 function requireAuth(req: any, res: any, next: any) {
   if (req.session && req.session.userId) {
     req.user = {
-      userId: req.session.userId,
+      id: req.session.userId,
       tenantId: req.session.tenantId,
       roleId: req.session.roleId
     };
