@@ -4228,10 +4228,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ===== AI CHATBOT ENDPOINTS =====
   
   // เริ่มการสนทนาใหม่
-  app.post("/api/chat/conversations", async (req: any, res: any) => {
+  app.post("/api/chat/conversations", requireAuth, async (req: any, res: any) => {
     try {
-      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
-      const userId = 1; // Default admin user for dev
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูลผู้ใช้ที่จำเป็น" 
+        });
+      }
       
       const conversation = await storage.createChatConversation({
         tenantId,
@@ -4247,10 +4253,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ดึงรายการการสนทนา
-  app.get("/api/chat/conversations", async (req: any, res: any) => {
+  app.get("/api/chat/conversations", requireAuth, async (req: any, res: any) => {
     try {
-      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
-      const userId = 1;
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+      
+      if (!tenantId || !userId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูลผู้ใช้ที่จำเป็น" 
+        });
+      }
       
       const conversations = await storage.getChatConversations(tenantId, userId);
       res.json(conversations);
@@ -4261,7 +4273,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ดึงข้อความในการสนทนา
-  app.get("/api/chat/conversations/:conversationId/messages", async (req: any, res: any) => {
+  app.get("/api/chat/conversations/:conversationId/messages", requireAuth, async (req: any, res: any) => {
     try {
       const { conversationId } = req.params;
       
@@ -4274,7 +4286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ส่งข้อความและรับการตอบกลับจาก AI
-  app.post("/api/chat/conversations/:conversationId/messages", async (req: any, res: any) => {
+  app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async (req: any, res: any) => {
     try {
       const { conversationId } = req.params;
       const { content } = req.body;
@@ -4294,7 +4306,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { GeminiService } = await import('./services/gemini');
       
       // ดึง API key จาก tenant configuration
-      const tenantId = '550e8400-e29b-41d4-a716-446655440000';
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
+        });
+      }
+      
       const aiConfig = await storage.getAiConfiguration(tenantId);
       
       let geminiService;
@@ -4491,7 +4509,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // ลบการตั้งค่า AI
   app.delete("/api/integrations/ai", requireAuth, async (req: any, res: any) => {
     try {
-      const tenantId = req.user.tenantId || "550e8400-e29b-41d4-a716-446655440000";
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
+        });
+      }
       
       const deleted = await storage.deleteAiConfiguration(tenantId);
       
