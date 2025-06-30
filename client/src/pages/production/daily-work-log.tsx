@@ -1135,7 +1135,7 @@ export default function DailyWorkLog() {
             <Table>
               <TableHeader>
                 <TableRow style={{ fontSize: '11px' }}>
-                  <TableHead className="w-[120px] py-2 px-3">เลขที่รายงาน</TableHead>
+                  <TableHead className="w-[120px] py-2 px-3">รหัสอ้างอิง</TableHead>
                   <TableHead className="w-[120px] py-2 px-3">วันเวลา</TableHead>
                   <TableHead className="w-[100px] py-2 px-3">ทีม</TableHead>
                   <TableHead className="w-[140px] py-2 px-3">ใบสั่งงาน</TableHead>
@@ -1154,6 +1154,8 @@ export default function DailyWorkLog() {
                       <div className="flex flex-col gap-0.5">
                         <span className="font-bold text-blue-600 text-xs">{log.reportNumber || 'N/A'}</span>
                         <span className="text-gray-500 text-[10px]">เลขที่รายงาน</span>
+                        <span className="font-mono text-green-600 text-[10px]">{log.id || 'N/A'}</span>
+                        <span className="text-gray-500 text-[9px]">เลขที่บันทึก</span>
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs py-2 px-3">
