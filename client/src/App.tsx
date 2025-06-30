@@ -152,7 +152,9 @@ function Router() {
       <Route path="/production/work-orders">
         <MainLayout><WorkOrderView /></MainLayout>
       </Route>
-      <Route path="/production/work-orders/:id/view" component={WorkOrderDetailView} />
+      <Route path="/production/work-orders/:id/view">
+        <MainLayout><WorkOrderDetailView /></MainLayout>
+      </Route>
       <Route path="/production/work-orders/:id/print" component={WorkOrderPrint} />
       <Route path="/production/daily-work-log">
         <MainLayout><DailyWorkLog /></MainLayout>

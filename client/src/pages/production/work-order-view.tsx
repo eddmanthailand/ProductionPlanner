@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,7 +14,7 @@ export default function WorkOrderView() {
   const [, setLocation] = useLocation();
 
   // Fetch work orders
-  const { data: workOrders = [], isLoading } = useQuery<WorkOrder[]>({
+  const { data: workOrders = [], isLoading: isLoadingWorkOrders } = useQuery<WorkOrder[]>({
     queryKey: ["/api/work-orders"],
   });
 
@@ -72,12 +71,12 @@ export default function WorkOrderView() {
 
   const getPriorityColor = (priority: number) => {
     switch (priority) {
-      case 1: return 'bg-red-100 text-red-800 border-red-200';
-      case 2: return 'bg-orange-100 text-orange-800 border-orange-200';
-      case 3: return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 4: return 'bg-green-100 text-green-800 border-green-200';
-      case 5: return 'bg-blue-100 text-blue-800 border-blue-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 1: return 'bg-red-100 text-red-800';
+      case 2: return 'bg-orange-100 text-orange-800';
+      case 3: return 'bg-yellow-100 text-yellow-800';
+      case 4: return 'bg-blue-100 text-blue-800';
+      case 5: return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -102,143 +101,142 @@ export default function WorkOrderView() {
   };
 
   return (
-    <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-              <FileText className="w-8 h-8 text-blue-600" />
-              ดูใบสั่งงาน
-            </h1>
-            <p className="text-gray-600 mt-1">แสดงและพิมพ์ใบสั่งงาน</p>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+            <FileText className="w-8 h-8 text-blue-600" />
+            ดูใบสั่งงาน
+          </h1>
+          <p className="text-gray-600 mt-1">แสดงและพิมพ์ใบสั่งงาน</p>
         </div>
+      </div>
 
-        {/* Search */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="ค้นหาด้วยเลขที่ใบสั่งงาน, ชื่องาน, หรือลูกค้า..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardContent>
-        </Card>
+      {/* Search */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Input
+              placeholder="ค้นหาเลขที่ใบสั่งงาน, ชื่องาน, หรือลูกค้า..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Work Orders List */}
-        <div className="grid gap-4">
-          {isLoading ? (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center">กำลังโหลดข้อมูล...</div>
-              </CardContent>
-            </Card>
-          ) : filteredWorkOrders.length === 0 ? (
-            <Card>
-              <CardContent className="p-6">
-                <div className="text-center py-8">
-                  <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-2">
-                    {searchTerm ? 'ไม่พบใบสั่งงานที่ตรงกับการค้นหา' : 'ยังไม่มีใบสั่งงาน'}
-                  </p>
-                  {searchTerm && (
-                    <p className="text-sm text-gray-400">
-                      ลองค้นหาด้วยคำอื่น หรือเครียร์การค้นหา
-                    </p>
+      {/* Work Orders List */}
+      <div className="space-y-4">
+        {isLoadingWorkOrders ? (
+          <div className="text-center py-8">
+            <div className="text-lg">กำลังโหลดข้อมูล...</div>
+          </div>
+        ) : filteredWorkOrders.length === 0 ? (
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center py-8 text-gray-500">
+                {searchTerm ? 'ไม่พบใบสั่งงานที่ตรงกับคำค้นหา' : 'ไม่มีใบสั่งงาน'}
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          filteredWorkOrders.map((workOrder) => (
+            <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3">
+                      <CardTitle className="text-lg font-semibold text-gray-900">
+                        {workOrder.orderNumber}
+                      </CardTitle>
+                      <Badge className={getStatusColor(workOrder.status)}>
+                        {getStatusText(workOrder.status)}
+                      </Badge>
+                      <Badge className={getPriorityColor(workOrder.priority)}>
+                        {getPriorityText(workOrder.priority)}
+                      </Badge>
+                    </div>
+                    <h3 className="text-md font-medium text-gray-800">{workOrder.title}</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleViewDetails(workOrder.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      ดูรายละเอียด
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handlePrint(workOrder.id)}
+                      className="flex items-center gap-2"
+                    >
+                      <Printer className="w-4 h-4" />
+                      พิมพ์
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <User className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">ลูกค้า:</span>
+                    <span className="font-medium">{getCustomerName(workOrder.customerId)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Package className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">ประเภท:</span>
+                    <span className="font-medium">{getWorkTypeName(workOrder.workTypeId)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">วันที่สร้าง:</span>
+                    <span className="font-medium">
+                      {new Date(workOrder.createdAt).toLocaleDateString('th-TH')}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-gray-500" />
+                    <span className="text-gray-600">กำหนดส่ง:</span>
+                    <span className="font-medium">
+                      {workOrder.deliveryDate 
+                        ? new Date(workOrder.deliveryDate).toLocaleDateString('th-TH')
+                        : 'ไม่ระบุ'
+                      }
+                    </span>
+                  </div>
+                </div>
+                
+                {workOrder.description && (
+                  <>
+                    <Separator className="my-3" />
+                    <div className="text-sm text-gray-600">
+                      <strong>รายละเอียด:</strong> {workOrder.description}
+                    </div>
+                  </>
+                )}
+                
+                <Separator className="my-3" />
+                <div className="flex justify-between items-center text-sm">
+                  <span className="font-medium text-gray-900">
+                    ยอดรวม: ฿{parseFloat(workOrder.totalAmount).toLocaleString()}
+                  </span>
+                  {workOrder.notes && (
+                    <span className="text-gray-500">หมายเหตุ: {workOrder.notes}</span>
                   )}
                 </div>
               </CardContent>
             </Card>
-          ) : (
-            filteredWorkOrders.map((workOrder) => (
-              <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-lg">
-                          {workOrder.orderNumber}
-                        </CardTitle>
-                        <Badge className={`${getStatusColor(workOrder.status)} border-0`}>
-                          {getStatusText(workOrder.status)}
-                        </Badge>
-                        <Badge variant="outline" className={getPriorityColor(workOrder.priority)}>
-                          {getPriorityText(workOrder.priority)}
-                        </Badge>
-                      </div>
-                      <h3 className="font-medium text-gray-900">{workOrder.title}</h3>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewDetails(workOrder.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Eye className="w-4 h-4" />
-                        ดูรายละเอียด
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handlePrint(workOrder.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Printer className="w-4 h-4" />
-                        พิมพ์
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <User className="w-4 h-4" />
-                      <span>ลูกค้า: {getCustomerName(workOrder.customerId)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Package className="w-4 h-4" />
-                      <span>ประเภท: {getWorkTypeName(workOrder.workTypeId)}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4" />
-                      <span>กำหนดส่ง: {workOrder.deliveryDate ? new Date(workOrder.deliveryDate).toLocaleDateString('th-TH') : 'ไม่ระบุ'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Clock className="w-4 h-4" />
-                      <span>สร้างเมื่อ: {new Date(workOrder.createdAt).toLocaleDateString('th-TH')}</span>
-                    </div>
-                  </div>
-                  
-                  {workOrder.description && (
-                    <>
-                      <Separator className="my-3" />
-                      <div className="text-sm text-gray-600">
-                        <strong>รายละเอียด:</strong> {workOrder.description}
-                      </div>
-                    </>
-                  )}
-                  
-                  <Separator className="my-3" />
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="font-medium text-gray-900">
-                      ยอดรวม: ฿{parseFloat(workOrder.totalAmount).toLocaleString()}
-                    </span>
-                    {workOrder.notes && (
-                      <span className="text-gray-500">หมายเหตุ: {workOrder.notes}</span>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
-          )}
-        </div>
+          ))
+        )}
       </div>
-    </Layout>
+    </div>
   );
 }
