@@ -482,19 +482,7 @@ function TeamRevenueReport() {
           </DialogHeader>
           
           <div className="space-y-4">
-            {/* Print Action Buttons */}
-            <div className="flex justify-end gap-2 border-b pb-4">
-              <Button
-                onClick={handlePrint}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <Printer className="mr-2 h-4 w-4" />
-                พิมพ์
-              </Button>
-              <Button variant="outline" onClick={() => setShowPrintPreview(false)}>
-                ปิด
-              </Button>
-            </div>
+
 
             {/* Print Content */}
             <PrintableReport 
@@ -561,22 +549,40 @@ function PrintableReport({
         `
       }} />
 
-      {/* Header */}
-      <div className="text-center border-b border-slate-300 pb-2 mb-3">
-        <h1 className="text-lg font-bold text-slate-800 mb-1">
-          รายงานรายได้ทีมการผลิต
-        </h1>
-        <div className="text-xs text-slate-600">
-          <strong>ทีม:</strong> {selectedTeamName} | <strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)} | <strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.
+      {/* Header with inline buttons */}
+      <div className="flex justify-between items-center border-b border-slate-300 pb-2 mb-3">
+        <div className="text-center flex-1">
+          <h1 className="text-lg font-bold text-slate-800 mb-1">
+            รายงานรายได้ทีมการผลิต
+          </h1>
+          <div className="text-xs text-slate-600">
+            <strong>ทีม:</strong> {selectedTeamName} | <strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)} | <strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.
+          </div>
+          <div className="text-xs text-slate-600 mt-1">
+            <span className="text-blue-600 font-bold">{totalJobs}</span> งานทั้งหมด | 
+            <span className="text-green-600 font-bold ml-1">{totalQuantity.toLocaleString()}</span> ชิ้นงานทั้งหมด | 
+            <span className="text-purple-600 font-bold ml-1">{formatCurrency(totalRevenue)}</span> รายได้รวม
+          </div>
         </div>
-      </div>
-
-      {/* Summary Statistics */}
-      <div className="text-center py-1 mb-2 border-b border-slate-200">
-        <div className="text-xs text-slate-600">
-          <span className="text-blue-600 font-bold">{totalJobs}</span> งานทั้งหมด | 
-          <span className="text-green-600 font-bold ml-1">{totalQuantity.toLocaleString()}</span> ชิ้นงานทั้งหมด | 
-          <span className="text-purple-600 font-bold ml-1">{formatCurrency(totalRevenue)}</span> รายได้รวม
+        
+        {/* Inline buttons */}
+        <div className="flex gap-2 ml-4">
+          <Button
+            onClick={() => window.print()}
+            size="sm"
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 text-xs"
+          >
+            <Printer className="mr-1 h-3 w-3" />
+            พิมพ์
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => window.close()}
+            className="px-3 py-1 text-xs"
+          >
+            ปิด
+          </Button>
         </div>
       </div>
 
@@ -592,11 +598,10 @@ function PrintableReport({
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">วันที่</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">เลขที่ใบสั่งงาน</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ลูกค้า</th>
-                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">สินค้า</th>
+                <th className="border border-slate-300 px-4 py-2 text-left text-xs font-semibold">สินค้า</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">สี</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ขนาด</th>
                 <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">ขั้นตอน</th>
-                <th className="border border-slate-300 px-2 py-2 text-left text-xs font-semibold">พนักงาน</th>
                 <th className="border border-slate-300 px-2 py-2 text-right text-xs font-semibold">จำนวน</th>
                 <th className="border border-slate-300 px-2 py-2 text-right text-xs font-semibold">ราคา/ชิ้น</th>
                 <th className="border border-slate-300 px-2 py-2 text-right text-xs font-semibold">รายได้</th>
@@ -616,7 +621,7 @@ function PrintableReport({
                     </td>
                     <td className="border border-slate-300 px-2 py-1 text-xs font-medium">{log.orderNumber}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs">{log.customerName}</td>
-                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.productName}</td>
+                    <td className="border border-slate-300 px-4 py-1 text-xs">{log.productName}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs">
                       <div className="flex items-center gap-1">
                         <div 
@@ -628,7 +633,6 @@ function PrintableReport({
                     </td>
                     <td className="border border-slate-300 px-2 py-1 text-xs">{log.sizeName}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs">{log.workStepName}</td>
-                    <td className="border border-slate-300 px-2 py-1 text-xs">{log.workerName}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs text-right">{quantity.toLocaleString()}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs text-right">{formatCurrency(unitPrice)}</td>
                     <td className="border border-slate-300 px-2 py-1 text-xs text-right font-medium">{formatCurrency(revenue)}</td>
@@ -638,7 +642,7 @@ function PrintableReport({
             </tbody>
             <tfoot>
               <tr className="bg-slate-200 font-bold">
-                <td colSpan={9} className="border border-slate-300 px-2 py-2 text-xs text-right">รวมทั้งหมด:</td>
+                <td colSpan={8} className="border border-slate-300 px-2 py-2 text-xs text-right">รวมทั้งหมด:</td>
                 <td className="border border-slate-300 px-2 py-2 text-xs text-right">{totalQuantity.toLocaleString()}</td>
                 <td className="border border-slate-300 px-2 py-2 text-xs"></td>
                 <td className="border border-slate-300 px-2 py-2 text-xs text-right">{formatCurrency(totalRevenue)}</td>
