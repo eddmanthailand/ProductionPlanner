@@ -131,11 +131,11 @@ function Router() {
       <Route path="/production/work-steps">
         <MainLayout><WorkSteps /></MainLayout>
       </Route>
+      <Route path="/production/work-orders">
+        <MainLayout><WorkOrders /></MainLayout>
+      </Route>
       <Route path="/production/work-orders/view">
         <MainLayout><WorkOrderReadonly /></MainLayout>
-      </Route>
-      <Route path="/production/work-orders/manage">
-        <MainLayout><WorkOrders /></MainLayout>
       </Route>
       <Route path="/production/work-orders/new">
         <MainLayout><WorkOrderForm /></MainLayout>
