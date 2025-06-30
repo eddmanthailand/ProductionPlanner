@@ -10,11 +10,24 @@ const AUTH_TAG_LENGTH = 16;
 function getMasterKey(): Buffer {
   const masterKeyHex = process.env.MASTER_ENCRYPTION_KEY;
   
-  if (!masterKeyHex || Buffer.from(masterKeyHex, 'hex').length !== 32) {
-    throw new Error('Invalid MASTER_ENCRYPTION_KEY. Please set a 64-character hex key in Replit Secrets.');
+  if (!masterKeyHex) {
+    throw new Error('MASTER_ENCRYPTION_KEY is not set. Please set it in Replit Secrets.');
   }
   
-  return Buffer.from(masterKeyHex, 'hex');
+  // If key is not exactly 64 hex chars, create a proper 32-byte key from it
+  if (masterKeyHex.length !== 64) {
+    // Use crypto to create a consistent 32-byte key from any input
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256').update(masterKeyHex).digest();
+    return hash;
+  }
+  
+  const keyBuffer = Buffer.from(masterKeyHex, 'hex');
+  if (keyBuffer.length !== 32) {
+    throw new Error('Invalid MASTER_ENCRYPTION_KEY. Must be a 64-character hex string (32 bytes).');
+  }
+  
+  return keyBuffer;
 }
 
 export function encrypt(text: string): string {
