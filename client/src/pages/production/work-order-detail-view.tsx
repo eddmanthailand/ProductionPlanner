@@ -50,6 +50,13 @@ export default function WorkOrderDetailView() {
     queryKey: ["/api/work-steps"],
   });
 
+  // Fetch sub jobs progress data
+  const { data: subJobsProgress = [] } = useQuery<any[]>({
+    queryKey: [`/api/sub-jobs/progress/${workOrderId}`],
+    enabled: !!workOrderId,
+    staleTime: 0,
+  });
+
   // Use sub jobs from work order response
   const subJobs = (workOrder as any)?.sub_jobs || [];
 
@@ -138,6 +145,16 @@ export default function WorkOrderDetailView() {
   const getSizeName = (sizeId: number) => {
     const size = sizes.find(s => s.id === sizeId);
     return size?.name || 'ไม่ระบุ';
+  };
+
+  // Helper function to get progress data for a sub job
+  const getSubJobProgress = (subJobId: number) => {
+    const progress = subJobsProgress.find(p => p.id === subJobId);
+    return progress || { 
+      progressPercentage: 0, 
+      quantityCompleted: 0, 
+      quantityRemaining: 0 
+    };
   };
 
   // Group sub jobs by department
@@ -257,42 +274,73 @@ export default function WorkOrderDetailView() {
                             <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">สี</th>
                             <th className="px-6 py-4 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">ขนาด</th>
                             <th className="px-6 py-4 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">จำนวน</th>
+                            <th className="px-6 py-4 text-center text-xs font-medium text-gray-600 uppercase tracking-wider">ความคืบหน้า</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
-                          {departmentSubJobs.map((subJob: any, index: number) => (
-                            <tr key={subJob.id} className="hover:bg-blue-50 transition-colors duration-200">
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {subJob.product_name || 'ไม่ระบุ'}
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                  {getWorkStepName(subJob.work_step_id)}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <div className="flex items-center gap-2">
-                                  <div 
-                                    className="w-4 h-4 rounded-full border border-gray-300"
-                                    style={{ backgroundColor: colors.find(c => c.id === subJob.color_id)?.code || '#f3f4f6' }}
-                                  ></div>
-                                  <span className="text-sm text-gray-900">{getColorName(subJob.color_id)}</span>
-                                </div>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
-                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                  {getSizeName(subJob.size_id)}
-                                </span>
-                              </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-center">
-                                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-800 text-sm font-semibold">
-                                  {subJob.quantity}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
+                          {departmentSubJobs.map((subJob: any, index: number) => {
+                            const progress = getSubJobProgress(subJob.id);
+                            const progressPercentage = progress.progressPercentage || 0;
+                            const quantityCompleted = progress.quantityCompleted || 0;
+                            const quantityTotal = subJob.quantity || 0;
+                            
+                            return (
+                              <tr key={subJob.id} className="hover:bg-blue-50 transition-colors duration-200">
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="text-sm font-medium text-gray-900">
+                                    {subJob.product_name || 'ไม่ระบุ'}
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                    {getWorkStepName(subJob.work_step_id)}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-4 h-4 rounded-full border border-gray-300"
+                                      style={{ backgroundColor: colors.find(c => c.id === subJob.color_id)?.code || '#f3f4f6' }}
+                                    ></div>
+                                    <span className="text-sm text-gray-900">{getColorName(subJob.color_id)}</span>
+                                  </div>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                    {getSizeName(subJob.size_id)}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-indigo-100 text-indigo-800 text-sm font-semibold">
+                                    {subJob.quantity}
+                                  </span>
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap text-center">
+                                  <div className="flex flex-col items-center gap-2">
+                                    {/* Progress Bar */}
+                                    <div className="w-full max-w-[120px] bg-gray-200 rounded-full h-2.5">
+                                      <div 
+                                        className={`h-2.5 rounded-full transition-all duration-300 ${
+                                          progressPercentage >= 100 ? 'bg-green-500' :
+                                          progressPercentage >= 50 ? 'bg-blue-500' :
+                                          progressPercentage > 0 ? 'bg-yellow-500' : 'bg-gray-300'
+                                        }`}
+                                        style={{ width: `${Math.min(progressPercentage, 100)}%` }}
+                                      ></div>
+                                    </div>
+                                    {/* Progress Text */}
+                                    <div className="text-xs text-gray-600">
+                                      <span className="font-semibold">{progressPercentage.toFixed(1)}%</span>
+                                      <br />
+                                      <span className="text-gray-500">
+                                        {quantityCompleted}/{quantityTotal}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                       </table>
                     </div>
