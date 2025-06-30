@@ -10,7 +10,6 @@ import { CalendarIcon, DollarSign, TrendingUp, Users, FileText, BarChart3, Clipb
 import { format, parseISO } from "date-fns";
 import { th } from "date-fns/locale";
 import { cn } from "@/lib/utils";
-import MainLayout from "@/components/layout/main-layout";
 
 interface Team {
   id: string;
@@ -401,7 +400,7 @@ function TeamRevenueReport() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {workLogs?.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()).map((log, index) => {
+                  {workLogs?.sort((a, b) => Number(a.id) - Number(b.id)).map((log, index) => {
                     const quantity = Number(log.quantity) || 0;
                     const unitPrice = Number(log.unitPrice) || 0;
                     const revenue = quantity * unitPrice;

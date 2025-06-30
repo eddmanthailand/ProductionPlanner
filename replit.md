@@ -130,6 +130,13 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ ปรับปรุงหน้ารายงานรายได้ทีมให้ทันสมัยและแก้ไขปัญหาการทำงาน
+  - ออกแบบ UI ใหม่: การ์ดสถิติมีมิติ, ปุ่มไล่เฉดสี, ตารางทันสมัยพร้อม hover effects
+  - แก้ไขปฏิทินปิดอัตโนมัติเมื่อเลือกวันที่
+  - แก้ไขการเรียกรายงานอัตโนมัติ ให้ทำงานเฉพาะเมื่อกดปุ่มสร้างรายงาน
+  - แก้ไข sidebar ซ้อนกันโดยเอา MainLayout wrapper ออก
+  - เปลี่ยนการเรียงลำดับตารางรายละเอียดรายได้ให้ตรงกับลำดับการบันทึกจริง (เรียงตาม ID)
+
 - June 30, 2025: ✅ แก้ไขปัญหาเลขที่รายงานซ้ำกันและชื่อพนักงานไม่แสดง
   - แก้ไขข้อมูลเก่า 18 รายการให้ใช้เลขที่รายงานเดียวกัน RP2025070001
   - เชื่อมโยงตาราง users แทน employees ใน daily work logs query 
