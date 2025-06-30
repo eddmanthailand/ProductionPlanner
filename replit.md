@@ -130,6 +130,13 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ เพิ่มฟีเจอร์ preview เอกสารและเมนู "ดูใบสั่งงาน"
+  - เพิ่มระบบ preview ไฟล์แนบ รองรับ รูปภาพ, PDF, และไฟล์ text
+  - เพิ่มปุ่ม "ดูตัวอย่าง" (ไอคอนตา) ในตารางไฟล์แนบ
+  - สร้าง dialog แสดงตัวอย่างไฟล์พร้อมข้อมูลรายละเอียด
+  - เพิ่มเมนูย่อย "ดูใบสั่งงาน" ใน sidebar รายงานการผลิต
+  - ปรับปรุงการแสดงผลตารางไฟล์แนบให้เป็นระเบียบมากขึ้น
+
 - June 26, 2025: ✅ สร้างและปรับปรุงระบบการแนบไฟล์สำหรับใบสั่งงาน
   - เพิ่มตาราง `work_order_attachments` สำหรับจัดเก็บข้อมูลไฟล์แนบ
   - สร้าง FileStorage service สำหรับจัดการไฟล์ (Local Storage)
