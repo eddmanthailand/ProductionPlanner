@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, Printer, Search, FileText, Calendar, User, Package, Clock, Info } from "lucide-react";
 import { WorkOrder, Customer, WorkType } from "@shared/schema";
@@ -48,25 +47,25 @@ export default function WorkOrderView() {
     return workType?.name || 'ไม่ระบุ';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'approved': return 'bg-blue-100 text-blue-800';
-      case 'in_production': return 'bg-orange-100 text-orange-800';
-      case 'completed': return 'bg-green-100 text-green-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
   const getStatusText = (status: string) => {
     switch (status) {
       case 'pending': return 'รอดำเนินการ';
+      case 'in_progress': return 'กำลังดำเนินการ';
       case 'approved': return 'อนุมัติแล้ว';
-      case 'in_production': return 'กำลังผลิต';
       case 'completed': return 'เสร็จสิ้น';
       case 'cancelled': return 'ยกเลิก';
       default: return status;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'in_progress': return 'bg-blue-100 text-blue-800';
+      case 'approved': return 'bg-green-100 text-green-800';
+      case 'completed': return 'bg-gray-100 text-gray-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
@@ -97,7 +96,6 @@ export default function WorkOrderView() {
   };
 
   const handlePrint = (workOrderId: string) => {
-    // Open print view in new window
     window.open(`/production/work-orders/${workOrderId}/print`, '_blank');
   };
 
@@ -115,17 +113,12 @@ export default function WorkOrderView() {
       </div>
 
       {/* Read-only Info Banner */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-center gap-2">
-          <Info className="w-5 h-5 text-blue-600" />
-          <div>
-            <h3 className="font-medium text-blue-900">โหมดดูอย่างเดียว</h3>
-            <p className="text-sm text-blue-700">
-              หน้านี้สำหรับดูและพิมพ์ใบสั่งงานเท่านั้น ไม่สามารถสร้างใหม่หรือแก้ไขได้
-            </p>
-          </div>
-        </div>
-      </div>
+      <Alert className="bg-blue-50 border-blue-200">
+        <Info className="h-4 w-4 text-blue-600" />
+        <AlertDescription className="text-blue-800">
+          <strong>โหมดดูอย่างเดียว:</strong> หน้านี้สำหรับดูและพิมพ์ใบสั่งงานเท่านั้น ไม่สามารถสร้างใหม่หรือแก้ไขได้
+        </AlertDescription>
+      </Alert>
 
       {/* Search */}
       <Card>
@@ -192,7 +185,7 @@ export default function WorkOrderView() {
                       className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
                     >
                       <Printer className="w-4 h-4" />
-                      พิมพ์ใบสั่งงาน
+                      พิมพ์
                     </Button>
                   </div>
                 </div>
@@ -218,7 +211,7 @@ export default function WorkOrderView() {
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-600">กำหนดส่ง:</span>
+                    <span className="text-gray-600">วันที่ส่งมอบ:</span>
                     <span className="font-medium">
                       {workOrder.deliveryDate 
                         ? new Date(workOrder.deliveryDate).toLocaleDateString('th-TH')
@@ -227,25 +220,12 @@ export default function WorkOrderView() {
                     </span>
                   </div>
                 </div>
-                
+
                 {workOrder.description && (
-                  <>
-                    <Separator className="my-3" />
-                    <div className="text-sm text-gray-600">
-                      <strong>รายละเอียด:</strong> {workOrder.description}
-                    </div>
-                  </>
+                  <div className="mt-4 p-3 bg-gray-50 rounded-md">
+                    <p className="text-sm text-gray-700">{workOrder.description}</p>
+                  </div>
                 )}
-                
-                <Separator className="my-3" />
-                <div className="flex justify-between items-center text-sm">
-                  <span className="font-medium text-gray-900">
-                    ยอดรวม: ฿{parseFloat(workOrder.totalAmount).toLocaleString()}
-                  </span>
-                  {workOrder.notes && (
-                    <span className="text-gray-500">หมายเหตุ: {workOrder.notes}</span>
-                  )}
-                </div>
               </CardContent>
             </Card>
           ))
