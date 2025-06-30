@@ -7,7 +7,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Trash2, Plus, Send, Bot, User, MessageSquare } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
-import MainLayout from '@/components/layout/main-layout';
+
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 
@@ -160,8 +160,7 @@ export default function AIChatbot() {
   };
 
   return (
-    <MainLayout>
-      <div className="flex h-[calc(100vh-200px)] bg-gray-50 rounded-lg overflow-hidden">
+    <div className="flex h-[calc(100vh-200px)] bg-gray-50 rounded-lg overflow-hidden">
         {/* Sidebar - Conversations List */}
         <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
           <div className="p-4 border-b border-gray-200">
@@ -389,6 +388,5 @@ export default function AIChatbot() {
           )}
         </div>
       </div>
-    </MainLayout>
   );
 }
