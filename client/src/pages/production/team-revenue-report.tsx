@@ -474,11 +474,8 @@ function TeamRevenueReport() {
       {/* Print Preview Dialog */}
       <Dialog open={showPrintPreview} onOpenChange={setShowPrintPreview}>
         <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              ดูก่อนพิมพ์ - รายงานรายได้ทีม
-            </DialogTitle>
+          <DialogHeader className="sr-only">
+            <DialogTitle>Print Preview</DialogTitle>
           </DialogHeader>
           
           <div className="space-y-4">
