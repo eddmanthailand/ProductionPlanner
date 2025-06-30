@@ -1870,6 +1870,15 @@ export class DatabaseStorage implements IStorage {
     return log;
   }
 
+  async createDailyWorkLogWithReportNumber(insertLog: InsertDailyWorkLog): Promise<DailyWorkLog> {
+    // Use the provided report number (for batch creation)
+    const [log] = await db
+      .insert(dailyWorkLogs)
+      .values(insertLog)
+      .returning();
+    return log;
+  }
+
   // Helper method to generate unique report number: RP+YYYY+MM+Sequential Number
   async generateUniqueReportNumber(tenantId: string): Promise<string> {
     const now = new Date();

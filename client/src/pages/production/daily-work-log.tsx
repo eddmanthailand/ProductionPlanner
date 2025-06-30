@@ -567,6 +567,39 @@ export default function DailyWorkLog() {
     },
   });
 
+  const batchCreateLogMutation = useMutation({
+    mutationFn: async ({ subJobs }: { subJobs: any[] }) => {
+      const response = await fetch('/api/daily-work-logs/batch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subJobs }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create batch logs');
+      }
+      
+      return response.json();
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/progress"] });
+      toast({ 
+        title: "สำเร็จ", 
+        description: `บันทึกงาน ${result.count} รายการด้วยเลขที่รายงาน ${result.reportNumber}`,
+      });
+      resetForm();
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "ไม่สามารถบันทึกงานได้", 
+        description: error.message || "เกิดข้อผิดพลาดในการบันทึกงาน", 
+        variant: "destructive" 
+      });
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -583,32 +616,50 @@ export default function DailyWorkLog() {
     }
 
     try {
-      // Create log entries for selected sub jobs
-      const logPromises = selectedSubJobIds.map(subJobId => {
+      // If editing a single log, use update
+      if (editingLog && selectedSubJobIds.length === 1) {
+        const subJobId = selectedSubJobIds[0];
         const quantity = selectedQuantities[subJobId] || "0";
         const subJob = subJobs.find(sj => sj.id.toString() === subJobId);
         const logData = {
           date: selectedDate,
           teamId: selectedTeam,
-          employeeId: user.id.toString(), // Use logged-in user ID
-          employeeName: `${user.firstName} ${user.lastName}`, // Use logged-in user name
+          employeeId: user.id.toString(),
+          employeeName: `${user.firstName} ${user.lastName}`,
           workOrderId: selectedWorkOrder,
           subJobId: parseInt(subJobId),
-          hoursWorked: 8, // Default 8 hours - auto calculated
+          hoursWorked: 8,
           workDescription: workDescription || `ทำงาน ${subJob?.productName}`,
           status: workStatus,
           notes,
           quantityCompleted: parseInt(quantity) || 0,
         };
+        
+        await updateLogMutation.mutateAsync({ id: editingLog.id, data: logData });
+      } else {
+        // For multiple sub jobs, use batch creation to get same report number
+        const subJobsData = selectedSubJobIds.map(subJobId => {
+          const quantity = selectedQuantities[subJobId] || "0";
+          const subJob = subJobs.find(sj => sj.id.toString() === subJobId);
+          return {
+            date: selectedDate,
+            teamId: selectedTeam,
+            employeeId: user.id.toString(),
+            employeeName: `${user.firstName} ${user.lastName}`,
+            workOrderId: selectedWorkOrder,
+            subJobId: parseInt(subJobId),
+            hoursWorked: 8,
+            workDescription: workDescription || `ทำงาน ${subJob?.productName}`,
+            status: workStatus,
+            notes,
+            quantityCompleted: parseInt(quantity) || 0,
+          };
+        });
 
-        if (editingLog && selectedSubJobIds.length === 1) {
-          return updateLogMutation.mutateAsync({ id: editingLog.id, data: logData });
-        } else {
-          return createLogMutation.mutateAsync(logData);
-        }
-      });
+        // Use batch API for multiple sub jobs
+        await batchCreateLogMutation.mutateAsync({ subJobs: subJobsData });
+      }
 
-      await Promise.all(logPromises);
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
       const selectedTeamData = teams.find(t => t.id === selectedTeam);
       toast({ title: "สำเร็จ", description: `บันทึกงาน ${selectedSubJobIds.length} รายการแล้ว (ทีม: ${selectedTeamData?.name})` });
