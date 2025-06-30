@@ -572,18 +572,11 @@ function PrintableReport({
       </div>
 
       {/* Summary Statistics */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        <div className="text-center p-2 border border-slate-200 rounded-lg">
-          <div className="text-lg font-bold text-blue-600">{totalJobs}</div>
-          <div className="text-xs text-slate-600">งานทั้งหมด</div>
-        </div>
-        <div className="text-center p-2 border border-slate-200 rounded-lg">
-          <div className="text-lg font-bold text-green-600">{totalQuantity.toLocaleString()}</div>
-          <div className="text-xs text-slate-600">ชิ้นงานทั้งหมด</div>
-        </div>
-        <div className="text-center p-2 border border-slate-200 rounded-lg">
-          <div className="text-lg font-bold text-purple-600">{formatCurrency(totalRevenue)}</div>
-          <div className="text-xs text-slate-600">รายได้รวม</div>
+      <div className="text-center py-2 mb-4 border-b border-slate-200">
+        <div className="text-sm text-slate-600">
+          <span className="text-blue-600 font-bold">{totalJobs}</span> งานทั้งหมด | 
+          <span className="text-green-600 font-bold ml-1">{totalQuantity.toLocaleString()}</span> ชิ้นงานทั้งหมด | 
+          <span className="text-purple-600 font-bold ml-1">{formatCurrency(totalRevenue)}</span> รายได้รวม
         </div>
       </div>
 
