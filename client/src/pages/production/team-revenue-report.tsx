@@ -562,14 +562,12 @@ function PrintableReport({
       }} />
 
       {/* Header */}
-      <div className="text-center border-b-2 border-slate-300 pb-6 mb-6">
-        <h1 className="text-2xl font-bold text-slate-800 mb-2">
+      <div className="text-center border-b-2 border-slate-300 pb-4 mb-6">
+        <h1 className="text-2xl font-bold text-slate-800 mb-1">
           รายงานรายได้ทีมการผลิต
         </h1>
-        <div className="text-lg text-slate-600 space-y-1">
-          <p><strong>ทีม:</strong> {selectedTeamName}</p>
-          <p><strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)}</p>
-          <p><strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.</p>
+        <div className="text-base text-slate-600 space-y-0">
+          <p><strong>ทีม:</strong> {selectedTeamName} | <strong>ช่วงเวลา:</strong> {formatDate(startDate)} - {formatDate(endDate)} | <strong>วันที่พิมพ์:</strong> {format(new Date(), 'dd MMMM yyyy HH:mm', { locale: th })} น.</p>
         </div>
       </div>
 
