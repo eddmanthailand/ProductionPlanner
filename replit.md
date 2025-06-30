@@ -130,7 +130,7 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
-- June 30, 2025: ✅ เพิ่มระบบ AI Settings (Multi-tenant BYOK) สำเร็จ
+- June 30, 2025: ✅ เพิ่มระบบ AI Settings (Multi-tenant BYOK) สำเร็จและทดสอบแล้ว
   - อัปเกรดระบบ encryption เป็น AES-256-GCM ระดับ Enterprise
   - สร้างหน้า AI Settings สำหรับจัดการ API key ของแต่ละ tenant
   - ปรับปรุง GeminiService ให้รองรับ multi-tenant API key
@@ -138,6 +138,8 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
   - เพิ่ม MASTER_ENCRYPTION_KEY system สำหรับเข้ารหัส tenant API keys
   - แยกระบบ AI ให้เป็น "Bring Your Own Key" model
   - มีการจัดการ error และ validation ที่ครอบคลุม
+  - **แก้ไขปัญหา CommonJS/ES6 module compatibility ในระบบ encryption**
+  - **ทดสอบเรียบร้อย: บันทึก API key, เข้ารหัส, ทดสอบ API, และ AI Chatbot ทำงานได้สมบูรณ์**
 
 - June 30, 2025: ✅ เพิ่มระบบ AI Chatbot ด้วย Gemini AI สำเร็จ
   - สร้างตาราง ai_configurations, chat_conversations, chat_messages

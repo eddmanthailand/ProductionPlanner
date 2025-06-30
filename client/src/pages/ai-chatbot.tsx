@@ -45,7 +45,7 @@ export default function AIChatbot() {
 
   // Fetch messages for selected conversation
   const { data: messages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
-    queryKey: ['/api/chat/conversations', selectedConversation, 'messages'],
+    queryKey: [`/api/chat/conversations/${selectedConversation}/messages`],
     enabled: !!selectedConversation,
     retry: false,
   });
@@ -81,7 +81,7 @@ export default function AIChatbot() {
       apiRequest('POST', `/api/chat/conversations/${conversationId || selectedConversation}/messages`, { content }),
     onSuccess: () => {
       queryClient.invalidateQueries({ 
-        queryKey: ['/api/chat/conversations', selectedConversation, 'messages'] 
+        queryKey: [`/api/chat/conversations/${selectedConversation}/messages`] 
       });
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setInputMessage('');
