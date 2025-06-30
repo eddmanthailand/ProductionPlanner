@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Eye, Printer, Search, FileText, Calendar, User, Package, Clock } from "lucide-react";
+import { Eye, Printer, Search, FileText, Calendar, User, Package, Clock, Info } from "lucide-react";
 import { WorkOrder, Customer, WorkType } from "@shared/schema";
 
 export default function WorkOrderView() {
@@ -109,7 +109,20 @@ export default function WorkOrderView() {
             <FileText className="w-8 h-8 text-blue-600" />
             ดูใบสั่งงาน
           </h1>
-          <p className="text-gray-600 mt-1">แสดงและพิมพ์ใบสั่งงาน</p>
+          <p className="text-gray-600 mt-1">แสดงและพิมพ์ใบสั่งงาน (โหมดดูอย่างเดียว)</p>
+        </div>
+      </div>
+
+      {/* Read-only Info Banner */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="flex items-center gap-2">
+          <Info className="w-5 h-5 text-blue-600" />
+          <div>
+            <h3 className="font-medium text-blue-900">โหมดดูอย่างเดียว</h3>
+            <p className="text-sm text-blue-700">
+              หน้านี้สำหรับดูและพิมพ์ใบสั่งงานเท่านั้น ไม่สามารถสร้างใหม่หรือแก้ไขได้
+            </p>
+          </div>
         </div>
       </div>
 
@@ -144,7 +157,7 @@ export default function WorkOrderView() {
           </Card>
         ) : (
           filteredWorkOrders.map((workOrder) => (
-            <Card key={workOrder.id} className="hover:shadow-md transition-shadow">
+            <Card key={workOrder.id} className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
                   <div className="space-y-2">
@@ -166,7 +179,7 @@ export default function WorkOrderView() {
                       size="sm"
                       variant="outline"
                       onClick={() => handleViewDetails(workOrder.id)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-blue-600 border-blue-600 hover:bg-blue-50"
                     >
                       <Eye className="w-4 h-4" />
                       ดูรายละเอียด
@@ -175,10 +188,10 @@ export default function WorkOrderView() {
                       size="sm"
                       variant="outline"
                       onClick={() => handlePrint(workOrder.id)}
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-green-600 border-green-600 hover:bg-green-50"
                     >
                       <Printer className="w-4 h-4" />
-                      พิมพ์
+                      พิมพ์ใบสั่งงาน
                     </Button>
                   </div>
                 </div>
