@@ -56,6 +56,15 @@ export default function AIChatbot() {
     onSuccess: (newConversation) => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setSelectedConversation(newConversation.id);
+      
+      // Send the pending message after creating conversation
+      if (inputMessage.trim()) {
+        setIsLoading(true);
+        sendMessageMutation.mutate({ 
+          content: inputMessage.trim(), 
+          conversationId: newConversation.id 
+        });
+      }
     },
     onError: () => {
       toast({
@@ -68,8 +77,8 @@ export default function AIChatbot() {
 
   // Send message
   const sendMessageMutation = useMutation({
-    mutationFn: (content: string) => 
-      apiRequest('POST', `/api/chat/conversations/${selectedConversation}/messages`, { content }),
+    mutationFn: ({ content, conversationId }: { content: string; conversationId?: number }) => 
+      apiRequest('POST', `/api/chat/conversations/${conversationId || selectedConversation}/messages`, { content }),
     onSuccess: () => {
       queryClient.invalidateQueries({ 
         queryKey: ['/api/chat/conversations', selectedConversation, 'messages'] 
@@ -114,18 +123,26 @@ export default function AIChatbot() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Auto-select first conversation if none selected
+  // Auto-select first conversation if none selected, or clear selection if no conversations
   useEffect(() => {
     if (conversations.length > 0 && !selectedConversation) {
       setSelectedConversation(conversations[0].id);
+    } else if (conversations.length === 0 && selectedConversation) {
+      setSelectedConversation(null);
     }
   }, [conversations, selectedConversation]);
 
   const handleSendMessage = () => {
-    if (!inputMessage.trim() || !selectedConversation || isLoading) return;
+    if (!inputMessage.trim() || isLoading) return;
+    
+    // If no conversation is selected, create one first
+    if (!selectedConversation) {
+      createConversationMutation.mutate();
+      return;
+    }
     
     setIsLoading(true);
-    sendMessageMutation.mutate(inputMessage.trim());
+    sendMessageMutation.mutate({ content: inputMessage.trim(), conversationId: selectedConversation });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
