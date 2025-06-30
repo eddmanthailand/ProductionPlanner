@@ -377,6 +377,17 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
             {!isCollapsed && <span className="ml-3">AI ผู้ช่วย</span>}
           </Link>
 
+          {/* AI Settings */}
+          <Link
+            href="/ai-settings"
+            className={`flex items-center py-2 px-3 text-gray-700 rounded-lg hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors ${
+              location === '/ai-settings' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+            }`}
+          >
+            <Settings className="w-5 h-5" />
+            {!isCollapsed && <span className="ml-3">การตั้งค่า AI</span>}
+          </Link>
+
           {/* User Management - แสดงเฉพาะเมื่อมีสิทธิ์เข้าถึง */}
           {canAccessPage('/user-management') && (
             <div className="relative">

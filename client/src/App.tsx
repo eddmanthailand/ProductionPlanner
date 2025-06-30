@@ -44,6 +44,7 @@ import UserManagement from "@/pages/user-management";
 import PageAccessManagement from "@/pages/page-access-management";
 import AccessDemo from "@/pages/access-demo";
 import AIChatbot from "@/pages/ai-chatbot";
+import AiSettings from "@/pages/ai-settings";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();
@@ -189,6 +190,9 @@ function Router() {
       </Route>
       <Route path="/ai-chatbot">
         <MainLayout><AIChatbot /></MainLayout>
+      </Route>
+      <Route path="/ai-settings">
+        <MainLayout><AiSettings /></MainLayout>
       </Route>
       <Route component={NotFound} />
     </Switch>
