@@ -1,0 +1,49 @@
+วิธีแก้ปัญหาทั้งระบบ (ด้วย React Query)
+โชคดีที่เรามีเครื่องมือแก้ปัญหานี้ที่ทรงพลังอยู่ในมือแล้วครับ เราจะใช้กลไกที่เรียกว่า "Cache Invalidation" (การทำให้แคชเก่าใช้งานไม่ได้) ซึ่งเป็นหัวใจของการจัดการข้อมูลด้วย React Query
+
+หลักการทำงานง่ายๆ คือ: "เมื่อไหร่ก็ตามที่เราแก้ไขข้อมูล, เราจะสั่งให้ React Query ไปดึงข้อมูลชุดนั้นมาใหม่"
+
+เราจะทำสิ่งนี้โดยใช้ useMutation ร่วมกับ queryClient.invalidateQueries ครับ
+
+ขั้นตอนการทำงานที่ถูกต้อง (ตามแผนใน Canvas):
+
+ดึงข้อมูล (Read): เราใช้ useQuery เพื่อดึงข้อมูลมาแสดง เช่น ดึงรายการบันทึกงานทั้งหมด
+
+JavaScript
+
+const { data, isLoading } = useQuery({
+  queryKey: ['dailyWorkLogs'], // ตั้งชื่อให้กับข้อมูลชุดนี้
+  queryFn: fetchDailyWorkLogs,
+});
+แก้ไขข้อมูล (Create, Update, Delete): เราใช้ useMutation เพื่อส่งคำสั่งไปแก้ไขข้อมูลที่เซิร์ฟเวอร์
+
+JavaScript
+
+const mutation = useMutation({
+  mutationFn: createNewLog, // ฟังก์ชันที่ยิง POST request
+  //...
+});
+สั่งให้ข้อมูลเก่าใช้ไม่ได้ (Invalidate): นี่คือส่วนที่สำคัญที่สุด! หลังจากที่ mutation ทำงานสำเร็จ (ใน onSuccess callback) เราจะเรียกใช้ queryClient.invalidateQueries
+
+JavaScript
+
+const queryClient = useQueryClient(); // เรียกใช้ client
+
+const mutation = useMutation({
+  mutationFn: createNewLog,
+  onSuccess: () => {
+    // เมื่อสร้าง Log ใหม่สำเร็จ
+    toast({ title: "บันทึกสำเร็จ!" });
+    // สั่งให้ข้อมูลที่ชื่อ 'dailyWorkLogs' กลายเป็นข้อมูลเก่า
+    // React Query จะไปดึงข้อมูลชุดนี้มาใหม่ให้เองโดยอัตโนมัติ!
+    queryClient.invalidateQueries({ queryKey: ['dailyWorkLogs'] });
+  },
+});
+สรุปง่ายๆ คือ:
+ทุกครั้งที่คุณกด "บันทึก" ในฟอร์ม (ซึ่งจะเรียก mutation), ทันทีที่เซิร์ฟเวอร์ตอบกลับมาว่า "บันทึกสำเร็จ", โค้ดฝั่ง Frontend ของเราจะบอก React Query ว่า "เฮ้! ข้อมูล dailyWorkLogs ที่นายมีอยู่มันเก่าแล้วนะ ไปโหลดมาใหม่เดี๋ยวนี้!"
+
+สิ่งที่เราจะทำในขั้นตอนต่อไปตามแผนใน Canvas:
+
+สิ่งที่คุณเลือกไว้ใน Canvas คือการ สร้าง Backend API สำหรับ POST, PUT, DELETE ก่อน ซึ่งถูกต้องและเป็นลำดับที่เหมาะสมที่สุดแล้วครับ เพราะเราต้องมี API ให้ Frontend เรียกใช้ก่อน
+
+หลังจากที่เราสร้าง API เหล่านั้นเสร็จแล้ว ในขั้นตอนต่อไปที่เราจะสร้างฟอร์มในฝั่ง Frontend ผมจะใส่โค้ดที่ใช้หลักการ useMutation และ invalidateQueries แบบนี้เข้าไปให้ครับ ซึ่งจะช่วยแก้ปัญหาข้อมูลเก่าค้างในแคชได้ทั้งระบบครับ!

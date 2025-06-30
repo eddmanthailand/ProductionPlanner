@@ -53,19 +53,25 @@ export async function apiRequest(
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 
-// Simple query function for dev mode
+// Simple query function for dev mode with cache-busting
 const devQueryFn: QueryFunction = async ({ queryKey }) => {
-  console.log('Query function called for:', queryKey[0]);
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`[${timestamp}] Query function called for:`, queryKey[0]);
   try {
-    const res = await fetch(queryKey[0] as string, { 
+    const url = queryKey[0] as string;
+    const cacheBusterUrl = url + (url.includes('?') ? '&' : '?') + `_t=${Date.now()}`;
+    
+    const res = await fetch(cacheBusterUrl, { 
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        'Accept': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
       },
       credentials: 'include'
     });
     
-    console.log('Response status:', res.status);
+    console.log(`[${timestamp}] Response status:`, res.status);
     
     if (!res.ok) {
       const errorText = await res.text();
@@ -73,7 +79,7 @@ const devQueryFn: QueryFunction = async ({ queryKey }) => {
     }
     
     const data = await res.json();
-    console.log('Response received:', Array.isArray(data) ? `${data.length} items` : 'object');
+    console.log(`[${timestamp}] Fresh data received:`, Array.isArray(data) ? `${data.length} items` : 'object');
     return data;
   } catch (error) {
     console.error('Query error:', error);
@@ -91,7 +97,8 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, // 5 minutes
+      staleTime: 0, // Always consider data stale for critical data
+      gcTime: 1000 * 60 * 5, // Keep in cache for 5 minutes
       retry: 1,
       retryDelay: 1000,
     },
