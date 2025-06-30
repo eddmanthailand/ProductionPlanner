@@ -257,7 +257,7 @@ export default function DailyWorkLog() {
     },
     enabled: !!selectedWorkOrder,
     staleTime: 0, // บังคับให้ fetch ข้อมูลใหม่ทุกครั้ง
-    cacheTime: 0 // ไม่เก็บ cache
+    gcTime: 0 // ไม่เก็บ cache
   });
 
   // Fetch sub jobs for quantity information in preview dialog
@@ -276,7 +276,7 @@ export default function DailyWorkLog() {
     queryKey: ["/api/sub-jobs/progress", selectedWorkOrder],
     enabled: !!selectedWorkOrder,
     staleTime: 0, // บังคับให้ fetch ข้อมูลใหม่ทุกครั้ง
-    cacheTime: 0, // ไม่เก็บ cache
+    gcTime: 0, // ไม่เก็บ cache
     queryFn: async () => {
       if (!selectedWorkOrder) return [];
       const response = await fetch(`/api/sub-jobs/progress/${selectedWorkOrder}?_t=${Date.now()}`);
@@ -530,7 +530,12 @@ export default function DailyWorkLog() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all related cache to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      
       toast({ 
         title: "สำเร็จ", 
         description: "บันทึกงานประจำวันเรียบร้อยแล้ว",
@@ -557,7 +562,12 @@ export default function DailyWorkLog() {
       return response.json();
     },
     onSuccess: () => {
+      // Invalidate all related cache to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/daily-work-logs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/sub-jobs/progress"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
+      
       toast({ title: "สำเร็จ", description: "อัปเดตบันทึกงานแล้ว" });
       setEditingLog(null);
       resetForm();

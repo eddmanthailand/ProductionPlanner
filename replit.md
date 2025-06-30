@@ -130,6 +130,13 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ แก้ไขปัญหา Cache ทั้งระบบ
+  - เพิ่ม anti-cache headers ใน Express middleware สำหรับ API routes
+  - ปรับ React Query configuration: staleTime=0, cache busting timestamps
+  - เพิ่ม comprehensive cache invalidation ใน mutations ทั้งหมด
+  - ระบบดึงข้อมูลใหม่ทุกครั้ง ไม่มีปัญหา stale data อีกต่อไป
+  - Daily work logs, work orders, และข้อมูลเชื่อมโยงแสดงผลทันที
+
 - June 30, 2025: ✅ แก้ไขปัญหาเลขที่รายงานไม่เหมือนกันและปรับปรุงรูปแบบหมายเลข
   - แก้ race condition ในการสร้างเลขที่รายงาน ใช้ batch API สำหรับการบันทึกหลายงาน
   - สร้าง /api/daily-work-logs/batch endpoint ให้หลาย sub jobs ใช้เลขที่รายงานเดียวกัน
