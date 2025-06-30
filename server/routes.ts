@@ -42,12 +42,21 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
   try {
     // 📊 Daily Work Logs - ใบบันทึกประจำวัน
     if (lowerMessage.includes('daily work log') || lowerMessage.includes('บันทึกประจำวัน') || 
-        lowerMessage.includes('ใบบันทึก') || lowerMessage.includes('งานประจำวัน')) {
+        lowerMessage.includes('ใบบันทึก') || lowerMessage.includes('งานประจำวัน') ||
+        lowerMessage.includes('สรุป') || lowerMessage.includes('ล่าสุด')) {
       
+      console.log('🔍 Detected daily work log keyword, fetching data...');
       const workLogs = await storage.getDailyWorkLogs(tenantId, {});
-      context += `\n=== ข้อมูล Daily Work Logs ล่าสุด ===\n`;
-      context += JSON.stringify(workLogs.slice(0, 20), null, 2);
-      systemInstructions += `ข้อมูลนี้เป็นใบบันทึกประจำวันของพนักงาน แต่ละรายการมี: วันที่ทำงาน, ชั่วโมงทำงาน, งานที่ทำ, และสถานะ\n`;
+      console.log('📊 Found work logs:', workLogs.length, 'records');
+      
+      if (workLogs && workLogs.length > 0) {
+        context += `\n=== ข้อมูลใบบันทึกประจำวันล่าสุด (จำนวน ${workLogs.length} รายการ) ===\n`;
+        context += JSON.stringify(workLogs.slice(0, 10), null, 2);
+        systemInstructions += `ข้อมูลนี้เป็นใบบันทึกประจำวันของพนักงานจริงในระบบ แต่ละรายการมี: ID, วันที่ทำงาน, ทีมงาน และรายละเอียดงาน กรุณาวิเคราะห์และสรุปข้อมูลให้ผู้ใช้\n`;
+      } else {
+        context += `\n=== ไม่พบข้อมูลใบบันทึกประจำวัน ===\n`;
+        systemInstructions += `ไม่มีข้อมูลใบบันทึกประจำวันในระบบขณะนี้\n`;
+      }
     }
 
     // 📋 Work Orders - ใบสั่งงาน  
@@ -4423,7 +4432,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         .map((msg: any) => ({ role: msg.role, content: msg.content }));
 
       // 🧠 Smart Message Processing: ตีความคำถามและดึงข้อมูลที่เกี่ยวข้อง
+      console.log('🔍 Smart Processing - Original message:', content.trim());
       const enhancedPrompt = await buildEnhancedPrompt(content.trim(), tenantId, storage);
+      console.log('🧠 Smart Processing - Enhanced prompt length:', enhancedPrompt.length);
+      console.log('🧠 Smart Processing - Enhanced prompt preview:', enhancedPrompt.substring(0, 500) + '...');
 
       // สร้างการตอบกลับจาก AI ด้วย enhanced prompt
       const aiResponse = await geminiService.generateChatResponse(

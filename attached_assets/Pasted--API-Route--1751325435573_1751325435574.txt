@@ -1,0 +1,80 @@
+// ========================================================================
+// แก้ไข API Route ในไฟล์ server/routes.ts
+// Instructions: ค้นหา app.post("/api/ai/chat", ...) เดิมของคุณ
+// แล้วแทนที่ด้วยโค้ดที่อัปเกรดแล้วด้านล่างนี้ทั้งหมด
+// ========================================================================
+
+import { decrypt } from "./encryption"; // Ensure decrypt is imported
+
+// ... (โค้ด routes เดิมของคุณ) ...
+
+// API for the chatbot with Smart Message Processing (Phase 1)
+app.post("/api/ai/chat", isAuthenticated, async (req: any, res) => {
+    try {
+        const { prompt } = req.body;
+        if (!prompt) {
+            return res.status(400).json({ message: "Prompt is required." });
+        }
+
+        const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Placeholder for tenantId
+
+        // --- Phase 1: Smart Message Processing ---
+        let contextData = null;
+        let contextDescription = "";
+
+        // 1. Keyword Detection Logic
+        const lowerCasePrompt = prompt.toLowerCase();
+        if (lowerCasePrompt.includes("daily work log") || lowerCasePrompt.includes("บันทึกงานประจำวัน")) {
+            // 2. Connect to existing storage functions
+            contextData = await storage.getDailyWorkLogs(tenantId);
+            contextDescription = "Here is the data for Daily Work Logs:";
+        } else if (lowerCasePrompt.includes("work order") || lowerCasePrompt.includes("ใบสั่งงาน")) {
+            contextData = await storage.getWorkOrdersWithCustomers(tenantId);
+            contextDescription = "Here is the data for Work Orders:";
+        }
+        // ... You can add more keyword checks here for other data types
+
+        // --- Phase 2: Context Injection (Basic Implementation) ---
+        let finalPrompt = prompt;
+
+        if (contextData && contextData.length > 0) {
+            // 3. Dynamic Prompt Building
+            const dataString = JSON.stringify(contextData, null, 2); // Pretty-print JSON
+            finalPrompt = `${contextDescription}\n\n${dataString}\n\nPlease analyze this data and answer the user's original question: "${prompt}"`;
+        }
+        
+        // --- Fetch API Key and Call Gemini ---
+        const config = await storage.getAiConfiguration(tenantId);
+        if (!config || !config.encryptedApiKey) {
+            return res.status(403).json({ 
+                message: "AI is not configured for this account." 
+            });
+        }
+
+        const apiKey = decrypt(config.encryptedApiKey);
+        const geminiApiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`;
+        
+        const geminiResponse = await fetch(geminiApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: finalPrompt }] }]
+            })
+        });
+
+        if (!geminiResponse.ok) {
+            const errorBody = await geminiResponse.text();
+            console.error("Gemini API Error:", errorBody);
+            throw new Error(`Failed to get response from AI. Status: ${geminiResponse.status}`);
+        }
+
+        const geminiData = await geminiResponse.json();
+        const aiResponseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "ขออภัย, ไม่สามารถประมวลผลคำตอบได้ในขณะนี้";
+
+        res.status(200).json({ response: aiResponseText });
+
+    } catch (error) {
+        console.error("AI chat error:", error);
+        res.status(500).json({ message: "An error occurred while communicating with the AI." });
+    }
+});

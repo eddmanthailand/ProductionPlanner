@@ -130,6 +130,14 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ ระบบ Smart Message Processing ติดตั้งสำเร็จ (Phase 1)
+  - เพิ่มฟังก์ชัน buildEnhancedPrompt ที่ตีความคำถามและดึงข้อมูลจริง
+  - รองรับคีย์เวิร์ด: บันทึกประจำวัน, ใบสั่งงาน, รายได้ทีม, สินค้า, ทีมงาน, วิเคราะห์
+  - AI จะได้รับข้อมูลจริงจากฐานข้อมูลพร้อม context instructions
+  - ระบบดึงข้อมูล 18 รายการ Daily Work Logs ได้สำเร็จ
+  - Backend เป็น Smart Middleman ระหว่าง Frontend กับ Gemini AI
+  - ข้อมูลผู้ใช้จริงถูกประมวลผลและส่งให้ AI แล้ว
+
 - June 30, 2025: ✅ แก้ไขระบบ Multi-tenant AI ให้ใช้ข้อมูลผู้ใช้จริง
   - ลบ placeholder tenantId ออกจาก AI-related endpoints ทั้งหมด
   - ใช้ `req.user?.tenantId` จากการ authentication จริง
