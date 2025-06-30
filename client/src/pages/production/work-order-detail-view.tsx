@@ -30,6 +30,26 @@ export default function WorkOrderDetailView() {
     queryKey: ["/api/work-types"],
   });
 
+  // Fetch departments
+  const { data: departments = [] } = useQuery<any[]>({
+    queryKey: ["/api/departments"],
+  });
+
+  // Fetch colors
+  const { data: colors = [] } = useQuery<any[]>({
+    queryKey: ["/api/colors"],
+  });
+
+  // Fetch sizes
+  const { data: sizes = [] } = useQuery<any[]>({
+    queryKey: ["/api/sizes"],
+  });
+
+  // Fetch work steps
+  const { data: workSteps = [] } = useQuery<any[]>({
+    queryKey: ["/api/work-steps"],
+  });
+
   // Use sub jobs from work order response
   const subJobs = (workOrder as any)?.sub_jobs || [];
 
@@ -99,9 +119,26 @@ export default function WorkOrderDetailView() {
     window.open(`/production/work-orders/${workOrderId}/print`, '_blank');
   };
 
-  const totalAmount = subJobs.reduce((sum: number, subJob: any) => 
-    sum + (subJob.quantity * parseFloat(subJob.unit_price || '0')), 0
-  );
+  // Helper functions to find data by ID
+  const getDepartmentName = (departmentId: string) => {
+    const department = departments.find(d => d.id === departmentId);
+    return department?.name || 'ไม่ระบุ';
+  };
+
+  const getWorkStepName = (workStepId: string) => {
+    const workStep = workSteps.find(ws => ws.id === workStepId);
+    return workStep?.name || 'ไม่ระบุ';
+  };
+
+  const getColorName = (colorId: number) => {
+    const color = colors.find(c => c.id === colorId);
+    return color?.name || 'ไม่ระบุ';
+  };
+
+  const getSizeName = (sizeId: number) => {
+    const size = sizes.find(s => s.id === sizeId);
+    return size?.name || 'ไม่ระบุ';
+  };
 
   return (
     <div className="space-y-6">
@@ -153,24 +190,6 @@ export default function WorkOrderDetailView() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">สถานะ:</label>
-                  <div className="mt-1">
-                    <Badge className={getStatusColor(workOrder.status)}>
-                      {getStatusText(workOrder.status)}
-                    </Badge>
-                  </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">ความสำคัญ:</label>
-                  <p className="mt-1 text-gray-900">{getPriorityText(workOrder.priority)}</p>
-                </div>
-                <div>
-                  <label className="text-sm font-medium text-gray-700">ประเภทงาน:</label>
-                  <p className="mt-1 text-gray-900">{workType?.name || 'ไม่ระบุ'}</p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
                   <label className="text-sm font-medium text-gray-700">วันที่สร้าง:</label>
                   <p className="mt-1 text-gray-900 flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
@@ -184,11 +203,19 @@ export default function WorkOrderDetailView() {
                     {formatDate(workOrder.deliveryDate)}
                   </p>
                 </div>
+              </div>
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">ยอดรวมทั้งหมด:</label>
-                  <p className="mt-1 text-gray-900 font-semibold text-green-600">
-                    ฿{totalAmount.toLocaleString()}
-                  </p>
+                  <label className="text-sm font-medium text-gray-700">ประเภทงาน:</label>
+                  <p className="mt-1 text-gray-900">{workType?.name || 'ไม่ระบุ'}</p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700">สถานะ:</label>
+                  <div className="mt-1">
+                    <Badge className={getStatusColor(workOrder.status)}>
+                      {getStatusText(workOrder.status)}
+                    </Badge>
+                  </div>
                 </div>
               </div>
             </div>
@@ -209,36 +236,11 @@ export default function WorkOrderDetailView() {
                     <label className="text-sm font-medium text-gray-700">ชื่อลูกค้า:</label>
                     <p className="mt-1 text-gray-900">{customer.name}</p>
                   </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">บริษัท:</label>
-                    <p className="mt-1 text-gray-900">{customer.companyName || 'ไม่ระบุ'}</p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">เลขประจำตัวผู้เสียภาษี:</label>
-                    <p className="mt-1 text-gray-900">{customer.taxId || 'ไม่ระบุ'}</p>
-                  </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-700">เบอร์โทร:</label>
-                    <p className="mt-1 text-gray-900 flex items-center gap-2">
-                      <Phone className="w-4 h-4" />
-                      {customer.phone || 'ไม่ระบุ'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">อีเมล:</label>
-                    <p className="mt-1 text-gray-900 flex items-center gap-2">
-                      <Mail className="w-4 h-4" />
-                      {customer.email || 'ไม่ระบุ'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">ที่อยู่:</label>
-                    <p className="mt-1 text-gray-900 flex items-start gap-2">
-                      <MapPin className="w-4 h-4 mt-0.5" />
-                      {customer.address || 'ไม่ระบุ'}
-                    </p>
+                    <label className="text-sm font-medium text-gray-700">บริษัท:</label>
+                    <p className="mt-1 text-gray-900">{customer.companyName || 'ไม่ระบุ'}</p>
                   </div>
                 </div>
               </div>
@@ -260,51 +262,39 @@ export default function WorkOrderDetailView() {
                 <table className="w-full border-collapse border border-gray-300">
                   <thead>
                     <tr className="bg-gray-50">
-                      <th className="border border-gray-300 px-4 py-2 text-left">รายการ</th>
-                      <th className="border border-gray-300 px-4 py-2 text-left">รายละเอียด</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">ชื่อสินค้า</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">แผนก</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">ขั้นตอน</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">สี</th>
+                      <th className="border border-gray-300 px-4 py-2 text-left">ขนาด</th>
                       <th className="border border-gray-300 px-4 py-2 text-center">จำนวน</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">ราคาต่อหน่วย</th>
-                      <th className="border border-gray-300 px-4 py-2 text-right">รวม</th>
-                      <th className="border border-gray-300 px-4 py-2 text-center">สถานะ</th>
                     </tr>
                   </thead>
                   <tbody>
                     {subJobs.map((subJob: any, index: number) => {
-                      const itemTotal = subJob.quantity * parseFloat(subJob.unit_price || '0');
                       return (
                         <tr key={subJob.id} className="hover:bg-gray-50">
                           <td className="border border-gray-300 px-4 py-2">
-                            {subJob.job_title || `รายการที่ ${index + 1}`}
+                            {subJob.product_name || 'ไม่ระบุ'}
                           </td>
                           <td className="border border-gray-300 px-4 py-2">
-                            {subJob.job_description || 'ไม่มีรายละเอียด'}
+                            {getDepartmentName(subJob.department_id)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {getWorkStepName(subJob.work_step_id)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {getColorName(subJob.color_id)}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-2">
+                            {getSizeName(subJob.size_id)}
                           </td>
                           <td className="border border-gray-300 px-4 py-2 text-center">
                             {subJob.quantity}
                           </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right">
-                            ฿{parseFloat(subJob.unit_price || '0').toLocaleString()}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
-                            ฿{itemTotal.toLocaleString()}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-2 text-center">
-                            <Badge className={getStatusColor(subJob.status || 'pending')}>
-                              {getStatusText(subJob.status || 'pending')}
-                            </Badge>
-                          </td>
                         </tr>
                       );
                     })}
-                    <tr className="bg-gray-50 font-semibold">
-                      <td colSpan={4} className="border border-gray-300 px-4 py-2 text-right">
-                        ยอดรวมทั้งหมด:
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2 text-right text-green-600">
-                        ฿{totalAmount.toLocaleString()}
-                      </td>
-                      <td className="border border-gray-300 px-4 py-2"></td>
-                    </tr>
                   </tbody>
                 </table>
               </div>
