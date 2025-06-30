@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { CalendarIcon, DollarSign, TrendingUp, Users, FileText } from "lucide-react";
+import { CalendarIcon, DollarSign, TrendingUp, Users, FileText, BarChart3, ClipboardList } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { th } from "date-fns/locale";
 import { cn } from "@/lib/utils";
@@ -174,23 +174,29 @@ export default function TeamRevenueReport() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <DollarSign className="w-8 h-8 text-green-600" />
-            รายงานรายได้ทีมผลิต
-          </h1>
-          <p className="text-gray-600 mt-1">วิเคราะห์รายได้ของทีมผลิตตามช่วงเวลาที่กำหนด</p>
+    <div className="space-y-6 p-6 bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+      {/* Modern Header */}
+      <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
+        <div className="flex items-center gap-4 mb-2">
+          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+            <DollarSign className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              รายงานรายได้ทีมผลิต
+            </h1>
+            <p className="text-slate-600 text-sm mt-1">วิเคราะห์รายได้ของทีมผลิตตามช่วงเวลาที่กำหนด</p>
+          </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" />
+      {/* Modern Filters */}
+      <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-3 text-xl">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+              <ClipboardList className="w-5 h-5 text-white" />
+            </div>
             เลือกเงื่อนไขการรายงาน
           </CardTitle>
         </CardHeader>
@@ -269,13 +275,13 @@ export default function TeamRevenueReport() {
 
             {/* ปุ่มสร้างรายงาน */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">&nbsp;</label>
+              <label className="text-sm font-medium text-slate-700">&nbsp;</label>
               <Button 
                 onClick={handleGenerateReport}
-                className="w-full"
+                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium py-2.5 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200"
                 disabled={!selectedTeam || !startDate || !endDate || isLoading}
               >
-                <FileText className="mr-2 h-4 w-4" />
+                <BarChart3 className="mr-2 h-4 w-4" />
                 สร้างรายงาน
               </Button>
             </div>
@@ -283,61 +289,73 @@ export default function TeamRevenueReport() {
         </CardContent>
       </Card>
 
-      {/* Summary Cards */}
+      {/* Modern Summary Cards */}
       {workLogs && workLogs.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card>
-            <CardContent className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          {/* รายได้รวม Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-green-50 to-emerald-50 hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">รายได้รวม</p>
-                  <p className="text-2xl font-bold text-green-600">
+                  <p className="text-sm font-medium text-green-700 mb-1">รายได้รวม</p>
+                  <p className="text-3xl font-bold text-green-600 group-hover:text-green-700 transition-colors">
                     ฿{summary.totalRevenue.toLocaleString()}
                   </p>
                 </div>
-                <DollarSign className="w-8 h-8 text-green-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <DollarSign className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          {/* จำนวนผลิต Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">จำนวนผลิต</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-sm font-medium text-blue-700 mb-1">จำนวนผลิต</p>
+                  <p className="text-3xl font-bold text-blue-600 group-hover:text-blue-700 transition-colors">
                     {summary.totalQuantity.toLocaleString()} ตัว
                   </p>
                 </div>
-                <TrendingUp className="w-8 h-8 text-blue-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <TrendingUp className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          {/* รายได้เฉลี่ย/วัน Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-purple-50 to-violet-50 hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">รายได้เฉลี่ย/วัน</p>
-                  <p className="text-2xl font-bold text-purple-600">
+                  <p className="text-sm font-medium text-purple-700 mb-1">รายได้เฉลี่ย/วัน</p>
+                  <p className="text-3xl font-bold text-purple-600 group-hover:text-purple-700 transition-colors">
                     ฿{summary.totalDays > 0 ? Math.round(summary.totalRevenue / summary.totalDays).toLocaleString() : 0}
                   </p>
                 </div>
-                <CalendarIcon className="w-8 h-8 text-purple-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <CalendarIcon className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
+          {/* จำนวนงานทั้งหมด Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-orange-50 to-amber-50 hover:shadow-2xl transition-all duration-300 group">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">จำนวนงานทั้งหมด</p>
-                  <p className="text-2xl font-bold text-orange-600">
+                  <p className="text-sm font-medium text-orange-700 mb-1">จำนวนงานทั้งหมด</p>
+                  <p className="text-3xl font-bold text-orange-600 group-hover:text-orange-700 transition-colors">
                     {summary.totalJobs} งาน
                   </p>
                 </div>
-                <Users className="w-8 h-8 text-orange-600" />
+                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                  <Users className="w-7 h-7 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
