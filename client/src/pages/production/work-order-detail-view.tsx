@@ -14,9 +14,9 @@ export default function WorkOrderDetailView() {
   const [, setLocation] = useLocation();
   const workOrderId = params?.id;
 
-  // Fetch work order
+  // Fetch work order detail
   const { data: workOrder, isLoading: isLoadingWorkOrder } = useQuery<WorkOrder>({
-    queryKey: ["/api/work-orders", workOrderId],
+    queryKey: [`/api/work-orders/${workOrderId}`],
     enabled: !!workOrderId,
   });
 
@@ -30,11 +30,8 @@ export default function WorkOrderDetailView() {
     queryKey: ["/api/work-types"],
   });
 
-  // Fetch sub jobs
-  const { data: subJobs = [] } = useQuery<SubJob[]>({
-    queryKey: ["/api/work-orders", workOrderId, "sub-jobs"],
-    enabled: !!workOrderId,
-  });
+  // Use sub jobs from work order response
+  const subJobs = (workOrder as any)?.sub_jobs || [];
 
   if (isLoadingWorkOrder) {
     return (
@@ -88,10 +85,11 @@ export default function WorkOrderDetailView() {
     }
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDate = (dateString: string | Date | null) => {
     if (!dateString) return 'ไม่ระบุ';
     try {
-      return format(new Date(dateString), 'dd MMMM yyyy', { locale: th });
+      const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+      return format(date, 'dd MMMM yyyy', { locale: th });
     } catch (error) {
       return 'ไม่ระบุ';
     }
@@ -183,7 +181,7 @@ export default function WorkOrderDetailView() {
                   <label className="text-sm font-medium text-gray-700">กำหนดส่ง:</label>
                   <p className="mt-1 text-gray-900 flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    {formatDate(workOrder.dueDate)}
+                    {formatDate(workOrder.deliveryDate)}
                   </p>
                 </div>
                 <div>
@@ -271,28 +269,28 @@ export default function WorkOrderDetailView() {
                     </tr>
                   </thead>
                   <tbody>
-                    {subJobs.map((subJob, index) => {
-                      const itemTotal = subJob.quantity * parseFloat(subJob.unitPrice || '0');
+                    {subJobs.map((subJob: any, index: number) => {
+                      const itemTotal = subJob.quantity * parseFloat(subJob.unit_price || '0');
                       return (
                         <tr key={subJob.id} className="hover:bg-gray-50">
                           <td className="border border-gray-300 px-4 py-2">
-                            {subJob.title || `รายการที่ ${index + 1}`}
+                            {subJob.job_title || `รายการที่ ${index + 1}`}
                           </td>
                           <td className="border border-gray-300 px-4 py-2">
-                            {subJob.description || 'ไม่มีรายละเอียด'}
+                            {subJob.job_description || 'ไม่มีรายละเอียด'}
                           </td>
                           <td className="border border-gray-300 px-4 py-2 text-center">
                             {subJob.quantity}
                           </td>
                           <td className="border border-gray-300 px-4 py-2 text-right">
-                            ฿{parseFloat(subJob.unitPrice || '0').toLocaleString()}
+                            ฿{parseFloat(subJob.unit_price || '0').toLocaleString()}
                           </td>
                           <td className="border border-gray-300 px-4 py-2 text-right font-semibold">
                             ฿{itemTotal.toLocaleString()}
                           </td>
                           <td className="border border-gray-300 px-4 py-2 text-center">
-                            <Badge className={getStatusColor(subJob.status)}>
-                              {getStatusText(subJob.status)}
+                            <Badge className={getStatusColor(subJob.status || 'pending')}>
+                              {getStatusText(subJob.status || 'pending')}
                             </Badge>
                           </td>
                         </tr>
