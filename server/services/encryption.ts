@@ -15,8 +15,7 @@ export class EncryptionService {
       const iv = crypto.randomBytes(IV_LENGTH);
       
       // Create cipher
-      const cipher = crypto.createCipher(ALGORITHM, MASTER_KEY);
-      cipher.setAutoPadding(true);
+      const cipher = crypto.createCipherGCM(ALGORITHM, Buffer.from(MASTER_KEY.slice(0, 32)));
       
       // Encrypt the text
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');

@@ -4291,7 +4291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       // เรียก Gemini AI เพื่อสร้างการตอบกลับ
-      const { GeminiService } = require('./services/gemini');
+      const { GeminiService } = await import('./services/gemini');
       const geminiService = new GeminiService(); // Use system API key for now
       
       // ดึงประวัติการสนทนา

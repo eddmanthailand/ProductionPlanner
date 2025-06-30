@@ -38,13 +38,13 @@ export default function AIChatbot() {
   const { toast } = useToast();
 
   // Fetch conversations
-  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery<ChatConversation[]>({
     queryKey: ['/api/chat/conversations'],
     retry: false,
   });
 
   // Fetch messages for selected conversation
-  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+  const { data: messages = [], isLoading: messagesLoading } = useQuery<ChatMessage[]>({
     queryKey: ['/api/chat/conversations', selectedConversation, 'messages'],
     enabled: !!selectedConversation,
     retry: false,
@@ -52,7 +52,7 @@ export default function AIChatbot() {
 
   // Create new conversation
   const createConversationMutation = useMutation({
-    mutationFn: () => apiRequest('/api/chat/conversations', 'POST', {}),
+    mutationFn: () => apiRequest('/api/chat/conversations', 'POST', { title: 'การสนทนาใหม่' }),
     onSuccess: (newConversation) => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setSelectedConversation(newConversation.id);
