@@ -25,7 +25,7 @@ export default function NotificationsTest() {
     mutationFn: (data: any) =>
       apiRequest("/api/notifications", {
         method: "POST",
-        body: JSON.stringify(data),
+        body: data,
       }),
     onSuccess: () => {
       toast({
