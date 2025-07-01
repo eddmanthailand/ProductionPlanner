@@ -1,0 +1,87 @@
+// ========================================================================
+// ส่วนที่ 1: โค้ดสำหรับไฟล์ shared/schema.ts
+// Instructions: ค้นหาส่วนของ workOrders และแทนที่ด้วยโค้ดทั้งหมดนี้
+// การเปลี่ยนแปลงสำคัญคือการเพิ่ม `workOrdersRelations` เข้าไป
+// ========================================================================
+
+import { relations } from "drizzle-orm";
+import {
+  pgTable,
+  // ... other imports ...
+  integer,
+  varchar,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core";
+import { users } from "./users"; // Assuming users schema is in another file or above
+import { customers } from "./customers"; // Assuming customers schema is in another file or above
+
+// --- ตาราง Work Orders (อาจจะปรับแก้บางคอลัมน์จากของคุณ) ---
+export const workOrders = pgTable("work_orders", {
+  id: serial("id").primaryKey(),
+  orderNumber: varchar("order_number", { length: 100 }).notNull(),
+  customerId: integer("customer_id").references(() => customers.id),
+  status: varchar("status", { length: 50 }).notNull(),
+  priority: varchar("priority", { length: 50 }).default("normal"),
+  startDate: date("start_date"),
+  dueDate: date("due_date"),
+  completedDate: date("completed_date"),
+  description: text("description"),
+  notes: text("notes"),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  assignedTo: integer("assigned_to").references(() => users.id),
+  deliveryStatus: varchar("delivery_status", { length: 50 }).default('Pending'),
+  shippedAt: timestamp("shipped_at"),
+  deliveredAt: timestamp("delivered_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// --- ส่วนที่สำคัญที่สุด: การประกาศความสัมพันธ์ ---
+export const workOrdersRelations = relations(workOrders, ({ one }) => ({
+  // กำหนดว่า 'customer' property ใน workOrder จะเชื่อมกับตาราง customers
+  // โดยใช้ field 'customerId' ของ workOrders และ 'id' ของ customers
+  customer: one(customers, {
+    fields: [workOrders.customerId],
+    references: [customers.id],
+  }),
+
+  // กำหนดว่า 'assignedUser' property จะเชื่อมกับตาราง users
+  // โดยใช้ field 'assignedTo'
+  assignedUser: one(users, {
+    fields: [workOrders.assignedTo],
+    references: [users.id],
+    relationName: 'assigned_to_user', // ตั้งชื่อ relation เพื่อไม่ให้ซ้ำกับ createdBy
+  }),
+
+  // กำหนดว่า 'createdByUser' property จะเชื่อมกับตาราง users
+  // โดยใช้ field 'createdBy'
+  createdByUser: one(users, {
+    fields: [workOrders.createdBy],
+    references: [users.id],
+    relationName: 'created_by_user', // ตั้งชื่อ relation
+  }),
+}));
+
+
+// ========================================================================
+// ส่วนที่ 2: โค้ดสำหรับไฟล์ server/storage.ts
+// Instructions: แทนที่ฟังก์ชัน getWorkOrdersWithCustomers เดิมของคุณด้วยโค้ดนี้
+// ========================================================================
+
+// ... (โค้ดอื่นๆ ใน storage.ts) ...
+
+// ฟังก์ชันที่แก้ไขแล้วอย่างสมบูรณ์
+export async function getWorkOrdersWithCustomers(tenantId: string) {
+  return db.query.workOrders.findMany({
+    where: eq(workOrders.tenantId, tenantId),
+    // 'with' clause จะทำงานได้ก็ต่อเมื่อมีการประกาศ Relations ใน schema.ts แล้ว
+    with: {
+      customer: true,
+      assignedUser: true,
+      createdByUser: true, // สามารถดึงข้อมูลผู้สร้างได้ด้วย
+    },
+    orderBy: [desc(workOrders.createdAt)],
+  });
+}

@@ -739,23 +739,7 @@ export const workQueueRelations = relations(workQueue, ({ one }) => ({
   })
 }));
 
-export const workOrdersRelations = relations(workOrders, ({ one, many }) => ({
-  customer: one(customers, {
-    fields: [workOrders.customerId],
-    references: [customers.id]
-  }),
-  quotation: one(quotations, {
-    fields: [workOrders.quotationId],
-    references: [quotations.id]
-  }),
-  workType: one(workTypes, {
-    fields: [workOrders.workTypeId],
-    references: [workTypes.id]
-  }),
-  items: many(workOrderItems),
-  subJobs: many(subJobs),
-  attachments: many(workOrderAttachments)
-}));
+
 
 export const workOrderItemsRelations = relations(workOrderItems, ({ one }) => ({
   workOrder: one(workOrders, {
@@ -1129,47 +1113,7 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
   })
 }));
 
-export const subJobsRelations = relations(subJobs, ({ one, many }) => ({
-  workOrder: one(workOrders, {
-    fields: [subJobs.workOrderId],
-    references: [workOrders.id]
-  }),
-  color: one(colors, {
-    fields: [subJobs.colorId],
-    references: [colors.id]
-  }),
-  size: one(sizes, {
-    fields: [subJobs.sizeId],
-    references: [sizes.id]
-  }),
-  dailyWorkLogs: many(dailyWorkLogs)
-}));
 
-export const workOrderAttachmentsRelations = relations(workOrderAttachments, ({ one }) => ({
-  workOrder: one(workOrders, {
-    fields: [workOrderAttachments.workOrderId],
-    references: [workOrders.id]
-  }),
-  uploadedByUser: one(users, {
-    fields: [workOrderAttachments.uploadedBy],
-    references: [users.id]
-  })
-}));
-
-export const dailyWorkLogsRelations = relations(dailyWorkLogs, ({ one }) => ({
-  subJob: one(subJobs, {
-    fields: [dailyWorkLogs.subJobId],
-    references: [subJobs.id]
-  }),
-  employee: one(employees, {
-    fields: [dailyWorkLogs.employeeId],
-    references: [employees.id]
-  }),
-  team: one(teams, {
-    fields: [dailyWorkLogs.teamId],
-    references: [teams.id]
-  })
-}));
 
 // Notifications System Tables
 export const notifications = pgTable("notifications", {
@@ -1281,3 +1225,111 @@ export type ChatConversation = typeof chatConversations.$inferSelect;
 export type InsertChatConversation = z.infer<typeof insertChatConversationSchema>;
 export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = z.infer<typeof insertChatMessageSchema>;
+
+// ===== ENHANCED WORK ORDERS RELATIONS (Critical for AI data retrieval) =====
+export const workOrdersRelationsEnhanced = relations(workOrders, ({ one, many }) => ({
+  // Customer relationship
+  customer: one(customers, {
+    fields: [workOrders.customerId],
+    references: [customers.id],
+  }),
+  
+  // Quotation relationship (optional)
+  quotation: one(quotations, {
+    fields: [workOrders.quotationId],
+    references: [quotations.id],
+  }),
+  
+  // Work Type relationship
+  workType: one(workTypes, {
+    fields: [workOrders.workTypeId],
+    references: [workTypes.id],
+  }),
+  
+  // Tenant relationship
+  tenant: one(tenants, {
+    fields: [workOrders.tenantId],
+    references: [tenants.id],
+  }),
+  
+  // Sub Jobs relationship (one-to-many)
+  subJobs: many(subJobs),
+  
+  // Work Order Items relationship (one-to-many) 
+  items: many(workOrderItems),
+  
+  // Attachments relationship (one-to-many)
+  attachments: many(workOrderAttachments),
+}));
+
+// Enhanced Sub Jobs Relations
+export const subJobsRelationsEnhanced = relations(subJobs, ({ one, many }) => ({
+  // Work Order relationship (parent)
+  workOrder: one(workOrders, {
+    fields: [subJobs.workOrderId],
+    references: [workOrders.id],
+  }),
+  
+  // Department relationship
+  department: one(departments, {
+    fields: [subJobs.departmentId],
+    references: [departments.id],
+  }),
+  
+  // Work Step relationship
+  workStep: one(workSteps, {
+    fields: [subJobs.workStepId],
+    references: [workSteps.id],
+  }),
+  
+  // Color relationship
+  color: one(colors, {
+    fields: [subJobs.colorId],
+    references: [colors.id],
+  }),
+  
+  // Size relationship
+  size: one(sizes, {
+    fields: [subJobs.sizeId],
+    references: [sizes.id],
+  }),
+  
+  // Daily Work Logs relationship (one-to-many)
+  dailyWorkLogs: many(dailyWorkLogs),
+}));
+
+// Enhanced Daily Work Logs Relations
+export const dailyWorkLogsRelationsEnhanced = relations(dailyWorkLogs, ({ one }) => ({
+  // Sub Job relationship (parent)
+  subJob: one(subJobs, {
+    fields: [dailyWorkLogs.subJobId],
+    references: [subJobs.id],
+  }),
+  
+  // Employee/User relationship
+  employee: one(users, {
+    fields: [dailyWorkLogs.employeeId],
+    references: [users.id],
+  }),
+  
+  // Team relationship
+  team: one(teams, {
+    fields: [dailyWorkLogs.teamId],
+    references: [teams.id],
+  }),
+}));
+
+// Enhanced Work Order Attachments Relations
+export const workOrderAttachmentsRelationsEnhanced = relations(workOrderAttachments, ({ one }) => ({
+  // Work Order relationship (parent)
+  workOrder: one(workOrders, {
+    fields: [workOrderAttachments.workOrderId],
+    references: [workOrders.id],
+  }),
+  
+  // User relationship (who uploaded)
+  uploadedBy: one(users, {
+    fields: [workOrderAttachments.uploadedBy],
+    references: [users.id],
+  }),
+}));
