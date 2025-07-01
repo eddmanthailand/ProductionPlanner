@@ -204,25 +204,65 @@ export default function AIChatbot() {
     return content.includes('```') || content.includes('SELECT') || content.includes('JSON') || content.includes('{') || content.includes('[');
   };
 
-  // Function to check if message contains chart data
+  // Enhanced function to check if message contains chart data
   const hasChartData = (content: string) => {
     try {
+      // Check for direct JSON with chartData
       const parsed = JSON.parse(content);
-      return parsed && parsed.chartData && parsed.chartData.type;
-    } catch {
+      if (parsed && parsed.chartData && parsed.chartData.type) {
+        return true;
+      }
+      
+      // Check for chart_response type from new format
+      if (parsed && parsed.type === 'chart_response' && parsed.chart) {
+        return true;
+      }
+      
       return false;
+    } catch {
+      // Also check for JSON patterns in text
+      return content.includes('"type": "chart_response"') || content.includes('"chartData"');
     }
   };
 
-  // Function to parse chart data from message
+  // Enhanced function to parse chart data from message
   const parseChartData = (content: string) => {
     try {
       const parsed = JSON.parse(content);
-      return {
-        message: parsed.message || '',
-        chartData: parsed.chartData
-      };
-    } catch {
+      
+      // Handle new chart_response format
+      if (parsed && parsed.type === 'chart_response' && parsed.chart) {
+        return {
+          message: parsed.message || 'แสดงข้อมูลเป็นกราฟ',
+          chartData: parsed.chart
+        };
+      }
+      
+      // Handle legacy format
+      if (parsed && parsed.chartData) {
+        return {
+          message: parsed.message || '',
+          chartData: parsed.chartData
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      // Try to extract JSON from text if parsing fails
+      try {
+        const jsonMatch = content.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          const extractedJson = JSON.parse(jsonMatch[0]);
+          if (extractedJson.type === 'chart_response' && extractedJson.chart) {
+            return {
+              message: extractedJson.message || 'แสดงข้อมูลเป็นกราฟ',
+              chartData: extractedJson.chart
+            };
+          }
+        }
+      } catch (extractError) {
+        console.log('Chart data extraction failed:', extractError);
+      }
       return null;
     }
   };
@@ -456,8 +496,8 @@ export default function AIChatbot() {
                           <p className="text-xs text-gray-600">สอบถามสถานะ แก้ไขข้อมูล</p>
                         </Card>
                         <Card className="p-4">
-                          <h4 className="font-medium text-sm mb-2">รายงานประสิทธิภาพ</h4>
-                          <p className="text-xs text-gray-600">วิเคราะห์ผลผลิต รายได้ทีม</p>
+                          <h4 className="font-medium text-sm mb-2">📊 สร้างกราฟและรายงาน</h4>
+                          <p className="text-xs text-gray-600">วิเคราะห์ข้อมูลเป็นกราฟ</p>
                         </Card>
                         <Card className="p-4">
                           <h4 className="font-medium text-sm mb-2">การใช้งานระบบ</h4>
@@ -467,6 +507,28 @@ export default function AIChatbot() {
                           <h4 className="font-medium text-sm mb-2">การแก้ปัญหา</h4>
                           <p className="text-xs text-gray-600">ช่วยแก้ไขปัญหาต่างๆ</p>
                         </Card>
+                      </div>
+                      
+                      {/* Chart Generation Suggestions */}
+                      <div className="mt-8 max-w-2xl mx-auto">
+                        <h4 className="text-sm font-medium text-gray-700 mb-4 text-center">💡 ตัวอย่างคำสั่งสร้างกราฟ:</h4>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {[
+                            { text: "สร้างกราฟแสดงรายได้ของแต่ละทีม", icon: "📊" },
+                            { text: "แสดงแนวโน้มการผลิตเป็นกราฟเส้น", icon: "📈" },
+                            { text: "เปรียบเทียบผลงานทีมเป็นแผนภูมิ", icon: "📋" },
+                            { text: "วิเคราะห์ประสิทธิภาพการทำงาน", icon: "⚡" }
+                          ].map((suggestion, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setInputMessage(suggestion.text)}
+                              className="p-3 text-left border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors text-sm"
+                            >
+                              <span className="mr-2">{suggestion.icon}</span>
+                              {suggestion.text}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   ) : (
