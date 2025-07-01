@@ -479,7 +479,29 @@ export default function AIChatbot() {
                             {/* Message Content */}
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1">
-                                {isCodeBlock(message.content) ? (
+                                {message.role === 'assistant' && hasChartData(message.content) ? (
+                                  // Display chart for AI responses with chart data
+                                  (() => {
+                                    const chartContent = parseChartData(message.content);
+                                    return chartContent ? (
+                                      <div className="space-y-4">
+                                        {chartContent.message && (
+                                          <p className="text-sm leading-relaxed text-gray-800">
+                                            {chartContent.message}
+                                          </p>
+                                        )}
+                                        <AIChart 
+                                          chartData={chartContent.chartData} 
+                                          className="max-w-full"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <p className="text-sm leading-relaxed text-gray-800">
+                                        ข้อมูลกราฟไม่สมบูรณ์
+                                      </p>
+                                    );
+                                  })()
+                                ) : isCodeBlock(message.content) ? (
                                   <div className="bg-gray-900 rounded-lg p-3 text-sm font-mono text-green-400 overflow-x-auto">
                                     <pre className="whitespace-pre-wrap">{message.content}</pre>
                                   </div>
@@ -559,7 +581,9 @@ export default function AIChatbot() {
                         {[
                           "สรุปใบสั่งงานที่ค้างอยู่",
                           "วิเคราะห์ประสิทธิภาพการผลิตเดือนที่แล้ว", 
-                          "แสดงรายได้ทีมสำหรับสัปดาห์นี้",
+                          "แสดงรายได้ทีมสำหรับสัปดาห์นี้เป็นกราฟ",
+                          "สร้างแผนภูมิเปรียบเทียบทีมงาน",
+                          "แสดงแนวโน้มการผลิตรายเดือน",
                           "ช่วยแก้ปัญหาการใช้งานระบบ"
                         ].map((prompt, index) => (
                           <Button
