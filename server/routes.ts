@@ -4847,7 +4847,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // ส่งข้อความและรับการตอบกลับจาก AI
+  // ส่งข้อความใหม่ (endpoint ที่ frontend เรียกใช้)
+  app.post("/api/chat/messages", requireAuth, async (req: any, res: any) => {
+    try {
+      const { conversationId, message } = req.body;
+      
+      if (!conversationId || !message || message.trim() === '') {
+        return res.status(400).json({ message: "กรุณาใส่ข้อความและเลือกการสนทนา" });
+      }
+
+      // บันทึกข้อความของผู้ใช้
+      const userMessage = await storage.createChatMessage({
+        conversationId: parseInt(conversationId),
+        role: 'user',
+        content: message.trim()
+      });
+
+      // เรียก Gemini AI เพื่อสร้างการตอบกลับ
+      const { GeminiService } = await import('./services/gemini');
+      
+      // ดึง API key จาก tenant configuration
+      const tenantId = req.user?.tenantId;
+      if (!tenantId) {
+        return res.status(400).json({ 
+          message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
+        });
+      }
+      
+      const aiConfig = await storage.getAiConfiguration(tenantId);
+      
+      let geminiService;
+      if (aiConfig && aiConfig.encryptedApiKey) {
+        // ใช้ API key ของ tenant (decrypt ก่อนใช้)
+        const { decrypt } = await import('./encryption');
+        const decryptedApiKey = decrypt(aiConfig.encryptedApiKey);
+        geminiService = new GeminiService(decryptedApiKey);
+      } else {
+        // Fallback ใช้ system API key
+        geminiService = new GeminiService();
+      }
+      
+      // ดึงประวัติการสนทนา
+      const recentMessages = await storage.getChatMessages(parseInt(conversationId));
+      const conversationHistory = recentMessages
+        .slice(-10) // เอา 10 ข้อความล่าสุด
+        .map((msg: any) => ({ role: msg.role, content: msg.content }));
+
+      // สร้างการตอบกลับจาก AI
+      let aiResponse;
+      try {
+        // สร้าง Enhanced Prompt
+        const enhancedPrompt = await buildEnhancedPromptWithHistory(message.trim(), tenantId, storage, conversationHistory);
+        
+        // ตรวจสอบ Chart Generation
+        const needsChart = shouldGenerateChart(message.trim());
+        let finalPrompt = needsChart ? buildChartPrompt(enhancedPrompt) : enhancedPrompt;
+        
+        // เพิ่ม Persona
+        if (aiConfig && aiConfig.persona) {
+          finalPrompt = buildPersonaPrompt(finalPrompt, aiConfig.persona);
+        }
+        
+        aiResponse = await geminiService.generateChatResponse(finalPrompt, []);
+        
+        // Safety check for HTML responses
+        if (aiResponse.trim().startsWith('<!DOCTYPE')) {
+          aiResponse = "ขออภัย ระบบมีปัญหาในการประมวลผลคำตอบ กรุณาลองถามใหม่ด้วยคำถามที่ง่ายกว่า";
+        }
+        
+      } catch (geminiError: any) {
+        console.error('❌ Gemini API Error:', geminiError);
+        
+        if (geminiError.message?.includes('API key')) {
+          aiResponse = "⚠️ มีปัญหาเกี่ยวกับการตั้งค่า AI API กรุณาตรวจสอบการตั้งค่าใน 'การตั้งค่า AI'";
+        } else if (geminiError.message?.includes('quota') || geminiError.message?.includes('rate limit')) {
+          aiResponse = "⚠️ การใช้งาน AI เกินขีดจำกัด กรุณารอสักครู่แล้วลองใหม่";
+        } else {
+          aiResponse = "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้ กรุณาลองใหม่ภายหลัง";
+        }
+      }
+
+      // บันทึกการตอบกลับของ AI
+      const assistantMessage = await storage.createChatMessage({
+        conversationId: parseInt(conversationId),
+        role: 'assistant',
+        content: aiResponse
+      });
+
+      // อัปเดตชื่อการสนทนาถ้าเป็นข้อความแรก
+      if (recentMessages.length <= 2) {
+        try {
+          const summary = await geminiService.generateConversationSummary([
+            { role: 'user', content: message.trim() },
+            { role: 'assistant', content: aiResponse }
+          ]);
+          await storage.updateChatConversationTitle(parseInt(conversationId), summary);
+        } catch (summaryError) {
+          console.log('Summary generation failed, keeping default title');
+        }
+      }
+
+      res.json({
+        userMessage,
+        assistantMessage
+      });
+    } catch (error) {
+      console.error("Send message error:", error);
+      res.status(500).json({ message: "ไม่สามารถส่งข้อความได้" });
+    }
+  });
+
+  // ส่งข้อความและรับการตอบกลับจาก AI (endpoint เดิม)
   app.post("/api/chat/conversations/:conversationId/messages", requireAuth, async (req: any, res: any) => {
     try {
       const { conversationId } = req.params;
