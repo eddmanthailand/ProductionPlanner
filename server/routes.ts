@@ -5269,6 +5269,140 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ===== ADVANCED AI ANALYTICS ENDPOINTS (Phase 5) =====
+  
+  // AI Insights Generation
+  app.post("/api/ai/insights", requireAuth, async (req: any, res: any) => {
+    try {
+      const { message, conversationHistory } = req.body;
+      const tenantId = req.session.tenantId;
+      
+      // Get system context data
+      const systemContext = {
+        workOrders: await storage.getWorkOrders(tenantId),
+        dailyWorkLogs: await storage.getDailyWorkLogs(tenantId),
+        teams: await storage.getTeams(tenantId)
+      };
+      
+      // Get AI configuration for this tenant
+      const aiConfig = await storage.getAiConfiguration(tenantId);
+      let geminiService;
+      
+      if (aiConfig?.encryptedApiKey) {
+        const decryptedKey = decrypt(aiConfig.encryptedApiKey);
+        geminiService = new GeminiService(decryptedKey);
+      } else {
+        geminiService = new GeminiService();
+      }
+      
+      const insights = await geminiService.generateInsights(
+        message,
+        conversationHistory || [],
+        systemContext
+      );
+      
+      res.json(insights);
+    } catch (error) {
+      console.error("AI Insights error:", error);
+      res.status(500).json({ message: "ไม่สามารถสร้าง Insights ได้" });
+    }
+  });
+
+  // Advanced Performance Analytics
+  app.post("/api/ai/performance-analytics", requireAuth, async (req: any, res: any) => {
+    try {
+      const { query } = req.body;
+      const tenantId = req.session.tenantId;
+      
+      // Comprehensive system data for analysis
+      const systemData = {
+        workOrders: await storage.getWorkOrders(tenantId),
+        dailyWorkLogs: await storage.getDailyWorkLogs(tenantId),
+        teams: await storage.getTeams(tenantId),
+        productionPlans: await storage.getProductionPlans(tenantId),
+        dashboardMetrics: await storage.getDashboardMetrics(tenantId)
+      };
+      
+      // Get AI configuration
+      const aiConfig = await storage.getAiConfiguration(tenantId);
+      let geminiService;
+      
+      if (aiConfig?.encryptedApiKey) {
+        const decryptedKey = decrypt(aiConfig.encryptedApiKey);
+        geminiService = new GeminiService(decryptedKey);
+      } else {
+        geminiService = new GeminiService();
+      }
+      
+      const analytics = await geminiService.generatePerformanceAnalytics(
+        query,
+        systemData
+      );
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error("Performance Analytics error:", error);
+      res.status(500).json({ message: "ไม่สามารถสร้าง Performance Analytics ได้" });
+    }
+  });
+
+  // Smart Recommendations
+  app.post("/api/ai/recommendations", requireAuth, async (req: any, res: any) => {
+    try {
+      const { context, userRole } = req.body;
+      const tenantId = req.session.tenantId;
+      
+      // Get current system state
+      const systemData = {
+        pendingWorkOrders: await storage.getWorkOrdersByStatus(tenantId, 'pending'),
+        activeWorkLogs: await storage.getActiveDailyWorkLogs(tenantId),
+        teamPerformance: await storage.getTeamPerformanceMetrics(tenantId)
+      };
+      
+      // Get AI configuration
+      const aiConfig = await storage.getAiConfiguration(tenantId);
+      let geminiService;
+      
+      if (aiConfig?.encryptedApiKey) {
+        const decryptedKey = decrypt(aiConfig.encryptedApiKey);
+        geminiService = new GeminiService(decryptedKey);
+      } else {
+        geminiService = new GeminiService();
+      }
+      
+      const prompt = `Based on the current system state and user context, provide smart recommendations:
+
+User Role: ${userRole}
+Current Context: ${context}
+
+System Data:
+${JSON.stringify(systemData, null, 2)}
+
+Provide actionable recommendations in these categories:
+1. Immediate Actions (urgent priorities)
+2. Process Improvements (efficiency gains)
+3. Resource Optimization (better allocation)
+4. Risk Mitigation (potential issues)
+5. Growth Opportunities (expansion possibilities)
+
+Respond in JSON format with structured recommendations.`;
+
+      const response = await geminiService.ai.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          responseMimeType: "application/json"
+        },
+        contents: prompt,
+      });
+
+      const recommendations = JSON.parse(response.text || "{}");
+      res.json(recommendations);
+    } catch (error) {
+      console.error("Smart Recommendations error:", error);
+      res.status(500).json({ message: "ไม่สามารถสร้าง Recommendations ได้" });
+    }
+  });
+
   // ===== AI ACTIVE MODE ENDPOINTS =====
   
   // Execute AI suggested actions safely

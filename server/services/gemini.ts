@@ -221,18 +221,85 @@ Respond in JSON format:
   }
 
   /**
-   * Build system prompt with context about the production system
+   * Analyze user behavior patterns and provide insights
+   */
+  async generateInsights(
+    userMessage: string,
+    conversationHistory: Array<{role: string, content: string}> = [],
+    systemContext?: any
+  ): Promise<any> {
+    try {
+      const prompt = `Based on the user's conversation history and current message, analyze patterns and provide intelligent insights:
+
+Current Message: "${userMessage}"
+
+Recent Conversation:
+${conversationHistory.slice(-5).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
+
+System Context:
+${systemContext ? JSON.stringify(systemContext).substring(0, 1000) : 'No additional context'}
+
+Analyze and provide:
+1. User Intent Category (work_management, data_analysis, system_help, reporting, troubleshooting)
+2. Complexity Level (simple, intermediate, advanced)
+3. Recommended Actions (suggest specific system features or workflows)
+4. Context Awareness (identify if this relates to previous conversations)
+5. Proactive Suggestions (what else might the user need)
+
+Respond in JSON format.`;
+
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              intentCategory: { type: "string" },
+              complexityLevel: { type: "string" },
+              recommendedActions: { 
+                type: "array",
+                items: { type: "string" }
+              },
+              contextAwareness: { type: "string" },
+              proactiveSuggestions: {
+                type: "array", 
+                items: { type: "string" }
+              },
+              confidence: { type: "number" }
+            }
+          }
+        },
+        contents: prompt,
+      });
+
+      return JSON.parse(response.text || "{}");
+    } catch (error) {
+      console.error("Insight generation error:", error);
+      return null;
+    }
+  }
+
+  /**
+   * Build enhanced system prompt with advanced contextual intelligence
    */
   private buildSystemPrompt(systemContext?: any): string {
-    return `You are an AI assistant for a production planning and management system. Your role is to help users with:
+    return `You are an advanced AI assistant with enhanced contextual intelligence for a production planning and management system. Your enhanced Phase 5 capabilities include:
 
-1. **Work Order Management**: Help users understand work orders, sub-jobs, and production planning
-2. **Team Performance**: Answer questions about team productivity, revenue reports, and daily work logs
-3. **System Navigation**: Guide users through different features and modules
-4. **Data Interpretation**: Explain reports, statistics, and system data
-5. **Data Visualization**: Create interactive charts and graphs when requested
-6. **Troubleshooting**: Help with common system issues and workflows
-7. **🤖 Active Mode Operations**: Execute real system actions safely when requested
+## 🧠 Enhanced Intelligence Features
+1. **Contextual Memory**: Remember conversation patterns and adapt responses accordingly
+2. **Predictive Insights**: Anticipate user needs based on conversation history  
+3. **Smart Recommendations**: Suggest optimal workflows and system features
+4. **Pattern Recognition**: Identify recurring issues and provide proactive solutions
+5. **Adaptive Communication**: Adjust communication style based on user expertise level
+
+## 🎯 Core System Capabilities
+1. **Work Order Management**: Comprehensive help with work orders, sub-jobs, and production planning
+2. **Advanced Analytics**: Deep insights into team performance, revenue analysis, and productivity metrics
+3. **Smart Navigation**: Intelligent guidance through system features with contextual suggestions
+4. **Data Intelligence**: Advanced interpretation of reports, statistics, and KPIs
+5. **Predictive Analytics**: Forecast trends and identify potential bottlenecks
+6. **Workflow Optimization**: Suggest improvements based on usage patterns
 
 **Data Visualization Capabilities:**
 You can now create interactive charts and graphs! When users ask for visual data representation:
@@ -299,6 +366,92 @@ Supported Action Types:
 ${systemContext ? JSON.stringify(systemContext, null, 2) : 'No specific context provided'}
 
 Remember: You're here to make the production management system easier to use and understand.`;
+  }
+
+  /**
+   * Generate advanced performance analytics and insights
+   */
+  async generatePerformanceAnalytics(
+    userMessage: string,
+    systemData: any
+  ): Promise<any> {
+    try {
+      const prompt = `As an advanced analytics AI, analyze the following production system data and provide comprehensive insights:
+
+User Query: "${userMessage}"
+
+System Data:
+${JSON.stringify(systemData, null, 2).substring(0, 2000)}
+
+Provide analysis in these categories:
+1. **Performance Metrics**: Key performance indicators and trends
+2. **Bottleneck Analysis**: Identify potential issues and constraints  
+3. **Optimization Opportunities**: Specific actionable recommendations
+4. **Predictive Insights**: Forecast upcoming challenges or opportunities
+5. **Resource Utilization**: Efficiency analysis and suggestions
+6. **Quality Indicators**: Data quality and completeness assessment
+
+For each category, provide:
+- Current status assessment
+- Risk level (low/medium/high)
+- Specific recommendations
+- Expected impact
+
+Respond in JSON format with structured insights.`;
+
+      const response = await this.ai.models.generateContent({
+        model: "gemini-2.5-pro",
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "object",
+            properties: {
+              performanceMetrics: {
+                type: "object",
+                properties: {
+                  status: { type: "string" },
+                  keyMetrics: { type: "array", items: { type: "string" } },
+                  riskLevel: { type: "string" }
+                }
+              },
+              bottleneckAnalysis: {
+                type: "object", 
+                properties: {
+                  identifiedIssues: { type: "array", items: { type: "string" } },
+                  criticalPath: { type: "string" },
+                  riskLevel: { type: "string" }
+                }
+              },
+              optimizationOpportunities: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    area: { type: "string" },
+                    recommendation: { type: "string" },
+                    impact: { type: "string" }
+                  }
+                }
+              },
+              predictiveInsights: {
+                type: "object",
+                properties: {
+                  forecasts: { type: "array", items: { type: "string" } },
+                  risks: { type: "array", items: { type: "string" } },
+                  opportunities: { type: "array", items: { type: "string" } }
+                }
+              }
+            }
+          }
+        },
+        contents: prompt,
+      });
+
+      return JSON.parse(response.text || "{}");
+    } catch (error) {
+      console.error("Performance analytics error:", error);
+      return null;
+    }
   }
 
   /**
