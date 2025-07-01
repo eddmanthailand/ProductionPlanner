@@ -302,7 +302,7 @@ export default function AIChatbot() {
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-full max-h-screen bg-gray-50 overflow-hidden">
         <Sidebar className={`transition-all duration-300 ${isSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
           <SidebarContent className="p-4">
             <div className="flex items-center justify-between mb-4">
@@ -337,7 +337,7 @@ export default function AIChatbot() {
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Header */}
           <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -388,7 +388,7 @@ export default function AIChatbot() {
           )}
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
             {!currentConversationId ? (
               <div className="text-center py-12">
                 <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
@@ -421,7 +421,7 @@ export default function AIChatbot() {
               <>
                 {messages.map((message) => (
                   <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-3xl ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'} rounded-lg p-4 shadow-sm border`}>
+                    <div className={`max-w-[85%] ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'} rounded-lg p-4 shadow-sm border`}>
                       <div className="flex items-start gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.role === 'user' ? 'bg-blue-600' : 'bg-gray-100'}`}>
                           {message.role === 'user' ? (
