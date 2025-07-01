@@ -42,15 +42,16 @@ export class GeminiService {
       console.log(`🤖 Action Detection - Message: "${userMessage}"`);
       console.log(`🤖 Action Detection - Is Actionable: ${isActionableRequest}`);
       
-      let fullPrompt = `${systemPrompt}
+      let fullPrompt;
+      
+      if (isActionableRequest) {
+        // Full prompt with action capabilities for actionable requests
+        fullPrompt = `${systemPrompt}
 
 Previous conversation:
 ${conversationContext}
 
-Current user message: ${userMessage}`;
-
-      if (isActionableRequest) {
-        fullPrompt += `
+Current user message: ${userMessage}
 
 🤖 ACTIVE MODE DETECTED: The user is asking for an action that could be automated.
 
@@ -76,12 +77,20 @@ Available Action Types:
 - CREATE_WORK_LOG: สร้างใบบันทึกประจำวัน
 - UPDATE_SUB_JOB: อัปเดตข้อมูลงานย่อย
 
-IMPORTANT: Always respond with the JSON format above when detecting actionable requests. Do not provide traditional text responses for actionable requests.`;
-      }
-
-      fullPrompt += `
+IMPORTANT: Always respond with the JSON format above when detecting actionable requests. Do not provide traditional text responses for actionable requests.
 
 Please provide a helpful response as a production management system assistant:`;
+      } else {
+        // Simplified prompt for regular conversations to improve speed
+        fullPrompt = `You are a helpful Thai-speaking AI assistant for a production management system.
+
+Previous conversation:
+${conversationContext}
+
+Current user message: ${userMessage}
+
+Please provide a concise, helpful response in Thai. Be professional but friendly.`;
+      }
 
       const response = await this.ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -326,14 +335,18 @@ Generate a short, descriptive title in Thai that captures the main topic discuss
   private detectActionableRequest(message: string): boolean {
     const lowerMessage = message.toLowerCase().trim();
     
-    // Exclude common greetings and simple questions
-    const greetings = [
+    // Exclude common greetings, simple questions, and general inquiries
+    const nonActionableQuestions = [
       'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'hello', 'hi', 'หวัดดี',
-      'ขอบคุณ', 'ขอบคุณครับ', 'ขอบคุณค่ะ', 'thanks', 'thank you'
+      'ขอบคุณ', 'ขอบคุณครับ', 'ขอบคุณค่ะ', 'thanks', 'thank you',
+      'คุณทำอะไรได้บ้าง', 'ช่วยอะไรได้บ้าง', 'มีฟีเจอร์อะไรบ้าง',
+      'what can you do', 'help me', 'คุณคือใคร', 'who are you',
+      'ขอดูใบสั่งงาน', 'ขอดูข้อมูล', 'แสดงข้อมูล', 'ขอดูเลขที่',
+      'มีใบสั่งงานอะไรบ้าง', 'ข้อมูลในระบบ', 'show me', 'tell me about'
     ];
     
-    // If it's just a greeting, don't treat as actionable
-    if (greetings.some(greeting => lowerMessage === greeting)) {
+    // If it's just a greeting or general question, don't treat as actionable
+    if (nonActionableQuestions.some(question => lowerMessage.includes(question))) {
       return false;
     }
     
