@@ -379,6 +379,14 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
                   >
                     จัดการสิทธิ์การเข้าถึงหน้า
                   </Link>
+                  <Link
+                    href="/notifications-test"
+                    className={`block py-2 px-3 text-sm text-gray-600 rounded-lg hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors ${
+                      location === '/notifications-test' ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : ''
+                    }`}
+                  >
+                    🔔 ทดสอบการแจ้งเตือน
+                  </Link>
                 </div>
               )}
             </div>
