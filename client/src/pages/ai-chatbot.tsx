@@ -36,6 +36,12 @@ interface ActionData {
 // Parse action data from AI response
 function parseActionData(content: string): ActionData | null {
   try {
+    // Early exit if content appears to be full HTML document
+    if (content.trim().startsWith('<!DOCTYPE')) {
+      console.log('⚠️ Detected HTML document, skipping action parsing');
+      return null;
+    }
+
     // Clean content first - remove HTML and unwanted characters  
     const cleanContent = content
       .replace(/<!DOCTYPE[^>]*>/gi, '')
@@ -47,6 +53,11 @@ function parseActionData(content: string): ActionData | null {
       .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]*>/g, '')
       .replace(/&[#\w]+;/g, '')
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&amp;/g, '&')
+      .replace(/&quot;/g, '"')
       .trim();
     
     // Look for JSON blocks in the cleaned content
@@ -204,8 +215,17 @@ export default function AIChatbot() {
       setErrorMessage(null);
     },
     onError: (error: any) => {
-      const errorMsg = error.message || "ไม่สามารถส่งข้อความได้";
-      setErrorMessage(errorMsg);
+      console.error('Send message error:', error);
+      
+      // Handle JSON parsing errors specifically
+      if (error.message && error.message.includes('DOCTYPE')) {
+        setErrorMessage("ระบบตอบกลับในรูปแบบที่ไม่ถูกต้อง กรุณาลองใหม่");
+      } else if (error.message && error.message.includes('JSON')) {
+        setErrorMessage("เกิดข้อผิดพลาดในการประมวลผลคำตอบ กรุณาลองใหม่");
+      } else {
+        const errorMsg = error.message || "ไม่สามารถส่งข้อความได้";
+        setErrorMessage(errorMsg);
+      }
       
       // Show user-friendly error
       toast({

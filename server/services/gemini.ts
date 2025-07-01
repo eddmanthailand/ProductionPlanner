@@ -90,7 +90,25 @@ Please provide a helpful response as a production management system assistant:`;
 
       let responseText = response.text || "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้";
 
-      // Clean up response text if it contains HTML elements
+      console.log(`🎯 Raw Gemini response (first 200 chars): ${responseText.substring(0, 200)}`);
+
+      // Check if response starts with HTML doctype
+      if (responseText.trim().startsWith('<!DOCTYPE')) {
+        console.log(`⚠️ Detected full HTML response, extracting content`);
+        
+        // Try to extract content from HTML body
+        const bodyMatch = responseText.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+        if (bodyMatch) {
+          responseText = bodyMatch[1];
+        }
+        
+        // If still has HTML structure, extract text content only
+        if (responseText.includes('<') && responseText.includes('>')) {
+          responseText = responseText.replace(/<[^>]*>/g, '').trim();
+        }
+      }
+
+      // Clean up any remaining HTML elements
       responseText = responseText
         .replace(/<!DOCTYPE[^>]*>/gi, '')
         .replace(/<html[^>]*>/gi, '')
@@ -100,7 +118,21 @@ Please provide a helpful response as a production management system assistant:`;
         .replace(/<\/body>/gi, '')
         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<[^>]*>/g, '') // Remove any remaining HTML tags
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
         .trim();
+
+      console.log(`🧹 Cleaned response (first 200 chars): ${responseText.substring(0, 200)}`);
+
+      // Final safety check - if response still contains HTML after cleaning
+      if (responseText.includes('<html>') || responseText.includes('<!DOCTYPE')) {
+        console.log(`⚠️ Response still contains HTML after cleaning, providing fallback`);
+        responseText = "ขออภัย ระบบประมวลผลคำตอบไม่สำเร็จ กรุณาลองถามใหม่ด้วยคำถามที่ง่ายกว่า";
+      }
 
       // If this was an actionable request and we don't have proper JSON, force a standard response
       if (isActionableRequest && !responseText.includes('"action_response"')) {
