@@ -618,13 +618,24 @@ export default function AIChatbot() {
                 <div className="flex gap-3 items-end">
                   <div className="flex-1 relative">
                     <div className="relative">
-                      <Input
+                      <textarea
                         value={inputMessage}
                         onChange={(e) => setInputMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleKeyPress}
                         placeholder="พิมพ์ข้อความของคุณ..."
                         disabled={isLoading}
-                        className="pr-14 py-3 rounded-2xl border-2 border-gray-200 focus:border-blue-400 bg-white shadow-sm min-h-[48px] resize-none"
+                        rows={1}
+                        className="w-full pr-14 py-3 rounded-2xl border-2 border-gray-200 focus:border-blue-400 bg-white shadow-sm min-h-[48px] resize-none focus:outline-none focus:ring-0 overflow-hidden"
+                        style={{ 
+                          minHeight: '48px',
+                          maxHeight: '120px',
+                          height: 'auto'
+                        }}
+                        onInput={(e) => {
+                          const target = e.target as HTMLTextAreaElement;
+                          target.style.height = '48px';
+                          target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                        }}
                       />
                       <Button
                         onClick={handleSendMessage}
