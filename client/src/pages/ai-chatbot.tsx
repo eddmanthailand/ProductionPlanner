@@ -382,8 +382,34 @@ export default function AIChatbot() {
               </Button>
             )}
             <h1 className="text-xl font-bold text-gray-800">AI ผู้ช่วย</h1>
+            <span className="ml-3 px-2 py-1 text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-medium">
+              Phase 5
+            </span>
           </div>
           <div className="flex items-center gap-2">
+            {/* Smart Insights Button (Phase 5) */}
+            <Button
+              onClick={() => {
+                if (messages.length > 0) {
+                  generateInsightsMutation.mutate({
+                    message: inputMessage || "Generate insights",
+                    conversationHistory: messages.slice(-5)
+                  });
+                }
+              }}
+              disabled={generateInsightsMutation.isPending || messages.length === 0}
+              size="sm"
+              variant="outline"
+              className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0"
+              title="Smart Insights - วิเคราะห์บทสนทนาและให้คำแนะนำ"
+            >
+              {generateInsightsMutation.isPending ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Brain className="w-4 h-4" />
+              )}
+            </Button>
+            
             <Button
               onClick={() => setIsSidebarOpen(!isSidebarOpen)}
               size="sm"
@@ -569,6 +595,111 @@ export default function AIChatbot() {
           )}
           <div ref={messagesEndRef} />
         </div>
+
+        {/* Smart Insights Panel (Phase 5) */}
+        {showInsights && insights && (
+          <div className="mx-4 mb-4">
+            <Card className="border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg flex items-center gap-2 text-purple-700">
+                    <Brain className="w-5 h-5" />
+                    Smart Insights
+                  </CardTitle>
+                  <Button
+                    onClick={() => setShowInsights(false)}
+                    size="sm"
+                    variant="ghost"
+                    className="text-purple-600 hover:text-purple-800"
+                  >
+                    ×
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Intent Category */}
+                  {insights.intentCategory && (
+                    <div className="bg-white p-3 rounded-lg border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target className="w-4 h-4 text-purple-600" />
+                        <span className="font-medium text-sm text-purple-700">Intent</span>
+                      </div>
+                      <p className="text-sm text-gray-700">{insights.intentCategory}</p>
+                    </div>
+                  )}
+                  
+                  {/* Complexity Level */}
+                  {insights.complexityLevel && (
+                    <div className="bg-white p-3 rounded-lg border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Activity className="w-4 h-4 text-orange-600" />
+                        <span className="font-medium text-sm text-orange-700">Complexity</span>
+                      </div>
+                      <p className="text-sm text-gray-700">{insights.complexityLevel}</p>
+                    </div>
+                  )}
+                  
+                  {/* Context Awareness */}
+                  {insights.contextAwareness && (
+                    <div className="bg-white p-3 rounded-lg border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Lightbulb className="w-4 h-4 text-yellow-600" />
+                        <span className="font-medium text-sm text-yellow-700">Context</span>
+                      </div>
+                      <p className="text-sm text-gray-700">{insights.contextAwareness}</p>
+                    </div>
+                  )}
+                  
+                  {/* Confidence */}
+                  {insights.confidence && (
+                    <div className="bg-white p-3 rounded-lg border border-purple-100">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                        <span className="font-medium text-sm text-green-700">Confidence</span>
+                      </div>
+                      <p className="text-sm text-gray-700">{Math.round(insights.confidence * 100)}%</p>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Recommendations */}
+                {insights.recommendedActions && insights.recommendedActions.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-sm text-purple-700 mb-2 flex items-center gap-2">
+                      <Zap className="w-4 h-4" />
+                      Recommended Actions
+                    </h4>
+                    <div className="space-y-2">
+                      {insights.recommendedActions.map((action: string, index: number) => (
+                        <div key={index} className="bg-white p-2 rounded border border-purple-100 text-sm text-gray-700">
+                          {action}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {/* Proactive Suggestions */}
+                {insights.proactiveSuggestions && insights.proactiveSuggestions.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="font-medium text-sm text-purple-700 mb-2 flex items-center gap-2">
+                      <Lightbulb className="w-4 h-4" />
+                      Proactive Suggestions
+                    </h4>
+                    <div className="space-y-2">
+                      {insights.proactiveSuggestions.map((suggestion: string, index: number) => (
+                        <div key={index} className="bg-white p-2 rounded border border-purple-100 text-sm text-gray-700">
+                          {suggestion}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Input Area */}
         {currentConversationId && (
