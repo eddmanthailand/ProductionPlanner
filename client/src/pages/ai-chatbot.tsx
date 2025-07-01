@@ -171,6 +171,7 @@ export default function AIChatbot() {
       e.preventDefault();
       handleSendMessage();
     }
+    // Shift + Enter จะยอมให้ขึ้นบรรทัดใหม่โดยอัตโนมัติ
   };
 
   const formatMessageTime = (timestamp: string) => {
