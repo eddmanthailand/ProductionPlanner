@@ -2469,7 +2469,8 @@ export class DatabaseStorage implements IStorage {
   async saveOrUpdateAiConfiguration(
     tenantId: string,
     provider: string,
-    encryptedApiKey: string
+    encryptedApiKey: string,
+    persona: string = 'neutral'
   ): Promise<any> {
     try {
       const result = await db.insert(aiConfigurations)
@@ -2477,12 +2478,14 @@ export class DatabaseStorage implements IStorage {
           tenantId,
           aiProvider: provider,
           encryptedApiKey,
+          persona,
         })
         .onConflictDoUpdate({
           target: aiConfigurations.tenantId,
           set: {
             aiProvider: provider,
             encryptedApiKey,
+            persona,
             updatedAt: new Date(),
           },
         })

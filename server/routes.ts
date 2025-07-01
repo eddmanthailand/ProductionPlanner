@@ -4992,7 +4992,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // บันทึก/อัปเดต AI configuration สำหรับ tenant
   app.post("/api/integrations/ai", requireAuth, async (req: any, res: any) => {
     try {
-      const { provider, apiKey } = req.body;
+      const { provider, apiKey, persona } = req.body;
       
       if (!provider || !apiKey) {
         return res.status(400).json({ message: "Provider และ API Key จำเป็นต้องระบุ" });
@@ -5022,8 +5022,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // บันทึกลงฐานข้อมูล
-      const configuration = await storage.saveOrUpdateAiConfiguration(tenantId, provider, encryptedApiKey);
+      // บันทึกลงฐานข้อมูล (รวม persona)
+      const configuration = await storage.saveOrUpdateAiConfiguration(tenantId, provider, encryptedApiKey, persona || 'neutral');
 
       res.status(200).json({ 
         message: "บันทึกการตั้งค่า AI สำเร็จ",
