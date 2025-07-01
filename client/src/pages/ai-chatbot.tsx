@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Trash2, Plus, Send, Bot, User, MessageSquare, Copy, Check } from 'lucide-react';
+import { Trash2, Plus, Send, Bot, User, MessageSquare, Copy, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiRequest } from '@/lib/queryClient';
 
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,7 @@ export default function AIChatbot() {
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
   const [contextBanner, setContextBanner] = useState<string | null>(null);
   const [conversationContext, setConversationContext] = useState<string>('');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -296,8 +297,27 @@ export default function AIChatbot() {
 
   return (
     <div className="flex h-[calc(100vh-200px)] bg-gray-50 rounded-lg overflow-hidden">
+        {/* Sidebar Toggle Button */}
+        <Button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          variant="ghost"
+          size="sm"
+          className={`absolute top-4 z-10 bg-white shadow-md hover:bg-gray-50 border ${
+            sidebarCollapsed ? 'left-4' : 'left-[300px]'
+          } transition-all duration-300`}
+          title={sidebarCollapsed ? 'แสดงรายการสนทนา' : 'ซ่อนรายการสนทนา'}
+        >
+          {sidebarCollapsed ? (
+            <ChevronRight className="h-4 w-4" />
+          ) : (
+            <ChevronLeft className="h-4 w-4" />
+          )}
+        </Button>
+
         {/* Sidebar - Conversations List */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
+        <div className={`bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ${
+          sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-80'
+        }`}>
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -370,7 +390,9 @@ export default function AIChatbot() {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col transition-all duration-300 ${
+          sidebarCollapsed ? 'ml-0' : 'ml-0'
+        }`}>
           {selectedConversation ? (
             <>
               {/* Chat Header */}
@@ -671,11 +693,24 @@ export default function AIChatbot() {
               <div className="text-center">
                 <MessageSquare className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  เลือกการสนทนา
+                  {sidebarCollapsed ? 'AI Assistant' : 'เลือกการสนทนา'}
                 </h3>
-                <p className="text-gray-600">
-                  เลือกการสนทนาจากแถบด้านซ้าย หรือสร้างการสนทนาใหม่
+                <p className="text-gray-600 mb-4">
+                  {sidebarCollapsed 
+                    ? 'ผู้ช่วย AI สำหรับระบบจัดการการผลิต' 
+                    : 'เลือกการสนทนาจากแถบด้านซ้าย หรือสร้างการสนทนาใหม่'
+                  }
                 </p>
+                {sidebarCollapsed && (
+                  <Button
+                    onClick={() => createConversationMutation.mutate()}
+                    disabled={createConversationMutation.isPending}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    เริ่มสนทนาใหม่
+                  </Button>
+                )}
               </div>
             </div>
           )}
