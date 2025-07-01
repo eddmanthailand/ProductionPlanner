@@ -1473,7 +1473,7 @@ export class DatabaseStorage implements IStorage {
         },
         attachments: {
           with: {
-            uploadedByUser: true
+            uploadedBy: true
           }
         }
       },
@@ -1505,7 +1505,7 @@ export class DatabaseStorage implements IStorage {
         },
         attachments: {
           with: {
-            uploadedByUser: true
+            uploadedBy: true
           }
         }
       },
