@@ -241,7 +241,7 @@ export function NotificationBell() {
           )}
         </ScrollArea>
 
-        {notifications.length > 0 && (
+        {(notifications as Notification[]).length > 0 && (
           <div className="p-2 border-t">
             <Button
               variant="ghost"

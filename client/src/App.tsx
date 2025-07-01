@@ -45,6 +45,7 @@ import PageAccessManagement from "@/pages/page-access-management";
 import AccessDemo from "@/pages/access-demo";
 import AIChatbot from "@/pages/ai-chatbot";
 import AiSettings from "@/pages/ai-settings";
+import NotificationsTest from "@/pages/notifications-test";
 
 function Router() {
   const { isAuthenticated, isLoading, error } = useAuth();
@@ -193,6 +194,9 @@ function Router() {
       </Route>
       <Route path="/ai-settings">
         <MainLayout><AiSettings /></MainLayout>
+      </Route>
+      <Route path="/notifications-test">
+        <MainLayout><NotificationsTest /></MainLayout>
       </Route>
       <Route component={NotFound} />
     </Switch>
