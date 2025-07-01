@@ -48,7 +48,17 @@ export async function apiRequest(
   });
 
   await throwIfResNotOk(res);
-  return res.json();
+  
+  // Check if response is actually JSON before parsing
+  const contentType = res.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return res.json();
+  } else {
+    // If not JSON, return the text content
+    const text = await res.text();
+    console.warn('Non-JSON response received:', text.substring(0, 100));
+    throw new Error('Server returned non-JSON response');
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
@@ -78,9 +88,18 @@ const devQueryFn: QueryFunction = async ({ queryKey }) => {
       throw new Error(`HTTP ${res.status}: ${errorText || res.statusText}`);
     }
     
-    const data = await res.json();
-    console.log(`[${timestamp}] Fresh data received:`, Array.isArray(data) ? `${data.length} items` : 'object');
-    return data;
+    // Check if response is actually JSON before parsing
+    const contentType = res.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      const data = await res.json();
+      console.log(`[${timestamp}] Fresh data received:`, Array.isArray(data) ? `${data.length} items` : 'object');
+      return data;
+    } else {
+      // If not JSON, log warning and throw error
+      const text = await res.text();
+      console.warn(`[${timestamp}] Non-JSON response received:`, text.substring(0, 100));
+      throw new Error('Server returned non-JSON response');
+    }
   } catch (error) {
     console.error('Query error:', error);
     throw error;

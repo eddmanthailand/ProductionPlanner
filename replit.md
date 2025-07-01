@@ -130,6 +130,13 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- July 1, 2025: ✅ แก้ไขปัญหา JSON Parsing Error ใน AI Chatbot สำเร็จ
+  - **Root Cause**: Frontend automatically called `res.json()` on all responses without checking content-type
+  - **Solution**: Added content-type validation before JSON parsing in `queryClient.ts`
+  - **Enhanced Error Handling**: Added proper error messages for non-JSON responses
+  - **Fixed API Route Mismatch**: Added missing `/api/chat/messages` endpoint for frontend calls
+  - **Result**: AI Chatbot now works without crashes, gracefully handles all response types
+
 - July 1, 2025: ✅ แก้ไขปัญหา Maximum Update Depth Exceeded ใน AI Chatbot สำเร็จ
   - **Fixed React Infinite Loop**: ลบ useState สำหรับ messages และใช้ข้อมูลจาก useQuery โดยตรง
   - **Removed Problematic useEffect**: ลบ useEffect ที่ทำให้เกิด infinite loop ในการอัปเดต messages
