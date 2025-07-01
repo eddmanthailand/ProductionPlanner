@@ -2,7 +2,8 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { pool } from "./db";
-import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, insertDailyWorkLogSchema, permissions, pageAccess, workOrderAttachments } from "@shared/schema";
+import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, insertDailyWorkLogSchema, permissions, pageAccess, workOrderAttachments, insertNotificationSchema, insertNotificationRuleSchema, insertUserNotificationPreferenceSchema } from "@shared/schema";
+import { notificationService } from "./services/notificationService";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -5512,6 +5513,256 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete AI configuration error:", error);
       res.status(500).json({ message: "ไม่สามารถลบการตั้งค่า AI ได้" });
+    }
+  });
+
+  // ===== NOTIFICATION SYSTEM ROUTES =====
+
+  // Get user notifications
+  app.get("/api/notifications", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+      const { status, type, limit, offset } = req.query;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const notifications = await notificationService.getUserNotifications(
+        user.id,
+        user.tenantId,
+        {
+          status,
+          type,
+          limit: limit ? parseInt(limit) : undefined,
+          offset: offset ? parseInt(offset) : undefined
+        }
+      );
+
+      res.json(notifications);
+    } catch (error) {
+      console.error("Get notifications error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงข้อมูลการแจ้งเตือนได้" });
+    }
+  });
+
+  // Get unread notification count
+  app.get("/api/notifications/unread-count", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const count = await notificationService.getUnreadCount(user.id, user.tenantId);
+      res.json({ count });
+    } catch (error) {
+      console.error("Get unread count error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงจำนวนการแจ้งเตือนที่ยังไม่ได้อ่านได้" });
+    }
+  });
+
+  // Mark notification as read
+  app.patch("/api/notifications/:id/read", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+      const { id } = req.params;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const updated = await notificationService.markAsRead(id, user.id, user.tenantId);
+
+      if (updated) {
+        res.json({ message: "อ่านการแจ้งเตือนแล้ว" });
+      } else {
+        res.status(404).json({ message: "ไม่พบการแจ้งเตือนที่ต้องการ" });
+      }
+    } catch (error) {
+      console.error("Mark as read error:", error);
+      res.status(500).json({ message: "ไม่สามารถอัปเดตสถานะการแจ้งเตือนได้" });
+    }
+  });
+
+  // Mark all notifications as read
+  app.patch("/api/notifications/read-all", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const count = await notificationService.markAllAsRead(user.id, user.tenantId);
+      res.json({ message: `อ่านการแจ้งเตือนทั้งหมดแล้ว (${count} รายการ)`, count });
+    } catch (error) {
+      console.error("Mark all as read error:", error);
+      res.status(500).json({ message: "ไม่สามารถอัปเดตสถานะการแจ้งเตือนได้" });
+    }
+  });
+
+  // Dismiss notification
+  app.patch("/api/notifications/:id/dismiss", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+      const { id } = req.params;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const updated = await notificationService.dismissNotification(id, user.id, user.tenantId);
+
+      if (updated) {
+        res.json({ message: "ปิดการแจ้งเตือนแล้ว" });
+      } else {
+        res.status(404).json({ message: "ไม่พบการแจ้งเตือนที่ต้องการ" });
+      }
+    } catch (error) {
+      console.error("Dismiss notification error:", error);
+      res.status(500).json({ message: "ไม่สามารถปิดการแจ้งเตือนได้" });
+    }
+  });
+
+  // Create notification (admin/system use)
+  app.post("/api/notifications", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      // Validate input
+      const notificationData = insertNotificationSchema.parse({
+        ...req.body,
+        tenantId: user.tenantId,
+        userId: req.body.userId || user.id
+      });
+
+      const notification = await notificationService.createNotification(notificationData);
+      res.json(notification);
+    } catch (error) {
+      console.error("Create notification error:", error);
+      res.status(500).json({ message: "ไม่สามารถสร้างการแจ้งเตือนได้" });
+    }
+  });
+
+  // Get notification rules (admin)
+  app.get("/api/notification-rules", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const rules = await notificationService.getNotificationRules(user.tenantId);
+      res.json(rules);
+    } catch (error) {
+      console.error("Get notification rules error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงข้อมูลกฎการแจ้งเตือนได้" });
+    }
+  });
+
+  // Create notification rule (admin)
+  app.post("/api/notification-rules", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const ruleData = insertNotificationRuleSchema.parse({
+        ...req.body,
+        tenantId: user.tenantId,
+        createdBy: user.id
+      });
+
+      const rule = await notificationService.createNotificationRule(ruleData);
+      res.json(rule);
+    } catch (error) {
+      console.error("Create notification rule error:", error);
+      res.status(500).json({ message: "ไม่สามารถสร้างกฎการแจ้งเตือนได้" });
+    }
+  });
+
+  // Get user notification preferences
+  app.get("/api/notification-preferences", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const preferences = await notificationService.getUserPreferences(user.id, user.tenantId);
+      res.json(preferences);
+    } catch (error) {
+      console.error("Get notification preferences error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงข้อมูลการตั้งค่าการแจ้งเตือนได้" });
+    }
+  });
+
+  // Update user notification preference
+  app.put("/api/notification-preferences/:type", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+      const { type } = req.params;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const preferenceData = {
+        enabled: req.body.enabled,
+        channels: req.body.channels,
+        frequency: req.body.frequency,
+        quietHours: req.body.quietHours
+      };
+
+      const preference = await notificationService.updateUserPreference(
+        user.id,
+        user.tenantId,
+        type,
+        preferenceData
+      );
+
+      res.json(preference);
+    } catch (error) {
+      console.error("Update notification preference error:", error);
+      res.status(500).json({ message: "ไม่สามารถอัปเดตการตั้งค่าการแจ้งเตือนได้" });
+    }
+  });
+
+  // Generate deadline warnings (system/cron job)
+  app.post("/api/notifications/generate-deadline-warnings", requireAuth, async (req: any, res: any) => {
+    try {
+      const { user } = req;
+
+      if (!user?.tenantId) {
+        return res.status(400).json({ message: "ไม่พบข้อมูล tenant ของผู้ใช้" });
+      }
+
+      const count = await notificationService.generateDeadlineWarnings(user.tenantId);
+      res.json({ message: `สร้างการแจ้งเตือนกำหนดส่ง ${count} รายการ` });
+    } catch (error) {
+      console.error("Generate deadline warnings error:", error);
+      res.status(500).json({ message: "ไม่สามารถสร้างการแจ้งเตือนกำหนดส่งได้" });
+    }
+  });
+
+  // Cleanup expired notifications (system/cron job)
+  app.post("/api/notifications/cleanup", requireAuth, async (req: any, res: any) => {
+    try {
+      const count = await notificationService.cleanupExpiredNotifications();
+      res.json({ message: `ลบการแจ้งเตือนที่หมดอายุ ${count} รายการ` });
+    } catch (error) {
+      console.error("Cleanup notifications error:", error);
+      res.status(500).json({ message: "ไม่สามารถล้างข้อมูลการแจ้งเตือนได้" });
     }
   });
 

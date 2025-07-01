@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date, index, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, decimal, uuid, jsonb, varchar, date, index, uniqueIndex, unique } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -1165,11 +1165,110 @@ export const dailyWorkLogsRelations = relations(dailyWorkLogs, ({ one }) => ({
   })
 }));
 
+// Notifications System Tables
+export const notifications = pgTable("notifications", {
+  id: text("id").primaryKey().$defaultFn(() => `NOT${Date.now().toString().slice(-8)}${Math.random().toString(36).substr(2, 4).toUpperCase()}`),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  type: text("type").notNull(), // deadline_warning, status_change, overdue_task, system_alert
+  title: text("title").notNull(),
+  message: text("message").notNull(),
+  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
+  status: text("status").notNull().default("unread"), // unread, read, dismissed
+  relatedType: text("related_type"), // work_order, daily_work_log, production_plan
+  relatedId: text("related_id"), // ID of related record
+  metadata: jsonb("metadata"), // Additional context data
+  readAt: timestamp("read_at"),
+  dismissedAt: timestamp("dismissed_at"),
+  scheduledFor: timestamp("scheduled_for"), // For delayed notifications
+  expiresAt: timestamp("expires_at"), // Auto-cleanup old notifications
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const notificationRules = pgTable("notification_rules", {
+  id: text("id").primaryKey().$defaultFn(() => `NR${Date.now().toString().slice(-8)}${Math.random().toString(36).substr(2, 4).toUpperCase()}`),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  name: text("name").notNull(),
+  description: text("description"),
+  eventType: text("event_type").notNull(), // deadline_approaching, status_changed, overdue, etc.
+  conditions: jsonb("conditions").notNull(), // Rule conditions in JSON format
+  actions: jsonb("actions").notNull(), // Actions to take (notification details)
+  isActive: boolean("is_active").notNull().default(true),
+  priority: text("priority").notNull().default("medium"),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export const userNotificationPreferences = pgTable("user_notification_preferences", {
+  id: text("id").primaryKey().$defaultFn(() => `UNP${Date.now().toString().slice(-8)}${Math.random().toString(36).substr(2, 4).toUpperCase()}`),
+  tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  notificationType: text("notification_type").notNull(), // matches notification.type
+  enabled: boolean("enabled").notNull().default(true),
+  channels: jsonb("channels").notNull().default('["in_app"]'), // in_app, email, sms
+  frequency: text("frequency").notNull().default("immediate"), // immediate, hourly, daily, weekly
+  quietHours: jsonb("quiet_hours"), // {start: "22:00", end: "08:00"}
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => [
+  // Unique constraint to prevent duplicate preferences
+  unique("unique_user_notification_type").on(table.userId, table.notificationType)
+]);
+
 // AI Schema types
 export const insertAiConfigurationSchema = createInsertSchema(aiConfigurations);
 export const insertChatConversationSchema = createInsertSchema(chatConversations);
 export const insertChatMessageSchema = createInsertSchema(chatMessages);
 
+// Notification Relations
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notifications.tenantId],
+    references: [tenants.id]
+  }),
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id]
+  })
+}));
+
+export const notificationRulesRelations = relations(notificationRules, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [notificationRules.tenantId],
+    references: [tenants.id]
+  }),
+  createdBy: one(users, {
+    fields: [notificationRules.createdBy],
+    references: [users.id]
+  })
+}));
+
+export const userNotificationPreferencesRelations = relations(userNotificationPreferences, ({ one }) => ({
+  tenant: one(tenants, {
+    fields: [userNotificationPreferences.tenantId],
+    references: [tenants.id]
+  }),
+  user: one(users, {
+    fields: [userNotificationPreferences.userId],
+    references: [users.id]
+  })
+}));
+
+// Notification Schema types
+export const insertNotificationSchema = createInsertSchema(notifications);
+export const insertNotificationRuleSchema = createInsertSchema(notificationRules);
+export const insertUserNotificationPreferenceSchema = createInsertSchema(userNotificationPreferences);
+
+export type Notification = typeof notifications.$inferSelect;
+export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+export type NotificationRule = typeof notificationRules.$inferSelect;
+export type InsertNotificationRule = z.infer<typeof insertNotificationRuleSchema>;
+export type UserNotificationPreference = typeof userNotificationPreferences.$inferSelect;
+export type InsertUserNotificationPreference = z.infer<typeof insertUserNotificationPreferenceSchema>;
+
+// AI Schema types
 export type AiConfiguration = typeof aiConfigurations.$inferSelect;
 export type InsertAiConfiguration = z.infer<typeof insertAiConfigurationSchema>;
 export type ChatConversation = typeof chatConversations.$inferSelect;
