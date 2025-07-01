@@ -507,6 +507,12 @@ export const workOrders = pgTable("work_orders", {
   startDate: date("start_date"),
   deliveryDate: date("delivery_date"),
   completedDate: date("completed_date"),
+  
+  // เพิ่มฟิลด์สำหรับจัดการสถานะการจัดส่ง
+  deliveryStatus: text("delivery_status").notNull().default("pending"), // pending, ready_for_dispatch, shipped, delivered
+  shippedAt: timestamp("shipped_at"),
+  deliveredAt: timestamp("delivered_at"),
+  
   notes: text("notes"),
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),

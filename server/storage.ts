@@ -270,6 +270,7 @@ export interface IStorage {
 
   // Work Orders
   getWorkOrders(tenantId: string): Promise<WorkOrder[]>;
+  getWorkOrdersByDeliveryStatus(tenantId: string, deliveryStatus?: string): Promise<WorkOrder[]>;
   getWorkOrder(id: string, tenantId: string): Promise<WorkOrder | undefined>;
   createWorkOrder(workOrder: InsertWorkOrder): Promise<WorkOrder>;
   updateWorkOrder(id: string, workOrder: Partial<InsertWorkOrder>, tenantId: string): Promise<WorkOrder | undefined>;
