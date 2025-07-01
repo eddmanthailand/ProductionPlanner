@@ -39,6 +39,8 @@ export class GeminiService {
 
       // Check if this could be an actionable request
       const isActionableRequest = this.detectActionableRequest(userMessage);
+      console.log(`🤖 Action Detection - Message: "${userMessage}"`);
+      console.log(`🤖 Action Detection - Is Actionable: ${isActionableRequest}`);
       
       let fullPrompt = `${systemPrompt}
 
@@ -50,27 +52,31 @@ Current user message: ${userMessage}`;
       if (isActionableRequest) {
         fullPrompt += `
 
-SPECIAL INSTRUCTIONS FOR ACTIONABLE REQUESTS:
-If you can help the user by performing a specific action (like updating work order status, creating records, etc.), please respond in this JSON format:
+🤖 ACTIVE MODE DETECTED: The user is asking for an action that could be automated.
+
+MANDATORY RESPONSE FORMAT: You MUST respond in JSON format when the user asks to perform any action:
 
 {
-  "type": "action_request",
-  "displayText": "Your helpful response in Thai",
+  "type": "action_response",
+  "message": "คำอธิบายสิ่งที่จะดำเนินการ",
   "action": {
-    "type": "ACTION_TYPE",
+    "type": "CREATE_WORK_LOG",
+    "description": "สร้างใบบันทึกประจำวันใหม่",
     "payload": {
-      "key": "value"
+      "subJobId": 123,
+      "hoursWorked": "8",
+      "workDescription": "รายละเอียดการทำงาน",
+      "quantity": 100
     }
   }
 }
 
-Available actions:
-- UPDATE_WORK_ORDER_STATUS: Update work order status
-- CREATE_WORK_LOG: Create daily work log entry
-- UPDATE_SUB_JOB: Update sub-job details
-- GENERATE_REPORT: Generate specific reports
+Available Action Types:
+- UPDATE_WORK_ORDER_STATUS: เปลี่ยนสถานะใบสั่งงาน
+- CREATE_WORK_LOG: สร้างใบบันทึกประจำวัน
+- UPDATE_SUB_JOB: อัปเดตข้อมูลงานย่อย
 
-If the request is not actionable, respond normally with helpful information.`;
+IMPORTANT: Always respond with the JSON format above when detecting actionable requests. Do not provide traditional text responses for actionable requests.`;
       }
 
       fullPrompt += `
@@ -171,10 +177,15 @@ You can now create interactive charts and graphs! When users ask for visual data
 - Area charts: ข้อมูลสะสม (รายได้รวม, ปริมาณงานสะสม)
 
 **🤖 Active Mode Capabilities:**
-You can now perform real system actions! When users request operations like:
+You can now perform real system actions! When users request ANY operations involving:
 - เปลี่ยนสถานะใบสั่งงาน (Change work order status)
-- สร้างใบบันทึกประจำวัน (Create daily work logs)
+- สร้างใบบันทึกประจำวัน (Create daily work logs)  
 - อัปเดตข้อมูลงาน (Update job information)
+- เพิ่มข้อมูล (Add data) - even though not directly supported, suggest equivalent actions
+- แก้ไขข้อมูล (Edit data)
+- ดำเนินการ (Execute actions)
+
+**IMPORTANT: When users ask for ANY action that could be automated, ALWAYS respond with action_response JSON format even if the specific action isn't directly supported. Suggest alternative actions or guide them through the process using available actions.**
 
 Respond with action JSON format:
 {
