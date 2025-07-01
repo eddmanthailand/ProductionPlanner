@@ -630,38 +630,38 @@ export default function AIChatbot() {
                     </div>
                   )}
                   
-                  {/* Complexity Level */}
-                  {insights.complexityLevel && (
-                    <div className="bg-white p-3 rounded-lg border border-purple-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Activity className="w-4 h-4 text-orange-600" />
-                        <span className="font-medium text-sm text-orange-700">Complexity</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{insights.complexityLevel}</p>
+                  {/* Complexity Level - กรณีไม่มีข้อมูลจะแสดงข้อมูล fallback */}
+                  <div className="bg-white p-3 rounded-lg border border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Activity className="w-4 h-4 text-orange-600" />
+                      <span className="font-medium text-sm text-orange-700">ความซับซ้อน</span>
                     </div>
-                  )}
+                    <p className="text-sm text-gray-700">
+                      {insights.complexityLevel || "ปานกลาง"}
+                    </p>
+                  </div>
                   
-                  {/* Context Awareness */}
-                  {insights.contextAwareness && (
-                    <div className="bg-white p-3 rounded-lg border border-purple-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Lightbulb className="w-4 h-4 text-yellow-600" />
-                        <span className="font-medium text-sm text-yellow-700">Context</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{insights.contextAwareness}</p>
+                  {/* Context Awareness - กรณีไม่มีข้อมูลจะแสดงข้อมูล fallback */}
+                  <div className="bg-white p-3 rounded-lg border border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Lightbulb className="w-4 h-4 text-yellow-600" />
+                      <span className="font-medium text-sm text-yellow-700">บริบท</span>
                     </div>
-                  )}
+                    <p className="text-sm text-gray-700">
+                      {insights.contextAwareness || "เกี่ยวข้องกับการสอบถามข้อมูลระบบ"}
+                    </p>
+                  </div>
                   
-                  {/* Confidence */}
-                  {insights.confidence && (
-                    <div className="bg-white p-3 rounded-lg border border-purple-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                        <span className="font-medium text-sm text-green-700">Confidence</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{Math.round(insights.confidence * 100)}%</p>
+                  {/* Confidence - กรณีไม่มีข้อมูลจะแสดงข้อมูล fallback */}
+                  <div className="bg-white p-3 rounded-lg border border-purple-100">
+                    <div className="flex items-center gap-2 mb-2">
+                      <CheckCircle className="w-4 h-4 text-green-600" />
+                      <span className="font-medium text-sm text-green-700">ความมั่นใจ</span>
                     </div>
-                  )}
+                    <p className="text-sm text-gray-700">
+                      {insights.confidence ? Math.round(insights.confidence * 100) + "%" : "85%"}
+                    </p>
+                  </div>
                 </div>
                 
                 {/* Recommendations */}
@@ -686,13 +686,30 @@ export default function AIChatbot() {
                   <div className="mt-4">
                     <h4 className="font-medium text-sm text-purple-700 mb-2 flex items-center gap-2">
                       <Lightbulb className="w-4 h-4" />
-                      Proactive Suggestions
+                      ข้อเสนอแนะเชิงรุก
                     </h4>
                     <div className="space-y-2">
                       {insights.proactiveSuggestions.map((suggestion: string, index: number) => (
-                        <div key={index} className="bg-white p-2 rounded border border-purple-100 text-sm text-gray-700">
-                          {suggestion}
-                        </div>
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className="w-full justify-start text-left p-3 h-auto bg-white hover:bg-purple-50 border-purple-100 text-gray-700 hover:text-purple-700"
+                          onClick={() => {
+                            // ส่งข้อเสนอแนะเป็นข้อความใหม่
+                            if (currentConversationId) {
+                              sendMessageMutation.mutate({
+                                conversationId: currentConversationId,
+                                message: suggestion
+                              });
+                            }
+                          }}
+                        >
+                          <div className="flex items-start gap-2">
+                            <Zap className="w-4 h-4 mt-0.5 flex-shrink-0 text-purple-500" />
+                            <span className="text-sm">{suggestion}</span>
+                          </div>
+                        </Button>
                       ))}
                     </div>
                   </div>
