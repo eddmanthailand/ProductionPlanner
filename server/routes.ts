@@ -33,11 +33,160 @@ function requireAuth(req: any, res: any, next: any) {
   }
 }
 
+// 🕒 Phase 2: Smart Date/Time Detection and Filtering
+function extractDateFilters(message: string): { dateFrom?: string; dateTo?: string; period?: string } {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  
+  const formatDate = (date: Date) => date.toISOString().split('T')[0];
+  
+  // วันนี้
+  if (message.includes('วันนี้') || message.includes('today')) {
+    return {
+      dateFrom: formatDate(today),
+      dateTo: formatDate(today),
+      period: 'today'
+    };
+  }
+  
+  // เมื่อวาน
+  if (message.includes('เมื่อวาน') || message.includes('yesterday')) {
+    return {
+      dateFrom: formatDate(yesterday),
+      dateTo: formatDate(yesterday),
+      period: 'yesterday'
+    };
+  }
+  
+  // สัปดาห์นี้
+  if (message.includes('สัปดาห์นี้') || message.includes('this week')) {
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    return {
+      dateFrom: formatDate(startOfWeek),
+      dateTo: formatDate(today),
+      period: 'this_week'
+    };
+  }
+  
+  // สัปดาห์ที่แล้ว
+  if (message.includes('สัปดาห์ที่แล้ว') || message.includes('สัปดาห์ก่อน') || message.includes('last week')) {
+    const lastWeekEnd = new Date(today);
+    lastWeekEnd.setDate(today.getDate() - today.getDay() - 1);
+    const lastWeekStart = new Date(lastWeekEnd);
+    lastWeekStart.setDate(lastWeekEnd.getDate() - 6);
+    return {
+      dateFrom: formatDate(lastWeekStart),
+      dateTo: formatDate(lastWeekEnd),
+      period: 'last_week'
+    };
+  }
+  
+  // เดือนนี้
+  if (message.includes('เดือนนี้') || message.includes('this month')) {
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    return {
+      dateFrom: formatDate(startOfMonth),
+      dateTo: formatDate(today),
+      period: 'this_month'
+    };
+  }
+  
+  // เดือนที่แล้ว
+  if (message.includes('เดือนที่แล้ว') || message.includes('เดือนก่อน') || message.includes('last month')) {
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const lastMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    return {
+      dateFrom: formatDate(lastMonth),
+      dateTo: formatDate(lastMonthEnd),
+      period: 'last_month'
+    };
+  }
+  
+  // ล่าสุด (7 วันล่าสุด)
+  if (message.includes('ล่าสุด') || message.includes('recent')) {
+    const sevenDaysAgo = new Date(today);
+    sevenDaysAgo.setDate(today.getDate() - 7);
+    return {
+      dateFrom: formatDate(sevenDaysAgo),
+      dateTo: formatDate(today),
+      period: 'recent'
+    };
+  }
+  
+  return {}; // ไม่พบเงื่อนไขเวลา
+}
+
+// 🌐 Helper function: Convert period codes to Thai text
+function getThaiPeriodText(period: string): string {
+  const periodMap: { [key: string]: string } = {
+    'today': 'วันนี้',
+    'yesterday': 'เมื่อวาน',
+    'this_week': 'สัปดาห์นี้',
+    'last_week': 'สัปดาห์ที่แล้ว',
+    'this_month': 'เดือนนี้',
+    'last_month': 'เดือนที่แล้ว',
+    'recent': '7 วันล่าสุด'
+  };
+  return periodMap[period] || period;
+}
+
+// 📝 Phase 2: Format work logs for better AI understanding
+function formatWorkLogsForAI(workLogs: any[]): string {
+  if (!workLogs || workLogs.length === 0) {
+    return "ไม่มีข้อมูลใบบันทึกประจำวัน\n";
+  }
+
+  let formatted = "";
+  workLogs.forEach((log, index) => {
+    formatted += `${index + 1}. รายการ ${log.id || 'ไม่ระบุ'}\n`;
+    formatted += `   - วันที่: ${log.date || 'ไม่ระบุ'}\n`;
+    formatted += `   - ทีม: ${log.teamName || log.teamId || 'ไม่ระบุ'}\n`;
+    formatted += `   - ชั่วโมงทำงาน: ${log.hours || 'ไม่ระบุ'} ชั่วโมง\n`;
+    formatted += `   - งาน: ${log.workOrderNumber || log.subJobId || 'ไม่ระบุ'}\n`;
+    formatted += `   - สถานะ: ${log.status || 'ไม่ระบุ'}\n`;
+    if (log.employeeName) {
+      formatted += `   - พนักงาน: ${log.employeeName}\n`;
+    }
+    formatted += "\n";
+  });
+
+  return formatted;
+}
+
+// 📝 Phase 2: Format work orders for better AI understanding
+function formatWorkOrdersForAI(workOrders: any[]): string {
+  if (!workOrders || workOrders.length === 0) {
+    return "ไม่มีข้อมูลใบสั่งงาน\n";
+  }
+
+  let formatted = "";
+  workOrders.forEach((order, index) => {
+    formatted += `${index + 1}. ใบสั่งงาน ${order.orderNumber || order.id || 'ไม่ระบุ'}\n`;
+    formatted += `   - ลูกค้า: ${order.customerName || order.customerId || 'ไม่ระบุ'}\n`;
+    formatted += `   - สินค้า: ${order.productName || order.productId || 'ไม่ระบุ'}\n`;
+    formatted += `   - จำนวน: ${order.quantity || 'ไม่ระบุ'} ชิ้น\n`;
+    formatted += `   - สถานะ: ${order.status || 'ไม่ระบุ'}\n`;
+    formatted += `   - วันที่สร้าง: ${order.createdAt ? order.createdAt.split('T')[0] : 'ไม่ระบุ'}\n`;
+    if (order.dueDate) {
+      formatted += `   - กำหนดส่ง: ${order.dueDate}\n`;
+    }
+    formatted += "\n";
+  });
+
+  return formatted;
+}
+
 // 🧠 Smart Message Processing: ตีความคำถามและสร้าง Enhanced Prompt
 async function buildEnhancedPrompt(userMessage: string, tenantId: string, storage: any): Promise<string> {
   const lowerMessage = userMessage.toLowerCase();
   let context = "";
   let systemInstructions = `คุณเป็น AI Assistant สำหรับระบบจัดการการผลิตและบัญชี กรุณาตอบเป็นภาษาไทยและให้ข้อมูลที่ถูกต้องตามข้อมูลที่ให้มา\n\n`;
+
+  // 🔍 Phase 2: Smart Date/Time Detection
+  const dateFilters = extractDateFilters(lowerMessage);
+  console.log('🕒 Detected date filters:', dateFilters);
 
   try {
     // 📊 Daily Work Logs - ใบบันทึกประจำวัน
@@ -46,27 +195,88 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
         lowerMessage.includes('สรุป') || lowerMessage.includes('ล่าสุด')) {
       
       console.log('🔍 Detected daily work log keyword, fetching data...');
-      const workLogs = await storage.getDailyWorkLogs(tenantId, {});
+      
+      // 🎯 Phase 2: Apply Smart Filtering based on date filters
+      let filters: any = {};
+      if (dateFilters.dateFrom && dateFilters.dateTo) {
+        filters.dateRange = {
+          from: dateFilters.dateFrom,
+          to: dateFilters.dateTo
+        };
+        console.log('📅 Applying date filter:', dateFilters.period, filters.dateRange);
+      }
+      
+      const workLogs = await storage.getDailyWorkLogs(tenantId, filters);
       console.log('📊 Found work logs:', workLogs.length, 'records');
       
       if (workLogs && workLogs.length > 0) {
-        context += `\n=== ข้อมูลใบบันทึกประจำวันล่าสุด (จำนวน ${workLogs.length} รายการ) ===\n`;
-        context += JSON.stringify(workLogs.slice(0, 10), null, 2);
-        systemInstructions += `ข้อมูลนี้เป็นใบบันทึกประจำวันของพนักงานจริงในระบบ แต่ละรายการมี: ID, วันที่ทำงาน, ทีมงาน และรายละเอียดงาน กรุณาวิเคราะห์และสรุปข้อมูลให้ผู้ใช้\n`;
+        const periodText = dateFilters.period ? ` (${getThaiPeriodText(dateFilters.period)})` : '';
+        context += `\n=== ข้อมูลใบบันทึกประจำวัน${periodText} (จำนวน ${workLogs.length} รายการ) ===\n`;
+        
+        // 🚀 Phase 2: Format data for better AI understanding
+        const formattedLogs = formatWorkLogsForAI(workLogs.slice(0, 15));
+        context += formattedLogs;
+        
+        systemInstructions += `ข้อมูลนี้เป็นใบบันทึกประจำวันของพนักงานจริงในระบบ${periodText} แต่ละรายการมี: ID, วันที่ทำงาน, ทีมงาน และรายละเอียดงาน กรุณาวิเคราะห์และสรุปข้อมูลให้ผู้ใช้\n`;
       } else {
-        context += `\n=== ไม่พบข้อมูลใบบันทึกประจำวัน ===\n`;
-        systemInstructions += `ไม่มีข้อมูลใบบันทึกประจำวันในระบบขณะนี้\n`;
+        const periodText = dateFilters.period ? ` (${getThaiPeriodText(dateFilters.period)})` : '';
+        context += `\n=== ไม่พบข้อมูลใบบันทึกประจำวัน${periodText} ===\n`;
+        systemInstructions += `ไม่มีข้อมูลใบบันทึกประจำวันในช่วงเวลาที่ระบุ\n`;
       }
     }
 
     // 📋 Work Orders - ใบสั่งงาน  
     if (lowerMessage.includes('work order') || lowerMessage.includes('ใบสั่งงาน') || 
-        lowerMessage.includes('งานค้างอยู่') || lowerMessage.includes('สั่งงาน')) {
+        lowerMessage.includes('งานค้างอยู่') || lowerMessage.includes('สั่งงาน') || 
+        lowerMessage.includes('งานที่ยังไม่เสร็จ') || lowerMessage.includes('รายการงาน')) {
+      
+      console.log('🔍 Detected work order keyword, fetching data...');
+      
+      // 🎯 Phase 2: Apply Status Filtering for Work Orders
+      let statusFilter = '';
+      if (lowerMessage.includes('ค้าง') || lowerMessage.includes('ยังไม่เสร็จ') || lowerMessage.includes('pending')) {
+        statusFilter = 'Pending';
+      } else if (lowerMessage.includes('กำลังทำ') || lowerMessage.includes('progress')) {
+        statusFilter = 'In Progress';
+      } else if (lowerMessage.includes('เสร็จ') || lowerMessage.includes('complete')) {
+        statusFilter = 'Completed';
+      }
       
       const workOrders = await storage.getWorkOrders(tenantId);
-      context += `\n=== ข้อมูลใบสั่งงานทั้งหมด ===\n`;
-      context += JSON.stringify(workOrders, null, 2);
-      systemInstructions += `ข้อมูลนี้เป็นใบสั่งงานการผลิต แต่ละรายการมี: เลขที่ใบสั่งงาน, ลูกค้า, สินค้า, สถานะ\n`;
+      let filteredOrders = workOrders;
+      
+      // Apply status filter if detected
+      if (statusFilter) {
+        filteredOrders = workOrders.filter((order: any) => order.status === statusFilter);
+        console.log(`🎯 Filtering by status: ${statusFilter}, found ${filteredOrders.length} orders`);
+      }
+      
+      // Apply date filter if detected  
+      if (dateFilters.dateFrom && dateFilters.dateTo) {
+        filteredOrders = filteredOrders.filter((order: any) => {
+          if (!order.createdAt) return false;
+          const orderDate = order.createdAt.split('T')[0];
+          return orderDate >= (dateFilters.dateFrom || '') && orderDate <= (dateFilters.dateTo || '');
+        });
+        console.log(`📅 Filtering by date: ${dateFilters.period}, found ${filteredOrders.length} orders`);
+      }
+      
+      if (filteredOrders && filteredOrders.length > 0) {
+        const statusText = statusFilter ? ` (สถานะ: ${statusFilter})` : '';
+        const periodText = dateFilters.period ? ` (${getThaiPeriodText(dateFilters.period)})` : '';
+        context += `\n=== ใบสั่งงาน${statusText}${periodText} (จำนวน ${filteredOrders.length} รายการ) ===\n`;
+        
+        // 🚀 Phase 2: Format work orders for better AI understanding
+        const formattedOrders = formatWorkOrdersForAI(filteredOrders.slice(0, 10));
+        context += formattedOrders;
+        
+        systemInstructions += `ข้อมูลนี้เป็นใบสั่งงานการผลิต${statusText}${periodText} แต่ละรายการมี: เลขที่ใบสั่งงาน, ลูกค้า, สินค้า, สถานะ กรุณาวิเคราะห์และสรุปข้อมูลให้ผู้ใช้\n`;
+      } else {
+        const statusText = statusFilter ? ` (สถานะ: ${statusFilter})` : '';
+        const periodText = dateFilters.period ? ` (${getThaiPeriodText(dateFilters.period)})` : '';
+        context += `\n=== ไม่พบใบสั่งงาน${statusText}${periodText} ===\n`;
+        systemInstructions += `ไม่มีข้อมูลใบสั่งงานที่ตรงกับเงื่อนไขที่ระบุ\n`;
+      }
     }
 
     // 💰 Revenue/รายได้ทีม
