@@ -1455,18 +1455,30 @@ export class DatabaseStorage implements IStorage {
 
   // Work Orders methods
   async getWorkOrders(tenantId: string): Promise<WorkOrder[]> {
-    return await db
-      .select()
-      .from(workOrders)
-      .where(eq(workOrders.tenantId, tenantId))
-      .orderBy(desc(workOrders.createdAt));
+    return await db.query.workOrders.findMany({
+      where: eq(workOrders.tenantId, tenantId),
+      with: {
+        customer: true,
+        subJobs: true,
+        attachments: true
+      },
+      orderBy: [desc(workOrders.createdAt)]
+    });
   }
 
   async getWorkOrder(id: string, tenantId: string): Promise<WorkOrder | undefined> {
-    const [result] = await db
-      .select()
-      .from(workOrders)
-      .where(and(eq(workOrders.id, id), eq(workOrders.tenantId, tenantId)));
+    const result = await db.query.workOrders.findFirst({
+      where: and(eq(workOrders.id, id), eq(workOrders.tenantId, tenantId)),
+      with: {
+        customer: true,
+        subJobs: {
+          with: {
+            dailyWorkLogs: true
+          }
+        },
+        attachments: true
+      }
+    });
     return result || undefined;
   }
 
