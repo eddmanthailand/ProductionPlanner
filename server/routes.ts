@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { pool } from "./db";
 import { insertUserSchema, insertTenantSchema, insertProductSchema, insertTransactionSchema, insertCustomerSchema, insertColorSchema, insertSizeSchema, insertWorkTypeSchema, insertDepartmentSchema, insertTeamSchema, insertWorkStepSchema, insertEmployeeSchema, insertWorkQueueSchema, insertProductionCapacitySchema, insertHolidaySchema, insertWorkOrderSchema, insertPermissionSchema, insertDailyWorkLogSchema, permissions, pageAccess, workOrderAttachments, insertNotificationSchema, insertNotificationRuleSchema, insertUserNotificationPreferenceSchema } from "@shared/schema";
 import { notificationService } from "./services/notificationService";
+import { GeminiService } from "./services/gemini";
+import { encrypt, decrypt } from "./encryption";
 import { db } from "./db";
 import { eq, sql } from "drizzle-orm";
 import bcrypt from "bcrypt";
@@ -5354,9 +5356,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get current system state
       const systemData = {
-        pendingWorkOrders: await storage.getWorkOrdersByStatus(tenantId, 'pending'),
-        activeWorkLogs: await storage.getActiveDailyWorkLogs(tenantId),
-        teamPerformance: await storage.getTeamPerformanceMetrics(tenantId)
+        pendingWorkOrders: (await storage.getWorkOrders(tenantId)).filter(wo => wo.status === 'pending'),
+        activeWorkLogs: await storage.getDailyWorkLogs(tenantId),
+        teams: await storage.getTeams(tenantId)
       };
       
       // Get AI configuration
@@ -5387,16 +5389,19 @@ Provide actionable recommendations in these categories:
 
 Respond in JSON format with structured recommendations.`;
 
-      const response = await geminiService.ai.models.generateContent({
-        model: "gemini-2.5-pro",
-        config: {
-          responseMimeType: "application/json"
-        },
-        contents: prompt,
-      });
+      const response = await geminiService.generateChatResponse(
+        `Generate recommendations based on: ${prompt}`,
+        [],
+        systemData
+      );
 
-      const recommendations = JSON.parse(response.text || "{}");
-      res.json(recommendations);
+      // Try to parse JSON, otherwise return as text
+      try {
+        const recommendations = JSON.parse(response);
+        res.json(recommendations);
+      } catch {
+        res.json({ message: response });
+      }
     } catch (error) {
       console.error("Smart Recommendations error:", error);
       res.status(500).json({ message: "ไม่สามารถสร้าง Recommendations ได้" });

@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, MessageSquare, Send, CheckCircle, Settings, User, Bot, BarChart3, TrendingUp, PieChart, Activity, Calendar, Menu, Trash2 } from "lucide-react";
+import { Plus, MessageSquare, Send, CheckCircle, Settings, User, Bot, BarChart3, TrendingUp, PieChart, Activity, Calendar, Menu, Trash2, Brain, Lightbulb, Target, AlertTriangle, Zap } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { AIChart } from "@/components/ui/chart";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 interface ChatMessage {
   id: number;
@@ -92,6 +93,8 @@ export default function AIChatbot() {
   const [inputMessage, setInputMessage] = useState("");
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [showInsights, setShowInsights] = useState(false);
+  const [insights, setInsights] = useState<any>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
@@ -195,6 +198,51 @@ export default function AIChatbot() {
         variant: "destructive",
       });
     }
+  });
+
+  // AI Insights mutation (Phase 5)
+  const generateInsightsMutation = useMutation({
+    mutationFn: async ({ message, conversationHistory }: { message: string; conversationHistory: any[] }) => {
+      return apiRequest('/api/ai/insights', {
+        method: 'POST',
+        body: { message, conversationHistory }
+      });
+    },
+    onSuccess: (data) => {
+      setInsights(data);
+      setShowInsights(true);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "ไม่สามารถสร้าง Insights ได้",
+        description: "เกิดข้อผิดพลาดในการวิเคราะห์ข้อมูล",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Performance Analytics mutation (Phase 5)
+  const performanceAnalyticsMutation = useMutation({
+    mutationFn: async (query: string) => {
+      return apiRequest('/api/ai/performance-analytics', {
+        method: 'POST',
+        body: { query }
+      });
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "การวิเคราะห์เสร็จสิ้น",
+        description: "AI ได้วิเคราะห์ประสิทธิภาพเรียบร้อยแล้ว",
+      });
+      console.log("Performance Analytics:", data);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "ไม่สามารถวิเคราะห์ได้",
+        description: "เกิดข้อผิดพลาดในการวิเคราะห์ประสิทธิภาพ",
+        variant: "destructive",
+      });
+    },
   });
 
   const executeAction = (actionData: ActionData) => {
