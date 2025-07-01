@@ -4560,24 +4560,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Team revenue report endpoint - ดึงข้อมูลจาก sub_jobs โดยตรงเท่านั้น
+  // Team revenue report endpoint - ดึงข้อมูลจาก daily_work_logs (quantity_completed) เพื่อความสอดคล้อง
   app.get("/api/team-revenue-report", async (req: any, res: any) => {
     try {
       const { teamId, startDate, endDate } = req.query;
-      console.log('API: Team revenue report (sub_jobs primary):', { teamId, startDate, endDate });
+      console.log('API: Team revenue report (daily_work_logs primary - quantity_completed):', { teamId, startDate, endDate });
 
       if (!teamId || !startDate || !endDate) {
         return res.status(400).json({ message: "teamId, startDate, and endDate are required" });
       }
 
-      // ดึงข้อมูลจาก sub_jobs โดยตรง - ข้อมูลราคาและจำนวนล่าสุด
+      // ดึงข้อมูลจาก daily_work_logs โดยตรง - ใช้จำนวนงานที่ทำจริง (quantity_completed)
       const result = await pool.query(`
         SELECT 
-          sj.id,
-          $1 as "teamId",
+          dwl.id,
+          dwl.team_id as "teamId",
           dwl.date,
           sj.product_name as "productName",
-          sj.quantity,
+          dwl.quantity_completed as "quantity",
           sj.production_cost as "unitPrice",
           dwl.employee_id as "workerId",
           COALESCE(dwl.employee_id, 'ไม่ระบุพนักงาน') as "workerName",
@@ -4590,9 +4590,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           sj.work_step_id as "workStepId",
           COALESCE(ws.name, '') as "workStepName",
           COALESCE(dwl.work_description, '') as "workDescription",
-          sj.updated_at as "lastUpdated"
-        FROM sub_jobs sj
-        INNER JOIN daily_work_logs dwl ON dwl.sub_job_id = sj.id
+          dwl.updated_at as "lastUpdated"
+        FROM daily_work_logs dwl
+        INNER JOIN sub_jobs sj ON dwl.sub_job_id = sj.id
         INNER JOIN work_orders wo ON sj.work_order_id = wo.id
         LEFT JOIN colors c ON sj.color_id = c.id
         LEFT JOIN sizes s ON sj.size_id = s.id
@@ -4604,7 +4604,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ORDER BY dwl.date ASC, wo.order_number ASC, COALESCE(c.name, '') ASC, COALESCE(s.name, '') ASC, COALESCE(ws.name, '') ASC
       `, [teamId, startDate, endDate]);
 
-      console.log('API: Found sub_jobs revenue data:', result.rows.length);
+      console.log('API: Found daily_work_logs revenue data (using quantity_completed):', result.rows.length);
       res.json(result.rows);
     } catch (error) {
       console.error("Get team revenue report error:", error);

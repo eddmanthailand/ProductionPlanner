@@ -130,6 +130,13 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- July 1, 2025: ✅ แก้ไขปัญหาความไม่สอดคล้องข้อมูลทีม "ตัด A" สำเร็จ
+  - **ปัญหาที่พบ**: รายงานรายได้ทีม (414), ใบบันทึกประจำวัน (436), AI Chatbot (436) แสดงตัวเลขไม่ตรงกัน
+  - **สาเหตุ**: รายงานรายได้ใช้ `sub_jobs.quantity` (ข้อมูลเดิม) แทน `daily_work_logs.quantity_completed` (ข้อมูลปัจจุบัน)
+  - **การแก้ไข**: ปรับ API `/api/team-revenue-report` ให้ใช้ `daily_work_logs.quantity_completed` แทน `sub_jobs.quantity`
+  - **ผลลัพธ์**: ระบบทั้ง 3 แหล่งแสดงตัวเลขเดียวกัน = 436 (สอดคล้องกัน 100%)
+  - **ข้อมูลที่แก้ไข**: มีการปรับจำนวนงานหลังสร้างใบสั่งงาน จาก 414 เป็น 436 ตัว
+
 - July 1, 2025: ✅ ระบบ Chart Generation สำเร็จ (Phase 3 สมบูรณ์)
   - **Enhanced Backend**: ปรับปรุง shouldGenerateChart ตรวจจับคำสั่งหลากหลาย
   - เพิ่มคีย์เวิร์ด: การเปรียบเทียบ, แนวโน้ม, ประสิทธิภาพ, รายได้, สถิติ
