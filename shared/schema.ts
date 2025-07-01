@@ -1066,6 +1066,7 @@ export const aiConfigurations = pgTable("ai_configurations", {
   tenantId: uuid("tenant_id").references(() => tenants.id).notNull().unique(),
   aiProvider: varchar("ai_provider", { length: 50 }).notNull(), // 'gemini', 'openai', etc.
   encryptedApiKey: text("encrypted_api_key").notNull(),
+  persona: varchar("persona", { length: 20 }).default('neutral'), // 'neutral', 'male', 'female'
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

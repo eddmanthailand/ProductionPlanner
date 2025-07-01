@@ -505,6 +505,48 @@ function shouldGenerateChart(message: string): boolean {
   return chartKeywords.some(keyword => lowercaseMessage.includes(keyword.toLowerCase()));
 }
 
+// 🎭 Phase 4: Persona System - Build persona-specific prompts
+function buildPersonaPrompt(originalPrompt: string, persona: string): string {
+  let personaInstruction = "";
+  
+  switch (persona) {
+    case 'male':
+      personaInstruction = `=== คำแนะนำการสื่อสาร ===
+คุณเป็น AI Assistant ชาย ให้สื่อสารด้วยท่าทีที่เป็นมิตรและเชื่อถือได้
+- ใช้คำลงท้าย "ครับ" ในประโยคที่เหมาะสม
+- ใช้ภาษาที่กระตุ้นให้เกิดความมั่นใจและตัดสินใจ
+- แสดงความเป็นผู้นำและให้คำแนะนำที่ชัดเจน
+- ตัวอย่าง: "ผมแนะนำให้ทำแบบนี้ครับ" หรือ "ตามข้อมูลที่วิเคราะห์แล้วครับ"
+
+`;
+      break;
+      
+    case 'female':
+      personaInstruction = `=== คำแนะนำการสื่อสาร ===
+คุณเป็น AI Assistant หญิง ให้สื่อสารด้วยท่าทีที่อบอุ่นและใส่ใจรายละเอียด
+- ใช้คำลงท้าย "ค่ะ" ในประโยคที่เหมาะสม
+- ใช้ภาษาที่แสดงความเอาใจใส่และความรอบคอบ
+- เน้นการให้คำปรึกษาที่ครอบคลุมและพิจารณาทุกมุมมอง
+- ตัวอย่าง: "ดิฉันขอแนะนำค่ะ" หรือ "ตามที่ได้วิเคราะห์ข้อมูลแล้วค่ะ"
+
+`;
+      break;
+      
+    default: // neutral
+      personaInstruction = `=== คำแนะนำการสื่อสาร ===
+คุณเป็น AI Assistant ที่เป็นกลาง ให้สื่อสารด้วยท่าทีที่เป็นมืออาชีพ
+- ใช้ภาษาที่เป็นทางการแต่เป็นมิตร
+- หลีกเลี่ยงการใช้คำสรรพนามที่บ่งบอกเพศ
+- เน้นการให้ข้อมูลที่แม่นยำและเป็นประโยชน์
+- ตัวอย่าง: "แนะนำให้พิจารณา" หรือ "ตามข้อมูลที่วิเคราะห์แล้ว"
+
+`;
+      break;
+  }
+  
+  return `${personaInstruction}${originalPrompt}`;
+}
+
 // 📊 Enhanced Chart Generation - Build intelligent chart prompt
 function buildChartPrompt(originalPrompt: string): string {
   return `${originalPrompt}
@@ -4865,12 +4907,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('📊 Chart Generation - Chart prompt activated');
       }
       
-      console.log('🧠 Smart Processing - Enhanced prompt length:', enhancedPrompt.length);
-      console.log('🧠 Smart Processing - Enhanced prompt preview:', enhancedPrompt.substring(0, 500) + '...');
+      // 🎭 Phase 4: Persona System - เพิ่มคำสั่งตามบุคลิกที่เลือก
+      let personalizedPrompt = enhancedPrompt;
+      if (aiConfig && aiConfig.persona) {
+        personalizedPrompt = buildPersonaPrompt(enhancedPrompt, aiConfig.persona);
+        console.log('🎭 Persona System - Applied persona:', aiConfig.persona);
+      }
+      
+      console.log('🧠 Smart Processing - Enhanced prompt length:', personalizedPrompt.length);
+      console.log('🧠 Smart Processing - Enhanced prompt preview:', personalizedPrompt.substring(0, 500) + '...');
 
-      // สร้างการตอบกลับจาก AI ด้วย enhanced prompt (ไม่ต้องส่ง history ซ้ำ)
+      // สร้างการตอบกลับจาก AI ด้วย personalized prompt
       const aiResponse = await geminiService.generateChatResponse(
-        enhancedPrompt,
+        personalizedPrompt,
         [] // History ถูกรวมไว้ใน prompt แล้ว
       );
 

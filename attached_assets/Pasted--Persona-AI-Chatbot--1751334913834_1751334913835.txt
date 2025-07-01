@@ -1,0 +1,28 @@
+แผนการพัฒนาระบบ: การกำหนด Persona สำหรับ AI Chatbotเอกสารนี้สรุปแนวทางการพัฒนาเพื่อเพิ่มความสามารถให้ผู้ดูแลระบบสามารถกำหนดบุคลิกและลักษณะการพูดของ AI Chatbot ได้1. หลักการทำงาน (How It Works)เราจะเพิ่ม "คำสั่งกำกับบุคลิก" (Persona Instruction) เข้าไปใน Prompt ที่เราส่งให้ Gemini ทุกครั้ง วิธีนี้จะบอกให้ AI รู้ว่าควรจะสวมบทบาทเป็นใครและใช้ลักษณะการพูดแบบไหนตัวอย่าง Prompt ที่จะส่งให้ Gemini:System Instruction: "You are a helpful AI assistant for a production management system. Your persona is female. Please respond in Thai and always end your sentences politely with 'ค่ะ'. Use female pronouns."User's Question: "ช่วยสรุปใบสั่งงานของเมื่อวานหน่อย"ด้วยคำสั่งกำกับนี้ Gemini จะเข้าใจและตอบกลับมาด้วยลักษณะการพูดที่เราต้องการเสมอ2. แผนการพัฒนาในทางเทคนิคเราจะแบ่งการทำงานออกเป็น 3 ส่วนหลัก: Database, Backend, และ Frontendส่วนที่ 1: การปรับปรุงฐานข้อมูล (Database Layer)เราต้องมีที่สำหรับเก็บการตั้งค่า Persona ของแต่ละผู้เช่า (Tenant)แนวทาง: เพิ่มคอลัมน์ใหม่ในตาราง ai_configurations ที่เรามีอยู่แล้วไฟล์ที่แก้ไข: shared/schema.tsการเปลี่ยนแปลงใน Schema:// ในไฟล์ shared/schema.ts
+export const aiConfigurations = pgTable("ai_configurations", {
+  // ... (คอลัมน์เดิมของคุณ) ...
+  encryptedApiKey: text("encrypted_api_key").notNull(),
+  
+  // --- เพิ่มคอลัมน์ใหม่ด้านล่างนี้ ---
+  persona: varchar("persona", { length: 50 }).default('neutral'), // 'neutral', 'male', 'female'
+
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+เราเพิ่มคอลัมน์ persona ที่สามารถเก็บค่าได้ 3 แบบ และตั้งค่าเริ่มต้นเป็น neutral (เป็นกลาง)ส่วนที่ 2: การปรับปรุงระบบหลังบ้าน (Backend Layer)เราต้องทำให้ Backend อ่านค่า Persona ที่ตั้งไว้ แล้วนำไปสร้างเป็นคำสั่งกำกับใน Promptไฟล์ที่แก้ไข: server/routes.ts และ server/storage.tsขั้นตอน:อัปเดต Storage: แก้ไขฟังก์ชัน saveOrUpdateAiConfiguration ใน storage.ts ให้สามารถบันทึกค่า persona ใหม่ได้ด้วยอัปเดต API สำหรับบันทึก: แก้ไข POST /api/integrations/ai ใน routes.ts ให้รับค่า persona จาก Frontend มาบันทึกอัปเดต API สำหรับแชท (ส่วนที่สำคัญที่สุด):ใน POST /api/ai/chat หลังจากที่ดึงข้อมูล config ของ Tenant มาแล้ว ให้เราดึงค่า config.persona มาด้วยสร้าง "System Instruction" ตามค่า persona ที่ได้มานำ System Instruction นี้ไปใส่ไว้ส่วนบนสุดของ finalPrompt ที่จะส่งให้ Geminiตัวอย่างโค้ดใน routes.ts:// ภายใน POST /api/ai/chat
+
+// ... ดึง config มาแล้ว ...
+const config = await storage.getAiConfiguration(tenantId);
+
+let systemInstruction = "You are a helpful AI assistant. Respond in Thai.";
+if (config?.persona === 'male') {
+    systemInstruction = "You are a helpful AI assistant. Your persona is male. Respond in Thai and end sentences with 'ครับ'.";
+} else if (config?.persona === 'female') {
+    systemInstruction = "You are a helpful AI assistant. Your persona is female. Respond in Thai and end sentences with 'ค่ะ'.";
+}
+
+// ... สร้าง finalPrompt ...
+const finalPromptWithPersona = `${systemInstruction}\n\n${finalPrompt}`;
+
+// ... ส่ง finalPromptWithPersona ไปให้ Gemini ...
+ส่วนที่ 3: การสร้างส่วนติดต่อผู้ใช้ (Frontend Layer)เราต้องสร้าง UI ให้ผู้ใช้สามารถเลือก Persona ที่ต้องการได้ไฟล์ที่แก้ไข: หน้า "การตั้งค่า AI" (image_ae2300.png)แนวทาง:เพิ่มส่วนใหม่ในหน้าตั้งค่า AI ชื่อว่า "บุคลิกของ AI" (AI Persona)สร้างเป็น Dropdown Menu หรือ Radio Buttons ให้ผู้ใช้เลือกเป็นกลาง (ผม/ดิฉัน, ครับ/ค่ะ)ผู้ชาย (ผม, ครับ)ผู้หญิง (ดิฉัน, ค่ะ)เมื่อผู้ใช้เลือกและกด "บันทึกการตั้งค่า", ให้ส่งค่าที่เลือก (เช่น 'female') ไปพร้อมกับ API Key ใน Request ที่ยิงไปที่ POST /api/integrations/aiสรุปหลังจากทำตามแผนนี้แล้ว คุณจะสามารถควบคุมลักษณะการพูดของ Chatbot ได้อย่างสมบูรณ์ ทำให้มันสามารถสื่อสารกับผู้ใช้ได้อย่างสอดคล้องและเป็นธรรมชาติมากยิ่งขึ้นครับถ้าคุณเห็นด้วยกับแผนนี้ เราสามารถเริ่มดำเนินการใน ส่วนที่ 1 และ 2 (Backend & Database) ก่อนได้เลยครับ!
