@@ -10,6 +10,7 @@ import { apiRequest } from '@/lib/queryClient';
 
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import AIChart from '@/components/ui/chart';
 
 interface ChatMessage {
   id: number;
@@ -199,6 +200,29 @@ export default function AIChatbot() {
 
   const isCodeBlock = (content: string) => {
     return content.includes('```') || content.includes('SELECT') || content.includes('JSON') || content.includes('{') || content.includes('[');
+  };
+
+  // Function to check if message contains chart data
+  const hasChartData = (content: string) => {
+    try {
+      const parsed = JSON.parse(content);
+      return parsed && parsed.chartData && parsed.chartData.type;
+    } catch {
+      return false;
+    }
+  };
+
+  // Function to parse chart data from message
+  const parseChartData = (content: string) => {
+    try {
+      const parsed = JSON.parse(content);
+      return {
+        message: parsed.message || '',
+        chartData: parsed.chartData
+      };
+    } catch {
+      return null;
+    }
   };
 
   // Function to detect conversation context from messages

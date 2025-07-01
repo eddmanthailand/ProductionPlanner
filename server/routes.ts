@@ -474,6 +474,55 @@ function buildConversationHistorySection(history: any[], currentMessage: string)
   return historySection;
 }
 
+// 📊 Phase 3: Chart Generation - Detect if user wants a chart/graph
+function shouldGenerateChart(message: string): boolean {
+  const chartKeywords = [
+    'กราฟ', 'แผนภูมิ', '차트', 'chart', 'graph',
+    'แสดงเป็นกราฟ', 'วาดกราฟ', 'สร้างแผนภูมิ',
+    'เทียบ', 'เปรียบเทียบ', 'แนวโน้ม', 'สถิติ',
+    'รายเดือน', 'รายสัปดาห์', 'รายวัน', 'ประจำเดือน',
+    'การเปลี่ยนแปลง', 'ความก้าวหน้า', 'ผลการดำเนินงาน'
+  ];
+  
+  return chartKeywords.some(keyword => message.toLowerCase().includes(keyword.toLowerCase()));
+}
+
+// 📊 Build chart-specific prompt for AI
+function buildChartPrompt(originalPrompt: string): string {
+  return `${originalPrompt}
+
+=== คำแนะนำพิเศษสำหรับการสร้างกราฟ ===
+ผู้ใช้ต้องการให้แสดงข้อมูลเป็นกราฟหรือแผนภูมิ กรุณาตอบกลับในรูปแบบ JSON ที่มีโครงสร้างดังนี้:
+
+{
+  "type": "chart_response",
+  "message": "คำอธิบายสั้นๆ เกี่ยวกับข้อมูล",
+  "chart": {
+    "type": "bar|line|pie|doughnut|area",
+    "title": "หัวข้อกราฟ",
+    "data": {
+      "labels": ["ป้ายกำกับ1", "ป้ายกำกับ2", "ป้ายกำกับ3"],
+      "datasets": [{
+        "label": "ชื่อชุดข้อมูล",
+        "data": [ตัวเลข1, ตัวเลข2, ตัวเลข3],
+        "backgroundColor": ["#3B82F6", "#10B981", "#F59E0B"],
+        "borderColor": "#374151"
+      }]
+    },
+    "options": {
+      "responsive": true,
+      "plugins": {
+        "legend": { "display": true },
+        "title": { "display": true, "text": "หัวข้อกราฟ" }
+      }
+    }
+  }
+}
+
+หากข้อมูลไม่เพียงพอสำหรับสร้างกราฟ ให้ตอบแบบปกติและแนะนำวิธีการได้ข้อมูลเพิ่มเติม
+กรุณาใช้ข้อมูลจริงจากระบบเท่านั้น ห้ามใช้ข้อมูลสมมติ`;
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Anti-cache middleware for API routes
   app.use('/api', (req, res, next) => {
@@ -4777,7 +4826,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🔍 Smart Processing - Original message:', content.trim());
       
       // 💬 Phase 2 เป้าหมายที่ 3: รวม Conversation History
-      const enhancedPrompt = await buildEnhancedPromptWithHistory(content.trim(), tenantId, storage, conversationHistory);
+      let enhancedPrompt = await buildEnhancedPromptWithHistory(content.trim(), tenantId, storage, conversationHistory);
+      
+      // 📊 Phase 3: Chart Generation - ตรวจสอบว่าต้องการกราฟหรือไม่
+      const needsChart = shouldGenerateChart(content.trim());
+      if (needsChart) {
+        enhancedPrompt = buildChartPrompt(enhancedPrompt);
+        console.log('📊 Chart Generation - Chart prompt activated');
+      }
       
       console.log('🧠 Smart Processing - Enhanced prompt length:', enhancedPrompt.length);
       console.log('🧠 Smart Processing - Enhanced prompt preview:', enhancedPrompt.substring(0, 500) + '...');
@@ -4788,11 +4844,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [] // History ถูกรวมไว้ใน prompt แล้ว
       );
 
-      // บันทึกการตอบกลับของ AI
+      // 📊 Phase 3: ประมวลผลการตอบกลับของ AI สำหรับ Chart Generation
+      let processedResponse = aiResponse;
+      let chartData = null;
+      
+      // ตรวจสอบว่า AI ตอบกลับเป็น JSON สำหรับ chart หรือไม่
+      if (needsChart && aiResponse.includes('"type": "chart_response"')) {
+        try {
+          const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsedResponse = JSON.parse(jsonMatch[0]);
+            if (parsedResponse.type === 'chart_response') {
+              chartData = parsedResponse.chart;
+              processedResponse = parsedResponse.message || 'แสดงข้อมูลเป็นกราฟ';
+              console.log('📊 Chart data extracted:', JSON.stringify(chartData, null, 2));
+            }
+          }
+        } catch (parseError) {
+          console.log('📊 Chart parsing failed, using text response:', parseError);
+        }
+      }
+
+      // บันทึกการตอบกลับของ AI (เก็บ JSON ถ้ามี chart data)
+      const messageContent = chartData ? 
+        JSON.stringify({ message: processedResponse, chartData }) : 
+        aiResponse;
+        
       const assistantMessage = await storage.createChatMessage({
         conversationId: parseInt(conversationId),
         role: 'assistant',
-        content: aiResponse
+        content: messageContent
       });
 
       // อัปเดตชื่อการสนทนาถ้าเป็นข้อความแรก
