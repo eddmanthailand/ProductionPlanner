@@ -341,11 +341,12 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
   })
 }));
 
-export const customersRelations = relations(customers, ({ one }) => ({
+export const customersRelations = relations(customers, ({ one, many }) => ({
   tenant: one(tenants, {
     fields: [customers.tenantId],
     references: [tenants.id]
-  })
+  }),
+  workOrders: many(workOrders)
 }));
 
 export const colorsRelations = relations(colors, ({ one }) => ({
@@ -745,7 +746,9 @@ export const workOrdersRelations = relations(workOrders, ({ one, many }) => ({
     fields: [workOrders.workTypeId],
     references: [workTypes.id]
   }),
-  items: many(workOrderItems)
+  items: many(workOrderItems),
+  subJobs: many(subJobs),
+  attachments: many(workOrderAttachments)
 }));
 
 export const workOrderItemsRelations = relations(workOrderItems, ({ one }) => ({
@@ -1117,6 +1120,36 @@ export const chatMessagesRelations = relations(chatMessages, ({ one }) => ({
   conversation: one(chatConversations, {
     fields: [chatMessages.conversationId],
     references: [chatConversations.id]
+  })
+}));
+
+export const subJobsRelations = relations(subJobs, ({ one, many }) => ({
+  workOrder: one(workOrders, {
+    fields: [subJobs.workOrderId],
+    references: [workOrders.id]
+  }),
+  dailyWorkLogs: many(dailyWorkLogs)
+}));
+
+export const workOrderAttachmentsRelations = relations(workOrderAttachments, ({ one }) => ({
+  workOrder: one(workOrders, {
+    fields: [workOrderAttachments.workOrderId],
+    references: [workOrders.id]
+  }),
+  uploadedByUser: one(users, {
+    fields: [workOrderAttachments.uploadedBy],
+    references: [users.id]
+  })
+}));
+
+export const dailyWorkLogsRelations = relations(dailyWorkLogs, ({ one }) => ({
+  subJob: one(subJobs, {
+    fields: [dailyWorkLogs.subJobId],
+    references: [subJobs.id]
+  }),
+  employee: one(users, {
+    fields: [dailyWorkLogs.employeeId],
+    references: [users.id]
   })
 }));
 
