@@ -130,6 +130,14 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ ระบบ Smart Data Filtering ติดตั้งสำเร็จ (Phase 2 เป้าหมายที่ 1)
+  - เพิ่มฟังก์ชัน extractDateFilters ตรวจจับเงื่อนไขเวลา: วันนี้, เมื่อวาน, สัปดาห์นี้/ที่แล้ว, เดือนนี้/ที่แล้ว, 7วันล่าสุด
+  - ปรับปรุงการกรองข้อมูล Daily Work Logs และ Work Orders ด้วยเงื่อนไขวันที่และสถานะ
+  - เพิ่มฟังก์ชัน formatWorkLogsForAI และ formatWorkOrdersForAI แปลง JSON เป็นข้อความอ่านง่าย
+  - ลดขนาด Prompt จากการส่ง JSON ทั้งหมดเป็นข้อมูลที่จัดรูปแบบแล้ว
+  - AI สามารถตอบคำถามเฉพาะเจาะจงเช่น "สรุปใบบันทึกประจำวันของวันนี้" ได้แม่นยำขึ้น
+  - แก้ปัญหา Over-fetching ทำให้ AI ทำงานเร็วขึ้นและแม่นยำขึ้น
+
 - June 30, 2025: ✅ ระบบ Smart Message Processing ติดตั้งสำเร็จ (Phase 1)
   - เพิ่มฟังก์ชัน buildEnhancedPrompt ที่ตีความคำถามและดึงข้อมูลจริง
   - รองรับคีย์เวิร์ด: บันทึกประจำวัน, ใบสั่งงาน, รายได้ทีม, สินค้า, ทีมงาน, วิเคราะห์
