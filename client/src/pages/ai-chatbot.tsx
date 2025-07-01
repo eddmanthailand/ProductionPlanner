@@ -306,6 +306,71 @@ export default function AIChatbot() {
     return null;
   };
 
+  // Parse action data from AI message
+  const parseActionData = (content: string) => {
+    try {
+      // Try to find JSON in message content
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.suggestedAction) {
+          return parsed.suggestedAction;
+        }
+      }
+      
+      // If not in JSON format, try to extract from structured content
+      if (content.includes('"type": "action_response"')) {
+        const parsed = JSON.parse(content);
+        return parsed.action || null;
+      }
+    } catch (error) {
+      console.log('Action parsing failed:', error);
+    }
+    return null;
+  };
+
+  // Execute AI suggested action
+  const executeAction = async (actionData: any) => {
+    try {
+      setIsLoading(true);
+      const response = await apiRequest('/api/execute-action', {
+        method: 'POST',
+        body: {
+          actionType: actionData.type,
+          payload: actionData.payload
+        }
+      });
+
+      if (response.success) {
+        toast({
+          title: "ดำเนินการสำเร็จ",
+          description: response.result.message,
+        });
+        
+        // Invalidate relevant caches
+        queryClient.invalidateQueries({ queryKey: ['/api/daily-work-logs'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/work-orders'] });
+        queryClient.invalidateQueries({ queryKey: ['/api/sub-jobs'] });
+        
+        // Refresh conversation to show updated status
+        if (selectedConversationId) {
+          queryClient.invalidateQueries({ queryKey: ['/api/conversations', selectedConversationId, 'messages'] });
+        }
+      } else {
+        throw new Error(response.message || 'Action failed');
+      }
+    } catch (error) {
+      console.error('Execute action error:', error);
+      toast({
+        title: "ไม่สามารถดำเนินการได้",
+        description: error instanceof Error ? error.message : "เกิดข้อผิดพลาดไม่ทราบสาเหตุ",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Function to make data in AI responses clickable
   const renderMessageWithLinks = (content: string) => {
     // Pattern to match work order numbers (WO-XXX or similar patterns)

@@ -4954,10 +4954,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log('🤖 Action detected:', JSON.stringify(suggestedAction, null, 2));
       }
 
-      // บันทึกการตอบกลับของ AI (เก็บ JSON ถ้ามี chart data)
-      const messageContent = chartData ? 
-        JSON.stringify({ message: processedResponse, chartData }) : 
-        aiResponse;
+      // บันทึกการตอบกลับของ AI (เก็บ JSON ถ้ามี chart data หรือ action)
+      let messageContent = aiResponse;
+      
+      if (chartData || suggestedAction) {
+        const responseData: any = { message: processedResponse };
+        if (chartData) responseData.chartData = chartData;
+        if (suggestedAction) responseData.suggestedAction = suggestedAction;
+        messageContent = JSON.stringify(responseData);
+      }
         
       const assistantMessage = await storage.createChatMessage({
         conversationId: parseInt(conversationId),
@@ -4974,10 +4979,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         await storage.updateChatConversationTitle(parseInt(conversationId), summary);
       }
 
-      res.json({
+      const responseData: any = {
         userMessage,
         assistantMessage
-      });
+      };
+      
+      // เพิ่ม chartData ถ้ามี
+      if (chartData) {
+        responseData.chartData = chartData;
+      }
+      
+      // เพิ่ม suggestedAction ถ้ามี (Active Mode)
+      if (suggestedAction) {
+        responseData.suggestedAction = suggestedAction;
+      }
+
+      res.json(responseData);
     } catch (error) {
       console.error("Send message error:", error);
       res.status(500).json({ message: "ไม่สามารถส่งข้อความได้" });
@@ -4994,6 +5011,74 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Delete conversation error:", error);
       res.status(500).json({ message: "ไม่สามารถลบการสนทนาได้" });
+    }
+  });
+
+  // ===== AI ACTIVE MODE ENDPOINTS =====
+  
+  // Execute AI suggested actions safely
+  app.post("/api/execute-action", requireAuth, async (req: any, res: any) => {
+    try {
+      const { actionType, payload } = req.body;
+      const tenantId = req.user?.tenantId;
+      const userId = req.user?.id;
+
+      if (!tenantId || !userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      console.log('🤖 Executing action:', { actionType, payload });
+
+      let result = {};
+
+      switch (actionType) {
+        case 'UPDATE_WORK_ORDER_STATUS':
+          if (payload.workOrderId && payload.newStatus) {
+            // อัปเดตสถานะใบสั่งงาน
+            await storage.updateWorkOrder(payload.workOrderId, { status: payload.newStatus }, tenantId);
+            result = { message: `อัปเดตสถานะใบสั่งงาน ${payload.workOrderId} เป็น '${payload.newStatus}' เรียบร้อย` };
+          }
+          break;
+
+        case 'CREATE_WORK_LOG':
+          if (payload.subJobId && payload.hoursWorked) {
+            // สร้างใบบันทึกประจำวัน
+            const logData = {
+              ...payload,
+              tenantId,
+              employeeId: userId.toString(),
+              date: new Date().toISOString().split('T')[0]
+            };
+            const workLog = await storage.createDailyWorkLog(logData);
+            result = { message: `บันทึกประจำวันสำหรับงาน ${payload.subJobId} เรียบร้อย`, workLog };
+          }
+          break;
+
+        case 'UPDATE_SUB_JOB':
+          if (payload.subJobId && (payload.quantity || payload.status)) {
+            // อัปเดตข้อมูล sub-job
+            await storage.updateSubJob(payload.subJobId, payload);
+            result = { message: `อัปเดตข้อมูลงานย่อย ${payload.subJobId} เรียบร้อย` };
+          }
+          break;
+
+        default:
+          return res.status(400).json({ message: `Action type '${actionType}' is not supported` });
+      }
+
+      res.json({
+        success: true,
+        actionType,
+        result
+      });
+
+    } catch (error) {
+      console.error("Execute action error:", error);
+      res.status(500).json({ 
+        success: false,
+        message: "ไม่สามารถดำเนินการได้", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
