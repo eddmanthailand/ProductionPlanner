@@ -130,6 +130,14 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- June 30, 2025: ✅ ระบบ Advanced Prompt Engineering และ Conversation History สำเร็จ (Phase 2 สมบูรณ์)
+  - เพิ่มฟังก์ชัน buildAdvancedPrompt สร้าง Prompt ที่มีโครงสร้างชัดเจนและมีประสิทธิภาพ
+  - เพิ่มการวิเคราะห์ภาพรวมข้อมูลก่อนแสดงรายละเอียด (analyzeDailyWorkLogs, analyzeWorkOrders)
+  - ลดขนาด Prompt จาก 10,462 ตัวอักษรเป็นรูปแบบกระชับที่แสดงเฉพาะข้อมูลสำคัญ
+  - เพิ่มระบบ Conversation History ให้ AI จำบริบทการสนทนาได้
+  - เพิ่มคำแนะนำการวิเคราะห์เฉพาะตามประเภทข้อมูล
+  - AI ให้คำตอบที่มีโครงสร้างชัดเจน วิเคราะห์เชิงลึก และให้ข้อเสนอแนะที่เป็นประโยชน์
+
 - June 30, 2025: ✅ ระบบ Smart Data Filtering ติดตั้งสำเร็จ (Phase 2 เป้าหมายที่ 1)
   - เพิ่มฟังก์ชัน extractDateFilters ตรวจจับเงื่อนไขเวลา: วันนี้, เมื่อวาน, สัปดาห์นี้/ที่แล้ว, เดือนนี้/ที่แล้ว, 7วันล่าสุด
   - ปรับปรุงการกรองข้อมูล Daily Work Logs และ Work Orders ด้วยเงื่อนไขวันที่และสถานะ

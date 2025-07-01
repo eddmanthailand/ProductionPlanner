@@ -132,50 +132,89 @@ function getThaiPeriodText(period: string): string {
   return periodMap[period] || period;
 }
 
-// 📝 Phase 2: Format work logs for better AI understanding
+// 📝 Phase 2: Format work logs for better AI understanding (เวอร์ชันกระชับ)
 function formatWorkLogsForAI(workLogs: any[]): string {
   if (!workLogs || workLogs.length === 0) {
     return "ไม่มีข้อมูลใบบันทึกประจำวัน\n";
   }
 
-  let formatted = "";
-  workLogs.forEach((log, index) => {
-    formatted += `${index + 1}. รายการ ${log.id || 'ไม่ระบุ'}\n`;
-    formatted += `   - วันที่: ${log.date || 'ไม่ระบุ'}\n`;
-    formatted += `   - ทีม: ${log.teamName || log.teamId || 'ไม่ระบุ'}\n`;
-    formatted += `   - ชั่วโมงทำงาน: ${log.hours || 'ไม่ระบุ'} ชั่วโมง\n`;
-    formatted += `   - งาน: ${log.workOrderNumber || log.subJobId || 'ไม่ระบุ'}\n`;
-    formatted += `   - สถานะ: ${log.status || 'ไม่ระบุ'}\n`;
-    if (log.employeeName) {
-      formatted += `   - พนักงาน: ${log.employeeName}\n`;
-    }
-    formatted += "\n";
+  // 🎯 Phase 2: สรุปข้อมูลภาพรวมก่อน
+  const summary = analyzeDailyWorkLogs(workLogs);
+  let formatted = `📊 สรุปภาพรวม: จำนวน ${workLogs.length} รายการ\n`;
+  formatted += `${summary}\n\n`;
+
+  // 📝 รายการ 5 รายการแรก (ตัวอย่าง)
+  formatted += `📋 รายการตัวอย่าง (${Math.min(5, workLogs.length)} รายการแรก):\n`;
+  workLogs.slice(0, 5).forEach((log, index) => {
+    const hours = log.hours ? `${log.hours}ชม` : '';
+    const team = log.teamName || log.teamId?.substring(0, 8) || '';
+    formatted += `${index + 1}. ${log.date} | ${team} | ${hours} | ${log.status || ''}\n`;
   });
+
+  if (workLogs.length > 5) {
+    formatted += `... และอีก ${workLogs.length - 5} รายการ\n`;
+  }
 
   return formatted;
 }
 
-// 📝 Phase 2: Format work orders for better AI understanding
+// 🔍 Phase 2: Analyze daily work logs summary
+function analyzeDailyWorkLogs(logs: any[]): string {
+  const teams = new Set(logs.map(log => log.teamName || log.teamId)).size;
+  const totalHours = logs.reduce((sum, log) => sum + (parseFloat(log.hours) || 0), 0);
+  const dates = new Set(logs.map(log => log.date));
+  const statuses = logs.reduce((acc: any, log) => {
+    acc[log.status || 'ไม่ระบุ'] = (acc[log.status || 'ไม่ระบุ'] || 0) + 1;
+    return acc;
+  }, {});
+
+  let summary = `- ทีมงาน: ${teams} ทีม | ชั่วโมงรวม: ${totalHours} ชม | ช่วงวันที่: ${dates.size} วัน\n`;
+  summary += `- สถานะงาน: ${Object.entries(statuses).map(([status, count]) => `${status}(${count})`).join(', ')}`;
+  
+  return summary;
+}
+
+// 📝 Phase 2: Format work orders for better AI understanding (เวอร์ชันกระชับ)
 function formatWorkOrdersForAI(workOrders: any[]): string {
   if (!workOrders || workOrders.length === 0) {
     return "ไม่มีข้อมูลใบสั่งงาน\n";
   }
 
-  let formatted = "";
-  workOrders.forEach((order, index) => {
-    formatted += `${index + 1}. ใบสั่งงาน ${order.orderNumber || order.id || 'ไม่ระบุ'}\n`;
-    formatted += `   - ลูกค้า: ${order.customerName || order.customerId || 'ไม่ระบุ'}\n`;
-    formatted += `   - สินค้า: ${order.productName || order.productId || 'ไม่ระบุ'}\n`;
-    formatted += `   - จำนวน: ${order.quantity || 'ไม่ระบุ'} ชิ้น\n`;
-    formatted += `   - สถานะ: ${order.status || 'ไม่ระบุ'}\n`;
-    formatted += `   - วันที่สร้าง: ${order.createdAt ? order.createdAt.split('T')[0] : 'ไม่ระบุ'}\n`;
-    if (order.dueDate) {
-      formatted += `   - กำหนดส่ง: ${order.dueDate}\n`;
-    }
-    formatted += "\n";
+  // 🎯 Phase 2: สรุปข้อมูลภาพรวมก่อน
+  const summary = analyzeWorkOrders(workOrders);
+  let formatted = `📊 สรุปภาพรวม: จำนวน ${workOrders.length} ใบสั่งงาน\n`;
+  formatted += `${summary}\n\n`;
+
+  // 📝 รายการ 5 รายการแรก (ตัวอย่าง)
+  formatted += `📋 รายการตัวอย่าง (${Math.min(5, workOrders.length)} รายการแรก):\n`;
+  workOrders.slice(0, 5).forEach((order, index) => {
+    const orderNum = order.orderNumber || order.id || '';
+    const customer = order.customerName || 'ไม่ระบุลูกค้า';
+    const status = order.status || '';
+    const date = order.createdAt ? order.createdAt.split('T')[0] : '';
+    formatted += `${index + 1}. ${orderNum} | ${customer} | ${status} | ${date}\n`;
   });
 
+  if (workOrders.length > 5) {
+    formatted += `... และอีก ${workOrders.length - 5} ใบสั่งงาน\n`;
+  }
+
   return formatted;
+}
+
+// 🔍 Phase 2: Analyze work orders summary
+function analyzeWorkOrders(orders: any[]): string {
+  const customers = new Set(orders.map(order => order.customerName || order.customerId)).size;
+  const statuses = orders.reduce((acc: any, order) => {
+    acc[order.status || 'ไม่ระบุ'] = (acc[order.status || 'ไม่ระบุ'] || 0) + 1;
+    return acc;
+  }, {});
+  const totalQuantity = orders.reduce((sum, order) => sum + (parseFloat(order.quantity) || 0), 0);
+
+  let summary = `- ลูกค้า: ${customers} ราย | จำนวนรวม: ${totalQuantity} ชิ้น\n`;
+  summary += `- สถานะงาน: ${Object.entries(statuses).map(([status, count]) => `${status}(${count})`).join(', ')}`;
+  
+  return summary;
 }
 
 // 🧠 Smart Message Processing: ตีความคำถามและสร้าง Enhanced Prompt
@@ -339,7 +378,100 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
     systemInstructions += `- การจัดการใบสั่งงาน\n- การจัดการทีมงาน\n- การติดตามประสิทธิภาพ\n- การใช้งานระบบ\n`;
   }
 
-  return `${systemInstructions}\n${context}\n\n=== คำถามจากผู้ใช้ ===\n${userMessage}\n\nกรุณาตอบคำถามโดยใช้ข้อมูลที่ให้มาข้างต้น หากไม่มีข้อมูลที่เกี่ยวข้อง ให้แจ้งและให้คำแนะนำทั่วไป`;
+  // 🚀 Phase 2 เป้าหมายที่ 2: Advanced Prompt Engineering
+  const finalPrompt = buildAdvancedPrompt(systemInstructions, context, userMessage, dateFilters);
+  
+  return finalPrompt;
+}
+
+// 🎯 Phase 2 เป้าหมายที่ 2: Advanced Prompt Engineering
+function buildAdvancedPrompt(instructions: string, context: string, userMessage: string, dateFilters: any): string {
+  let prompt = "";
+  
+  // 📋 System Role และ Instructions ที่เข้มข้น
+  prompt += `คุณเป็น AI Assistant ผู้เชี่ยวชาญด้านระบบจัดการการผลิตและบัญชี\n`;
+  prompt += `ภารกิจ: ตอบคำถามด้วยข้อมูลจริงจากระบบ วิเคราะห์เชิงลึก และให้คำแนะนำที่เป็นประโยชน์\n\n`;
+  
+  // 🔍 บริบทการสนทนา (ถ้ามีข้อมูล)
+  if (context.trim()) {
+    prompt += `=== ข้อมูลจากระบบ ===\n`;
+    prompt += context;
+    prompt += `\n`;
+    
+    // 📊 เพิ่มคำแนะนำการวิเคราะห์เฉพาะ
+    if (context.includes('ใบบันทึกประจำวัน')) {
+      prompt += `💡 แนวทางการวิเคราะห์:\n`;
+      prompt += `- สรุปจำนวนรายการและช่วงเวลา\n`;
+      prompt += `- วิเคราะห์การกระจายงานตามทีม\n`;
+      prompt += `- ชี้ประเด็นที่น่าสนใจหรือผิดปกติ\n`;
+      prompt += `- เสนอข้อเสนอแนะเพื่อปรับปรุง\n\n`;
+    }
+    
+    if (context.includes('ใบสั่งงาน')) {
+      prompt += `💡 แนวทางการวิเคราะห์:\n`;
+      prompt += `- สรุปสถานะงานโดยรวม\n`;
+      prompt += `- วิเคราะห์ลูกค้าและประเภทสินค้า\n`;
+      prompt += `- ระบุงานที่ต้องเร่งด่วนหรือค้างนาน\n`;
+      prompt += `- เสนอแนะการปรับปรุงกระบวนการ\n\n`;
+    }
+  }
+  
+  // ❓ คำถามและเงื่อนไขพิเศษ
+  prompt += `=== คำถามจากผู้ใช้ ===\n${userMessage}\n\n`;
+  
+  // 🎯 เงื่อนไขพิเศษตามบริบท
+  if (dateFilters.period) {
+    prompt += `🕒 หมายเหตุ: ข้อมูลนี้กรองเฉพาะ${getThaiPeriodText(dateFilters.period)} (${dateFilters.dateFrom} ถึง ${dateFilters.dateTo})\n`;
+  }
+  
+  // 📝 คำสั่งการตอบสนอง
+  prompt += `\n=== คำสั่งการตอบสนอง ===\n`;
+  prompt += `1. ใช้ข้อมูลจริงจากระบบเป็นหลัก\n`;
+  prompt += `2. ตอบเป็นภาษาไทยที่เข้าใจง่าย\n`;
+  prompt += `3. วิเคราะห์เชิงลึกและให้ข้อเสนอแนะ\n`;
+  prompt += `4. หากไม่มีข้อมูลที่เกี่ยวข้อง ให้แจ้งและเสนอทางเลือก\n`;
+  prompt += `5. จัดรูปแบบให้อ่านง่าย ใช้ bullet points และหัวข้อ\n`;
+  
+  return prompt;
+}
+
+// 💬 Phase 2 เป้าหมายที่ 3: Enhanced Prompt with Conversation History
+async function buildEnhancedPromptWithHistory(userMessage: string, tenantId: string, storage: any, conversationHistory: any[]): Promise<string> {
+  // สร้าง Enhanced Prompt แบบพื้นฐาน
+  const basePrompt = await buildEnhancedPrompt(userMessage, tenantId, storage);
+  
+  // เพิ่ม Conversation History ถ้ามี
+  if (conversationHistory && conversationHistory.length > 2) {
+    const historySection = buildConversationHistorySection(conversationHistory, userMessage);
+    
+    // แทรก History ก่อนคำถามปัจจุบัน
+    const parts = basePrompt.split('=== คำถามจากผู้ใช้ ===');
+    if (parts.length === 2) {
+      return `${parts[0]}${historySection}\n=== คำถามจากผู้ใช้ ===${parts[1]}`;
+    }
+  }
+  
+  return basePrompt;
+}
+
+// 📜 Build conversation history section
+function buildConversationHistorySection(history: any[], currentMessage: string): string {
+  // กรองเอาเฉพาะข้อความที่เกี่ยวข้อง (ไม่เอาข้อความปัจจุบัน)
+  const relevantHistory = history.filter(msg => msg.content !== currentMessage).slice(-6); // เอา 6 ข้อความล่าสุด
+  
+  if (relevantHistory.length === 0) {
+    return "";
+  }
+  
+  let historySection = `=== บริบทการสนทนาก่อนหน้า ===\n`;
+  relevantHistory.forEach((msg, index) => {
+    const role = msg.role === 'user' ? '👤 ผู้ใช้' : '🤖 AI';
+    const content = msg.content.length > 150 ? msg.content.substring(0, 150) + '...' : msg.content;
+    historySection += `${role}: ${content}\n`;
+  });
+  historySection += `\n`;
+  
+  return historySection;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -4643,14 +4775,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // 🧠 Smart Message Processing: ตีความคำถามและดึงข้อมูลที่เกี่ยวข้อง
       console.log('🔍 Smart Processing - Original message:', content.trim());
-      const enhancedPrompt = await buildEnhancedPrompt(content.trim(), tenantId, storage);
+      
+      // 💬 Phase 2 เป้าหมายที่ 3: รวม Conversation History
+      const enhancedPrompt = await buildEnhancedPromptWithHistory(content.trim(), tenantId, storage, conversationHistory);
+      
       console.log('🧠 Smart Processing - Enhanced prompt length:', enhancedPrompt.length);
       console.log('🧠 Smart Processing - Enhanced prompt preview:', enhancedPrompt.substring(0, 500) + '...');
 
-      // สร้างการตอบกลับจาก AI ด้วย enhanced prompt
+      // สร้างการตอบกลับจาก AI ด้วย enhanced prompt (ไม่ต้องส่ง history ซ้ำ)
       const aiResponse = await geminiService.generateChatResponse(
         enhancedPrompt,
-        conversationHistory
+        [] // History ถูกรวมไว้ใน prompt แล้ว
       );
 
       // บันทึกการตอบกลับของ AI
