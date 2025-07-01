@@ -138,21 +138,60 @@ function formatWorkLogsForAI(workLogs: any[]): string {
     return "ไม่มีข้อมูลใบบันทึกประจำวัน\n";
   }
 
-  // 🎯 Phase 2: สรุปข้อมูลภาพรวมก่อน
+  // 🎯 Enhanced: สรุปข้อมูลภาพรวมพร้อม relational data
   const summary = analyzeDailyWorkLogs(workLogs);
   let formatted = `📊 สรุปภาพรวม: จำนวน ${workLogs.length} รายการ\n`;
   formatted += `${summary}\n\n`;
 
-  // 📝 รายการ 5 รายการแรก (ตัวอย่าง)
-  formatted += `📋 รายการตัวอย่าง (${Math.min(5, workLogs.length)} รายการแรก):\n`;
+  // 📝 รายละเอียดครบถ้วน (5 รายการแรก)
+  formatted += `📋 รายละเอียดใบบันทึกประจำวัน (${Math.min(5, workLogs.length)} รายการแรก):\n`;
   workLogs.slice(0, 5).forEach((log, index) => {
-    const hours = log.hours ? `${log.hours}ชม` : '';
-    const team = log.teamName || log.teamId?.substring(0, 8) || '';
-    formatted += `${index + 1}. ${log.date} | ${team} | ${hours} | ${log.status || ''}\n`;
+    const hours = log.hoursWorked || log.hours || '0';
+    const teamName = log.team?.name || log.teamName || 'ไม่ระบุทีม';
+    const employeeName = log.employee 
+      ? `${log.employee.firstName} ${log.employee.lastName}` 
+      : log.employeeName || 'ไม่ระบุพนักงาน';
+    const status = log.status || 'ไม่ระบุสถานะ';
+    const quantity = log.quantityCompleted || 0;
+    
+    formatted += `\n${index + 1}. วันที่: ${log.date} | รายงาน: ${log.reportNumber || 'ไม่มี'}\n`;
+    formatted += `   - พนักงาน: ${employeeName} | ทีม: ${teamName}\n`;
+    formatted += `   - ชั่วโมง: ${hours} ชม | จำนวน: ${quantity} ชิ้น | สถานะ: ${status}\n`;
+    
+    // Sub Job และ Work Order Information
+    if (log.subJob) {
+      const productName = log.subJob.productName || 'ไม่ระบุสินค้า';
+      const colorName = log.subJob.color?.name || 'ไม่ระบุสี';
+      const sizeName = log.subJob.size?.name || 'ไม่ระบุขนาด';
+      formatted += `   - สินค้า: ${productName} (${colorName}, ${sizeName})\n`;
+      
+      // Customer Information
+      if (log.subJob.workOrder?.customer) {
+        const customerName = log.subJob.workOrder.customer.name || 'ไม่ระบุลูกค้า';
+        const orderNumber = log.subJob.workOrder.orderNumber || 'ไม่มีเลขที่';
+        formatted += `   - ลูกค้า: ${customerName} | ใบสั่งงาน: ${orderNumber}\n`;
+      }
+    }
+    
+    // Work Description
+    if (log.workDescription) {
+      const description = log.workDescription.length > 50 
+        ? log.workDescription.substring(0, 50) + '...' 
+        : log.workDescription;
+      formatted += `   - รายละเอียด: ${description}\n`;
+    }
+    
+    // Notes
+    if (log.notes) {
+      const notes = log.notes.length > 30 
+        ? log.notes.substring(0, 30) + '...' 
+        : log.notes;
+      formatted += `   - หมายเหตุ: ${notes}\n`;
+    }
   });
 
   if (workLogs.length > 5) {
-    formatted += `... และอีก ${workLogs.length - 5} รายการ\n`;
+    formatted += `\n... และอีก ${workLogs.length - 5} รายการ\n`;
   }
 
   return formatted;

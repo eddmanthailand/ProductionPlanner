@@ -1128,6 +1128,14 @@ export const subJobsRelations = relations(subJobs, ({ one, many }) => ({
     fields: [subJobs.workOrderId],
     references: [workOrders.id]
   }),
+  color: one(colors, {
+    fields: [subJobs.colorId],
+    references: [colors.id]
+  }),
+  size: one(sizes, {
+    fields: [subJobs.sizeId],
+    references: [sizes.id]
+  }),
   dailyWorkLogs: many(dailyWorkLogs)
 }));
 
@@ -1147,9 +1155,13 @@ export const dailyWorkLogsRelations = relations(dailyWorkLogs, ({ one }) => ({
     fields: [dailyWorkLogs.subJobId],
     references: [subJobs.id]
   }),
-  employee: one(users, {
+  employee: one(employees, {
     fields: [dailyWorkLogs.employeeId],
-    references: [users.id]
+    references: [employees.id]
+  }),
+  team: one(teams, {
+    fields: [dailyWorkLogs.teamId],
+    references: [teams.id]
   })
 }));
 
