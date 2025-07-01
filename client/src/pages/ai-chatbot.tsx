@@ -151,7 +151,7 @@ export default function AIChatbot() {
   });
 
   const sendMessageMutation = useMutation({
-    mutationFn: (messageData: { conversationId: number; content: string }) =>
+    mutationFn: (messageData: { conversationId: number; message: string }) =>
       apiRequest('/api/chat/messages', {
         method: 'POST',
         body: messageData
@@ -222,7 +222,7 @@ export default function AIChatbot() {
     
     sendMessageMutation.mutate({
       conversationId: currentConversationId!,
-      content: inputMessage
+      message: inputMessage
     });
   };
 
