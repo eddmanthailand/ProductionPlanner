@@ -319,11 +319,7 @@ export default function AIChatbot() {
           sidebarCollapsed ? 'w-0 overflow-hidden' : 'w-80'
         }`}>
           <div className="p-4 border-b border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Bot className="h-6 w-6 text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
-              </div>
+            <div className="flex items-center gap-3 mb-3">
               <Button
                 onClick={() => createConversationMutation.mutate()}
                 disabled={createConversationMutation.isPending}
@@ -332,6 +328,10 @@ export default function AIChatbot() {
               >
                 <Plus className="h-4 w-4" />
               </Button>
+              <div className="flex items-center gap-2">
+                <Bot className="h-6 w-6 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-900">AI Assistant</h2>
+              </div>
             </div>
             <p className="text-sm text-gray-600">
               ผู้ช่วย AI สำหรับระบบจัดการการผลิต
