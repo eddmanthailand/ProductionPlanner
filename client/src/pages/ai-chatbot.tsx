@@ -308,12 +308,15 @@ export default function AIChatbot() {
 
   // Parse action data from AI message
   const parseActionData = (content: string) => {
+    console.log('🤖 Parsing content for actions:', content.substring(0, 200));
+    
     try {
       // First check if the content looks like JSON
       if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+        console.log('🤖 Detected pure JSON format');
         const parsed = JSON.parse(content);
         if (parsed.type === 'action_response' && parsed.action) {
-          console.log('🤖 Action Data Parsed:', parsed.action);
+          console.log('🤖 Action Data Parsed from pure JSON:', parsed.action);
           return parsed.action;
         }
       }
@@ -321,6 +324,7 @@ export default function AIChatbot() {
       // Try to find JSON block within ```json``` code blocks
       const jsonBlockMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonBlockMatch) {
+        console.log('🤖 Found JSON code block:', jsonBlockMatch[1].substring(0, 100));
         const parsed = JSON.parse(jsonBlockMatch[1]);
         if (parsed.type === 'action_response' && parsed.action) {
           console.log('🤖 Action Data Parsed from code block:', parsed.action);
@@ -329,11 +333,12 @@ export default function AIChatbot() {
       }
       
       // Try to find any JSON object in the content
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      const jsonMatch = content.match(/\{[\s\S]*?\}/);
       if (jsonMatch) {
+        console.log('🤖 Found JSON object:', jsonMatch[0].substring(0, 100));
         const parsed = JSON.parse(jsonMatch[0]);
         if (parsed.type === 'action_response' && parsed.action) {
-          console.log('🤖 Action Data Parsed from match:', parsed.action);
+          console.log('🤖 Action Data Parsed from JSON match:', parsed.action);
           return parsed.action;
         }
         if (parsed.suggestedAction) {
@@ -341,6 +346,8 @@ export default function AIChatbot() {
           return parsed.suggestedAction;
         }
       }
+      
+      console.log('🤖 No valid action JSON found in content');
     } catch (error) {
       console.log('🤖 Action parsing failed:', error);
     }
