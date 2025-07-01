@@ -174,29 +174,67 @@ function analyzeDailyWorkLogs(logs: any[]): string {
   return summary;
 }
 
-// 📝 Phase 2: Format work orders for better AI understanding (เวอร์ชันกระชับ)
+// 📝 Enhanced: Format work orders with complete relational data
 function formatWorkOrdersForAI(workOrders: any[]): string {
   if (!workOrders || workOrders.length === 0) {
     return "ไม่มีข้อมูลใบสั่งงาน\n";
   }
 
-  // 🎯 Phase 2: สรุปข้อมูลภาพรวมก่อน
+  // 🎯 Enhanced: สรุปข้อมูลภาพรวมพร้อม relational data
   const summary = analyzeWorkOrders(workOrders);
   let formatted = `📊 สรุปภาพรวม: จำนวน ${workOrders.length} ใบสั่งงาน\n`;
   formatted += `${summary}\n\n`;
 
-  // 📝 รายการ 5 รายการแรก (ตัวอย่าง)
-  formatted += `📋 รายการตัวอย่าง (${Math.min(5, workOrders.length)} รายการแรก):\n`;
-  workOrders.slice(0, 5).forEach((order, index) => {
+  // 📝 รายละเอียดครบถ้วน (3 รายการแรก)
+  formatted += `📋 รายละเอียดใบสั่งงาน (${Math.min(3, workOrders.length)} รายการแรก):\n`;
+  workOrders.slice(0, 3).forEach((order, index) => {
     const orderNum = order.orderNumber || order.id || '';
-    const customer = order.customerName || 'ไม่ระบุลูกค้า';
-    const status = order.status || '';
+    const customer = order.customer ? `${order.customer.name} (${order.customer.phone || 'ไม่มีเบอร์'})` : order.customerName || 'ไม่ระบุลูกค้า';
+    const status = order.status || 'ไม่ระบุสถานะ';
     const date = order.createdAt ? order.createdAt.split('T')[0] : '';
-    formatted += `${index + 1}. ${orderNum} | ${customer} | ${status} | ${date}\n`;
+    const workType = order.workType ? order.workType.name : 'ไม่ระบุประเภท';
+    const totalAmount = order.totalAmount || '0';
+    const deliveryDate = order.deliveryDate || 'ไม่กำหนด';
+
+    formatted += `\n${index + 1}. ใบสั่งงาน: ${orderNum}\n`;
+    formatted += `   - ลูกค้า: ${customer}\n`;
+    formatted += `   - สถานะ: ${status} | ประเภท: ${workType}\n`;
+    formatted += `   - มูลค่า: ${totalAmount} บาท | กำหนดส่ง: ${deliveryDate}\n`;
+    formatted += `   - วันที่สร้าง: ${date}\n`;
+    
+    // Sub Jobs Information
+    if (order.subJobs && order.subJobs.length > 0) {
+      const totalSubJobs = order.subJobs.length;
+      const completedJobs = order.subJobs.filter((sj: any) => 
+        sj.dailyWorkLogs && sj.dailyWorkLogs.length > 0
+      ).length;
+      formatted += `   - งานย่อย: ${totalSubJobs} งาน (ดำเนินการแล้ว ${completedJobs} งาน)\n`;
+      
+      // Show recent work logs if available
+      const recentLogs = order.subJobs
+        .flatMap((sj: any) => sj.dailyWorkLogs || [])
+        .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, 2);
+      
+      if (recentLogs.length > 0) {
+        formatted += `   - งานล่าสุด: `;
+        recentLogs.forEach((log: any, i: number) => {
+          const employeeName = log.employee ? `${log.employee.firstName} ${log.employee.lastName}` : 'ไม่ระบุ';
+          const logDate = log.date || log.createdAt?.split('T')[0] || '';
+          formatted += `${logDate} (${employeeName})${i < recentLogs.length - 1 ? ', ' : ''}`;
+        });
+        formatted += `\n`;
+      }
+    }
+    
+    // Attachments Information
+    if (order.attachments && order.attachments.length > 0) {
+      formatted += `   - ไฟล์แนบ: ${order.attachments.length} ไฟล์\n`;
+    }
   });
 
-  if (workOrders.length > 5) {
-    formatted += `... และอีก ${workOrders.length - 5} ใบสั่งงาน\n`;
+  if (workOrders.length > 3) {
+    formatted += `\n... และอีก ${workOrders.length - 3} ใบสั่งงาน\n`;
   }
 
   return formatted;
@@ -204,15 +242,42 @@ function formatWorkOrdersForAI(workOrders: any[]): string {
 
 // 🔍 Phase 2: Analyze work orders summary
 function analyzeWorkOrders(orders: any[]): string {
-  const customers = new Set(orders.map(order => order.customerName || order.customerId)).size;
   const statuses = orders.reduce((acc: any, order) => {
     acc[order.status || 'ไม่ระบุ'] = (acc[order.status || 'ไม่ระบุ'] || 0) + 1;
     return acc;
   }, {});
-  const totalQuantity = orders.reduce((sum, order) => sum + (parseFloat(order.quantity) || 0), 0);
+  
+  const customers = new Set(orders.map(order => order.customer?.name || order.customerName || 'ไม่ระบุ')).size;
+  const totalAmount = orders.reduce((sum, order) => sum + (parseFloat(order.totalAmount) || 0), 0);
+  const dates = new Set(orders.map(order => order.createdAt?.split('T')[0]));
+  
+  // Enhanced: Analyze sub jobs and work progress
+  const totalSubJobs = orders.reduce((sum, order) => sum + (order.subJobs?.length || 0), 0);
+  const jobsWithProgress = orders.reduce((sum, order) => {
+    return sum + (order.subJobs?.filter((sj: any) => sj.dailyWorkLogs && sj.dailyWorkLogs.length > 0).length || 0);
+  }, 0);
+  
+  // Work types analysis
+  const workTypes = orders.reduce((acc: any, order) => {
+    const type = order.workType?.name || order.workTypeId || 'ไม่ระบุประเภท';
+    acc[type] = (acc[type] || 0) + 1;
+    return acc;
+  }, {});
+  
+  // Attachments count
+  const totalAttachments = orders.reduce((sum, order) => sum + (order.attachments?.length || 0), 0);
 
-  let summary = `- ลูกค้า: ${customers} ราย | จำนวนรวม: ${totalQuantity} ชิ้น\n`;
-  summary += `- สถานะงาน: ${Object.entries(statuses).map(([status, count]) => `${status}(${count})`).join(', ')}`;
+  let summary = `- ลูกค้า: ${customers} ราย | มูลค่ารวม: ${totalAmount.toLocaleString()} บาท | ช่วงวันที่: ${dates.size} วัน\n`;
+  summary += `- สถานะงาน: ${Object.entries(statuses).map(([status, count]) => `${status}(${count})`).join(', ')}\n`;
+  summary += `- งานย่อย: ${totalSubJobs} งาน (ดำเนินการแล้ว ${jobsWithProgress} งาน)\n`;
+  
+  if (Object.keys(workTypes).length > 0 && Object.keys(workTypes).some(key => key !== 'ไม่ระบุประเภท')) {
+    summary += `- ประเภทงาน: ${Object.entries(workTypes).map(([type, count]) => `${type}(${count})`).join(', ')}\n`;
+  }
+  
+  if (totalAttachments > 0) {
+    summary += `- ไฟล์แนบ: ${totalAttachments} ไฟล์`;
+  }
   
   return summary;
 }
