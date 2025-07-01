@@ -134,26 +134,15 @@ Please provide a helpful response as a production management system assistant:`;
         responseText = "ขออภัย ระบบประมวลผลคำตอบไม่สำเร็จ กรุณาลองถามใหม่ด้วยคำถามที่ง่ายกว่า";
       }
 
-      // If this was an actionable request and we don't have proper JSON, force a standard response
+      // Only create action response JSON if we actually have a clear actionable request
+      // that the AI confirmed as actionable, not just any message with action keywords
       if (isActionableRequest && !responseText.includes('"action_response"')) {
         console.log(`⚠️ Actionable request detected but no proper JSON response received`);
         console.log(`Raw response: ${responseText.substring(0, 200)}...`);
         
-        // Return a properly formatted action response
-        const actionResponse = {
-          type: "action_response",
-          message: "ระบบตรวจพบคำขอที่สามารถดำเนินการได้ แต่ยังไม่สามารถประมวลผลอัตโนมัติได้ในขณะนี้",
-          action: {
-            type: "MANUAL_REVIEW",
-            description: "ต้องการการตรวจสอบด้วยตนเอง",
-            payload: {
-              userRequest: userMessage
-            }
-          }
-        };
-        
-        const jsonString = JSON.stringify(actionResponse, null, 2);
-        return `การตอบสนองปกติ: ${responseText}\n\n\`\`\`json\n${jsonString}\n\`\`\``;
+        // Just return the regular response for now - don't force JSON for simple interactions
+        // The AI should only return JSON when it's actually appropriate
+        return responseText;
       }
 
       return responseText;
@@ -335,18 +324,28 @@ Generate a short, descriptive title in Thai that captures the main topic discuss
    * Detect if user message contains actionable requests
    */
   private detectActionableRequest(message: string): boolean {
-    const lowerMessage = message.toLowerCase();
+    const lowerMessage = message.toLowerCase().trim();
     
-    // Keywords that suggest actionable requests
-    const actionKeywords = [
-      'เปลี่ยนสถานะ', 'อัปเดต', 'แก้ไข', 'เพิ่ม', 'ลบ', 'บันทึก', 'สร้าง',
-      'update', 'change', 'modify', 'add', 'create', 'delete', 'save',
-      'ช่วยเปลี่ยน', 'ช่วยอัปเดต', 'ช่วยแก้ไข', 'ช่วยเพิ่ม', 'ช่วยสร้าง',
-      'ทำให้', 'จัดการ', 'ดำเนินการ', 'ปรับ', 'แก้', 'ตั้งค่า',
-      'เริ่มงาน', 'หยุดงาน', 'เสร็จสิ้น', 'ยกเลิก', 'ลบออก'
+    // Exclude common greetings and simple questions
+    const greetings = [
+      'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'hello', 'hi', 'หวัดดี',
+      'ขอบคุณ', 'ขอบคุณครับ', 'ขอบคุณค่ะ', 'thanks', 'thank you'
     ];
     
-    return actionKeywords.some(keyword => lowerMessage.includes(keyword));
+    // If it's just a greeting, don't treat as actionable
+    if (greetings.some(greeting => lowerMessage === greeting)) {
+      return false;
+    }
+    
+    // Specific actionable phrases that clearly indicate intent to modify data
+    const specificActionKeywords = [
+      'เปลี่ยนสถานะของ', 'อัปเดตข้อมูล', 'แก้ไขใบสั่งงาน', 'บันทึกงาน', 'สร้างใบบันทึก',
+      'ช่วยเปลี่ยนสถานะ', 'ช่วยอัปเดต', 'ช่วยแก้ไข', 'ช่วยบันทึก', 'ช่วยสร้าง',
+      'ทำการอัปเดต', 'ดำเนินการเปลี่ยน', 'ปรับสถานะ', 'แก้ไขข้อมูล',
+      'เริ่มงานใหม่', 'หยุดการทำงาน', 'เสร็จสิ้นงาน', 'ยกเลิกใบสั่งงาน'
+    ];
+    
+    return specificActionKeywords.some(keyword => lowerMessage.includes(keyword));
   }
 
   /**
