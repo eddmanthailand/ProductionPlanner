@@ -4601,7 +4601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           AND dwl.date >= $2
           AND dwl.date <= $3
           AND dwl.deleted_at IS NULL
-        ORDER BY dwl.date ASC, wo.order_number ASC, COALESCE(c.name, '') ASC, COALESCE(s.name, '') ASC, COALESCE(ws.name, '') ASC
+        ORDER BY dwl.id ASC
       `, [teamId, startDate, endDate]);
 
       console.log('API: Found daily_work_logs revenue data (using quantity_completed):', result.rows.length);

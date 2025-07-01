@@ -136,6 +136,7 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
   - **การแก้ไข**: ปรับ API `/api/team-revenue-report` ให้ใช้ `daily_work_logs.quantity_completed` แทน `sub_jobs.quantity`
   - **ผลลัพธ์**: ระบบทั้ง 3 แหล่งแสดงตัวเลขเดียวกัน = 436 (สอดคล้องกัน 100%)
   - **ข้อมูลที่แก้ไข**: มีการปรับจำนวนงานหลังสร้างใบสั่งงาน จาก 414 เป็น 436 ตัว
+  - **แก้ไขเพิ่มเติม**: ปรับการเรียงลำดับในรายงานรายได้จาก `ORDER BY date, order_number, color, size` เป็น `ORDER BY dwl.id ASC` เพื่อให้ตรงกับลำดับการบันทึกจริง
 
 - July 1, 2025: ✅ ระบบ Chart Generation สำเร็จ (Phase 3 สมบูรณ์)
   - **Enhanced Backend**: ปรับปรุง shouldGenerateChart ตรวจจับคำสั่งหลากหลาย
