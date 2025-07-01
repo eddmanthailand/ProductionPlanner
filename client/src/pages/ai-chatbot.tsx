@@ -36,13 +36,33 @@ interface ActionData {
 // Parse action data from AI response
 function parseActionData(content: string): ActionData | null {
   try {
-    // Look for JSON blocks in the content
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
-                     content.match(/\{[\s\S]*"action_response"[\s\S]*\}/);
+    // Clean content first - remove HTML and unwanted characters
+    const cleanContent = content
+      .replace(/<!DOCTYPE[^>]*>/gi, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/&[#\w]+;/g, '')
+      .trim();
+    
+    // Look for JSON blocks in the cleaned content
+    const jsonMatch = cleanContent.match(/```json\s*([\s\S]*?)\s*```/) || 
+                     cleanContent.match(/\{[\s\S]*?"action_response"[\s\S]*?\}/);
     
     if (!jsonMatch) return null;
     
-    const jsonStr = jsonMatch[1] || jsonMatch[0];
+    let jsonStr = jsonMatch[1] || jsonMatch[0];
+    
+    // Additional cleanup for JSON string
+    jsonStr = jsonStr
+      .replace(/```json/g, '')
+      .replace(/```/g, '')
+      .replace(/^\s*[\r\n]+|[\r\n]+\s*$/g, '')
+      .trim();
+    
+    // Validate JSON format
+    if (!jsonStr.startsWith('{') || !jsonStr.endsWith('}')) {
+      return null;
+    }
+    
     const parsed = JSON.parse(jsonStr);
     
     if (parsed.action_response) {
@@ -121,7 +141,9 @@ export default function AIChatbot() {
 
   // Update messages when conversation changes
   useEffect(() => {
-    setMessages(conversationMessages);
+    if (Array.isArray(conversationMessages)) {
+      setMessages(conversationMessages);
+    }
   }, [conversationMessages]);
 
   // Scroll to bottom when messages change
@@ -260,7 +282,7 @@ export default function AIChatbot() {
             </div>
             
             <div className="space-y-2 overflow-y-auto">
-              {conversations.map((conversation: ChatConversation) => (
+              {Array.isArray(conversations) && conversations.map((conversation: ChatConversation) => (
                 <Button
                   key={conversation.id}
                   variant={currentConversationId === conversation.id ? "default" : "ghost"}
@@ -356,7 +378,7 @@ export default function AIChatbot() {
                             const chartData = parseChartData(message.content);
                             if (chartData) {
                               try {
-                                return <AIChart data={chartData} />;
+                                return <AIChart chartData={chartData} />;
                               } catch (error) {
                                 return (
                                   <p className="text-sm text-red-600">
