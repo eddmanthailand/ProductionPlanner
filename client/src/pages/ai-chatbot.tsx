@@ -163,7 +163,7 @@ export default function AIChatbot() {
 
   // Query messages for current conversation
   const { data: conversationMessages = [], refetch: refetchMessages } = useQuery({
-    queryKey: ['/api/chat/messages', currentConversationId],
+    queryKey: [`/api/chat/messages?conversationId=${currentConversationId}`],
     enabled: !!currentConversationId,
     refetchOnWindowFocus: false
   });

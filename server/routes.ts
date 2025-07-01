@@ -4847,6 +4847,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // ดึงข้อความในการสนทนา (endpoint ที่ frontend เรียกใช้)
+  app.get("/api/chat/messages", requireAuth, async (req: any, res: any) => {
+    try {
+      const conversationId = req.query.conversationId || req.headers['conversation-id'];
+      
+      if (!conversationId) {
+        return res.status(400).json({ message: "กรุณาระบุ conversationId" });
+      }
+      
+      const messages = await storage.getChatMessages(parseInt(conversationId));
+      res.json(messages);
+    } catch (error) {
+      console.error("Get messages error:", error);
+      res.status(500).json({ message: "ไม่สามารถดึงข้อความได้" });
+    }
+  });
+
   // ส่งข้อความใหม่ (endpoint ที่ frontend เรียกใช้)
   app.post("/api/chat/messages", requireAuth, async (req: any, res: any) => {
     try {
