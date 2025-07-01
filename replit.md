@@ -130,6 +130,14 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- July 1, 2025: ✅ แก้ไขปัญหา Maximum Update Depth Exceeded ใน AI Chatbot สำเร็จ
+  - **Fixed React Infinite Loop**: ลบ useState สำหรับ messages และใช้ข้อมูลจาก useQuery โดยตรง
+  - **Removed Problematic useEffect**: ลบ useEffect ที่ทำให้เกิด infinite loop ในการอัปเดต messages
+  - **Enhanced JSON Parsing**: ปรับปรุงการจัดการ HTML content ทั้งใน backend และ frontend
+  - **Improved Error Handling**: เพิ่มระบบ fallback สำหรับ actionable requests ที่ไม่ได้ JSON
+  - **Syntax Fix**: แก้ไข template string error ใน Gemini service
+  - **Result**: ระบบ AI Active Mode ทำงานได้เสียบแบบปกติ ไม่มี React errors อีกต่อไป
+
 - July 1, 2025: ✅ พัฒนา AI Assistant Active Mode สำเร็จ (Phase 4 เริ่มต้น)
   - **Enhanced Backend**: เพิ่ม API endpoint `/api/execute-action` สำหรับดำเนินการอัตโนมัติ
   - รองรับ 3 action types: UPDATE_WORK_ORDER_STATUS, CREATE_WORK_LOG, UPDATE_SUB_JOB
