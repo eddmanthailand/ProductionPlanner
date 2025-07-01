@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+// Card imports removed as not used
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-// Removed unused sidebar imports
 import { Plus, MessageSquare, Send, CheckCircle, Settings, User, Bot, BarChart3, TrendingUp, PieChart, Activity, Calendar, Menu } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { AIChart } from "@/components/ui/chart";
@@ -33,73 +32,14 @@ interface ActionData {
   data: any;
 }
 
-// Parse action data from AI response
 function parseActionData(content: string): ActionData | null {
   try {
-    // Early exit if content appears to be full HTML document
-    if (content.trim().startsWith('<!DOCTYPE')) {
-      console.log('⚠️ Detected HTML document, skipping action parsing');
-      return null;
+    const actionMatch = content.match(/\[ACTION\](.*?)\[\/ACTION\]/s);
+    if (actionMatch) {
+      const actionContent = actionMatch[1].trim();
+      const parsed = JSON.parse(actionContent);
+      return parsed;
     }
-
-    // Clean content first - remove HTML and unwanted characters  
-    const cleanContent = content
-      .replace(/<!DOCTYPE[^>]*>/gi, '')
-      .replace(/<html[^>]*>[\s\S]*?<\/html>/gi, '')
-      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
-      .replace(/<body[^>]*>/gi, '')
-      .replace(/<\/body>/gi, '')
-      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
-      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
-      .replace(/<[^>]*>/g, '')
-      .replace(/&[#\w]+;/g, '')
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
-      .replace(/&amp;/g, '&')
-      .replace(/&quot;/g, '"')
-      .trim();
-    
-    // Look for JSON blocks in the cleaned content
-    const jsonMatch = cleanContent.match(/```json\s*([\s\S]*?)\s*```/) || 
-                     cleanContent.match(/\{[\s\S]*?"type":\s*"action_response"[\s\S]*?\}/) ||
-                     cleanContent.match(/\{[\s\S]*?"action"[\s\S]*?\}/);
-    
-    if (!jsonMatch) return null;
-    
-    let jsonStr = jsonMatch[1] || jsonMatch[0];
-    
-    // Additional cleanup for JSON string
-    jsonStr = jsonStr
-      .replace(/```json/g, '')
-      .replace(/```/g, '')
-      .replace(/^\s*[\r\n]+|[\r\n]+\s*$/g, '')
-      .trim();
-    
-    // Validate JSON format
-    if (!jsonStr.startsWith('{') || !jsonStr.endsWith('}')) {
-      return null;
-    }
-    
-    const parsed = JSON.parse(jsonStr);
-    
-    // Check for different JSON structures
-    if (parsed.type === "action_response" && parsed.action) {
-      return {
-        type: parsed.action.type,
-        description: parsed.action.description || parsed.message,
-        data: parsed.action.payload || parsed.action
-      };
-    }
-    
-    if (parsed.action_response) {
-      return {
-        type: parsed.action_response.type,
-        description: parsed.action_response.description,
-        data: parsed.action_response.data
-      };
-    }
-    
     return null;
   } catch (error) {
     console.error('Error parsing action data:', error);
@@ -107,195 +47,195 @@ function parseActionData(content: string): ActionData | null {
   }
 }
 
-// Parse chart data from AI response
 function parseChartData(content: string) {
   try {
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/) || 
-                     content.match(/\{[\s\S]*"chart_response"[\s\S]*\}/);
+    let jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (!jsonMatch) {
+      jsonMatch = content.match(/\[CHART\](.*?)\[\/CHART\]/s);
+    }
+    if (!jsonMatch) {
+      jsonMatch = content.match(/\{[\s\S]*"chart_response"[\s\S]*\}/);
+    }
     
-    if (!jsonMatch) return null;
+    if (jsonMatch) {
+      const jsonText = jsonMatch[1] || jsonMatch[0];
+      const parsed = JSON.parse(jsonText.trim());
+      
+      if (parsed.chart_response) {
+        return parsed.chart_response;
+      }
+      
+      if (parsed.type && parsed.data) {
+        return parsed;
+      }
+    }
     
-    const jsonStr = jsonMatch[1] || jsonMatch[0];
-    const parsed = JSON.parse(jsonStr);
-    
-    return parsed.chart_response || parsed;
+    return null;
   } catch (error) {
-    console.error('Error parsing chart data:', error);
+    console.error('Error parsing chart data:', error)
     return null;
   }
 }
 
-// Check if content is a code block
 function isCodeBlock(content: string): boolean {
-  return content.includes('```') && (
-    content.includes('SELECT') || 
-    content.includes('INSERT') || 
-    content.includes('UPDATE') || 
-    content.includes('DELETE') ||
-    content.includes('CREATE TABLE') ||
-    content.includes('function') ||
-    content.includes('const ') ||
-    content.includes('import ')
-  );
+  return content.includes('```') || content.includes('<code>');
 }
 
-// Render message with clickable links
 function renderMessageWithLinks(content: string): string {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   return content.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:text-blue-800 underline">$1</a>');
 }
 
 export default function AIChatbot() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
-  const [message, setMessage] = useState('');
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
-  
-  // Add error handler for better UX
+  const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Query conversations
-  const { data: conversations = [], refetch: refetchConversations } = useQuery({
-    queryKey: ['/api/chat/conversations'],
-    refetchOnWindowFocus: false
+  const { data: conversations = [], isLoading: conversationsLoading } = useQuery({
+    queryKey: ['/api/chat/conversations']
+  }) as { data: ChatConversation[]; isLoading: boolean };
+
+  const { data: messages = [], isLoading: messagesLoading } = useQuery({
+    queryKey: ['/api/chat/messages', currentConversationId],
+    queryFn: () => currentConversationId ? 
+      apiRequest(`/api/chat/messages?conversationId=${currentConversationId}`) : 
+      Promise.resolve([]),
+    enabled: !!currentConversationId
   });
 
-  // Query messages for current conversation
-  const { data: conversationMessages = [], refetch: refetchMessages } = useQuery({
-    queryKey: [`/api/chat/messages?conversationId=${currentConversationId}`],
-    enabled: !!currentConversationId,
-    refetchOnWindowFocus: false
-  });
-
-  // Use messages directly from query to avoid state issues
-  const messages = Array.isArray(conversationMessages) ? conversationMessages : [];
-
-  // Create new conversation mutation
   const createConversationMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest('/api/chat/conversations', {
-        method: 'POST',
-        body: { title: 'การสนทนาใหม่' }
-      });
-      return response;
-    },
+    mutationFn: () => apiRequest('/api/chat/conversations', {
+      method: 'POST',
+      body: JSON.stringify({ title: `สนทนาใหม่ ${new Date().toLocaleString('th-TH')}` })
+    }),
     onSuccess: (newConversation) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setCurrentConversationId(newConversation.id);
-      refetchConversations();
-      toast({ 
-        title: "สำเร็จ", 
-        description: "สร้างการสนทนาใหม่แล้ว" 
+      setErrorMessage(null);
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถสร้างการสนทนาใหม่ได้",
+        variant: "destructive",
       });
     }
   });
 
-  // Send message mutation
   const sendMessageMutation = useMutation({
-    mutationFn: async (messageText: string) => {
-      if (!currentConversationId) {
-        throw new Error('ไม่พบการสนทนา');
-      }
-      
-      // Clear any previous errors
-      setErrorMessage(null);
-      
-      const response = await apiRequest('/api/chat/messages', {
+    mutationFn: (messageData: { conversationId: number; content: string }) =>
+      apiRequest('/api/chat/messages', {
         method: 'POST',
-        body: {
-          conversationId: currentConversationId,
-          message: messageText
-        }
-      });
-      return response;
-    },
+        body: JSON.stringify(messageData)
+      }),
     onSuccess: () => {
-      refetchMessages();
-      setMessage('');
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/messages', currentConversationId] });
+      setInputMessage("");
       setErrorMessage(null);
     },
     onError: (error: any) => {
       console.error('Send message error:', error);
-      
-      // Handle JSON parsing errors specifically
-      if (error.message && error.message.includes('DOCTYPE')) {
-        setErrorMessage("ระบบตอบกลับในรูปแบบที่ไม่ถูกต้อง กรุณาลองใหม่");
-      } else if (error.message && error.message.includes('JSON')) {
-        setErrorMessage("เกิดข้อผิดพลาดในการประมวลผลคำตอบ กรุณาลองใหม่");
+      if (error.message.includes('API key')) {
+        setErrorMessage("ไม่พบการตั้งค่า AI API Key กรุณาไปที่หน้า 'การตั้งค่า AI' เพื่อเพิ่ม API Key ของ Gemini");
       } else {
-        const errorMsg = error.message || "ไม่สามารถส่งข้อความได้";
-        setErrorMessage(errorMsg);
+        setErrorMessage(error.message || "เกิดข้อผิดพลาดในการส่งข้อความ");
       }
-      
-      // Show user-friendly error
-      toast({
-        title: "การเชื่อมต่อมีปัญหา",
-        description: "AI กำลังประมวลผล กรุณารอสักครู่แล้วลองใหม่",
-        variant: "destructive"
-      });
     }
   });
 
-  // Execute action mutation
   const executeActionMutation = useMutation({
     mutationFn: async (actionData: ActionData) => {
-      const response = await apiRequest('/api/execute-action', {
+      return apiRequest('/api/execute-action', {
         method: 'POST',
-        body: actionData
+        body: JSON.stringify(actionData)
       });
-      return response;
     },
-    onSuccess: (result) => {
-      toast({
-        title: "สำเร็จ",
-        description: "ดำเนินการเรียบร้อยแล้ว",
-      });
-      
-      // Invalidate relevant queries
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/daily-work-logs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/work-orders'] });
       queryClient.invalidateQueries({ queryKey: ['/api/sub-jobs'] });
+      toast({
+        title: "สำเร็จ",
+        description: "ดำเนินการเรียบร้อยแล้ว",
+        variant: "default",
+      });
     },
     onError: (error: any) => {
       toast({
         title: "เกิดข้อผิดพลาด",
         description: error.message || "ไม่สามารถดำเนินการได้",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   });
 
-  const handleSendMessage = () => {
-    if (!message.trim()) return;
-    
-    if (!currentConversationId) {
-      toast({
-        title: "แจ้งเตือน",
-        description: "กรุณาสร้างการสนทนาใหม่ก่อน",
-        variant: "destructive"
-      });
-      return;
+  const executeAction = (actionData: ActionData) => {
+    if (confirm(`คุณต้องการให้ AI ดำเนินการ: ${actionData.description} ใช่หรือไม่?`)) {
+      executeActionMutation.mutate(actionData);
     }
+  };
 
-    sendMessageMutation.mutate(message);
+  useEffect(() => {
+    if (conversations.length > 0 && !currentConversationId) {
+      setCurrentConversationId(conversations[0].id);
+    }
+  }, [conversations, currentConversationId]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!inputMessage.trim()) return;
+    if (!currentConversationId) {
+      const newConversation = await createConversationMutation.mutateAsync();
+      setCurrentConversationId(newConversation.id);
+    }
+    
+    sendMessageMutation.mutate({
+      conversationId: currentConversationId!,
+      content: inputMessage
+    });
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      setInputMessage(inputMessage + '\n');
+    } else if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
   };
 
-  const executeAction = (actionData: ActionData) => {
-    executeActionMutation.mutate(actionData);
-  };
+  const groupedMessages = useMemo(() => {
+    if (!Array.isArray(messages)) return [];
+    
+    const grouped = [];
+    let currentGroup = null;
+    
+    for (const message of messages) {
+      if (!currentGroup || currentGroup.role !== message.role) {
+        currentGroup = {
+          role: message.role,
+          messages: [message]
+        };
+        grouped.push(currentGroup);
+      } else {
+        currentGroup.messages.push(message);
+      }
+    }
+    
+    return grouped;
+  }, [messages]);
 
-  // Suggested prompts for quick start
   const suggestedPrompts = [
     { icon: BarChart3, text: "สร้างกราฟแสดงรายได้ของแต่ละทีม", category: "chart" },
-    { icon: TrendingUp, text: "วิเคราะห์แนวโน้มการผลิตของเดือนนี้", category: "analysis" },
-    { icon: PieChart, text: "แสดงสัดส่วนสินค้าที่ผลิตมากที่สุด", category: "chart" },
+    { icon: TrendingUp, text: "วิเคราะห์แนวโน้มการผลิตเดือนนี้", category: "analysis" },
+    { icon: PieChart, text: "แสดงสัดส่วนสถานะงานในระบบ", category: "chart" },
     { icon: Activity, text: "สรุปใบบันทึกประจำวันของวันนี้", category: "summary" },
     { icon: Calendar, text: "แสดงงานที่ค้างอยู่ในสัปดาห์นี้", category: "analysis" }
   ];
@@ -306,248 +246,241 @@ export default function AIChatbot() {
       <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden bg-white border-r border-gray-200`}>
         <div className="p-4 h-full flex flex-col">
           <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-800">การสนทนา AI</h2>
+            <h2 className="text-lg font-semibold text-gray-800">การสนทนา AI</h2>
+            <Button
+              onClick={() => createConversationMutation.mutate()}
+              disabled={createConversationMutation.isPending}
+              size="sm"
+              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+            >
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
+          
+          <div className="space-y-2 overflow-y-auto">
+            {Array.isArray(conversations) && conversations.map((conversation: ChatConversation) => (
               <Button
-                onClick={() => createConversationMutation.mutate()}
-                disabled={createConversationMutation.isPending}
-                size="sm"
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
+                key={conversation.id}
+                variant={currentConversationId === conversation.id ? "default" : "ghost"}
+                className={`w-full justify-start text-left h-auto p-3 ${
+                  currentConversationId === conversation.id 
+                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
+                    : 'hover:bg-gray-100'
+                }`}
+                onClick={() => setCurrentConversationId(conversation.id)}
               >
-                <Plus className="w-4 h-4" />
+                <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
+                <span className="truncate">{conversation.title}</span>
               </Button>
-            </div>
-            
-            <div className="space-y-2 overflow-y-auto">
-              {Array.isArray(conversations) && conversations.map((conversation: ChatConversation) => (
-                <Button
-                  key={conversation.id}
-                  variant={currentConversationId === conversation.id ? "default" : "ghost"}
-                  className={`w-full justify-start text-left h-auto p-3 ${
-                    currentConversationId === conversation.id 
-                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
-                      : 'hover:bg-gray-100'
-                  }`}
-                  onClick={() => setCurrentConversationId(conversation.id)}
-                >
-                  <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{conversation.title}</span>
-                </Button>
-              ))}
-            </div>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-          {/* Header */}
-          <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {!isSidebarOpen && (
-                <Button
-                  onClick={() => setIsSidebarOpen(true)}
-                  size="sm"
-                  variant="outline"
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0"
-                >
-                  <Menu className="w-4 h-4 mr-2" />
-                  แสดงการสนทนา
-                </Button>
-              )}
-              <h1 className="text-xl font-bold text-gray-800">AI ผู้ช่วย</h1>
-            </div>
-            <div className="flex items-center gap-2">
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {!isSidebarOpen && (
               <Button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                onClick={() => setIsSidebarOpen(true)}
                 size="sm"
                 variant="outline"
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white border-0"
               >
-                <Menu className="w-4 h-4" />
+                <Menu className="w-4 h-4 mr-2" />
+                แสดงการสนทนา
               </Button>
-            </div>
+            )}
+            <h1 className="text-xl font-bold text-gray-800">AI ผู้ช่วย</h1>
           </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              size="sm"
+              variant="outline"
+            >
+              <Menu className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
 
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-orange-500 rounded-full flex items-center justify-center">
-                  <span className="text-xs text-white">!</span>
-                </div>
-                <div className="text-sm text-orange-800">
-                  <span className="font-medium">การเชื่อมต่อมีปัญหา:</span> {errorMessage}
-                </div>
-                <Button
-                  onClick={() => setErrorMessage(null)}
-                  size="sm"
-                  variant="ghost"
-                  className="ml-auto h-6 w-6 p-0 text-orange-600 hover:text-orange-800"
-                >
-                  ×
-                </Button>
+        {/* Error Message */}
+        {errorMessage && (
+          <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-orange-50 to-red-50 border border-orange-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Settings className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="text-orange-800 font-medium">การตั้งค่า AI</p>
+                <p className="text-orange-700 text-sm mt-1">{errorMessage}</p>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4 min-w-0">
-            {!currentConversationId ? (
-              <div className="text-center py-12">
-                <Bot className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-600 mb-2">ยินดีต้อนรับสู่ AI ผู้ช่วย</h3>
-                <p className="text-gray-500 mb-6">สร้างการสนทนาใหม่เพื่อเริ่มต้น</p>
-                
-                <div className="max-w-2xl mx-auto">
-                  <h4 className="text-sm font-medium text-gray-600 mb-3">คำสั่งที่แนะนำ:</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {currentConversationId ? (
+            groupedMessages.length > 0 ? (
+              groupedMessages.map((group, groupIndex) => (
+                <div key={groupIndex} className="space-y-2">
+                  {group.messages.map((message) => (
+                    <div
+                      key={message.id}
+                      className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      {message.role === 'assistant' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                          <Bot className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                      <div
+                        className={`max-w-[85%] rounded-lg p-3 ${
+                          message.role === 'user'
+                            ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white'
+                            : 'bg-white border border-gray-200 text-gray-800'
+                        }`}
+                      >
+                        {(() => {
+                          const actionData = parseActionData(message.content);
+                          const chartData = parseChartData(message.content);
+                          
+                          if (actionData) {
+                            const cleanContent = message.content.replace(/\[ACTION\](.*?)\[\/ACTION\]/s, '').trim();
+                            return (
+                              <div className="space-y-3">
+                                {cleanContent && (
+                                  <div
+                                    className="prose prose-sm max-w-none whitespace-pre-wrap"
+                                    dangerouslySetInnerHTML={{
+                                      __html: renderMessageWithLinks(cleanContent)
+                                    }}
+                                  />
+                                )}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                                  <div className="flex items-center gap-2 mb-2">
+                                    <CheckCircle className="w-4 h-4 text-blue-600" />
+                                    <span className="text-blue-800 font-medium">การดำเนินการที่แนะนำ</span>
+                                  </div>
+                                  <p className="text-blue-700 text-sm mb-3">{actionData.description}</p>
+                                  <Button
+                                    onClick={() => executeAction(actionData)}
+                                    disabled={executeActionMutation.isPending}
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    {executeActionMutation.isPending ? 'กำลังดำเนินการ...' : 'ดำเนินการ'}
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          if (chartData) {
+                            const cleanContent = message.content
+                              .replace(/```json[\s\S]*?```/g, '')
+                              .replace(/\[CHART\][\s\S]*?\[\/CHART\]/g, '')
+                              .replace(/\{[\s\S]*?"chart_response"[\s\S]*?\}/g, '')
+                              .trim();
+                            return (
+                              <div className="space-y-4">
+                                {cleanContent && (
+                                  <div
+                                    className="prose prose-sm max-w-none whitespace-pre-wrap"
+                                    dangerouslySetInnerHTML={{
+                                      __html: renderMessageWithLinks(cleanContent)
+                                    }}
+                                  />
+                                )}
+                                <div className="bg-gray-50 rounded-lg p-4">
+                                  <AIChart data={chartData} />
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          if (isCodeBlock(message.content)) {
+                            return (
+                              <div
+                                className="prose prose-sm max-w-none"
+                                dangerouslySetInnerHTML={{
+                                  __html: renderMessageWithLinks(message.content.replace(/\n/g, '<br>'))
+                                }}
+                              />
+                            );
+                          }
+                          
+                          return (
+                            <div
+                              className="prose prose-sm max-w-none whitespace-pre-wrap"
+                              dangerouslySetInnerHTML={{
+                                __html: renderMessageWithLinks(message.content)
+                              }}
+                            />
+                          );
+                        })()}
+                      </div>
+                      {message.role === 'user' && (
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-teal-600 flex items-center justify-center flex-shrink-0">
+                          <User className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ))
+            ) : (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                  <Bot className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-800 mb-2">ยินดีต้อนรับสู่ AI ผู้ช่วย</h3>
+                  <p className="text-gray-600 mb-6">สร้างการสนทนาใหม่เพื่อเริ่มใช้งาน</p>
+                  <div className="grid grid-cols-1 gap-3 max-w-md">
+                    <p className="text-sm text-gray-500 mb-2">คำถามที่แนะนำ:</p>
                     {suggestedPrompts.map((prompt, index) => (
                       <Button
                         key={index}
                         variant="outline"
-                        className="h-auto p-3 text-left justify-start bg-white hover:bg-gray-50"
-                        onClick={() => {
-                          if (!currentConversationId) {
-                            createConversationMutation.mutate();
-                          }
-                          setMessage(prompt.text);
-                        }}
+                        className="justify-start text-left p-3 h-auto"
+                        onClick={() => setInputMessage(prompt.text)}
                       >
-                        <prompt.icon className="w-4 h-4 mr-2 text-blue-500" />
+                        <prompt.icon className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="text-sm">{prompt.text}</span>
                       </Button>
                     ))}
                   </div>
                 </div>
               </div>
-            ) : (
-              <>
-                {messages.map((message) => (
-                  <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] ${message.role === 'user' ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'} rounded-lg p-4 shadow-sm border`}>
-                      <div className="flex items-start gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.role === 'user' ? 'bg-blue-600' : 'bg-gray-100'}`}>
-                          {message.role === 'user' ? (
-                            <User className="w-4 h-4 text-white" />
-                          ) : (
-                            <Bot className="w-4 h-4 text-gray-600" />
-                          )}
-                        </div>
-                        <div className="flex-1 space-y-3">
-                          {/* Chart rendering */}
-                          {message.role === 'assistant' && (() => {
-                            const chartData = parseChartData(message.content);
-                            if (chartData) {
-                              try {
-                                return <AIChart chartData={chartData} />;
-                              } catch (error) {
-                                return (
-                                  <p className="text-sm text-red-600">
-                                    ข้อมูลกราฟไม่สมบูรณ์
-                                  </p>
-                                );
-                              }
-                            }
-                            return null;
-                          })()} 
-                          
-                          {/* Code block rendering */}
-                          {isCodeBlock(message.content) ? (
-                            <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-4 text-sm font-mono text-green-400 overflow-x-auto border border-slate-700 shadow-lg">
-                              <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-600">
-                                <div className="flex gap-1">
-                                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-                                  <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
-                                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                                </div>
-                                <span className="text-slate-400 text-xs ml-2">โค้ด</span>
-                              </div>
-                              <pre className="whitespace-pre-wrap text-green-300">{message.content}</pre>
-                            </div>
-                          ) : message.role === 'assistant' ? (
-                            <div className="space-y-4">
-                              {/* Clean content without HTML tags for display */}
-                              <div className="prose prose-sm max-w-none">
-                                <div 
-                                  className="text-sm leading-relaxed text-gray-800"
-                                  dangerouslySetInnerHTML={{ 
-                                    __html: renderMessageWithLinks(message.content)
-                                      .replace(/<!DOCTYPE[^>]*>/gi, '')
-                                      .replace(/<[^>]*>/g, '')
-                                      .replace(/&[#\w]+;/g, '')
-                                      .replace(/\n/g, '<br>') 
-                                  }}
-                                />
-                              </div>
-                              
-                              {/* Action Buttons - Active Mode */}
-                              {(() => {
-                                const actionData = parseActionData(message.content);
-                                if (!actionData) return null;
-                                
-                                return (
-                                  <div className="mt-4 p-4 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl shadow-sm">
-                                    <div className="flex items-start gap-3">
-                                      <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-full flex items-center justify-center flex-shrink-0 shadow-md">
-                                        <span className="text-xs text-white font-bold">✨</span>
-                                      </div>
-                                      <div className="flex-1">
-                                        <div className="text-sm font-semibold text-emerald-800 mb-2 flex items-center gap-2">
-                                          <span>🤖 การดำเนินการที่แนะนำ</span>
-                                        </div>
-                                        <div className="text-sm text-emerald-700 mb-4 leading-relaxed">
-                                          {actionData.description || 'AI แนะนำให้ดำเนินการดังต่อไปนี้'}
-                                        </div>
-                                        <Button
-                                          onClick={() => executeAction(actionData)}
-                                          disabled={executeActionMutation.isPending}
-                                          className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-5 py-2.5 text-sm font-semibold rounded-lg shadow-md hover:shadow-lg transition-all duration-200 border-0"
-                                        >
-                                          {executeActionMutation.isPending ? (
-                                            <>
-                                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                                              กำลังดำเนินการ...
-                                            </>
-                                          ) : (
-                                            <>
-                                              <CheckCircle className="w-4 h-4 mr-2" />
-                                              ยืนยันดำเนินการ
-                                            </>
-                                          )}
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              })()}
-                            </div>
-                          ) : (
-                            <p className="text-sm leading-relaxed whitespace-pre-wrap text-white">
-                              {message.content}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div ref={messagesEndRef} />
-              </>
-            )}
-          </div>
+            )
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-800 mb-2">เลือกการสนทนา</h3>
+                <p className="text-gray-600">เลือกการสนทนาจากรายการด้านซ้าย หรือสร้างการสนทนาใหม่</p>
+              </div>
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
 
-          {/* Input */}
+        {/* Input Area */}
+        {currentConversationId && (
           <div className="bg-white border-t border-gray-200 p-4">
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="พิมพ์ข้อความหา AI ผู้ช่วย... (กด Shift+Enter เพื่อขึ้นบรรทัดใหม่)"
-                className="flex-1 min-h-[44px] max-h-32 resize-none"
-                disabled={sendMessageMutation.isPending}
+                placeholder="พิมพ์ข้อความ AI ผู้ช่วย... (กด Shift + Enter เพื่อขึ้นบรรทัดใหม่)"
+                className="resize-none min-h-[40px] max-h-32"
+                rows={1}
               />
               <Button
                 onClick={handleSendMessage}
-                disabled={!message.trim() || sendMessageMutation.isPending}
+                disabled={sendMessageMutation.isPending || !inputMessage.trim()}
+                size="lg"
                 className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-6"
               >
                 {sendMessageMutation.isPending ? (
@@ -558,7 +491,7 @@ export default function AIChatbot() {
               </Button>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
