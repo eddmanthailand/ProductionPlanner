@@ -353,8 +353,8 @@ export default function AIChatbot() {
         queryClient.invalidateQueries({ queryKey: ['/api/sub-jobs'] });
         
         // Refresh conversation to show updated status
-        if (selectedConversationId) {
-          queryClient.invalidateQueries({ queryKey: ['/api/conversations', selectedConversationId, 'messages'] });
+        if (selectedConversation) {
+          queryClient.invalidateQueries({ queryKey: ['/api/conversations', selectedConversation, 'messages'] });
         }
       } else {
         throw new Error(response.message || 'Action failed');
@@ -656,12 +656,55 @@ export default function AIChatbot() {
                                     <pre className="whitespace-pre-wrap">{message.content}</pre>
                                   </div>
                                 ) : message.role === 'assistant' ? (
-                                  <div 
-                                    className="text-sm leading-relaxed text-gray-800"
-                                    dangerouslySetInnerHTML={{ 
-                                      __html: renderMessageWithLinks(message.content).replace(/\n/g, '<br>') 
-                                    }}
-                                  />
+                                  <div className="space-y-3">
+                                    <div 
+                                      className="text-sm leading-relaxed text-gray-800"
+                                      dangerouslySetInnerHTML={{ 
+                                        __html: renderMessageWithLinks(message.content).replace(/\n/g, '<br>') 
+                                      }}
+                                    />
+                                    
+                                    {/* Action Buttons - Active Mode */}
+                                    {(() => {
+                                      const actionData = parseActionData(message.content);
+                                      if (actionData) {
+                                        return (
+                                          <div className="mt-3 p-3 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+                                            <div className="flex items-start gap-3">
+                                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <span className="text-xs text-white font-bold">AI</span>
+                                              </div>
+                                              <div className="flex-1">
+                                                <div className="text-sm font-medium text-blue-800 mb-2">
+                                                  🤖 การดำเนินการที่แนะนำ
+                                                </div>
+                                                <div className="text-sm text-blue-700 mb-3">
+                                                  {actionData.description || 'AI แนะนำให้ดำเนินการดังต่อไปนี้'}
+                                                </div>
+                                                <Button
+                                                  onClick={() => executeAction(actionData)}
+                                                  disabled={isLoading}
+                                                  className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2 text-sm font-medium rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                                                >
+                                                  {isLoading ? (
+                                                    <>
+                                                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                                                      กำลังดำเนินการ...
+                                                    </>
+                                                  ) : (
+                                                    <>
+                                                      ✨ ดำเนินการ
+                                                    </>
+                                                  )}
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    })()}
+                                  </div>
                                 ) : (
                                   <p className="text-sm leading-relaxed whitespace-pre-wrap text-white">
                                     {message.content}
