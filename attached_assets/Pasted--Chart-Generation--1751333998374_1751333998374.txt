@@ -1,0 +1,17 @@
+แผนการพัฒนา: ฟีเจอร์สร้างกราฟ (Chart Generation)เอกสารนี้สรุปแผนการพัฒนาทางเทคนิคเพื่อเพิ่มความสามารถให้ AI Chatbot สามารถสร้างและแสดงผลข้อมูลเป็นกราฟได้โดยตรงในหน้าต่างแชท1. หลักการทำงาน (How It Works)เราจะเปลี่ยนวิธีที่ Backend และ Frontend คุยกัน จากเดิมที่ส่งแค่ข้อความธรรมดา ({ response: "..." }) ไปเป็นการส่งข้อมูลที่มีโครงสร้าง (Structured Data) ที่สามารถบอกประเภทของเนื้อหาได้ตัวอย่าง JSON Response ใหม่:{
+  "type": "chart",
+  "chartType": "bar",
+  "data": {
+    "title": "รายได้เปรียบเทียบแต่ละทีม (ไตรมาสล่าสุด)",
+    "categories": ["ทีม A", "ทีม B", "ทีม C"],
+    "series": [
+      { "name": "รายได้", "data": [45000, 62000, 51000] }
+    ]
+  }
+}
+หรือถ้าเป็นข้อความธรรมดา:{
+  "type": "text",
+  "content": "สวัสดีครับ มีอะไรให้ผมช่วยครับ"
+}
+2. แผนการพัฒนาในทางเทคนิคเราจะแบ่งการทำงานออกเป็น 2 ส่วนหลักคือ Backend และ Frontendส่วนที่ 1: อัปเกรด Backend (เพิ่มความสามารถในการตัดสินใจ)เราต้องทำให้ API /api/ai/chat ฉลาดพอที่จะตัดสินใจได้ว่าเมื่อไหร่ควรจะตอบเป็นข้อความ และเมื่อไหร่ควรจะตอบเป็นกราฟขั้นตอน:ปรับปรุง Prompt ที่ส่งให้ Gemini: เราจะเพิ่มคำสั่งพิเศษเข้าไปใน Prompt เพื่อบอกให้ Gemini ช่วยตัดสินใจและจัดรูปแบบข้อมูลให้เราตัวอย่าง Prompt ใหม่:"Based on the user's question: 'แสดงกราฟเปรียบเทียบรายได้ของแต่ละทีมในไตรมาสล่าสุด'. First, decide if a chart is the best way to answer. If yes, respond ONLY with a JSON object in the format: {\"type\":\"chart\", \"chartType\":\"bar\", ...}. If a chart is not suitable, respond with a normal text answer inside a JSON object: {\"type\":\"text\", \"content\":\"...\"}. Here is the context data from the database: [...data...]"ปรับปรุง Logic ใน routes.ts:API /api/ai/chat จะต้องพยายาม JSON.parse() คำตอบที่ได้จาก Geminiถ้า Parse สำเร็จ: แสดงว่า Gemini ตอบกลับมาเป็นโครงสร้างสำหรับสร้างกราฟ ให้ส่ง JSON นั้นกลับไปให้ Frontend ได้เลยถ้า Parse ไม่สำเร็จ: แสดงว่า Gemini ตอบกลับมาเป็นข้อความธรรมดา ให้เรานำข้อความนั้นมาห่อในโครงสร้าง { "type": "text", "content": "..." } แล้วค่อยส่งกลับไปให้ Frontendส่วนที่ 2: สร้าง Frontend Component สำหรับแสดงผล (Chart Renderer)เราต้องสร้าง Component ใหม่ในฝั่ง Frontend ที่สามารถรับข้อมูล JSON จาก Backend แล้วเลือกว่าจะแสดงผลเป็นข้อความหรือเป็นกราฟขั้นตอน:ติดตั้งไลบรารีกราฟ:ใน Terminal ของ Replit ให้ติดตั้ง recharts ซึ่งเป็นไลบรารีสำหรับสร้างกราฟที่ทำงานได้ดีกับ Reactnpm install recharts
+สร้าง MessageRenderer.tsx Component:Component นี้จะรับ message object เป็น propภายใน Component จะมี Logic if-else หรือ switch-case เพื่อตรวจสอบค่า message.typeถ้า type คือ "text": ให้แสดงผล message.content เป็นข้อความปกติถ้า type คือ "chart": ให้ดึงข้อมูลจาก message.data แล้วส่งต่อไปให้ Component กราฟ (เช่น <BarChartComponent data={message.data} />) เพื่อวาดกราฟขึ้นมาบนหน้าจอ3. ข้อเสนอแนะสำหรับขั้นตอนแรกผมแนะนำให้เราเริ่มจาก ส่วนที่ 1: อัปเกรด Backend ก่อนครับ เพราะเป็นส่วนที่ซับซ้อนและสำคัญที่สุดสิ่งที่เราจะทำ:ปรับปรุง Logic การสร้าง Prompt ใน routes.ts ให้มีคำสั่งพิเศษสำหรับให้ Gemini สร้าง JSONเพิ่ม Logic การ JSON.parse() เพื่อจัดการกับคำตอบที่ได้จาก Geminiเมื่อ Backend ของเราพร้อมที่จะส่งข้อมูลแบบมีโครงสร้างแล้ว การสร้าง Component ใน Frontend เพื่อแสดงผลจะเป็นขั้นตอนต่อไปที่ชัดเจนและทำได้ง่ายขึ้นครับถ้าคุณพร้อมแล้ว เรามาเริ่มลงมืออัปเกรด API ของเรากันได้เลยครับ!

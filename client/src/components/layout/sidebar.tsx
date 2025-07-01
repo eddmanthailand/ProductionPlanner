@@ -75,14 +75,14 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
         />
       )}
 
-      {/* Toggle Button for Desktop */}
+      {/* Toggle Button for Desktop and Mobile */}
       {isCollapsed && (
         <button
           onClick={toggleSidebar}
-          className="fixed left-2 top-4 z-50 p-2 bg-white shadow-lg rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors hidden md:block"
+          className="fixed left-2 top-4 z-50 p-3 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800 shadow-lg rounded-lg border border-blue-300 dark:border-blue-400 transition-all duration-200 transform hover:scale-105"
           title="เปิดเมนู"
         >
-          <ChevronRight className="w-4 h-4 text-gray-600" />
+          <ChevronRight className="w-5 h-5 text-white" />
         </button>
       )}
       
@@ -112,7 +112,7 @@ export default function Sidebar({ isCollapsed, setIsCollapsed }: SidebarProps) {
           
           <button
             onClick={toggleSidebar}
-            className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700 transition-colors"
+            className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-700 dark:hover:to-indigo-800 text-white shadow-md transition-all duration-200 transform hover:scale-105"
           >
             {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <X className="w-4 h-4 md:hidden" />}
           </button>
