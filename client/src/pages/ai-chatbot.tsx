@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -138,7 +138,6 @@ export default function AIChatbot() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   
@@ -158,17 +157,8 @@ export default function AIChatbot() {
     refetchOnWindowFocus: false
   });
 
-  // Update messages when conversation changes
-  useEffect(() => {
-    if (Array.isArray(conversationMessages)) {
-      setMessages(conversationMessages);
-    }
-  }, [conversationMessages]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  // Use messages directly from query to avoid state issues
+  const messages = Array.isArray(conversationMessages) ? conversationMessages : [];
 
   // Create new conversation mutation
   const createConversationMutation = useMutation({
@@ -181,7 +171,6 @@ export default function AIChatbot() {
     },
     onSuccess: (newConversation) => {
       setCurrentConversationId(newConversation.id);
-      setMessages([]);
       refetchConversations();
       toast({ 
         title: "สำเร็จ", 
