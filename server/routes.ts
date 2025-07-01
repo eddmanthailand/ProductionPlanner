@@ -4918,10 +4918,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log('🧠 Smart Processing - Enhanced prompt preview:', personalizedPrompt.substring(0, 500) + '...');
 
       // สร้างการตอบกลับจาก AI ด้วย personalized prompt
-      const aiResponse = await geminiService.generateChatResponse(
-        personalizedPrompt,
-        [] // History ถูกรวมไว้ใน prompt แล้ว
-      );
+      let aiResponse;
+      try {
+        aiResponse = await geminiService.generateChatResponse(
+          personalizedPrompt,
+          [] // History ถูกรวมไว้ใน prompt แล้ว
+        );
+        
+        console.log('🎯 AI Response received (first 200 chars):', aiResponse.substring(0, 200));
+        
+        // Safety check for HTML responses
+        if (aiResponse.trim().startsWith('<!DOCTYPE')) {
+          console.log('⚠️ AI returned HTML document, providing fallback response');
+          aiResponse = "ขออภัย ระบบมีปัญหาในการประมวลผลคำตอบ กรุณาลองถามใหม่ด้วยคำถามที่ง่ายกว่า หรือติดต่อผู้ดูแลระบบ";
+        }
+        
+      } catch (geminiError: any) {
+        console.error('❌ Gemini API Error:', geminiError);
+        
+        // Provide user-friendly error message
+        if (geminiError.message?.includes('API key')) {
+          aiResponse = "⚠️ มีปัญหาเกี่ยวกับการตั้งค่า AI API กรุณาตรวจสอบการตั้งค่าใน 'การตั้งค่า AI'";
+        } else if (geminiError.message?.includes('quota') || geminiError.message?.includes('rate limit')) {
+          aiResponse = "⚠️ การใช้งาน AI เกินขีดจำกัด กรุณารอสักครู่แล้วลองใหม่";
+        } else {
+          aiResponse = "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้ กรุณาลองใหม่ภายหลัง";
+        }
+      }
 
       // 📊 Phase 3: ประมวลผลการตอบกลับของ AI สำหรับ Chart Generation
       let processedResponse = aiResponse;
