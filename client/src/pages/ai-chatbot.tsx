@@ -309,22 +309,40 @@ export default function AIChatbot() {
   // Parse action data from AI message
   const parseActionData = (content: string) => {
     try {
-      // Try to find JSON in message content
-      const jsonMatch = content.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        const parsed = JSON.parse(jsonMatch[0]);
-        if (parsed.suggestedAction) {
-          return parsed.suggestedAction;
+      // First check if the content looks like JSON
+      if (content.trim().startsWith('{') && content.trim().endsWith('}')) {
+        const parsed = JSON.parse(content);
+        if (parsed.type === 'action_response' && parsed.action) {
+          console.log('🤖 Action Data Parsed:', parsed.action);
+          return parsed.action;
         }
       }
       
-      // If not in JSON format, try to extract from structured content
-      if (content.includes('"type": "action_response"')) {
-        const parsed = JSON.parse(content);
-        return parsed.action || null;
+      // Try to find JSON block within ```json``` code blocks
+      const jsonBlockMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonBlockMatch) {
+        const parsed = JSON.parse(jsonBlockMatch[1]);
+        if (parsed.type === 'action_response' && parsed.action) {
+          console.log('🤖 Action Data Parsed from code block:', parsed.action);
+          return parsed.action;
+        }
+      }
+      
+      // Try to find any JSON object in the content
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const parsed = JSON.parse(jsonMatch[0]);
+        if (parsed.type === 'action_response' && parsed.action) {
+          console.log('🤖 Action Data Parsed from match:', parsed.action);
+          return parsed.action;
+        }
+        if (parsed.suggestedAction) {
+          console.log('🤖 Legacy Action Data Parsed:', parsed.suggestedAction);
+          return parsed.suggestedAction;
+        }
       }
     } catch (error) {
-      console.log('Action parsing failed:', error);
+      console.log('🤖 Action parsing failed:', error);
     }
     return null;
   };
