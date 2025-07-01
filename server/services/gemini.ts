@@ -55,29 +55,29 @@ Current user message: ${userMessage}
 
 🤖 ACTIVE MODE DETECTED: The user is asking for an action that could be automated.
 
-MANDATORY RESPONSE FORMAT: You MUST respond in JSON format when the user asks to perform any action:
+MANDATORY RESPONSE FORMAT: You MUST embed action suggestions using [ACTION] tags when the user asks to perform any action:
 
+Regular text response explaining the situation and recommendation.
+
+[ACTION]
 {
-  "type": "action_response",
-  "message": "คำอธิบายสิ่งที่จะดำเนินการ",
-  "action": {
-    "type": "CREATE_WORK_LOG",
-    "description": "สร้างใบบันทึกประจำวันใหม่",
-    "payload": {
-      "subJobId": 123,
-      "hoursWorked": "8",
-      "workDescription": "รายละเอียดการทำงาน",
-      "quantity": 100
-    }
+  "type": "CREATE_WORK_LOG",
+  "description": "สร้างใบบันทึกประจำวันใหม่",
+  "payload": {
+    "subJobId": 123,
+    "hoursWorked": "8",
+    "workDescription": "รายละเอียดการทำงาน",
+    "quantity": 100
   }
 }
+[/ACTION]
 
 Available Action Types:
 - UPDATE_WORK_ORDER_STATUS: เปลี่ยนสถานะใบสั่งงาน
 - CREATE_WORK_LOG: สร้างใบบันทึกประจำวัน
 - UPDATE_SUB_JOB: อัปเดตข้อมูลงานย่อย
 
-IMPORTANT: Always respond with the JSON format above when detecting actionable requests. Do not provide traditional text responses for actionable requests.
+IMPORTANT: Always embed action suggestions in [ACTION] tags when detecting actionable requests. Provide natural explanatory text, then include the action in the specified tag format.
 
 Please provide a helpful response as a production management system assistant:`;
       } else {
@@ -143,15 +143,14 @@ Please provide a concise, helpful response in Thai. Be professional but friendly
         responseText = "ขออภัย ระบบประมวลผลคำตอบไม่สำเร็จ กรุณาลองถามใหม่ด้วยคำถามที่ง่ายกว่า";
       }
 
-      // Only create action response JSON if we actually have a clear actionable request
-      // that the AI confirmed as actionable, not just any message with action keywords
-      if (isActionableRequest && !responseText.includes('"action_response"')) {
-        console.log(`⚠️ Actionable request detected but no proper JSON response received`);
-        console.log(`Raw response: ${responseText.substring(0, 200)}...`);
-        
-        // Just return the regular response for now - don't force JSON for simple interactions
-        // The AI should only return JSON when it's actually appropriate
-        return responseText;
+      // Log if actionable request was detected for debugging
+      if (isActionableRequest) {
+        console.log(`✅ Actionable request processed - checking for [ACTION] tags`);
+        if (responseText.includes('[ACTION]')) {
+          console.log(`✅ Action tags found in response`);
+        } else {
+          console.log(`⚠️ No action tags found despite actionable request detection`);
+        }
       }
 
       return responseText;

@@ -1,0 +1,220 @@
+// File: client/src/pages/ai-assistant.tsx (Example file path)
+import React, { useState, useEffect, useRef } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { Layout } from '@/components/layout/layout';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Bot, User, Send, Copy, Check } from 'lucide-react';
+import { toast } from '@/components/ui/use-toast';
+
+// --- Types ---
+type Message = {
+  id: string;
+  role: 'user' | 'model' | 'loading';
+  content: any; // Can be string or a structured object
+};
+
+type ActionPayload = {
+  type: string;
+  payload: Record<string, any>;
+};
+
+// --- API Call Functions ---
+const postChatMessage = async (payload: { prompt: string; history: any[] }) => {
+  const res = await fetch('/api/ai/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    throw new Error('Failed to get response from AI');
+  }
+  return res.json();
+};
+
+const executeAction = async (action: ActionPayload) => {
+    const res = await fetch('/api/execute-action', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(action),
+    });
+    if (!res.ok) {
+        throw new Error('Failed to execute action');
+    }
+    return res.json();
+};
+
+
+// --- Child Components ---
+
+// Action Button Component
+const ActionConfirmation = ({ action }: { action: ActionPayload }) => {
+    const actionMutation = useMutation({
+        mutationFn: executeAction,
+        onSuccess: (data) => {
+            toast({ title: "ดำเนินการสำเร็จ!", description: data.message });
+            // Here you might want to trigger a refetch of relevant data
+        },
+        onError: (error: Error) => {
+            toast({ title: "เกิดข้อผิดพลาด", description: error.message, variant: "destructive" });
+        }
+    });
+
+    return (
+        <div className="bg-muted p-3 rounded-lg mt-2 border">
+            <p className="text-sm font-semibold mb-2">{action.payload.description || 'ข้อเสนอแนะ:'}</p>
+            <div className="flex gap-2">
+                <Button 
+                    size="sm" 
+                    onClick={() => actionMutation.mutate(action)}
+                    disabled={actionMutation.isPending}
+                >
+                    {actionMutation.isPending ? 'กำลังดำเนินการ...' : 'ยืนยัน'}
+                </Button>
+                <Button size="sm" variant="outline">ยกเลิก</Button>
+            </div>
+        </div>
+    );
+};
+
+// Main Message Renderer
+const MessageRenderer = ({ message }: { message: Message }) => {
+  const [hasCopied, setHasCopied] = useState(false);
+
+  if (message.role === 'loading') {
+    return (
+      <div className="flex items-start gap-3">
+        <Avatar className="w-8 h-8"><AvatarFallback><Bot size={20}/></AvatarFallback></Avatar>
+        <div className="bg-muted rounded-lg p-3 max-w-xl">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 bg-foreground rounded-full animate-pulse delay-0"></span>
+            <span className="w-2 h-2 bg-foreground rounded-full animate-pulse delay-150"></span>
+            <span className="w-2 h-2 bg-foreground rounded-full animate-pulse delay-300"></span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const isUser = message.role === 'user';
+  let contentToRender: React.ReactNode;
+  let actionToRender: ActionPayload | null = null;
+
+  // Logic to parse the content
+  if (typeof message.content === 'object' && message.content !== null) {
+      // This handles structured responses like action_response
+      contentToRender = message.content.message || JSON.stringify(message.content);
+      if (message.content.type === 'action_response' && message.content.action) {
+          actionToRender = message.content.action;
+      }
+  } else {
+      // This handles simple text responses
+      contentToRender = message.content;
+  }
+  
+  const handleCopy = () => {
+    navigator.clipboard.writeText(String(contentToRender));
+    setHasCopied(true);
+    setTimeout(() => setHasCopied(false), 2000);
+  };
+
+  return (
+    <div className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`}>
+      <Avatar className="w-8 h-8">
+        <AvatarFallback>{isUser ? <User size={20}/> : <Bot size={20}/>}</AvatarFallback>
+      </Avatar>
+      <div className={`rounded-lg p-3 max-w-xl group relative ${isUser ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+        <p className="whitespace-pre-wrap">{contentToRender}</p>
+        {actionToRender && <ActionConfirmation action={actionToRender} />}
+        {!isUser && (
+            <button onClick={handleCopy} className="absolute top-1 right-1 p-1 rounded-md bg-background/50 opacity-0 group-hover:opacity-100 transition-opacity">
+                {hasCopied ? <Check size={14} className="text-green-500"/> : <Copy size={14}/>}
+            </button>
+        )}
+      </div>
+    </div>
+  );
+};
+
+
+// --- Main Page Component ---
+export default function AiAssistantPage() {
+  const [messages, setMessages] = useState<Message[]>([
+    { id: 'init', role: 'model', content: 'สวัสดีค่ะ มีอะไรให้ช่วยคะ? ลองถามเกี่ยวกับ "ใบสั่งงาน" หรือ "บันทึกงานประจำวัน" ได้เลยค่ะ' }
+  ]);
+  const [input, setInput] = useState('');
+  const chatEndRef = useRef<HTMLDivElement>(null);
+
+  const chatMutation = useMutation({
+    mutationFn: postChatMessage,
+    onSuccess: (data) => {
+      // Replace loading message with the actual response
+      setMessages(prev => [
+        ...prev.filter(m => m.role !== 'loading'),
+        { id: crypto.randomUUID(), role: 'model', content: data }
+      ]);
+    },
+    onError: (error: Error) => {
+      setMessages(prev => [
+        ...prev.filter(m => m.role !== 'loading'),
+        { id: crypto.randomUUID(), role: 'model', content: `ขออภัยค่ะ เกิดข้อผิดพลาด: ${error.message}` }
+      ]);
+    }
+  });
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || chatMutation.isPending) return;
+
+    const userMessage: Message = { id: crypto.randomUUID(), role: 'user', content: input };
+    const loadingMessage: Message = { id: 'loading', role: 'loading', content: '...' };
+    
+    setMessages(prev => [...prev, userMessage, loadingMessage]);
+
+    // Prepare history for the backend
+    const history = messages.map(m => ({ role: m.role, content: m.content }));
+    
+    chatMutation.mutate({ prompt: input, history });
+    setInput('');
+  };
+
+  return (
+    <Layout>
+      <div className="h-[calc(100vh-4rem)] flex flex-col max-w-3xl mx-auto p-4">
+        <div className="flex-1 overflow-y-auto pr-4 space-y-6">
+          {messages.map((msg) => <MessageRenderer key={msg.id} message={msg} />)}
+          <div ref={chatEndRef} />
+        </div>
+        <div className="mt-4">
+          <form onSubmit={handleSubmit} className="relative">
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="พิมพ์คำถามของคุณที่นี่..."
+              className="pr-12 resize-none"
+              rows={2}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  handleSubmit(e);
+                }
+              }}
+            />
+            <Button 
+              type="submit" 
+              size="icon" 
+              className="absolute bottom-2 right-2"
+              disabled={chatMutation.isPending}
+            >
+              <Send size={20}/>
+            </Button>
+          </form>
+        </div>
+      </div>
+    </Layout>
+  );
+}

@@ -398,20 +398,37 @@ export default function AIChatbot() {
                                     }}
                                   />
                                 )}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                                  <div className="flex items-center gap-2 mb-2">
-                                    <CheckCircle className="w-4 h-4 text-blue-600" />
-                                    <span className="text-blue-800 font-medium">การดำเนินการที่แนะนำ</span>
+                                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-4 shadow-sm">
+                                  <div className="flex items-center gap-2 mb-3">
+                                    <CheckCircle className="w-5 h-5 text-blue-600" />
+                                    <span className="text-blue-800 font-semibold">💡 คำแนะนำจาก AI</span>
                                   </div>
-                                  <p className="text-blue-700 text-sm mb-3">{actionData.description}</p>
-                                  <Button
-                                    onClick={() => executeAction(actionData)}
-                                    disabled={executeActionMutation.isPending}
-                                    size="sm"
-                                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                                  >
-                                    {executeActionMutation.isPending ? 'กำลังดำเนินการ...' : 'ดำเนินการ'}
-                                  </Button>
+                                  <p className="text-blue-700 mb-4 leading-relaxed">{actionData.description}</p>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={() => executeAction(actionData)}
+                                      disabled={executeActionMutation.isPending}
+                                      size="sm"
+                                      className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-medium px-4 py-2 rounded-lg shadow-sm transition-all duration-200"
+                                    >
+                                      {executeActionMutation.isPending ? (
+                                        <>
+                                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                                          กำลังดำเนินการ...
+                                        </>
+                                      ) : (
+                                        <>✅ อนุมัติและดำเนินการ</>
+                                      )}
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="border-gray-300 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg transition-all duration-200"
+                                      disabled={executeActionMutation.isPending}
+                                    >
+                                      ❌ ยกเลิก
+                                    </Button>
+                                  </div>
                                 </div>
                               </div>
                             );
