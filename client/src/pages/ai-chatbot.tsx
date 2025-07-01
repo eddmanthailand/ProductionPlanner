@@ -34,6 +34,8 @@ export default function AIChatbot() {
   const [inputMessage, setInputMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<number | null>(null);
+  const [contextBanner, setContextBanner] = useState<string | null>(null);
+  const [conversationContext, setConversationContext] = useState<string>('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -87,9 +89,12 @@ export default function AIChatbot() {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
       setInputMessage('');
       setIsLoading(false);
+      // Clear context banner after a short delay
+      setTimeout(() => setContextBanner(null), 3000);
     },
     onError: () => {
       setIsLoading(false);
+      setContextBanner(null);
       toast({
         title: "เกิดข้อผิดพลาด",
         description: "ไม่สามารถส่งข้อความได้",
@@ -133,8 +138,22 @@ export default function AIChatbot() {
     }
   }, [conversations, selectedConversation]);
 
+  // Update conversation context when messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      const context = detectConversationContext(messages);
+      setConversationContext(context);
+    } else {
+      setConversationContext('');
+    }
+  }, [messages]);
+
   const handleSendMessage = () => {
     if (!inputMessage.trim() || isLoading) return;
+    
+    // Detect context banner before sending
+    const banner = detectContextBanner(inputMessage.trim(), messages);
+    setContextBanner(banner);
     
     // If no conversation is selected, create one first
     if (!selectedConversation) {
@@ -180,6 +199,74 @@ export default function AIChatbot() {
 
   const isCodeBlock = (content: string) => {
     return content.includes('```') || content.includes('SELECT') || content.includes('JSON') || content.includes('{') || content.includes('[');
+  };
+
+  // Function to detect conversation context from messages
+  const detectConversationContext = (messages: ChatMessage[]) => {
+    const recentMessages = messages.slice(-6);
+    const keywords = {
+      'ใบสั่งงาน': 'Work Orders',
+      'ใบบันทึกประจำวัน': 'Daily Work Logs', 
+      'รายได้ทีม': 'Team Revenue',
+      'การผลิต': 'Production Management',
+      'ลูกค้า': 'Customer Management',
+      'สินค้า': 'Product Management'
+    };
+
+    for (const [thai, english] of Object.entries(keywords)) {
+      if (recentMessages.some(msg => msg.content.includes(thai))) {
+        return english;
+      }
+    }
+    return '';
+  };
+
+  // Function to detect context for "Responding to..." banner
+  const detectContextBanner = (currentMessage: string, previousMessages: ChatMessage[]) => {
+    const lastUserMessage = previousMessages
+      .filter(msg => msg.role === 'user')
+      .slice(-1)[0];
+    
+    if (!lastUserMessage) return null;
+
+    // Check if current message seems to be following up on previous question
+    const followUpKeywords = ['แล้ว', 'ของ', 'นั้น', 'เหล่านั้น', 'ที่กล่าวมา', 'ดังกล่าว'];
+    const hasFollowUp = followUpKeywords.some(keyword => currentMessage.includes(keyword));
+    
+    if (hasFollowUp && lastUserMessage.content.length > 10) {
+      return lastUserMessage.content.substring(0, 50) + (lastUserMessage.content.length > 50 ? '...' : '');
+    }
+    
+    return null;
+  };
+
+  // Function to make data in AI responses clickable
+  const renderMessageWithLinks = (content: string) => {
+    // Pattern to match work order numbers (WO-XXX or similar patterns)
+    const workOrderPattern = /(WO-\d+|ใบสั่งงาน\s*#?\s*\d+)/g;
+    // Pattern to match customer names in quotes
+    const customerPattern = /"([^"]+)"/g;
+    // Pattern to match report numbers
+    const reportPattern = /(RP\d+|รายงาน\s*#?\s*\d+)/g;
+
+    let processedContent = content;
+    
+    // Replace work order references with clickable links
+    processedContent = processedContent.replace(workOrderPattern, (match) => {
+      return `<span class="inline-flex items-center px-2 py-1 rounded-md bg-blue-100 text-blue-800 text-xs font-medium cursor-pointer hover:bg-blue-200 transition-colors" onclick="window.open('/production/work-orders', '_blank')" title="คลิกเพื่อดูใบสั่งงาน">${match}</span>`;
+    });
+
+    // Replace customer names with clickable links  
+    processedContent = processedContent.replace(customerPattern, (match, customerName) => {
+      return `<span class="inline-flex items-center px-2 py-1 rounded-md bg-green-100 text-green-800 text-xs font-medium cursor-pointer hover:bg-green-200 transition-colors" onclick="window.open('/sales/customers', '_blank')" title="คลิกเพื่อดูข้อมูลลูกค้า">"${customerName}"</span>`;
+    });
+
+    // Replace report numbers with clickable links
+    processedContent = processedContent.replace(reportPattern, (match) => {
+      return `<span class="inline-flex items-center px-2 py-1 rounded-md bg-purple-100 text-purple-800 text-xs font-medium cursor-pointer hover:bg-purple-200 transition-colors" onclick="window.open('/reports', '_blank')" title="คลิกเพื่อดูรายงาน">${match}</span>`;
+    });
+
+    return processedContent;
   };
 
   return (
@@ -263,18 +350,41 @@ export default function AIChatbot() {
             <>
               {/* Chat Header */}
               <div className="p-4 bg-white border-b border-gray-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <Bot className="h-6 w-6 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">AI Assistant</h3>
-                    <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-gray-600">พร้อมใช้งาน</span>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                      <Bot className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">AI Assistant</h3>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                        <span className="text-sm text-gray-600">พร้อมใช้งาน</span>
+                        {conversationContext && (
+                          <>
+                            <span className="text-gray-400">•</span>
+                            <span className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded-full">
+                              {conversationContext}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
+
+                {/* Context Banner */}
+                {contextBanner && (
+                  <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm">
+                      <div className="w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center">
+                        <span className="text-xs text-white">↗</span>
+                      </div>
+                      <span className="text-amber-800 font-medium">กำลังตอบกลับโดยอ้างอิงจาก:</span>
+                      <span className="text-amber-700 italic">"{contextBanner}"</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Messages Area */}
@@ -349,10 +459,15 @@ export default function AIChatbot() {
                                   <div className="bg-gray-900 rounded-lg p-3 text-sm font-mono text-green-400 overflow-x-auto">
                                     <pre className="whitespace-pre-wrap">{message.content}</pre>
                                   </div>
+                                ) : message.role === 'assistant' ? (
+                                  <div 
+                                    className="text-sm leading-relaxed text-gray-800"
+                                    dangerouslySetInnerHTML={{ 
+                                      __html: renderMessageWithLinks(message.content).replace(/\n/g, '<br>') 
+                                    }}
+                                  />
                                 ) : (
-                                  <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
-                                    message.role === 'user' ? 'text-white' : 'text-gray-800'
-                                  }`}>
+                                  <p className="text-sm leading-relaxed whitespace-pre-wrap text-white">
                                     {message.content}
                                   </p>
                                 )}
