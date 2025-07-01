@@ -130,14 +130,17 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
-- July 1, 2025: ✅ เพิ่มปุ่มเปิด-ปิด Sidebar ใน AI Chatbot สำเร็จ
-  - สร้างปุ่ม toggle ซ่อน/แสดง รายการสนทนาด้านซ้าย
+- July 1, 2025: ✅ อัปเกรด UI/UX สำหรับ Sidebar ทั้งระบบ
+  - **Main Sidebar**: เปลี่ยนจากระบบ hover เป็นปุ่มเปิด-ปิดแบบ manual
+  - เพิ่มปุ่ม toggle ที่มุมซ้ายบนเมื่อ sidebar ถูกซ่อน (desktop)
+  - ลบระบบ auto-hide และ hover zone เพื่อ UX ที่ดีกว่า
+  - **AI Chatbot Sidebar**: สร้างปุ่ม toggle ซ่อน/แสดงรายการสนทนา
   - ขยายพื้นที่การสนทนาให้กว้างขึ้นเมื่อซ่อน sidebar
-  - เพิ่ม smooth transition animation ใน UI
-  - แสดงปุ่มสร้างสนทนาใหม่เมื่อซ่อน sidebar
-  - ปรับปรุง UX ให้ใช้งานง่ายและมีประสิทธิภาพ
+  - เพิ่ม smooth transition animation ทั้งระบบ
+  - แสดงปุ่มสร้างสนทนาใหม่เมื่อซ่อน AI sidebar
   - แก้ไขปัญหา Shift + Enter ไม่ทำงาน เปลี่ยนจาก Input เป็น textarea
   - เพิ่ม auto-resize textarea และ multi-line support
+  - ปรับตำแหน่งปุ่ม + ใน AI Chatbot ไปทางซ้ายของหัวข้อ
 
 - July 1, 2025: ✅ ระบบ Chart Generation สำเร็จ (Phase 3 เริ่มต้น)
   - เพิ่มฟังก์ชัน shouldGenerateChart ตรวจจับคำถามที่ต้องการกราฟ
