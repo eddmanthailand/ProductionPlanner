@@ -5057,6 +5057,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         id: configuration.id,
         provider: configuration.aiProvider,
+        persona: configuration.persona,
         isActive: configuration.isActive,
         createdAt: configuration.createdAt,
         updatedAt: configuration.updatedAt

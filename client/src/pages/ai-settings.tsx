@@ -19,7 +19,8 @@ import { useAuth } from '@/hooks/useAuth';
 // Validation schema for AI configuration
 const aiConfigSchema = z.object({
   provider: z.string().min(1, "กรุณาเลือก AI Provider"),
-  apiKey: z.string().min(1, "กรุณาใส่ API Key").min(10, "API Key ต้องมีความยาวอย่างน้อย 10 ตัวอักษร")
+  apiKey: z.string().min(1, "กรุณาใส่ API Key").min(10, "API Key ต้องมีความยาวอย่างน้อย 10 ตัวอักษร"),
+  persona: z.string().optional()
 });
 
 type AiConfigForm = z.infer<typeof aiConfigSchema>;
@@ -27,6 +28,7 @@ type AiConfigForm = z.infer<typeof aiConfigSchema>;
 interface AiConfiguration {
   id: number;
   provider: string;
+  persona?: string;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
@@ -48,7 +50,8 @@ export default function AiSettings() {
     resolver: zodResolver(aiConfigSchema),
     defaultValues: {
       provider: 'gemini',
-      apiKey: ''
+      apiKey: '',
+      persona: 'neutral'
     }
   });
 
@@ -74,7 +77,7 @@ export default function AiSettings() {
         title: "สำเร็จ",
         description: "บันทึกการตั้งค่า AI เรียบร้อยแล้ว",
       });
-      form.reset({ provider: form.getValues('provider'), apiKey: '' });
+      form.reset({ provider: form.getValues('provider'), apiKey: '', persona: form.getValues('persona') });
       setTestResult(null);
     },
     onError: (error: any) => {
@@ -254,6 +257,14 @@ export default function AiSettings() {
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">บุคลิก:</span>
+                    <Badge variant="outline" className="text-purple-700 border-purple-300">
+                      {aiConfig.persona === 'male' ? 'ชาย (เป็นมิตร)' : 
+                       aiConfig.persona === 'female' ? 'หญิง (อบอุ่น)' : 
+                       'เป็นกลาง (มืออาชีพ)'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">เฉพาะ Tenant:</span>
                     <Badge variant="outline" className="text-green-700 border-green-300">
                       {currentTenant?.name || 'องค์กรนี้'}
@@ -359,6 +370,26 @@ export default function AiSettings() {
                 )}
                 <p className="text-xs text-gray-500">
                   API Key ของคุณจะถูกเข้ารหัสอย่างปลอดภัยก่อนบันทึกในระบบ
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="persona">บุคลิก AI</Label>
+                <Select
+                  value={form.watch('persona') || 'neutral'}
+                  onValueChange={(value) => form.setValue('persona', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="เลือกบุคลิก AI" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="neutral">เป็นกลาง (มืออาชีพ)</SelectItem>
+                    <SelectItem value="male">ชาย (เป็นมิตร)</SelectItem>
+                    <SelectItem value="female">หญิง (อบอุ่น)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-gray-500">
+                  เลือกบุคลิกและรูปแบบการสื่อสารของ AI ที่เหมาะกับความต้องการของคุณ
                 </p>
               </div>
 
