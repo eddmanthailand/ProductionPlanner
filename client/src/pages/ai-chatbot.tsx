@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Sidebar, SidebarContent, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+// Removed unused sidebar imports
 import { Plus, MessageSquare, Send, CheckCircle, Settings, User, Bot, BarChart3, TrendingUp, PieChart, Activity, Calendar, Menu } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { AIChart } from "@/components/ui/chart";
@@ -301,11 +301,11 @@ export default function AIChatbot() {
   ];
 
   return (
-    <SidebarProvider>
-      <div className="flex h-full max-h-screen bg-gray-50 overflow-hidden">
-        <Sidebar className={`transition-all duration-300 ${isSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden`}>
-          <SidebarContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
+    <div className="flex h-full bg-gray-50 overflow-hidden">
+      {/* AI Conversations Sidebar */}
+      <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-80' : 'w-0'} overflow-hidden bg-white border-r border-gray-200`}>
+        <div className="p-4 h-full flex flex-col">
+          <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-800">การสนทนา AI</h2>
               <Button
                 onClick={() => createConversationMutation.mutate()}
@@ -334,10 +334,11 @@ export default function AIChatbot() {
                 </Button>
               ))}
             </div>
-          </SidebarContent>
-        </Sidebar>
+        </div>
+      </div>
 
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Header */}
           <div className="bg-white border-b border-gray-200 p-4 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -559,6 +560,6 @@ export default function AIChatbot() {
           </div>
         </div>
       </div>
-    </SidebarProvider>
+    </div>
   );
 }
