@@ -21,7 +21,7 @@ export class GeminiService {
   }
 
   /**
-   * Generate chat response for support chatbot
+   * Generate chat response for support chatbot with action support
    */
   async generateChatResponse(
     userMessage: string, 
@@ -37,12 +37,43 @@ export class GeminiService {
         .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
         .join('\n');
 
-      const fullPrompt = `${systemPrompt}
+      // Check if this could be an actionable request
+      const isActionableRequest = this.detectActionableRequest(userMessage);
+      
+      let fullPrompt = `${systemPrompt}
 
 Previous conversation:
 ${conversationContext}
 
-Current user message: ${userMessage}
+Current user message: ${userMessage}`;
+
+      if (isActionableRequest) {
+        fullPrompt += `
+
+SPECIAL INSTRUCTIONS FOR ACTIONABLE REQUESTS:
+If you can help the user by performing a specific action (like updating work order status, creating records, etc.), please respond in this JSON format:
+
+{
+  "type": "action_request",
+  "displayText": "Your helpful response in Thai",
+  "action": {
+    "type": "ACTION_TYPE",
+    "payload": {
+      "key": "value"
+    }
+  }
+}
+
+Available actions:
+- UPDATE_WORK_ORDER_STATUS: Update work order status
+- CREATE_WORK_LOG: Create daily work log entry
+- UPDATE_SUB_JOB: Update sub-job details
+- GENERATE_REPORT: Generate specific reports
+
+If the request is not actionable, respond normally with helpful information.`;
+      }
+
+      fullPrompt += `
 
 Please provide a helpful response as a production management system assistant:`;
 
@@ -189,5 +220,65 @@ Generate a short, descriptive title in Thai that captures the main topic discuss
       console.error("Summary generation error:", error);
       return "การสนทนาเกี่ยวกับระบบ";
     }
+  }
+
+  /**
+   * Detect if user message contains actionable requests
+   */
+  private detectActionableRequest(message: string): boolean {
+    const lowerMessage = message.toLowerCase();
+    
+    // Keywords that suggest actionable requests
+    const actionKeywords = [
+      'เปลี่ยนสถานะ', 'อัปเดต', 'แก้ไข', 'เพิ่ม', 'ลบ', 'บันทึก', 'สร้าง',
+      'update', 'change', 'modify', 'add', 'create', 'delete', 'save',
+      'ช่วยเปลี่ยน', 'ช่วยอัปเดต', 'ช่วยแก้ไข', 'ช่วยเพิ่ม', 'ช่วยสร้าง',
+      'ทำให้', 'จัดการ', 'ดำเนินการ', 'ปรับ', 'แก้', 'ตั้งค่า',
+      'เริ่มงาน', 'หยุดงาน', 'เสร็จสิ้น', 'ยกเลิก', 'ลบออก'
+    ];
+    
+    return actionKeywords.some(keyword => lowerMessage.includes(keyword));
+  }
+
+  /**
+   * Parse AI response and check if it contains actionable JSON
+   */
+  parseActionResponse(response: string): {
+    isAction: boolean;
+    displayText: string;
+    action?: any;
+  } {
+    try {
+      // Try to parse as JSON first
+      const parsed = JSON.parse(response);
+      
+      if (parsed.type === 'action_request' && parsed.action) {
+        return {
+          isAction: true,
+          displayText: parsed.displayText || response,
+          action: parsed.action
+        };
+      }
+    } catch (error) {
+      // Not JSON, check if it contains JSON within text
+      const jsonMatch = response.match(/\{[^}]*"type":\s*"action_request"[^}]*\}/);
+      if (jsonMatch) {
+        try {
+          const actionData = JSON.parse(jsonMatch[0]);
+          return {
+            isAction: true,
+            displayText: actionData.displayText || response,
+            action: actionData.action
+          };
+        } catch (parseError) {
+          // JSON parsing failed, treat as normal response
+        }
+      }
+    }
+    
+    return {
+      isAction: false,
+      displayText: response
+    };
   }
 }

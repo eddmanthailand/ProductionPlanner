@@ -4944,6 +4944,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
+      // 🤖 Phase 4: ประมวลผล Active Mode Actions
+      const actionResponse = geminiService.parseActionResponse(aiResponse);
+      let suggestedAction = null;
+      
+      if (actionResponse.isAction && actionResponse.action) {
+        processedResponse = actionResponse.displayText;
+        suggestedAction = actionResponse.action;
+        console.log('🤖 Action detected:', JSON.stringify(suggestedAction, null, 2));
+      }
+
       // บันทึกการตอบกลับของ AI (เก็บ JSON ถ้ามี chart data)
       const messageContent = chartData ? 
         JSON.stringify({ message: processedResponse, chartData }) : 
