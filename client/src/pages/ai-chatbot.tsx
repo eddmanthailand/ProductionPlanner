@@ -109,7 +109,7 @@ export default function AIChatbot() {
   const createConversationMutation = useMutation({
     mutationFn: () => apiRequest('/api/chat/conversations', {
       method: 'POST',
-      body: JSON.stringify({ title: `สนทนาใหม่ ${new Date().toLocaleString('th-TH')}` })
+      body: { title: `สนทนาใหม่ ${new Date().toLocaleString('th-TH')}` }
     }),
     onSuccess: (newConversation) => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
@@ -154,7 +154,7 @@ export default function AIChatbot() {
     mutationFn: (messageData: { conversationId: number; content: string }) =>
       apiRequest('/api/chat/messages', {
         method: 'POST',
-        body: JSON.stringify(messageData)
+        body: messageData
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/chat/messages', currentConversationId] });
@@ -175,7 +175,7 @@ export default function AIChatbot() {
     mutationFn: async (actionData: ActionData) => {
       return apiRequest('/api/execute-action', {
         method: 'POST',
-        body: JSON.stringify(actionData)
+        body: actionData
       });
     },
     onSuccess: () => {
