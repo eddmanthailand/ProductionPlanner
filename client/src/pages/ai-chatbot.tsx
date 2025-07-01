@@ -209,6 +209,7 @@ export default function AIChatbot() {
       });
     },
     onSuccess: (data) => {
+      console.log("🧠 Smart Insights received:", data);
       setInsights(data);
       setShowInsights(true);
     },

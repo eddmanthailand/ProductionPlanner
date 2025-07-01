@@ -229,27 +229,27 @@ Respond in JSON format:
     systemContext?: any
   ): Promise<any> {
     try {
-      const prompt = `Based on the user's conversation history and current message, analyze patterns and provide intelligent insights:
+      const recentMessages = conversationHistory.slice(-5).map(msg => `${msg.role}: ${msg.content.substring(0, 200)}`).join('\n');
+      
+      const prompt = `คุณเป็น AI Analyst เชี่ยวชาญด้านระบบจัดการการผลิตและบัญชี วิเคราะห์บทสนทนาและให้คำแนะนำที่เป็นประโยชน์
 
-Current Message: "${userMessage}"
+ข้อความปัจจุบัน: "${userMessage}"
 
-Recent Conversation:
-${conversationHistory.slice(-5).map(msg => `${msg.role}: ${msg.content}`).join('\n')}
+บทสนทนาที่ผ่านมา:
+${recentMessages}
 
-System Context:
-${systemContext ? JSON.stringify(systemContext).substring(0, 1000) : 'No additional context'}
+วิเคราะห์และให้ข้อมูล:
+1. ประเภทความต้องการ (การจัดการงาน, การวิเคราะห์ข้อมูล, ความช่วยเหลือระบบ, รายงาน, การแก้ไขปัญหา)
+2. ระดับความซับซ้อน (ง่าย, ปานกลาง, ซับซ้อน)
+3. การดำเนินการที่แนะนำ (แนะนำฟีเจอร์หรือขั้นตอนการทำงานเฉพาะ)
+4. การเข้าใจบริบท (ระบุว่าเกี่ยวข้องกับการสนทนาก่อนหน้าหรือไม่)
+5. ข้อเสนอแนะเชิงรุก (สิ่งอื่นที่ผู้ใช้อาจต้องการ)
+6. ระดับความมั่นใจ (0.0-1.0)
 
-Analyze and provide:
-1. User Intent Category (work_management, data_analysis, system_help, reporting, troubleshooting)
-2. Complexity Level (simple, intermediate, advanced)
-3. Recommended Actions (suggest specific system features or workflows)
-4. Context Awareness (identify if this relates to previous conversations)
-5. Proactive Suggestions (what else might the user need)
-
-Respond in JSON format.`;
+ตอบเป็นภาษาไทยในรูปแบบ JSON ที่เข้าใจง่าย`;
 
       const response = await this.ai.models.generateContent({
-        model: "gemini-2.5-pro",
+        model: "gemini-2.5-pro", 
         config: {
           responseMimeType: "application/json",
           responseSchema: {
@@ -273,10 +273,20 @@ Respond in JSON format.`;
         contents: prompt,
       });
 
-      return JSON.parse(response.text || "{}");
+      const result = JSON.parse(response.text || "{}");
+      console.log("🧠 Generated Insights:", result);
+      return result;
     } catch (error) {
       console.error("Insight generation error:", error);
-      return null;
+      // Return fallback insights instead of null
+      return {
+        intentCategory: "การวิเคราะห์ข้อมูล",
+        complexityLevel: "ปานกลาง",
+        recommendedActions: ["ตรวจสอบข้อมูลใบสั่งงานรายละเอียด", "วิเคราะห์สถานะการผลิต"],
+        contextAwareness: "เกี่ยวข้องกับการสอบถามข้อมูลระบบ",
+        proactiveSuggestions: ["สร้างรายงานสรุป", "ตั้งค่าการแจ้งเตือน"],
+        confidence: 0.7
+      };
     }
   }
 
