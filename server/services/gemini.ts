@@ -88,7 +88,43 @@ Please provide a helpful response as a production management system assistant:`;
         contents: fullPrompt,
       });
 
-      return response.text || "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้";
+      let responseText = response.text || "ขออภัย ไม่สามารถประมวลผลคำถามได้ในขณะนี้";
+
+      // Clean up response text if it contains HTML elements
+      responseText = responseText
+        .replace(/<!DOCTYPE[^>]*>/gi, '')
+        .replace(/<html[^>]*>/gi, '')
+        .replace(/<\/html>/gi, '')
+        .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+        .replace(/<body[^>]*>/gi, '')
+        .replace(/<\/body>/gi, '')
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .trim();
+
+      // If this was an actionable request and we don't have proper JSON, force a standard response
+      if (isActionableRequest && !responseText.includes('"action_response"')) {
+        console.log(`⚠️ Actionable request detected but no proper JSON response received`);
+        console.log(`Raw response: ${responseText.substring(0, 200)}...`);
+        
+        // Return a properly formatted action response
+        const actionResponse = {
+          type: "action_response",
+          message: "ระบบตรวจพบคำขอที่สามารถดำเนินการได้ แต่ยังไม่สามารถประมวลผลอัตโนมัติได้ในขณะนี้",
+          action: {
+            type: "MANUAL_REVIEW",
+            description: "ต้องการการตรวจสอบด้วยตนเอง",
+            payload: {
+              userRequest: userMessage
+            }
+          }
+        };
+        
+        const jsonString = JSON.stringify(actionResponse, null, 2);
+        return `การตอบสนองปกติ: ${responseText}\n\n\`\`\`json\n${jsonString}\n\`\`\``;
+      }
+
+      return responseText;
     } catch (error: any) {
       console.error("Gemini API error:", error);
       throw new Error(`Failed to generate response: ${error?.message || 'Unknown error'}`);

@@ -36,16 +36,23 @@ interface ActionData {
 // Parse action data from AI response
 function parseActionData(content: string): ActionData | null {
   try {
-    // Clean content first - remove HTML and unwanted characters
+    // Clean content first - remove HTML and unwanted characters  
     const cleanContent = content
       .replace(/<!DOCTYPE[^>]*>/gi, '')
+      .replace(/<html[^>]*>[\s\S]*?<\/html>/gi, '')
+      .replace(/<head[^>]*>[\s\S]*?<\/head>/gi, '')
+      .replace(/<body[^>]*>/gi, '')
+      .replace(/<\/body>/gi, '')
+      .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+      .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
       .replace(/<[^>]*>/g, '')
       .replace(/&[#\w]+;/g, '')
       .trim();
     
     // Look for JSON blocks in the cleaned content
     const jsonMatch = cleanContent.match(/```json\s*([\s\S]*?)\s*```/) || 
-                     cleanContent.match(/\{[\s\S]*?"action_response"[\s\S]*?\}/);
+                     cleanContent.match(/\{[\s\S]*?"type":\s*"action_response"[\s\S]*?\}/) ||
+                     cleanContent.match(/\{[\s\S]*?"action"[\s\S]*?\}/);
     
     if (!jsonMatch) return null;
     
@@ -64,6 +71,15 @@ function parseActionData(content: string): ActionData | null {
     }
     
     const parsed = JSON.parse(jsonStr);
+    
+    // Check for different JSON structures
+    if (parsed.type === "action_response" && parsed.action) {
+      return {
+        type: parsed.action.type,
+        description: parsed.action.description || parsed.message,
+        data: parsed.action.payload || parsed.action
+      };
+    }
     
     if (parsed.action_response) {
       return {
