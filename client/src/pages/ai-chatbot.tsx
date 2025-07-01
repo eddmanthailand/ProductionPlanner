@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, MessageSquare, Send, CheckCircle, Settings, User, Bot, BarChart3, TrendingUp, PieChart, Activity, Calendar, Menu } from "lucide-react";
+import { Plus, MessageSquare, Send, CheckCircle, Settings, User, Bot, BarChart3, TrendingUp, PieChart, Activity, Calendar, Menu, Trash2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { AIChart } from "@/components/ui/chart";
 
@@ -120,6 +120,31 @@ export default function AIChatbot() {
       toast({
         title: "เกิดข้อผิดพลาด",
         description: error.message || "ไม่สามารถสร้างการสนทนาใหม่ได้",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const deleteConversationMutation = useMutation({
+    mutationFn: (conversationId: number) => apiRequest(`/api/chat/conversations/${conversationId}`, {
+      method: 'DELETE'
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['/api/chat/conversations'] });
+      // If we deleted the current conversation, clear it
+      if (currentConversationId && conversations.find((c: ChatConversation) => c.id === currentConversationId)) {
+        setCurrentConversationId(null);
+      }
+      toast({
+        title: "สำเร็จ",
+        description: "ลบการสนทนาเรียบร้อยแล้ว",
+        variant: "default",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "ไม่สามารถลบการสนทนาได้",
         variant: "destructive",
       });
     }
@@ -259,19 +284,34 @@ export default function AIChatbot() {
           
           <div className="space-y-2 overflow-y-auto">
             {Array.isArray(conversations) && conversations.map((conversation: ChatConversation) => (
-              <Button
-                key={conversation.id}
-                variant={currentConversationId === conversation.id ? "default" : "ghost"}
-                className={`w-full justify-start text-left h-auto p-3 ${
-                  currentConversationId === conversation.id 
-                    ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
-                    : 'hover:bg-gray-100'
-                }`}
-                onClick={() => setCurrentConversationId(conversation.id)}
-              >
-                <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
-                <span className="truncate">{conversation.title}</span>
-              </Button>
+              <div key={conversation.id} className="relative group">
+                <Button
+                  variant={currentConversationId === conversation.id ? "default" : "ghost"}
+                  className={`w-full justify-start text-left h-auto p-3 pr-12 ${
+                    currentConversationId === conversation.id 
+                      ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' 
+                      : 'hover:bg-gray-100'
+                  }`}
+                  onClick={() => setCurrentConversationId(conversation.id)}
+                >
+                  <MessageSquare className="w-4 h-4 mr-2 flex-shrink-0" />
+                  <span className="truncate">{conversation.title}</span>
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="absolute right-1 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 h-8 w-8 hover:bg-red-100 hover:text-red-600"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (confirm(`คุณต้องการลบการสนทนา "${conversation.title}" ใช่หรือไม่?`)) {
+                      deleteConversationMutation.mutate(conversation.id);
+                    }
+                  }}
+                  disabled={deleteConversationMutation.isPending}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             ))}
           </div>
         </div>

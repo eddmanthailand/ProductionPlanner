@@ -5152,7 +5152,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // ลบการสนทนา
-  app.delete("/api/chat/conversations/:conversationId", async (req: any, res: any) => {
+  app.delete("/api/chat/conversations/:conversationId", requireAuth, async (req: any, res: any) => {
     try {
       const { conversationId } = req.params;
       
