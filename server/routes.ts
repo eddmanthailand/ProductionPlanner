@@ -4994,16 +4994,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { provider, apiKey, persona } = req.body;
       
-      if (!provider || !apiKey) {
-        return res.status(400).json({ message: "Provider และ API Key จำเป็นต้องระบุ" });
-      }
-
       // ดึง tenant ID จาก session
       const tenantId = req.user?.tenantId;
       if (!tenantId) {
         return res.status(400).json({ 
           message: "ไม่พบข้อมูล tenant ของผู้ใช้" 
         });
+      }
+
+      // ตรวจสอบว่ามีการตั้งค่าอยู่แล้วหรือไม่
+      const existingConfig = await storage.getAiConfiguration(tenantId);
+      
+      if (!provider) {
+        return res.status(400).json({ message: "Provider จำเป็นต้องระบุ" });
+      }
+
+      // ถ้ามีการตั้งค่าอยู่แล้วและไม่มี API key ใหม่ แสดงว่าอัปเดต persona เท่านั้น
+      if (existingConfig && !apiKey) {
+        // อัปเดต persona โดยใช้ API key เดิม
+        const configuration = await storage.saveOrUpdateAiConfiguration(
+          tenantId, 
+          provider, 
+          existingConfig.encryptedApiKey, 
+          persona || 'neutral'
+        );
+
+        return res.status(200).json({ 
+          message: "อัปเดตบุคลิก AI สำเร็จ",
+          id: configuration.id,
+          provider: configuration.aiProvider 
+        });
+      }
+
+      // สำหรับการตั้งค่าใหม่หรือเปลี่ยน API key
+      if (!apiKey) {
+        return res.status(400).json({ message: "API Key จำเป็นต้องระบุสำหรับการตั้งค่าใหม่" });
       }
       
       // เข้ารหัส API key
