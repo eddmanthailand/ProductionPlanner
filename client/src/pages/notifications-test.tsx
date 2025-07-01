@@ -187,7 +187,7 @@ export default function NotificationsTest() {
                       <SelectValue placeholder="เลือกประเภท" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">ไม่มี</SelectItem>
+                      <SelectItem value="none">ไม่มี</SelectItem>
                       <SelectItem value="work_order">ใบสั่งงาน</SelectItem>
                       <SelectItem value="daily_work_log">บันทึกงาน</SelectItem>
                       <SelectItem value="production_plan">แผนผลิต</SelectItem>
