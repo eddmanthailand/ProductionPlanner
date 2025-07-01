@@ -238,9 +238,18 @@ function formatWorkOrdersForAI(workOrders: any[]): string {
     const totalAmount = order.totalAmount || '0';
     const deliveryDate = order.deliveryDate || 'ไม่กำหนด';
 
+    const deliveryStatus = order.deliveryStatus || 'pending';
+    const deliveryStatusText = {
+      'pending': 'ยังไม่ได้ส่ง',
+      'ready_for_dispatch': 'พร้อมส่ง',
+      'shipped': 'ส่งแล้ว',
+      'delivered': 'ได้รับแล้ว'
+    }[deliveryStatus] || deliveryStatus;
+
     formatted += `\n${index + 1}. ใบสั่งงาน: ${orderNum}\n`;
     formatted += `   - ลูกค้า: ${customer}\n`;
     formatted += `   - สถานะ: ${status} | ประเภท: ${workType}\n`;
+    formatted += `   - สถานะการจัดส่ง: ${deliveryStatusText}\n`;
     formatted += `   - มูลค่า: ${totalAmount} บาท | กำหนดส่ง: ${deliveryDate}\n`;
     formatted += `   - วันที่สร้าง: ${date}\n`;
     
@@ -374,12 +383,17 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
     // 📋 Work Orders - ใบสั่งงาน  
     if (lowerMessage.includes('work order') || lowerMessage.includes('ใบสั่งงาน') || 
         lowerMessage.includes('งานค้างอยู่') || lowerMessage.includes('สั่งงาน') || 
-        lowerMessage.includes('งานที่ยังไม่เสร็จ') || lowerMessage.includes('รายการงาน')) {
+        lowerMessage.includes('งานที่ยังไม่เสร็จ') || lowerMessage.includes('รายการงาน') ||
+        lowerMessage.includes('ยังไม่ได้ส่ง') || lowerMessage.includes('ยังไม่จัดส่ง') ||
+        lowerMessage.includes('ยังไม่ส่งของ') || lowerMessage.includes('pending delivery')) {
       
       console.log('🔍 Detected work order keyword, fetching data...');
       
-      // 🎯 Phase 2: Apply Status Filtering for Work Orders
+      // 🎯 Phase 2: Apply Status and Delivery Status Filtering for Work Orders
       let statusFilter = '';
+      let deliveryStatusFilter = '';
+      
+      // เช็คสถานะการทำงาน
       if (lowerMessage.includes('ค้าง') || lowerMessage.includes('ยังไม่เสร็จ') || lowerMessage.includes('pending')) {
         statusFilter = 'Pending';
       } else if (lowerMessage.includes('กำลังทำ') || lowerMessage.includes('progress')) {
@@ -388,7 +402,30 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
         statusFilter = 'Completed';
       }
       
-      const workOrders = await storage.getWorkOrders(tenantId);
+      // เช็คสถานะการจัดส่ง
+      if (lowerMessage.includes('ยังไม่ได้ส่ง') || lowerMessage.includes('ยังไม่จัดส่ง') || 
+          lowerMessage.includes('ยังไม่ส่งของ') || lowerMessage.includes('pending delivery')) {
+        deliveryStatusFilter = 'pending';
+        console.log('🚚 Detected delivery status filter: pending');
+      } else if (lowerMessage.includes('พร้อมส่ง') || lowerMessage.includes('ready for dispatch')) {
+        deliveryStatusFilter = 'ready_for_dispatch';
+      } else if (lowerMessage.includes('ส่งแล้ว') || lowerMessage.includes('shipped')) {
+        deliveryStatusFilter = 'shipped';
+      } else if (lowerMessage.includes('ได้รับแล้ว') || lowerMessage.includes('delivered')) {
+        deliveryStatusFilter = 'delivered';
+      }
+      
+      let workOrders;
+      
+      // ใช้ API ใหม่ถ้ามีการกรองตามสถานะการจัดส่ง
+      if (deliveryStatusFilter) {
+        console.log(`🚚 Using delivery status API with filter: ${deliveryStatusFilter}`);
+        const response = await fetch(`http://localhost:5000/api/work-orders/delivery-status/${deliveryStatusFilter}`);
+        workOrders = await response.json();
+      } else {
+        workOrders = await storage.getWorkOrders(tenantId);
+      }
+      
       let filteredOrders = workOrders;
       
       // Apply status filter if detected
@@ -3374,6 +3411,73 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Get work orders error:", error);
       res.status(500).json({ message: "Failed to fetch work orders" });
+    }
+  });
+
+  // New endpoint: Get work orders by delivery status
+  app.get("/api/work-orders/delivery-status/:status?", async (req: any, res: any) => {
+    try {
+      console.log("API: Work orders by delivery status endpoint called");
+      const tenantId = "550e8400-e29b-41d4-a716-446655440000"; // Default tenant for dev
+      const { status } = req.params;
+      
+      console.log("API: Filtering work orders by delivery status:", status || "all");
+      
+      let query = `SELECT * FROM work_orders WHERE tenant_id = $1`;
+      let params = [tenantId];
+      
+      if (status && status !== 'all') {
+        query += ` AND delivery_status = $2`;
+        params.push(status);
+      }
+      
+      query += ` ORDER BY created_at DESC`;
+      
+      const result = await pool.query(query, params);
+      
+      // Transform snake_case to camelCase for frontend and fetch sub_jobs
+      const workOrders = await Promise.all(result.rows.map(async (row) => {
+        // Fetch sub-jobs for each work order
+        const subJobsResult = await pool.query(
+          `SELECT * FROM sub_jobs WHERE work_order_id = $1 ORDER BY sort_order ASC, created_at ASC`,
+          [row.id]
+        );
+        
+        return {
+          id: row.id,
+          orderNumber: row.order_number,
+          quotationId: row.quotation_id,
+          customerId: row.customer_id,
+          customerName: row.customer_name,
+          customerTaxId: row.customer_tax_id,
+          customerAddress: row.customer_address,
+          customerPhone: row.customer_phone,
+          customerEmail: row.customer_email,
+          title: row.title,
+          description: row.description,
+          totalAmount: row.total_amount,
+          status: row.status,
+          priority: row.priority,
+          workTypeId: row.work_type_id,
+          startDate: row.start_date,
+          deliveryDate: row.delivery_date,
+          completedDate: row.completed_date,
+          deliveryStatus: row.delivery_status, // ฟิลด์ใหม่
+          shippedAt: row.shipped_at,           // ฟิลด์ใหม่
+          deliveredAt: row.delivered_at,       // ฟิลด์ใหม่
+          notes: row.notes,
+          tenantId: row.tenant_id,
+          createdAt: row.created_at,
+          updatedAt: row.updated_at,
+          subJobs: subJobsResult.rows
+        };
+      }));
+      
+      console.log(`Found work orders with delivery status '${status || 'all'}': ${result.rows.length}`);
+      res.json(workOrders);
+    } catch (error) {
+      console.error("Get work orders by delivery status error:", error);
+      res.status(500).json({ message: "Failed to fetch work orders by delivery status" });
     }
   });
 
