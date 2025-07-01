@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLanguage } from "@/hooks/use-language";
-import { Search, Bell, Languages } from "lucide-react";
+import { Search, Languages } from "lucide-react";
+import { NotificationBell } from "@/components/ui/notification-bell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,12 +67,7 @@ export default function Header() {
           </DropdownMenu>
           
           {/* Notifications */}
-          <button className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-            <Bell className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-              3
-            </span>
-          </button>
+          <NotificationBell />
         </div>
       </div>
     </header>
