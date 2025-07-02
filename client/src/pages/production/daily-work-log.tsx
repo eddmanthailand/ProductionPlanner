@@ -23,6 +23,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import type { DailyWorkLogWithDetails } from "@shared/schema";
 
 // ฟังก์ชันสำหรับจัดรูปแบบวันที่อย่างปลอดภัย
 const safeFormatDate = (dateString: string | null | undefined, formatString: string): string => {
@@ -48,22 +49,7 @@ const getColorHex = (colorCode: string): string => {
   return '#f3f4f6';
 };
 
-interface DailyWorkLog {
-  id: string;
-  reportNumber: string;
-  date: string;
-  teamId: string;
-  employeeId: string;
-  workOrderId: string;
-  subJobId: number;
-  hoursWorked: number;
-  workDescription: string;
-  status: 'in_progress' | 'completed' | 'paused';
-  notes?: string;
-  quantityCompleted?: number;
-  createdAt: string;
-  updatedAt: string;
-}
+// Using DailyWorkLogWithDetails from schema instead of local interface
 
 interface Team {
   id: string;
@@ -167,7 +153,7 @@ export default function DailyWorkLog() {
   const [workDescription, setWorkDescription] = useState<string>("");
   const [workStatus, setWorkStatus] = useState<string>("in_progress");
   const [notes, setNotes] = useState<string>("");
-  const [editingLog, setEditingLog] = useState<DailyWorkLog | null>(null);
+  const [editingLog, setEditingLog] = useState<DailyWorkLogWithDetails | null>(null);
   const [previewingLog, setPreviewingLog] = useState<any>(null);
   const [showSearchDialog, setShowSearchDialog] = useState(false);
   const [searchCriteria, setSearchCriteria] = useState({
@@ -299,7 +285,7 @@ export default function DailyWorkLog() {
     }
   });
 
-  const { data: dailyLogs = [] } = useQuery<DailyWorkLog[]>({
+  const { data: dailyLogs = [] } = useQuery<DailyWorkLogWithDetails[]>({
     queryKey: ["/api/daily-work-logs", searchCriteria, selectedDate, selectedTeam],
     queryFn: async () => {
       const params = new URLSearchParams({
@@ -1170,7 +1156,7 @@ export default function DailyWorkLog() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {consolidatedLogs.map((log, index) => (
+                {consolidatedLogs.map((log: any, index) => (
                   <TableRow key={`${log.date}-${log.teamId}-${log.workOrderId}-${index}`} 
                            style={{ fontSize: '11px' }}
                            className="hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors h-12">

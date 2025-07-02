@@ -952,6 +952,20 @@ export const insertDailyWorkLogArchiveSchema = createInsertSchema(dailyWorkLogsA
 
 export type DailyWorkLog = typeof dailyWorkLogs.$inferSelect;
 export type InsertDailyWorkLog = z.infer<typeof insertDailyWorkLogSchema>;
+
+// Extended type with joined data
+export type DailyWorkLogWithDetails = DailyWorkLog & {
+  orderNumber?: string;
+  customerName?: string;
+  deliveryDate?: string;
+  productName?: string;
+  subJobQuantity?: number;
+  colorName?: string;
+  colorCode?: string;
+  sizeName?: string;
+  teamName?: string;
+  employeeName?: string;
+};
 export type DailyWorkLogArchive = typeof dailyWorkLogsArchive.$inferSelect;
 export type InsertDailyWorkLogArchive = z.infer<typeof insertDailyWorkLogArchiveSchema>;
 

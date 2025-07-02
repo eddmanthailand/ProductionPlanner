@@ -94,6 +94,7 @@ import {
   type InsertProductionPlanItem,
   type DailyWorkLog,
   type InsertDailyWorkLog,
+  type DailyWorkLogWithDetails,
   type DailyWorkLogArchive,
   type InsertDailyWorkLogArchive,
   type WorkOrderAttachment,
@@ -1806,7 +1807,7 @@ export class DatabaseStorage implements IStorage {
     status?: string; 
     employeeName?: string; 
     limit?: number; 
-  }): Promise<DailyWorkLog[]> {
+  }): Promise<DailyWorkLogWithDetails[]> {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
@@ -1845,9 +1846,27 @@ export class DatabaseStorage implements IStorage {
       const limitClause = filters?.limit ? ` LIMIT ${filters.limit}` : '';
       
       const query = `
-        SELECT * FROM daily_work_logs 
+        SELECT 
+          dwl.*,
+          wo.order_number,
+          wo.customer_name,
+          wo.delivery_date,
+          sj.product_name,
+          sj.quantity as sub_job_quantity,
+          c.name as color_name,
+          c.code as color_code,
+          s.name as size_name,
+          t.name as team_name,
+          u.first_name || ' ' || u.last_name as employee_name
+        FROM daily_work_logs dwl
+        LEFT JOIN work_orders wo ON dwl.work_order_id = wo.id
+        LEFT JOIN sub_jobs sj ON dwl.sub_job_id = sj.id
+        LEFT JOIN colors c ON sj.color_id = c.id  
+        LEFT JOIN sizes s ON sj.size_id = s.id
+        LEFT JOIN teams t ON dwl.team_id = t.id
+        LEFT JOIN users u ON dwl.employee_id = u.id
         WHERE ${whereClause}
-        ORDER BY created_at DESC
+        ORDER BY dwl.created_at DESC
         ${limitClause}
       `;
 
@@ -1857,7 +1876,7 @@ export class DatabaseStorage implements IStorage {
       
       console.log('Storage: Found daily work logs:', allLogs.length, 'records');
       console.log('Storage: Sample record:', allLogs[0] ? Object.keys(allLogs[0]) : 'No records');
-      return allLogs as DailyWorkLog[];
+      return allLogs as DailyWorkLogWithDetails[];
     } catch (error) {
       console.error('Get daily work logs error:', error);
       return [];
