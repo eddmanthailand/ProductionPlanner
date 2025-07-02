@@ -130,6 +130,12 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- July 2, 2025: ✅ แก้ไขปัญหาหน้า AI ไม่ปรากฏในระบบจัดการสิทธิ์สำเร็จ
+  - **Root Cause**: หน้า AI Chatbot, AI Settings, และหน้าทดสอบไม่อยู่ใน fallback page list
+  - **Solution**: เพิ่มหน้า `/ai-chatbot`, `/ai-settings`, `/notifications-test` ลงใน fallback page mapping
+  - **Updated Functions**: แก้ไขทั้ง `getPageNameFromUrl()` และ `getAllSystemPages()` 
+  - **Result**: ระบบจัดการสิทธิ์แสดงหน้า AI ได้ครบถ้วน สามารถกำหนดสิทธิ์ได้ตามปกติ
+
 - July 1, 2025: ✅ ระบบ AI Chatbot Phase 5 - Enhanced AI Intelligence สำเร็จ (Smart Insights Panel Complete)
   - **Smart Insights Panel**: เพิ่มระบบวิเคราะห์บทสนทนาแบบ real-time พร้อม visual cards
   - **Advanced AI Analytics**: ปุ่ม Brain ในส่วนหัว AI Chatbot เรียก generateInsights API

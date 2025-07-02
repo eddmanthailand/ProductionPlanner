@@ -692,6 +692,42 @@ function buildPersonaPrompt(originalPrompt: string, persona: string): string {
 }
 
 // 📊 Enhanced Chart Generation - Build intelligent chart prompt
+function processActiveModeResponse(aiResponse: string): string {
+  try {
+    // Try to parse response as JSON first
+    const parsed = JSON.parse(aiResponse);
+    
+    if (parsed.type === 'action_response' && parsed.action) {
+      // Convert JSON action response to [ACTION] tag format
+      const actionTag = `[ACTION]${JSON.stringify(parsed.action)}[/ACTION]`;
+      const message = parsed.message || '';
+      return `${message}\n\n${actionTag}`;
+    }
+    
+    // If not action_response, return original
+    return aiResponse;
+  } catch (jsonError) {
+    // Check if the response contains JSON with action_response
+    const jsonMatch = aiResponse.match(/\{[^}]*"type":\s*"action_response"[^}]*\}/);
+    if (jsonMatch) {
+      try {
+        const actionData = JSON.parse(jsonMatch[0]);
+        if (actionData.type === 'action_response' && actionData.action) {
+          const actionTag = `[ACTION]${JSON.stringify(actionData.action)}[/ACTION]`;
+          const cleanedMessage = aiResponse.replace(jsonMatch[0], '').trim();
+          return `${cleanedMessage}\n\n${actionTag}`;
+        }
+      } catch (parseError) {
+        // If parsing fails, return original response
+        return aiResponse;
+      }
+    }
+    
+    // No action found, return original response
+    return aiResponse;
+  }
+}
+
 function buildChartPrompt(originalPrompt: string): string {
   return `${originalPrompt}
 
@@ -5148,6 +5184,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (aiResponse.trim().startsWith('<!DOCTYPE')) {
           aiResponse = "ขออภัย ระบบมีปัญหาในการประมวลผลคำตอบ กรุณาลองถามใหม่ด้วยคำถามที่ง่ายกว่า";
         }
+        
+        // Process response for Active Mode (convert JSON action_response to [ACTION] tags)
+        aiResponse = processActiveModeResponse(aiResponse);
         
       } catch (geminiError: any) {
         console.error('❌ Gemini API Error:', geminiError);
