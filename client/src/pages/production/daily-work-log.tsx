@@ -919,7 +919,7 @@ export default function DailyWorkLog() {
                             <div className="space-y-1">
                               <div className="text-xs font-medium">{subJob.productName}</div>
                               {progressPercentage > 0 && (
-                                <div className="flex items-center gap-1.5">
+                                <div key={`progress-${subJob.id}`} className="flex items-center gap-1.5">
                                   <Progress value={progressPercentage} className="h-1.5 flex-1" />
                                   <span className="text-[10px] font-medium text-gray-600 dark:text-gray-400 min-w-[35px]">
                                     {progressPercentage.toFixed(1)}%
@@ -931,7 +931,7 @@ export default function DailyWorkLog() {
                           <TableCell className="py-2 px-3">
                             <div className="flex items-center gap-1.5">
                               {subJob.colorId && (
-                                <div className="w-2.5 h-2.5 rounded-full border border-gray-300" style={{
+                                <div key={`color-${subJob.id}`} className="w-2.5 h-2.5 rounded-full border border-gray-300" style={{
                                   backgroundColor: getColorHex(colors.find(c => c.id === subJob.colorId)?.code || '')
                                 }}></div>
                               )}
@@ -1004,6 +1004,7 @@ export default function DailyWorkLog() {
                           <TableCell className="py-2 px-3">
                             {selectedSubJobs[subJob.id.toString()] && (
                               <Input
+                                key={`quantity-input-${subJob.id}`}
                                 type="number"
                                 placeholder="จำนวน"
                                 value={selectedQuantities[subJob.id.toString()] || ""}
