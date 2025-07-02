@@ -235,7 +235,20 @@ function UserManagement() {
     mutationFn: async (data: EditUserFormData) => {
       if (!editingUser) throw new Error("ไม่พบข้อมูลผู้ใช้");
       const response = await apiRequest("PUT", `/api/users/${editingUser.id}`, data);
-      return await response.json();
+      
+      // Check if response is ok and has JSON content
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+      
+      // Check if response has content to parse as JSON
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      }
+      
+      return { success: true }; // Return default success for non-JSON responses
     },
     onSuccess: () => {
       toast({
@@ -248,9 +261,19 @@ function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: Error) => {
+      console.error("Edit user error:", error);
+      let errorMessage = error.message;
+      
+      // Handle specific error messages in Thai
+      if (error.message.includes("Username already exists")) {
+        errorMessage = "ชื่อผู้ใช้นี้มีอยู่แล้ว กรุณาใช้ชื่อผู้ใช้อื่น";
+      } else if (error.message.includes("Email already exists")) {
+        errorMessage = "อีเมลนี้มีอยู่แล้ว กรุณาใช้อีเมลอื่น";
+      }
+      
       toast({
-        title: "เกิดข้อผิดพลาด",
-        description: error.message,
+        title: "ไม่สามารถแก้ไขข้อมูลผู้ใช้ได้",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -259,7 +282,18 @@ function UserManagement() {
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
       const response = await apiRequest("DELETE", `/api/users/${userId}`);
-      return await response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      }
+      
+      return { success: true };
     },
     onSuccess: () => {
       toast({
@@ -280,7 +314,18 @@ function UserManagement() {
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: number; isActive: boolean }) => {
       const response = await apiRequest("PATCH", `/api/users/${userId}/status`, { isActive });
-      return await response.json();
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || `HTTP ${response.status}`);
+      }
+      
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        return await response.json();
+      }
+      
+      return { success: true };
     },
     onSuccess: (data, variables) => {
       toast({
