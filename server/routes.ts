@@ -2343,7 +2343,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '/production': 'การผลิต',
         '/sales': 'การขาย',
         '/products': 'จัดการสินค้า',
-        '/access-demo': 'ทดสอบสิทธิ์'
+        '/access-demo': 'ทดสอบสิทธิ์',
+        '/ai-chatbot': 'AI ผู้ช่วย',
+        '/ai-settings': 'การตั้งค่า AI',
+        '/notifications-test': 'ทดสอบระบบการแจ้งเตือน'
       };
       
       return fallbackPageNameMap[url] || url;
@@ -2390,7 +2393,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         '/production': 'การผลิต',
         '/sales': 'การขาย',
         '/products': 'จัดการสินค้า',
-        '/access-demo': 'ทดสอบสิทธิ์'
+        '/access-demo': 'ทดสอบสิทธิ์',
+        '/ai-chatbot': 'AI ผู้ช่วย',
+        '/ai-settings': 'การตั้งค่า AI',
+        '/notifications-test': 'ทดสอบระบบการแจ้งเตือน'
       };
       
       return Object.entries(fallbackPageNameMap).map(([url, name]) => ({ name, url }));
