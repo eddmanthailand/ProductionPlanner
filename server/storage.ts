@@ -1856,6 +1856,7 @@ export class DatabaseStorage implements IStorage {
       const allLogs = (result as any).rows || [];
       
       console.log('Storage: Found daily work logs:', allLogs.length, 'records');
+      console.log('Storage: Sample record:', allLogs[0] ? Object.keys(allLogs[0]) : 'No records');
       return allLogs as DailyWorkLog[];
     } catch (error) {
       console.error('Get daily work logs error:', error);
