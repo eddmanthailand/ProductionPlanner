@@ -350,6 +350,7 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
         lowerMessage.includes('สรุป') || lowerMessage.includes('ล่าสุด')) {
       
       console.log('🔍 Detected daily work log keyword, fetching data...');
+      console.log('🔑 Using tenantId:', tenantId);
       
       // 🎯 Phase 2: Apply Smart Filtering based on date filters
       let filters: any = {};
@@ -363,6 +364,7 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
       
       const workLogs = await storage.getDailyWorkLogs(tenantId, filters);
       console.log('📊 Found work logs:', workLogs.length, 'records');
+      console.log('📊 Sample work log data:', workLogs.slice(0, 2));
       
       if (workLogs && workLogs.length > 0) {
         const periodText = dateFilters.period ? ` (${getThaiPeriodText(dateFilters.period)})` : '';
@@ -371,6 +373,7 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
         // 🚀 Phase 2: Format data for better AI understanding
         const formattedLogs = formatWorkLogsForAI(workLogs.slice(0, 15));
         context += formattedLogs;
+        console.log('📝 Generated work logs context length:', formattedLogs.length, 'chars');
         
         systemInstructions += `ข้อมูลนี้เป็นใบบันทึกประจำวันของพนักงานจริงในระบบ${periodText} แต่ละรายการมี: ID, วันที่ทำงาน, ทีมงาน และรายละเอียดงาน กรุณาวิเคราะห์และสรุปข้อมูลให้ผู้ใช้\n`;
       } else {
@@ -420,11 +423,27 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
       // ใช้ API ใหม่ถ้ามีการกรองตามสถานะการจัดส่ง
       if (deliveryStatusFilter) {
         console.log(`🚚 Using delivery status API with filter: ${deliveryStatusFilter}`);
-        const response = await fetch(`http://localhost:5000/api/work-orders/delivery-status/${deliveryStatusFilter}`);
-        workOrders = await response.json();
+        try {
+          // เปลี่ยนจาก hardcoded localhost เป็น relative path
+          const response = await fetch(`/api/work-orders/delivery-status/${deliveryStatusFilter}`, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (response.ok) {
+            workOrders = await response.json();
+          } else {
+            console.log('❌ API call failed, fallback to storage');
+            workOrders = await storage.getWorkOrders(tenantId);
+          }
+        } catch (fetchError) {
+          console.log('❌ Fetch error, using storage directly:', fetchError);
+          workOrders = await storage.getWorkOrders(tenantId);
+        }
       } else {
         workOrders = await storage.getWorkOrders(tenantId);
       }
+      
+      console.log('📋 Found work orders:', workOrders.length, 'records');
+      console.log('📋 Sample work order data:', workOrders.slice(0, 1));
       
       let filteredOrders = workOrders;
       
@@ -511,7 +530,8 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
     }
 
   } catch (error) {
-    console.error('Error building enhanced prompt:', error);
+    console.error('❌ Error building enhanced prompt:', error);
+    console.error('❌ Error details:', error instanceof Error ? error.message : error);
     context += `\n=== ไม่สามารถดึงข้อมูลเพิ่มเติมได้ ===\n`;
     systemInstructions += `เนื่องจากปัญหาทางเทคนิค กรุณาตอบตามความรู้ทั่วไปของคุณ\n`;
   }
@@ -523,7 +543,13 @@ async function buildEnhancedPrompt(userMessage: string, tenantId: string, storag
   }
 
   // 🚀 Phase 2 เป้าหมายที่ 2: Advanced Prompt Engineering
+  console.log('🏗️ Building final prompt...');
+  console.log('📏 Context size:', context.length, 'chars');
+  console.log('📄 System instructions size:', systemInstructions.length, 'chars');
+  
   const finalPrompt = buildAdvancedPrompt(systemInstructions, context, userMessage, dateFilters);
+  console.log('✅ Final prompt size:', finalPrompt.length, 'chars');
+  console.log('🎯 Context preview:', context.substring(0, 200) + '...');
   
   return finalPrompt;
 }
@@ -5167,11 +5193,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let aiResponse;
       try {
         // สร้าง Enhanced Prompt
+        console.log('🔧 Building enhanced prompt for message:', message.trim().substring(0, 50) + '...');
         const enhancedPrompt = await buildEnhancedPromptWithHistory(message.trim(), tenantId, storage, conversationHistory);
+        console.log('🎯 Enhanced prompt generated, size:', enhancedPrompt.length, 'chars');
         
         // ตรวจสอบ Chart Generation
         const needsChart = shouldGenerateChart(message.trim());
         let finalPrompt = needsChart ? buildChartPrompt(enhancedPrompt) : enhancedPrompt;
+        console.log('📊 Chart generation needed:', needsChart);
+        console.log('🎯 Final prompt size before Gemini:', finalPrompt.length, 'chars');
         
         // เพิ่ม Persona
         if (aiConfig && aiConfig.persona) {

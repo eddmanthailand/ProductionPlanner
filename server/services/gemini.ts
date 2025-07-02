@@ -46,6 +46,7 @@ export class GeminiService {
       
       if (isActionableRequest) {
         // Full prompt with action capabilities for actionable requests
+        console.log('🤖 Using full action prompt for actionable request');
         fullPrompt = `${systemPrompt}
 
 Previous conversation:
@@ -82,6 +83,7 @@ IMPORTANT: Always embed action suggestions in [ACTION] tags when detecting actio
 Please provide a helpful response as a production management system assistant:`;
       } else {
         // Simplified prompt for regular conversations to improve speed
+        console.log('🤖 Using simplified prompt for general conversation');
         fullPrompt = `You are a helpful Thai-speaking AI assistant for a production management system.
 
 Previous conversation:
@@ -91,6 +93,11 @@ Current user message: ${userMessage}
 
 Please provide a concise, helpful response in Thai. Be professional but friendly.`;
       }
+
+      console.log(`🤖 Final prompt length: ${fullPrompt.length} characters`);
+      console.log(`🤖 Prompt preview (first 300 chars):`, fullPrompt.substring(0, 300) + '...');
+      console.log(`🤖 Prompt contains database context:`, fullPrompt.includes('=== ข้อมูล') || fullPrompt.includes('รายการ'));
+      console.log(`🤖 Calling Gemini API...`);
 
       const response = await this.ai.models.generateContent({
         model: "gemini-2.5-flash",
