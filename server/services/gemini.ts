@@ -504,30 +504,44 @@ Generate a short, descriptive title in Thai that captures the main topic discuss
   private detectActionableRequest(message: string): boolean {
     const lowerMessage = message.toLowerCase().trim();
     
-    // Exclude common greetings, simple questions, and general inquiries
-    const nonActionableQuestions = [
-      'สวัสดี', 'สวัสดีครับ', 'สวัสดีค่ะ', 'hello', 'hi', 'หวัดดี',
-      'ขอบคุณ', 'ขอบคุณครับ', 'ขอบคุณค่ะ', 'thanks', 'thank you',
-      'คุณทำอะไรได้บ้าง', 'ช่วยอะไรได้บ้าง', 'มีฟีเจอร์อะไรบ้าง',
-      'what can you do', 'help me', 'คุณคือใคร', 'who are you',
-      'ขอดูใบสั่งงาน', 'ขอดูข้อมูล', 'แสดงข้อมูล', 'ขอดูเลขที่',
-      'มีใบสั่งงานอะไรบ้าง', 'ข้อมูลในระบบ', 'show me', 'tell me about'
+    // คำขอที่ต้องการข้อมูลจากฐานข้อมูล - ถือว่าเป็น actionable เพราะต้องใช้ enhanced prompt
+    const dataRequestKeywords = [
+      'สรุป', 'รายงาน', 'แสดง', 'ดู', 'วิเคราะห์', 'ตรวจสอบ',
+      'บันทึกประจำวัน', 'ใบสั่งงาน', 'รายได้', 'ประสิทธิภาพ',
+      'ข้อมูล', 'ล่าสุด', 'ย้อนหลัง', 'วันนี้', 'เมื่อวาน', 'สัปดาห์',
+      'รายการ', 'จำนวน', 'ทั้งหมด', 'เฉพาะ', 'ประจำ'
     ];
     
-    // If it's just a greeting or general question, don't treat as actionable
-    if (nonActionableQuestions.some(question => lowerMessage.includes(question))) {
+    // ถ้าข้อความมีคำขอข้อมูล ให้ถือว่าเป็น actionable
+    if (dataRequestKeywords.some(keyword => lowerMessage.includes(keyword))) {
+      return true;
+    }
+    
+    // คำทักทายพื้นฐานที่ไม่ต้องการข้อมูล
+    const simpleGreetings = [
+      'สวัสดี', 'hello', 'hi', 'หวัดดี',
+      'ขอบคุณ', 'thanks', 'thank you',
+      'คุณทำอะไรได้บ้าง', 'ช่วยอะไรได้บ้าง', 'มีฟีเจอร์อะไรบ้าง',
+      'คุณคือใคร', 'who are you'
+    ];
+    
+    // ถ้าเป็นคำทักทายเท่านั้น ไม่ต้องการ enhanced prompt
+    const isSimpleGreeting = simpleGreetings.some(greeting => 
+      lowerMessage === greeting || lowerMessage === greeting + 'ครับ' || lowerMessage === greeting + 'ค่ะ'
+    );
+    
+    if (isSimpleGreeting) {
       return false;
     }
     
-    // Specific actionable phrases that clearly indicate intent to modify data
-    const specificActionKeywords = [
-      'เปลี่ยนสถานะของ', 'อัปเดตข้อมูล', 'แก้ไขใบสั่งงาน', 'บันทึกงาน', 'สร้างใบบันทึก',
-      'ช่วยเปลี่ยนสถานะ', 'ช่วยอัปเดต', 'ช่วยแก้ไข', 'ช่วยบันทึก', 'ช่วยสร้าง',
-      'ทำการอัปเดต', 'ดำเนินการเปลี่ยน', 'ปรับสถานะ', 'แก้ไขข้อมูล',
-      'เริ่มงานใหม่', 'หยุดการทำงาน', 'เสร็จสิ้นงาน', 'ยกเลิกใบสั่งงาน'
+    // Action keywords สำหรับการแก้ไขข้อมูล
+    const actionKeywords = [
+      'เปลี่ยนสถานะ', 'อัปเดต', 'แก้ไข', 'บันทึก', 'สร้าง',
+      'ช่วยเปลี่ยน', 'ช่วยอัปเดต', 'ช่วยแก้ไข', 'ช่วยบันทึก', 'ช่วยสร้าง',
+      'เริ่มงาน', 'หยุดการทำงาน', 'เสร็จสิ้น', 'ยกเลิก'
     ];
     
-    return specificActionKeywords.some(keyword => lowerMessage.includes(keyword));
+    return actionKeywords.some(keyword => lowerMessage.includes(keyword));
   }
 
   /**
