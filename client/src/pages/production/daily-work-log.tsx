@@ -1457,7 +1457,7 @@ export default function DailyWorkLog() {
                                   const orderQuantity = subJobData?.quantity || 0;
 
                                   return (
-                                    <TableRow key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                                    <TableRow key={`${item.subJobId}-${item.productName}-${item.colorName}-${item.sizeName}-${index}`} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                                       <TableCell className="font-medium">{item.productName || '-'}</TableCell>
                                       <TableCell>
                                         <div className="flex items-center gap-2">
