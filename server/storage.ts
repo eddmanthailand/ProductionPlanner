@@ -1810,63 +1810,53 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
-      const conditions = [eq(dailyWorkLogs.tenantId, tenantId), isNull(dailyWorkLogs.deletedAt)];
+      let whereClause = `tenant_id = '${tenantId}' AND deleted_at IS NULL`;
 
       if (filters?.date) {
         console.log('Storage: Adding date filter:', filters.date);
-        conditions.push(eq(dailyWorkLogs.date, filters.date));
+        whereClause += ` AND date = '${filters.date}'`;
       }
 
       if (filters?.dateFrom) {
         console.log('Storage: Adding dateFrom filter:', filters.dateFrom);
-        conditions.push(gte(dailyWorkLogs.date, filters.dateFrom));
+        whereClause += ` AND date >= '${filters.dateFrom}'`;
       }
 
       if (filters?.dateTo) {
         console.log('Storage: Adding dateTo filter:', filters.dateTo);
-        conditions.push(lte(dailyWorkLogs.date, filters.dateTo));
+        whereClause += ` AND date <= '${filters.dateTo}'`;
       }
 
       if (filters?.teamId && filters.teamId !== 'all') {
         console.log('Storage: Adding team filter:', filters.teamId);
-        conditions.push(eq(dailyWorkLogs.teamId, filters.teamId));
+        whereClause += ` AND team_id = '${filters.teamId}'`;
       }
 
       if (filters?.workOrderId) {
         console.log('Storage: Adding work order filter:', filters.workOrderId);
-        conditions.push(eq(dailyWorkLogs.workOrderId, filters.workOrderId));
+        whereClause += ` AND work_order_id = '${filters.workOrderId}'`;
       }
 
       if (filters?.status) {
         console.log('Storage: Adding status filter:', filters.status);
-        conditions.push(eq(dailyWorkLogs.status, filters.status));
+        whereClause += ` AND status = '${filters.status}'`;
       }
 
-      const allLogs = await db.query.dailyWorkLogs.findMany({
-        where: and(...conditions),
-        with: {
-          subJob: {
-            with: {
-              color: true,
-              size: true,
-              workOrder: {
-                with: {
-                  customer: true
-                }
-              }
-            }
-          },
-          employee: true,
-          team: true
-        },
-        orderBy: [desc(dailyWorkLogs.createdAt)]
-      });
-
-      // Apply limit after fetching if specified
-      const logs = filters?.limit ? allLogs.slice(0, filters.limit) : allLogs;
+      const limitClause = filters?.limit ? ` LIMIT ${filters.limit}` : '';
       
-      console.log('Storage: Found daily work logs:', logs.length, logs.map(l => ({ id: l.id, date: l.date, teamId: l.teamId })));
-      return logs;
+      const query = `
+        SELECT * FROM daily_work_logs 
+        WHERE ${whereClause}
+        ORDER BY created_at DESC
+        ${limitClause}
+      `;
+
+      console.log('Storage: Executing SQL:', query);
+      const result = await db.execute(sql`${sql.raw(query)}`);
+      const allLogs = (result as any).rows || [];
+      
+      console.log('Storage: Found daily work logs:', allLogs.length, 'records');
+      return allLogs as DailyWorkLog[];
     } catch (error) {
       console.error('Get daily work logs error:', error);
       return [];
