@@ -130,6 +130,15 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- July 2, 2025: ✅ แก้ไขปัญหา AI Database Connectivity สำเร็จครบถ้วน
+  - **Root Cause Resolved**: แก้ไข SQL Type Casting Error โดยเปลี่ยนจาก Drizzle ORM เป็น raw SQL
+  - **Enhanced Detection**: ปรับปรุง detectActionableRequest ให้รู้จัก keywords การขอข้อมูล
+  - **Keywords Added**: สรุป, รายงาน, แสดง, ดู, วิเคราะห์, บันทึกประจำวัน, ใบสั่งงาน, รายได้
+  - **Smart Routing**: คำขอข้อมูลใช้ enhanced prompt พร้อมข้อมูลจริง, คำทักทายใช้ simplified prompt
+  - **Database Integration**: AI ดึงข้อมูล 18 รายการ daily work logs ได้สำเร็จ
+  - **AI Intelligence**: AI วิเคราะห์ข้อมูล ให้ข้อเสนอแนะ และตรวจจับปัญหาในข้อมูลได้
+  - **Result**: AI Chatbot ทำงานได้สมบูรณ์ พร้อมใช้งานจริงในการวิเคราะห์ข้อมูลธุรกิจ
+
 - July 2, 2025: ✅ แก้ไข AI Active Mode เป็นระบบ Action Approval พร้อมใช้งานสำเร็จ
   - **Enhanced Backend**: สร้างฟังก์ชัน `processActiveModeResponse()` แปลง JSON action_response เป็น [ACTION] tags
   - **Response Processing**: เพิ่มการ process Active Mode response ใน chat messages API endpoint
