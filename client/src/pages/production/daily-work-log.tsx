@@ -1386,7 +1386,7 @@ export default function DailyWorkLog() {
                   {/* แสดงแต่ละรอบการบันทึก */}
                   {previewingLog.recordingSessions && previewingLog.recordingSessions.length > 0 ? (
                     previewingLog.recordingSessions.map((session: any, sessionIndex: number) => (
-                      <div key={session.reportNumber} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
+                      <div key={`session-${session.reportNumber}-${sessionIndex}`} className="border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden">
                         {/* หัวข้อของแต่ละรอบ */}
                         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 px-4 py-3 border-b border-gray-200 dark:border-gray-600">
                           <div className="flex items-center justify-between">
