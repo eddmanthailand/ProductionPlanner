@@ -46,8 +46,9 @@ export default function PageAccessManagement() {
   const { data: config, isLoading, error, refetch } = useQuery<PageAccessConfig>({
     queryKey: ["pageAccessConfig"],
     queryFn: async () => {
-      const response = await fetch("/api/page-access-management/config", {
-        cache: 'no-cache', // ป้องกันการ cache ข้อมูลเก่า
+      const timestamp = Date.now();
+      const response = await fetch(`/api/page-access-management/config?_t=${timestamp}`, {
+        cache: 'no-cache',
         headers: {
           'Cache-Control': 'no-cache',
           'Pragma': 'no-cache'
@@ -60,7 +61,7 @@ export default function PageAccessManagement() {
     },
     refetchOnWindowFocus: false,
     staleTime: 0, // ข้อมูลจะ stale ทันที
-    cacheTime: 0, // ไม่เก็บ cache
+    gcTime: 0, // ใช้ gcTime แทน cacheTime (React Query v5)
   });
 
   const updateMutation = useMutation({
@@ -113,7 +114,13 @@ export default function PageAccessManagement() {
         title: "สำเร็จ",
         description: "สร้างสิทธิ์ครบถ้วนเรียบร้อยแล้ว",
       });
-      queryClient.invalidateQueries({ queryKey: ["pageAccessConfig"] });
+      // ล้าง cache ทั้งหมดและ force refetch
+      setPermissions({});
+      queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
+      // รอสักครู่แล้ว refetch ใหม่
+      setTimeout(() => {
+        refetch();
+      }, 500);
     },
     onError: (error: Error) => {
       toast({
@@ -181,7 +188,6 @@ export default function PageAccessManagement() {
         if (originalLevel !== currentLevel) {
           updatedList.push({
             pageUrl: page.url,
-            pageTitle: page.name, // เพิ่ม pageTitle เพื่อป้องกัน null value
             roleId: role.id,
             accessLevel: currentLevel,
           });
@@ -327,7 +333,15 @@ export default function PageAccessManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    refetch();
+                    // ล้าง permissions state ก่อน
+                    setPermissions({});
+                    setHasChanges(false);
+                    // ล้าง cache ทั้งหมด
+                    queryClient.removeQueries({ queryKey: ["pageAccessConfig"] });
+                    // รอสักครู่แล้ว refetch ใหม่
+                    setTimeout(() => {
+                      refetch();
+                    }, 200);
                     toast({
                       title: "กำลังรีเฟรชข้อมูล",
                       description: "กำลังดึงข้อมูลล่าสุดจากเซิร์ฟเวอร์",
