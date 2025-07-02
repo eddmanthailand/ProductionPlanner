@@ -24,6 +24,20 @@ import { apiRequest } from "@/lib/queryClient";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
+// ฟังก์ชันสำหรับจัดรูปแบบวันที่อย่างปลอดภัย
+const safeFormatDate = (dateString: string | null | undefined, formatString: string): string => {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return '-';
+    return format(date, formatString);
+  } catch (error) {
+    console.warn('Invalid date format:', dateString);
+    return '-';
+  }
+};
+
 // ฟังก์ชันสำหรับแสดงสี - ตอนนี้ใช้ hex code จากฐานข้อมูลโดยตรง
 const getColorHex = (colorCode: string): string => {
   // ถ้าเป็น hex code แล้ว ใช้เลย
@@ -856,7 +870,7 @@ export default function DailyWorkLog() {
                 <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">กำหนดส่งสินค้า</Label>
                 <p className="font-medium text-lg">
                   {selectedWorkOrderDetails.deliveryDate 
-                    ? format(new Date(selectedWorkOrderDetails.deliveryDate), 'dd/MM/yyyy')
+                    ? safeFormatDate(selectedWorkOrderDetails.deliveryDate, 'dd/MM/yyyy')
                     : 'ไม่ระบุ'
                   }
                 </p>
@@ -1170,8 +1184,8 @@ export default function DailyWorkLog() {
                     </TableCell>
                     <TableCell className="font-mono text-xs py-2 px-3">
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-xs">{format(new Date(log.createdAt), 'dd/MM/yyyy')}</span>
-                        <span className="text-gray-500 text-[10px]">{format(new Date(log.createdAt), 'HH:mm')}</span>
+                        <span className="text-xs">{safeFormatDate(log.createdAt, 'dd/MM/yyyy')}</span>
+                        <span className="text-gray-500 text-[10px]">{safeFormatDate(log.createdAt, 'HH:mm')}</span>
                       </div>
                     </TableCell>
                     <TableCell className="py-2 px-3">
@@ -1248,7 +1262,7 @@ export default function DailyWorkLog() {
                   รายละเอียดการบันทึกงาน
                 </DialogTitle>
                 <DialogDescription className="text-gray-600">
-                  แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}
+                  แสดงรายละเอียดงานที่บันทึกไว้ทั้งหมด - วันที่ {previewingLog && safeFormatDate(previewingLog.createdAt, 'dd/MM/yyyy')}
                 </DialogDescription>
               </div>
               <div className="mr-[10%]">
@@ -1326,8 +1340,8 @@ export default function DailyWorkLog() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <Label className="text-[10px] font-medium text-blue-600 dark:text-blue-400 block">วันที่บันทึก</Label>
-                      <p className="font-bold text-xs text-blue-900 dark:text-blue-100">{format(new Date(previewingLog.createdAt), 'dd/MM/yyyy')}</p>
-                      <p className="text-[9px] text-blue-700 dark:text-blue-300">{format(new Date(previewingLog.createdAt), 'HH:mm น.')}</p>
+                      <p className="font-bold text-xs text-blue-900 dark:text-blue-100">{safeFormatDate(previewingLog.createdAt, 'dd/MM/yyyy')}</p>
+                      <p className="text-[9px] text-blue-700 dark:text-blue-300">{safeFormatDate(previewingLog.createdAt, 'HH:mm น.')}</p>
                     </div>
                   </div>
                 </div>
@@ -1400,7 +1414,7 @@ export default function DailyWorkLog() {
                                 <div className="flex items-center gap-4 text-sm text-blue-700 dark:text-blue-300">
                                   <span>เลขที่รายงาน: {session.reportNumber}</span>
                                   <span>•</span>
-                                  <span>เวลา: {format(new Date(session.createdAt), 'HH:mm น.')}</span>
+                                  <span>เวลา: {safeFormatDate(session.createdAt, 'HH:mm น.')}</span>
                                   <span>•</span>
                                   <span>ผู้บันทึก: {session.employeeName}</span>
                                 </div>
