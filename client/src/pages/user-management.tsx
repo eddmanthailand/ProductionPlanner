@@ -213,9 +213,19 @@ function UserManagement() {
       queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
     },
     onError: (error: Error) => {
+      console.error("Create user error:", error);
+      let errorMessage = error.message;
+      
+      // Handle specific error messages in Thai
+      if (error.message.includes("Username already exists")) {
+        errorMessage = "ชื่อผู้ใช้นี้มีอยู่แล้ว กรุณาใช้ชื่อผู้ใช้อื่น";
+      } else if (error.message.includes("Email already exists")) {
+        errorMessage = "อีเมลนี้มีอยู่แล้ว กรุณาใช้อีเมลอื่น";
+      }
+      
       toast({
-        title: "เกิดข้อผิดพลาด",
-        description: error.message,
+        title: "ไม่สามารถสร้างผู้ใช้ได้",
+        description: errorMessage,
         variant: "destructive",
       });
     },
