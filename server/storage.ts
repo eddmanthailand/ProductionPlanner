@@ -1811,36 +1811,36 @@ export class DatabaseStorage implements IStorage {
     try {
       console.log('Storage: Getting daily work logs with filters:', { tenantId, filters });
       
-      let whereClause = `tenant_id = '${tenantId}' AND deleted_at IS NULL`;
+      let whereClause = `dwl.tenant_id = '${tenantId}'::uuid AND dwl.deleted_at IS NULL`;
 
       if (filters?.date) {
         console.log('Storage: Adding date filter:', filters.date);
-        whereClause += ` AND date = '${filters.date}'`;
+        whereClause += ` AND dwl.date = '${filters.date}'`;
       }
 
       if (filters?.dateFrom) {
         console.log('Storage: Adding dateFrom filter:', filters.dateFrom);
-        whereClause += ` AND date >= '${filters.dateFrom}'`;
+        whereClause += ` AND dwl.date >= '${filters.dateFrom}'`;
       }
 
       if (filters?.dateTo) {
         console.log('Storage: Adding dateTo filter:', filters.dateTo);
-        whereClause += ` AND date <= '${filters.dateTo}'`;
+        whereClause += ` AND dwl.date <= '${filters.dateTo}'`;
       }
 
       if (filters?.teamId && filters.teamId !== 'all') {
         console.log('Storage: Adding team filter:', filters.teamId);
-        whereClause += ` AND team_id = '${filters.teamId}'`;
+        whereClause += ` AND dwl.team_id = '${filters.teamId}'`;
       }
 
       if (filters?.workOrderId) {
         console.log('Storage: Adding work order filter:', filters.workOrderId);
-        whereClause += ` AND work_order_id = '${filters.workOrderId}'`;
+        whereClause += ` AND dwl.work_order_id = '${filters.workOrderId}'`;
       }
 
       if (filters?.status) {
         console.log('Storage: Adding status filter:', filters.status);
-        whereClause += ` AND status = '${filters.status}'`;
+        whereClause += ` AND dwl.status = '${filters.status}'`;
       }
 
       const limitClause = filters?.limit ? ` LIMIT ${filters.limit}` : '';
@@ -1864,7 +1864,7 @@ export class DatabaseStorage implements IStorage {
         LEFT JOIN colors c ON sj.color_id = c.id  
         LEFT JOIN sizes s ON sj.size_id = s.id
         LEFT JOIN teams t ON dwl.team_id = t.id
-        LEFT JOIN users u ON dwl.employee_id = u.id
+        LEFT JOIN users u ON dwl.employee_id::integer = u.id
         WHERE ${whereClause}
         ORDER BY dwl.created_at DESC
         ${limitClause}
