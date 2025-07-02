@@ -1,12 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
-async function throwIfResNotOk(res: Response) {
-  if (!res.ok) {
-    const text = (await res.text()) || res.statusText;
-    throw new Error(`${res.status}: ${text}`);
-  }
-}
-
 // Overloaded function to support both old and new calling patterns
 export async function apiRequest(
   urlOrMethod: string,
@@ -47,17 +40,31 @@ export async function apiRequest(
     credentials: "include", // Include session cookies
   });
 
-  await throwIfResNotOk(res);
+  // Handle error responses first
+  if (!res.ok) {
+    let errorText = res.statusText;
+    try {
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const errorData = await res.json();
+        errorText = errorData.message || errorData.error || res.statusText;
+      } else {
+        errorText = await res.text() || res.statusText;
+      }
+    } catch (e) {
+      // If we can't read the response body, use statusText
+      errorText = res.statusText;
+    }
+    throw new Error(`${res.status}: ${errorText}`);
+  }
   
-  // Check if response is actually JSON before parsing
+  // Handle successful responses
   const contentType = res.headers.get('content-type');
   if (contentType && contentType.includes('application/json')) {
     return res.json();
   } else {
-    // If not JSON, return the text content
-    const text = await res.text();
-    console.warn('Non-JSON response received:', text.substring(0, 100));
-    throw new Error('Server returned non-JSON response');
+    // For non-JSON successful responses, return a success indicator
+    return { success: true };
   }
 }
 

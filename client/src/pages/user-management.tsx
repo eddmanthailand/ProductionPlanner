@@ -234,21 +234,7 @@ function UserManagement() {
   const editUserMutation = useMutation({
     mutationFn: async (data: EditUserFormData) => {
       if (!editingUser) throw new Error("ไม่พบข้อมูลผู้ใช้");
-      const response = await apiRequest("PUT", `/api/users/${editingUser.id}`, data);
-      
-      // Check if response is ok and has JSON content
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `HTTP ${response.status}`);
-      }
-      
-      // Check if response has content to parse as JSON
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      
-      return { success: true }; // Return default success for non-JSON responses
+      return await apiRequest("PUT", `/api/users/${editingUser.id}`, data);
     },
     onSuccess: () => {
       toast({
@@ -281,19 +267,7 @@ function UserManagement() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      const response = await apiRequest("DELETE", `/api/users/${userId}`);
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `HTTP ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      
-      return { success: true };
+      return await apiRequest("DELETE", `/api/users/${userId}`);
     },
     onSuccess: () => {
       toast({
@@ -313,19 +287,7 @@ function UserManagement() {
 
   const toggleUserStatusMutation = useMutation({
     mutationFn: async ({ userId, isActive }: { userId: number; isActive: boolean }) => {
-      const response = await apiRequest("PATCH", `/api/users/${userId}/status`, { isActive });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || `HTTP ${response.status}`);
-      }
-      
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        return await response.json();
-      }
-      
-      return { success: true };
+      return await apiRequest("PATCH", `/api/users/${userId}/status`, { isActive });
     },
     onSuccess: (data, variables) => {
       toast({
