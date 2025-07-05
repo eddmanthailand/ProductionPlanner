@@ -10,12 +10,8 @@
 5. ตั้งชื่อ: **`production-planning-v2`**
 6. คลิก **"Import"**
 
-### 2. สร้าง GitHub Repository ใหม่ (สำหรับ V2)
-1. ไปที่ **GitHub** → **New Repository**
-2. **Repository Name**: `production-planning-v2`
-3. **Description**: `Production Planning System V2 - Firebase Studio Enhanced`
-4. **Private**: ✓
-5. **Don't initialize** (เราจะ push จาก Replit)
+### 2. GitHub Repository V2 ✅ พร้อมแล้ว
+**Repository URL**: https://github.com/eddmanthailand/production-planning-v2.git
 
 ### 3. เชื่อมต่อ V2 App กับ GitHub Repository ใหม่
 ใน Replit V2 app:
