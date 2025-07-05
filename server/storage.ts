@@ -2046,6 +2046,7 @@ export class DatabaseStorage implements IStorage {
           productName: subJobs.productName,
           departmentId: subJobs.departmentId,
           workStepId: subJobs.workStepId,
+          teamId: subJobs.teamId, // เพิ่ม teamId ในการ select
           colorId: subJobs.colorId,
           sizeId: subJobs.sizeId,
           quantity: subJobs.quantity,
