@@ -3444,6 +3444,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
           [row.id]
         );
         
+        // Transform sub-jobs to camelCase
+        const transformedSubJobs = subJobsResult.rows.map(subJob => ({
+          id: subJob.id,
+          workOrderId: subJob.work_order_id,
+          productName: subJob.product_name,
+          departmentId: subJob.department_id,
+          workStepId: subJob.work_step_id,
+          teamId: subJob.team_id, // แปลง team_id เป็น teamId
+          colorId: subJob.color_id,
+          sizeId: subJob.size_id,
+          quantity: subJob.quantity,
+          unitPrice: subJob.unit_price,
+          productionCost: subJob.production_cost,
+          totalCost: subJob.total_cost,
+          status: subJob.status,
+          sortOrder: subJob.sort_order,
+          createdAt: subJob.created_at,
+          updatedAt: subJob.updated_at
+        }));
+        
         return {
           id: row.id,
           orderNumber: row.order_number,
@@ -3469,7 +3489,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           tenantId: row.tenant_id,
           createdAt: row.created_at,
           updatedAt: row.updated_at,
-          sub_jobs: subJobsResult.rows
+          sub_jobs: transformedSubJobs // ใช้ข้อมูลที่แปลงแล้ว
         };
       }));
       
@@ -3571,6 +3591,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
         [id]
       );
       
+      // Transform sub-jobs to camelCase
+      const transformedSubJobs = subJobsResult.rows.map(subJob => ({
+        id: subJob.id,
+        workOrderId: subJob.work_order_id,
+        productName: subJob.product_name,
+        departmentId: subJob.department_id,
+        workStepId: subJob.work_step_id,
+        teamId: subJob.team_id, // แปลง team_id เป็น teamId
+        colorId: subJob.color_id,
+        sizeId: subJob.size_id,
+        quantity: subJob.quantity,
+        unitPrice: subJob.unit_price,
+        productionCost: subJob.production_cost,
+        totalCost: subJob.total_cost,
+        status: subJob.status,
+        sortOrder: subJob.sort_order,
+        createdAt: subJob.created_at,
+        updatedAt: subJob.updated_at
+      }));
+      
       // Transform to camelCase
       const workOrder = {
         id: row.id,
@@ -3597,7 +3637,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         tenantId: row.tenant_id,
         createdAt: row.created_at,
         updatedAt: row.updated_at,
-        sub_jobs: subJobsResult.rows
+        sub_jobs: transformedSubJobs // ใช้ข้อมูลที่แปลงแล้ว
       };
       
       res.json(workOrder);
