@@ -542,10 +542,263 @@
         </div>
 
         <div class="action-buttons">
-            <button class="btn btn-secondary">🔄 รีเซ็ต</button>
-            <button class="btn btn-secondary">💾 บันทึกเทมเพลต</button>
-            <button class="btn btn-primary">✅ สร้าง SubJobs ทั้งหมด</button>
+            <button class="btn btn-secondary" onclick="resetForm()">🔄 รีเซ็ต</button>
+            <button class="btn btn-secondary" onclick="saveTemplate()">💾 บันทึกเทมเพลต</button>
+            <button class="btn btn-primary" onclick="generateSubJobs()">🚀 สร้าง SubJobs ทั้งหมด</button>
         </div>
     </div>
+
+    <script>
+        // Mock data structure for demonstration
+        let tableData = {
+            colors: ['ขาว', 'ดำ', 'เขียว'],
+            sizes: ['XS', 'S', 'M', 'L', 'XL'],
+            departments: {
+                '🔪 แผนกตัด': {
+                    'ทีม A': {
+                        'ขาว': [5, 20, 15, 8, 3],
+                        'ดำ': [10, 15, 10, 5, 2],
+                        'เขียว': [10, 15, 15, 7, 4]
+                    },
+                    'ทีม B': {
+                        'ขาว': [0, 15, 10, 5, 0],
+                        'ดำ': [8, 12, 8, 3, 1]
+                    }
+                },
+                '🧵 แผนกเย็บ': {
+                    'ทีม A': {
+                        'ขาว': [5, 20, 15, 8, 3],
+                        'ดำ': [10, 15, 10, 5, 2]
+                    }
+                }
+            }
+        };
+
+        // Generate SubJobs function
+        function generateSubJobs() {
+            const selectedDepts = getSelectedDepartments();
+            const product = document.querySelector('select').value;
+            const workStep = document.querySelectorAll('select')[1].value;
+            
+            let subJobsData = [];
+            let totalSubJobs = 0;
+            let totalQuantity = 0;
+
+            // Collect data from all tables
+            selectedDepts.forEach(dept => {
+                dept.teams.forEach(team => {
+                    const colors = getColorsFromTable(dept.name, team);
+                    const sizes = getSizesFromTable(dept.name, team);
+                    
+                    colors.forEach(color => {
+                        sizes.forEach((size, sizeIndex) => {
+                            const quantity = getQuantityFromTable(dept.name, team, color, sizeIndex);
+                            if (quantity > 0) {
+                                subJobsData.push({
+                                    department: dept.name,
+                                    team: team,
+                                    product: product,
+                                    color: color,
+                                    size: size,
+                                    quantity: quantity,
+                                    workStep: workStep,
+                                    estimatedHours: calculateEstimatedHours(quantity),
+                                    priority: 'medium'
+                                });
+                                totalSubJobs++;
+                                totalQuantity += quantity;
+                            }
+                        });
+                    });
+                });
+            });
+
+            // Show preview dialog
+            showSubJobsPreview(subJobsData, totalSubJobs, totalQuantity);
+        }
+
+        function getSelectedDepartments() {
+            const depts = [];
+            document.querySelectorAll('.dept-toggle').forEach(deptElement => {
+                const deptCheckbox = deptElement.querySelector('input[type="checkbox"]');
+                if (deptCheckbox.checked) {
+                    const deptName = deptCheckbox.nextSibling.textContent.trim();
+                    const teams = [];
+                    
+                    deptElement.querySelectorAll('.team-checkboxes input[type="checkbox"]').forEach(teamCheckbox => {
+                        if (teamCheckbox.checked) {
+                            teams.push(teamCheckbox.nextSibling.textContent.trim());
+                        }
+                    });
+                    
+                    if (teams.length > 0) {
+                        depts.push({ name: deptName, teams: teams });
+                    }
+                }
+            });
+            return depts;
+        }
+
+        function getColorsFromTable(dept, team) {
+            // This would fetch from actual table in real implementation
+            return tableData.colors;
+        }
+
+        function getSizesFromTable(dept, team) {
+            // This would fetch from actual table in real implementation
+            return tableData.sizes;
+        }
+
+        function getQuantityFromTable(dept, team, color, sizeIndex) {
+            // Mock implementation - in real app would read from table inputs
+            const deptKey = dept;
+            if (tableData.departments[deptKey] && tableData.departments[deptKey][team] && tableData.departments[deptKey][team][color]) {
+                return tableData.departments[deptKey][team][color][sizeIndex] || 0;
+            }
+            return 0;
+        }
+
+        function calculateEstimatedHours(quantity) {
+            return Math.round(quantity * 0.5 * 100) / 100; // 0.5 hours per unit
+        }
+
+        function showSubJobsPreview(subJobsData, totalSubJobs, totalQuantity) {
+            const preview = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center;">
+                    <div style="background: white; border-radius: 12px; padding: 24px; max-width: 800px; max-height: 80vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2);">
+                        <h3 style="margin-bottom: 16px; color: #1f2937;">🔍 ตัวอย่าง SubJobs ที่จะสร้าง</h3>
+                        
+                        <div style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+                            <strong>📊 สรุป:</strong> จะสร้าง ${totalSubJobs} SubJobs รวม ${totalQuantity} ชิ้น
+                        </div>
+                        
+                        <div style="max-height: 400px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 8px;">
+                            <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
+                                <thead>
+                                    <tr style="background: #f3f4f6;">
+                                        <th style="padding: 8px; border: 1px solid #e5e7eb;">แผนก</th>
+                                        <th style="padding: 8px; border: 1px solid #e5e7eb;">ทีม</th>
+                                        <th style="padding: 8px; border: 1px solid #e5e7eb;">สี</th>
+                                        <th style="padding: 8px; border: 1px solid #e5e7eb;">ไซส์</th>
+                                        <th style="padding: 8px; border: 1px solid #e5e7eb;">จำนวน</th>
+                                        <th style="padding: 8px; border: 1px solid #e5e7eb;">ชั่วโมง</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${subJobsData.map(job => `
+                                        <tr>
+                                            <td style="padding: 6px; border: 1px solid #e5e7eb;">${job.department}</td>
+                                            <td style="padding: 6px; border: 1px solid #e5e7eb;">${job.team}</td>
+                                            <td style="padding: 6px; border: 1px solid #e5e7eb;">${job.color}</td>
+                                            <td style="padding: 6px; border: 1px solid #e5e7eb;">${job.size}</td>
+                                            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${job.quantity}</td>
+                                            <td style="padding: 6px; border: 1px solid #e5e7eb; text-align: center;">${job.estimatedHours}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 16px;">
+                            <button onclick="closePreview()" style="padding: 8px 16px; background: #6b7280; color: white; border: none; border-radius: 6px; cursor: pointer;">❌ ยกเลิก</button>
+                            <button onclick="confirmCreateSubJobs(${JSON.stringify(subJobsData).replace(/"/g, '&quot;')})" style="padding: 8px 16px; background: linear-gradient(135deg, #3b82f6, #6366f1); color: white; border: none; border-radius: 6px; cursor: pointer;">✅ ยืนยันสร้าง</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', preview);
+        }
+
+        function closePreview() {
+            const preview = document.querySelector('div[style*="position: fixed"]');
+            if (preview) preview.remove();
+        }
+
+        function confirmCreateSubJobs(subJobsData) {
+            // In real implementation, this would call API
+            console.log('Creating SubJobs:', subJobsData);
+            
+            // Show success message
+            closePreview();
+            alert(`✅ สร้าง ${subJobsData.length} SubJobs เรียบร้อยแล้ว!\n\nระบบจะเพิ่มงานเหล่านี้ลงในใบสั่งงานและอัปเดตข้อมูลการผลิต`);
+            
+            // Update summary
+            updateSummary();
+        }
+
+        function resetForm() {
+            // Reset all checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            
+            // Reset first department and team as default
+            document.querySelector('.dept-toggle input[type="checkbox"]').checked = true;
+            document.querySelector('.team-checkboxes input[type="checkbox"]').checked = true;
+            
+            // Reset all number inputs
+            document.querySelectorAll('input[type="number"]').forEach(input => input.value = '0');
+            
+            alert('🔄 รีเซ็ตข้อมูลเรียบร้อยแล้ว');
+            updateSummary();
+        }
+
+        function saveTemplate() {
+            const templateData = {
+                selectedDepts: getSelectedDepartments(),
+                tableData: tableData,
+                timestamp: new Date().toISOString()
+            };
+            
+            // In real implementation, this would save to database
+            localStorage.setItem('bulkSubJobsTemplate', JSON.stringify(templateData));
+            alert('💾 บันทึกเทมเพลตเรียบร้อยแล้ว!');
+        }
+
+        function updateSummary() {
+            const selectedDepts = getSelectedDepartments();
+            let totalSubJobs = 0;
+            let totalQuantity = 0;
+            
+            selectedDepts.forEach(dept => {
+                dept.teams.forEach(team => {
+                    tableData.colors.forEach(color => {
+                        tableData.sizes.forEach((size, sizeIndex) => {
+                            const quantity = getQuantityFromTable(dept.name, team, color, sizeIndex);
+                            if (quantity > 0) {
+                                totalSubJobs++;
+                                totalQuantity += quantity;
+                            }
+                        });
+                    });
+                });
+            });
+            
+            // Update summary display
+            const summaryItems = document.querySelectorAll('.summary-item .summary-value');
+            if (summaryItems.length >= 6) {
+                summaryItems[0].textContent = totalSubJobs;
+                summaryItems[1].textContent = totalQuantity;
+                summaryItems[2].textContent = selectedDepts.length;
+                summaryItems[3].textContent = selectedDepts.reduce((sum, dept) => sum + dept.teams.length, 0);
+                summaryItems[4].textContent = tableData.colors.length;
+                summaryItems[5].textContent = tableData.sizes.length;
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateSummary();
+            
+            // Add event listeners for checkboxes
+            document.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.addEventListener('change', updateSummary);
+            });
+            
+            // Add event listeners for number inputs
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                input.addEventListener('input', updateSummary);
+            });
+        });
+    </script>
 </body>
 </html>
