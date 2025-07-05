@@ -130,15 +130,15 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
-- July 5, 2025: ✅ กำหนด Hybrid Development Workflow สำหรับ Production Planning V2
-  - **V1 Repository**: https://github.com/eddmanthailand/ProductionPlanner
-  - **V2 Repository**: https://github.com/eddmanthailand/production-planning-v2
+- July 5, 2025: ✅ กำหนด Hybrid Development Workflow สำหรับ Production Planning System
+  - **Repository**: https://github.com/eddmanthailand/ProductionPlanner
   - **Hybrid Workflow Strategy**:
     * **Replit**: เริ่มต้นสร้างแอปพลิเคชัน + Deploy (production)
     * **Firebase Studio**: พัฒนาและปรับปรุงโค้ด (AI-powered development)
     * **Git/GitHub**: เชื่อมและจัดการเวอร์ชันโค้ด
-    * **Neon**: ฐานข้อมูลสำหรับทั้ง V1 และ V2
-  - **Development Flow**: Replit (สร้าง) → Firebase Studio (พัฒนา AI) → Git (version control) → Replit (deploy)
+    * **Neon**: ฐานข้อมูล production
+  - **Development Flow**: Replit (base) → Firebase Studio (AI enhancement) → Git (version control) → Replit (deploy)
+  - **Focus**: พัฒนา AI features ให้แข็งแกร่งขึ้นในระบบปัจจุบัน
 
 - July 2, 2025: ✅ แก้ไขปัญหา AI Database Connectivity สำเร็จครบถ้วน
   - **Root Cause Resolved**: แก้ไข SQL Type Casting Error โดยเปลี่ยนจาก Drizzle ORM เป็น raw SQL
