@@ -11,6 +11,17 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// Serve static mockup files
+app.use(express.static('.', { 
+  dotfiles: 'ignore',
+  index: false,
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      res.set('Content-Type', 'text/html');
+    }
+  }
+}));
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
