@@ -83,6 +83,7 @@ export default function WorkOrderForm() {
     { 
       productName: "", 
       departmentId: "", 
+      teamId: "",
       workStepId: "", 
       colorId: "", 
       sizeId: "", 
@@ -493,6 +494,7 @@ export default function WorkOrderForm() {
       { 
         productName: "", 
         departmentId: "", 
+        teamId: "",
         workStepId: "", 
         colorId: "", 
         sizeId: "", 
@@ -986,8 +988,9 @@ export default function WorkOrderForm() {
                     <TableHeader>
                       <TableRow className="bg-gray-100 border-b-2 border-gray-200">
                         <TableHead className="text-center font-semibold text-gray-700 px-1 py-2 w-[5%] text-sm"></TableHead>
-                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[23%] text-sm">ชื่อสินค้า/งาน</TableHead>
-                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[12%] text-sm">แผนก</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-3 py-2 w-[20%] text-sm">ชื่อสินค้า/งาน</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">แผนก</TableHead>
+                        <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ทีม</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[13%] text-sm">ขั้นตอนงาน</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">สี</TableHead>
                         <TableHead className="text-left font-semibold text-gray-700 px-2 py-2 w-[10%] text-sm">ขนาด</TableHead>
@@ -1031,6 +1034,24 @@ export default function WorkOrderForm() {
                                 {departments.map((dept) => (
                                   <SelectItem key={dept.id} value={dept.id}>
                                     {dept.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </TableCell>
+                          <TableCell className="px-2 py-1.5">
+                            <Select 
+                              value={subJob.teamId} 
+                              onValueChange={(value) => handleSubJobChange(index, 'teamId', value)}
+                              disabled={!subJob.departmentId}
+                            >
+                              <SelectTrigger className="w-full border-gray-200 focus:border-blue-400 focus:ring-1 focus:ring-blue-200 h-7 text-xs shadow-sm">
+                                <SelectValue placeholder="เลือกทีม" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {teams.filter(team => team.departmentId === subJob.departmentId).map((team) => (
+                                  <SelectItem key={team.id} value={team.id}>
+                                    {team.name}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
