@@ -3614,12 +3614,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log("API: Creating work order with data:", workOrderData);
       
-      // Generate order number
+      // Generate JB format order number (JB202507XXX)
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      
       const countResult = await pool.query(
-        `SELECT COUNT(*) as count FROM work_orders WHERE tenant_id = $1`,
-        [tenantId]
+        `SELECT COUNT(*) as count FROM work_orders 
+         WHERE tenant_id = $1 
+         AND EXTRACT(YEAR FROM created_at) = $2 
+         AND EXTRACT(MONTH FROM created_at) = $3`,
+        [tenantId, year, month]
       );
-      const orderNumber = `WO${String(parseInt(countResult.rows[0].count) + 1).padStart(6, '0')}`;
+      
+      const sequence = String(parseInt(countResult.rows[0].count) + 1).padStart(3, '0');
+      const orderNumber = `JB${year}${month}${sequence}`;
       
       // Get customer info if customerId is provided
       let customerData = {
@@ -3691,8 +3700,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ]
       );
       
-      console.log("API: Work order created successfully");
-      res.status(201).json(insertResult.rows[0]);
+      const workOrder = insertResult.rows[0];
+      console.log("API: Work order created successfully", workOrder.id);
+      
+      // Create sub-jobs if they are provided
+      if (workOrderData.subJobs && workOrderData.subJobs.length > 0) {
+        console.log("API: Creating sub-jobs for work order:", workOrder.id);
+        
+        for (let i = 0; i < workOrderData.subJobs.length; i++) {
+          const subJob = workOrderData.subJobs[i];
+          const subJobId = `sj_${Date.now()}_${i}`;
+          
+          await pool.query(
+            `INSERT INTO sub_jobs (
+              id, work_order_id, product_name, department_id, team_id, work_step_id,
+              color_id, size_id, quantity, production_cost, total_cost, sort_order, tenant_id
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)`,
+            [
+              subJobId,
+              workOrder.id,
+              subJob.productName || '',
+              subJob.departmentId || null,
+              subJob.teamId || null,
+              subJob.workStepId || null,
+              subJob.colorId ? parseInt(subJob.colorId) : null,
+              subJob.sizeId ? parseInt(subJob.sizeId) : null,
+              subJob.quantity || 1,
+              subJob.productionCost || 0,
+              subJob.totalCost || 0,
+              i, // sort order
+              tenantId
+            ]
+          );
+        }
+        
+        console.log(`API: Created ${workOrderData.subJobs.length} sub-jobs`);
+      }
+      
+      console.log("API: Work order and sub-jobs created successfully");
+      res.status(201).json(workOrder);
     } catch (error) {
       console.error("Create work order error:", error);
       res.status(500).json({ message: "Failed to create work order" });
