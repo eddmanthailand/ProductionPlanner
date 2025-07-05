@@ -543,6 +543,7 @@ export const subJobs = pgTable("sub_jobs", {
   productName: text("product_name").notNull(),
   departmentId: text("department_id").references(() => departments.id),
   workStepId: text("work_step_id").references(() => workSteps.id),
+  teamId: text("team_id").references(() => teams.id), // เพิ่ม team_id column
   colorId: integer("color_id").references(() => colors.id),
   sizeId: integer("size_id").references(() => sizes.id),
   quantity: integer("quantity").notNull().default(1),
