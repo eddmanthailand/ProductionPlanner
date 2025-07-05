@@ -1251,7 +1251,7 @@ function BulkSubJobsGenerator({
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [quantities, setQuantities] = useState<Record<string, Record<string, Record<string, number>>>>({});
-  const [productNames, setProductNames] = useState<Record<string, Record<string, Record<string, string>>>>({});
+  const [productName, setProductName] = useState<string>('');
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generatedSubJobs, setGeneratedSubJobs] = useState<SubJob[]>([]);
 
@@ -1326,18 +1326,7 @@ function BulkSubJobsGenerator({
     }));
   };
 
-  const updateProductName = (departmentId: string, colorId: string, sizeId: string, productName: string) => {
-    setProductNames(prev => ({
-      ...prev,
-      [departmentId]: {
-        ...prev[departmentId],
-        [colorId]: {
-          ...prev[departmentId]?.[colorId],
-          [sizeId]: productName
-        }
-      }
-    }));
-  };
+
 
   const generateSubJobs = () => {
     const newSubJobs: SubJob[] = [];
@@ -1352,7 +1341,7 @@ function BulkSubJobsGenerator({
         selectedSizes.forEach(sizeId => {
           const size = sizes.find(s => s.id.toString() === sizeId);
           const quantity = quantities[deptId]?.[colorId]?.[sizeId] || 0;
-          const productName = productNames[deptId]?.[colorId]?.[sizeId] || `${department?.name || ''} - ${color?.name} ${size?.name}`;
+          const fullProductName = productName || `${department?.name || ''} - ${color?.name} ${size?.name}`;
           
           if (quantity > 0) {
             deptWorkSteps.forEach(workStep => {
@@ -1360,7 +1349,7 @@ function BulkSubJobsGenerator({
               if (deptTeams.length > 0) {
                 deptTeams.forEach(team => {
                   newSubJobs.push({
-                    productName: productName,
+                    productName: fullProductName,
                     departmentId: deptId,
                     teamId: team.id,
                     workStepId: workStep.id,
@@ -1373,7 +1362,7 @@ function BulkSubJobsGenerator({
                 });
               } else {
                 newSubJobs.push({
-                  productName: productName,
+                  productName: fullProductName,
                   departmentId: deptId,
                   workStepId: workStep.id,
                   colorId: colorId,
@@ -1405,7 +1394,7 @@ function BulkSubJobsGenerator({
     setSelectedColors([]);
     setSelectedSizes([]);
     setQuantities({});
-    setProductNames({});
+    setProductName('');
     setGeneratedSubJobs([]);
   };
 
@@ -1556,6 +1545,22 @@ function BulkSubJobsGenerator({
                   </div>
                 </div>
 
+                {/* Product Name Input */}
+                {selectedColors.length > 0 && selectedSizes.length > 0 && (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      ชื่อสินค้า
+                    </label>
+                    <Input
+                      type="text"
+                      value={productName}
+                      onChange={(e) => setProductName(e.target.value)}
+                      className="w-full"
+                      placeholder="กรอกชื่อสินค้า"
+                    />
+                  </div>
+                )}
+
                 {/* Help Text */}
                 {selectedDepartments.length > 0 && (selectedColors.length === 0 || selectedSizes.length === 0) && (
                   <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
@@ -1613,23 +1618,14 @@ function BulkSubJobsGenerator({
                                       </td>
                                       {selectedSizes.map(sizeId => (
                                         <td key={sizeId} className="border border-gray-300 px-1 py-1">
-                                          <div className="space-y-1">
-                                            <Input
-                                              type="text"
-                                              value={productNames[deptId]?.[colorId]?.[sizeId] || ''}
-                                              onChange={(e) => updateProductName(deptId, colorId, sizeId, e.target.value)}
-                                              className="w-24 h-6 text-xs border-gray-200"
-                                              placeholder="ชื่อสินค้า"
-                                            />
-                                            <Input
-                                              type="number"
-                                              min="0"
-                                              value={quantities[deptId]?.[colorId]?.[sizeId] || ''}
-                                              onChange={(e) => updateQuantity(deptId, colorId, sizeId, parseInt(e.target.value) || 0)}
-                                              className="w-24 h-6 text-center text-xs border-gray-200"
-                                              placeholder="จำนวน"
-                                            />
-                                          </div>
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            value={quantities[deptId]?.[colorId]?.[sizeId] || ''}
+                                            onChange={(e) => updateQuantity(deptId, colorId, sizeId, parseInt(e.target.value) || 0)}
+                                            className="w-16 h-8 text-center text-xs border-gray-200"
+                                            placeholder="0"
+                                          />
                                         </td>
                                       ))}
                                     </tr>
