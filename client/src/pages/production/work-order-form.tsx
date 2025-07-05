@@ -1247,6 +1247,8 @@ function BulkSubJobsGenerator({
 }: BulkSubJobsGeneratorProps) {
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
   const [quantities, setQuantities] = useState<Record<string, Record<string, Record<string, number>>>>({});
   const [previewOpen, setPreviewOpen] = useState(false);
   const [generatedSubJobs, setGeneratedSubJobs] = useState<SubJob[]>([]);
@@ -1267,6 +1269,48 @@ function BulkSubJobsGenerator({
     );
   };
 
+  const addColor = (colorId: string) => {
+    if (!selectedColors.includes(colorId)) {
+      setSelectedColors(prev => [...prev, colorId]);
+    }
+  };
+
+  const removeColor = (colorId: string) => {
+    setSelectedColors(prev => prev.filter(id => id !== colorId));
+    // Remove quantities for this color
+    setQuantities(prev => {
+      const newQuantities = { ...prev };
+      Object.keys(newQuantities).forEach(deptId => {
+        if (newQuantities[deptId]?.[colorId]) {
+          delete newQuantities[deptId][colorId];
+        }
+      });
+      return newQuantities;
+    });
+  };
+
+  const addSize = (sizeId: string) => {
+    if (!selectedSizes.includes(sizeId)) {
+      setSelectedSizes(prev => [...prev, sizeId]);
+    }
+  };
+
+  const removeSize = (sizeId: string) => {
+    setSelectedSizes(prev => prev.filter(id => id !== sizeId));
+    // Remove quantities for this size
+    setQuantities(prev => {
+      const newQuantities = { ...prev };
+      Object.keys(newQuantities).forEach(deptId => {
+        Object.keys(newQuantities[deptId] || {}).forEach(colorId => {
+          if (newQuantities[deptId]?.[colorId]?.[sizeId] !== undefined) {
+            delete newQuantities[deptId][colorId][sizeId];
+          }
+        });
+      });
+      return newQuantities;
+    });
+  };
+
   const updateQuantity = (departmentId: string, colorId: string, sizeId: string, quantity: number) => {
     setQuantities(prev => ({
       ...prev,
@@ -1285,21 +1329,22 @@ function BulkSubJobsGenerator({
     
     selectedDepartments.forEach(deptId => {
       const department = departments.find(d => d.id === deptId);
-      const deptTeams = teams.filter(t => t.departmentId === deptId && selectedTeams.includes(t.id));
       const deptWorkSteps = workSteps.filter(ws => ws.departmentId === deptId);
       
-      colors.forEach(color => {
-        sizes.forEach(size => {
-          const quantity = quantities[deptId]?.[color.id.toString()]?.[size.id.toString()] || 0;
+      selectedColors.forEach(colorId => {
+        const color = colors.find(c => c.id.toString() === colorId);
+        selectedSizes.forEach(sizeId => {
+          const size = sizes.find(s => s.id.toString() === sizeId);
+          const quantity = quantities[deptId]?.[colorId]?.[sizeId] || 0;
           
           if (quantity > 0) {
             deptWorkSteps.forEach(workStep => {
               newSubJobs.push({
-                productName: `${department?.name || ''} - ${color.name} ${size.name}`,
+                productName: `${department?.name || ''} - ${color?.name} ${size?.name}`,
                 departmentId: deptId,
                 workStepId: workStep.id,
-                colorId: color.id.toString(),
-                sizeId: size.id.toString(),
+                colorId: colorId,
+                sizeId: sizeId,
                 quantity: quantity,
                 productionCost: 0,
                 totalCost: 0
@@ -1323,6 +1368,8 @@ function BulkSubJobsGenerator({
   const resetForm = () => {
     setSelectedDepartments([]);
     setSelectedTeams([]);
+    setSelectedColors([]);
+    setSelectedSizes([]);
     setQuantities({});
     setGeneratedSubJobs([]);
   };
@@ -1334,7 +1381,7 @@ function BulkSubJobsGenerator({
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-purple-800">🚀 Bulk SubJobs Generator</DialogTitle>
             <DialogDescription>
-              เลือกแผนก ทีม และกรอกจำนวนสินค้าเพื่อสร้าง Sub-jobs หลายรายการพร้อมกัน
+              สร้าง Sub-jobs หลายรายการพร้อมกัน โดยเลือกแผนก ทีม จากนั้นเพิ่มสีและไซส์ที่ต้องการ แล้วกรอกจำนวนในตาราง
             </DialogDescription>
           </DialogHeader>
 
@@ -1379,63 +1426,179 @@ function BulkSubJobsGenerator({
               </div>
             )}
 
-            {/* Quantity Table */}
+            {/* Dynamic Color and Size Selection */}
             {selectedDepartments.length > 0 && (
               <div>
-                <h3 className="text-lg font-semibold mb-3 text-gray-800">กรอกจำนวนสินค้า</h3>
+                <h3 className="text-lg font-semibold mb-4 text-gray-800">สร้างตารางสินค้า</h3>
                 
-                {selectedDepartments.map(deptId => {
-                  const department = departments.find(d => d.id === deptId);
-                  return (
-                    <div key={deptId} className="mb-6">
-                      <h4 className="text-md font-semibold mb-3 text-purple-700 bg-purple-50 p-2 rounded">
-                        {department?.name}
-                      </h4>
-                      
-                      <div className="overflow-x-auto">
-                        <table className="w-full border border-gray-300 rounded-lg">
-                          <thead>
-                            <tr className="bg-gray-100">
-                              <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">สี</th>
-                              {sizes.map(size => (
-                                <th key={size.id} className="border border-gray-300 px-3 py-2 text-center text-sm font-semibold">
-                                  {size.name}
-                                </th>
-                              ))}
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {colors.map(color => (
-                              <tr key={color.id} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 px-3 py-2 font-medium text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <div 
-                                      className="w-4 h-4 rounded border"
-                                      style={{ backgroundColor: (color.code || '#000000') as string }}
-                                    ></div>
-                                    {color.name}
-                                  </div>
-                                </td>
-                                {sizes.map(size => (
-                                  <td key={size.id} className="border border-gray-300 px-1 py-1">
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={quantities[deptId]?.[color.id.toString()]?.[size.id.toString()] || ''}
-                                      onChange={(e) => updateQuantity(deptId, color.id.toString(), size.id.toString(), parseInt(e.target.value) || 0)}
-                                      className="w-16 h-8 text-center text-xs border-gray-200"
-                                      placeholder="0"
-                                    />
-                                  </td>
-                                ))}
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                {/* Color Selection */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-md font-semibold text-purple-700">เลือกสี</h4>
+                    <Select onValueChange={(value) => addColor(value)}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="➕ เพิ่มแถว (สี)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {colors
+                          .filter(color => !selectedColors.includes(color.id.toString()))
+                          .map(color => (
+                            <SelectItem key={color.id} value={color.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                <div 
+                                  className="w-4 h-4 rounded border"
+                                  style={{ backgroundColor: color.code || '#000000' }}
+                                ></div>
+                                {color.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {selectedColors.map(colorId => {
+                      const color = colors.find(c => c.id.toString() === colorId);
+                      return (
+                        <div key={colorId} className="flex items-center gap-2 bg-purple-100 px-3 py-1 rounded-full">
+                          <div 
+                            className="w-3 h-3 rounded border"
+                            style={{ backgroundColor: color?.code || '#000000' }}
+                          ></div>
+                          <span className="text-sm">{color?.name}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0 hover:bg-red-200"
+                            onClick={() => removeColor(colorId)}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Size Selection */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-md font-semibold text-indigo-700">เลือกไซส์</h4>
+                    <Select onValueChange={(value) => addSize(value)}>
+                      <SelectTrigger className="w-48">
+                        <SelectValue placeholder="➕ เพิ่มคอลัมน์ (ไซส์)" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {sizes
+                          .filter(size => !selectedSizes.includes(size.id.toString()))
+                          .map(size => (
+                            <SelectItem key={size.id} value={size.id.toString()}>
+                              {size.name}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSizes.map(sizeId => {
+                      const size = sizes.find(s => s.id.toString() === sizeId);
+                      return (
+                        <div key={sizeId} className="flex items-center gap-2 bg-indigo-100 px-3 py-1 rounded-full">
+                          <span className="text-sm">{size?.name}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0 hover:bg-red-200"
+                            onClick={() => removeSize(sizeId)}
+                          >
+                            ×
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Help Text */}
+                {selectedDepartments.length > 0 && (selectedColors.length === 0 || selectedSizes.length === 0) && (
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4">
+                    <div className="flex">
+                      <div className="ml-3">
+                        <p className="text-sm text-blue-700">
+                          💡 <strong>วิธีใช้งาน:</strong> เพิ่มสีและไซส์ที่ต้องการก่อน จากนั้นตารางจะปรากฏให้กรอกจำนวน
+                        </p>
                       </div>
                     </div>
-                  );
-                })}
+                  </div>
+                )}
+
+                {/* Dynamic Quantity Table */}
+                {selectedColors.length > 0 && selectedSizes.length > 0 && (
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 text-gray-800">กรอกจำนวนสินค้า</h3>
+                    
+                    {selectedDepartments.map(deptId => {
+                      const department = departments.find(d => d.id === deptId);
+                      return (
+                        <div key={deptId} className="mb-6">
+                          <h4 className="text-md font-semibold mb-3 text-purple-700 bg-purple-50 p-2 rounded">
+                            {department?.name}
+                          </h4>
+                          
+                          <div className="overflow-x-auto">
+                            <table className="w-full border border-gray-300 rounded-lg">
+                              <thead>
+                                <tr className="bg-gray-100">
+                                  <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">สี</th>
+                                  {selectedSizes.map(sizeId => {
+                                    const size = sizes.find(s => s.id.toString() === sizeId);
+                                    return (
+                                      <th key={sizeId} className="border border-gray-300 px-3 py-2 text-center text-sm font-semibold">
+                                        {size?.name}
+                                      </th>
+                                    );
+                                  })}
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {selectedColors.map(colorId => {
+                                  const color = colors.find(c => c.id.toString() === colorId);
+                                  return (
+                                    <tr key={colorId} className="hover:bg-gray-50">
+                                      <td className="border border-gray-300 px-3 py-2 font-medium text-sm">
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-4 h-4 rounded border"
+                                            style={{ backgroundColor: color?.code || '#000000' }}
+                                          ></div>
+                                          {color?.name}
+                                        </div>
+                                      </td>
+                                      {selectedSizes.map(sizeId => (
+                                        <td key={sizeId} className="border border-gray-300 px-1 py-1">
+                                          <Input
+                                            type="number"
+                                            min="0"
+                                            value={quantities[deptId]?.[colorId]?.[sizeId] || ''}
+                                            onChange={(e) => updateQuantity(deptId, colorId, sizeId, parseInt(e.target.value) || 0)}
+                                            className="w-16 h-8 text-center text-xs border-gray-200"
+                                            placeholder="0"
+                                          />
+                                        </td>
+                                      ))}
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
 
@@ -1454,7 +1617,7 @@ function BulkSubJobsGenerator({
               <Button 
                 onClick={generateSubJobs}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
-                disabled={selectedDepartments.length === 0}
+                disabled={selectedDepartments.length === 0 || selectedColors.length === 0 || selectedSizes.length === 0}
               >
                 🚀 สร้าง SubJobs ทั้งหมด
               </Button>
