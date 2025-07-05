@@ -93,6 +93,7 @@ export default function WorkOrderForm() {
   const [originalSubJobs, setOriginalSubJobs] = useState<SubJob[]>([]);
   const [savedWorkOrderId, setSavedWorkOrderId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("details");
+  const [bulkGeneratorOpen, setBulkGeneratorOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     orderNumber: "",
@@ -1136,6 +1137,10 @@ export default function WorkOrderForm() {
                         <Plus className="h-3 w-3" />
                         <span>เพิ่ม Sub-job</span>
                       </Button>
+                      <Button onClick={() => setBulkGeneratorOpen(true)} size="sm" className="flex items-center space-x-1 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs px-3 py-1 h-7">
+                        <Package className="h-3 w-3" />
+                        <span>🚀 สร้างหลาย Sub-jobs</span>
+                      </Button>
                       <div className="text-xs text-gray-600">
                         จำนวน Sub-jobs: <span className="font-semibold text-gray-800">{subJobs.length} รายการ</span>
                       </div>
@@ -1196,6 +1201,333 @@ export default function WorkOrderForm() {
           </div>
         </div>
       </div>
+
+      {/* Bulk SubJobs Generator Dialog */}
+      <BulkSubJobsGenerator 
+        open={bulkGeneratorOpen}
+        onOpenChange={setBulkGeneratorOpen}
+        departments={departments}
+        teams={teams}
+        workSteps={workSteps}
+        colors={colors}
+        sizes={sizes}
+        onGenerate={(generatedSubJobs) => {
+          setSubJobs([...subJobs, ...generatedSubJobs]);
+          setBulkGeneratorOpen(false);
+          toast({
+            title: "สำเร็จ",
+            description: `สร้าง Sub-jobs จำนวน ${generatedSubJobs.length} รายการเรียบร้อย`,
+          });
+        }}
+      />
     </div>
+  );
+}
+
+interface BulkSubJobsGeneratorProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  departments: Department[];
+  teams: Team[];
+  workSteps: WorkStep[];
+  colors: Color[];
+  sizes: Size[];
+  onGenerate: (subJobs: SubJob[]) => void;
+}
+
+function BulkSubJobsGenerator({ 
+  open, 
+  onOpenChange, 
+  departments, 
+  teams, 
+  workSteps, 
+  colors, 
+  sizes, 
+  onGenerate 
+}: BulkSubJobsGeneratorProps) {
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [selectedTeams, setSelectedTeams] = useState<string[]>([]);
+  const [quantities, setQuantities] = useState<Record<string, Record<string, Record<string, number>>>>({});
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [generatedSubJobs, setGeneratedSubJobs] = useState<SubJob[]>([]);
+
+  const toggleDepartment = (deptId: string) => {
+    setSelectedDepartments(prev => 
+      prev.includes(deptId) 
+        ? prev.filter(id => id !== deptId)
+        : [...prev, deptId]
+    );
+  };
+
+  const toggleTeam = (teamId: string) => {
+    setSelectedTeams(prev => 
+      prev.includes(teamId) 
+        ? prev.filter(id => id !== teamId)
+        : [...prev, teamId]
+    );
+  };
+
+  const updateQuantity = (departmentId: string, colorId: string, sizeId: string, quantity: number) => {
+    setQuantities(prev => ({
+      ...prev,
+      [departmentId]: {
+        ...prev[departmentId],
+        [colorId]: {
+          ...prev[departmentId]?.[colorId],
+          [sizeId]: quantity
+        }
+      }
+    }));
+  };
+
+  const generateSubJobs = () => {
+    const newSubJobs: SubJob[] = [];
+    
+    selectedDepartments.forEach(deptId => {
+      const department = departments.find(d => d.id === deptId);
+      const deptTeams = teams.filter(t => t.departmentId === deptId && selectedTeams.includes(t.id));
+      const deptWorkSteps = workSteps.filter(ws => ws.departmentId === deptId);
+      
+      colors.forEach(color => {
+        sizes.forEach(size => {
+          const quantity = quantities[deptId]?.[color.id.toString()]?.[size.id.toString()] || 0;
+          
+          if (quantity > 0) {
+            deptWorkSteps.forEach(workStep => {
+              newSubJobs.push({
+                productName: `${department?.name || ''} - ${color.name} ${size.name}`,
+                departmentId: deptId,
+                workStepId: workStep.id,
+                colorId: color.id.toString(),
+                sizeId: size.id.toString(),
+                quantity: quantity,
+                productionCost: 0,
+                totalCost: 0
+              });
+            });
+          }
+        });
+      });
+    });
+
+    setGeneratedSubJobs(newSubJobs);
+    setPreviewOpen(true);
+  };
+
+  const confirmGenerate = () => {
+    onGenerate(generatedSubJobs);
+    setPreviewOpen(false);
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setSelectedDepartments([]);
+    setSelectedTeams([]);
+    setQuantities({});
+    setGeneratedSubJobs([]);
+  };
+
+  return (
+    <>
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-purple-800">🚀 Bulk SubJobs Generator</DialogTitle>
+            <DialogDescription>
+              เลือกแผนก ทีม และกรอกจำนวนสินค้าเพื่อสร้าง Sub-jobs หลายรายการพร้อมกัน
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Department Selection */}
+            <div>
+              <h3 className="text-lg font-semibold mb-3 text-gray-800">เลือกแผนก</h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {departments.map(dept => (
+                  <label key={dept.id} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedDepartments.includes(dept.id)}
+                      onChange={() => toggleDepartment(dept.id)}
+                      className="rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                    />
+                    <span className="text-sm font-medium">{dept.name}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Team Selection */}
+            {selectedDepartments.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">เลือกทีม</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {teams
+                    .filter(team => selectedDepartments.includes(team.departmentId))
+                    .map(team => (
+                      <label key={team.id} className="flex items-center space-x-2 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={selectedTeams.includes(team.id)}
+                          onChange={() => toggleTeam(team.id)}
+                          className="rounded border-purple-300 text-purple-600 focus:ring-purple-500"
+                        />
+                        <span className="text-sm font-medium">{team.name}</span>
+                      </label>
+                    ))}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity Table */}
+            {selectedDepartments.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold mb-3 text-gray-800">กรอกจำนวนสินค้า</h3>
+                
+                {selectedDepartments.map(deptId => {
+                  const department = departments.find(d => d.id === deptId);
+                  return (
+                    <div key={deptId} className="mb-6">
+                      <h4 className="text-md font-semibold mb-3 text-purple-700 bg-purple-50 p-2 rounded">
+                        {department?.name}
+                      </h4>
+                      
+                      <div className="overflow-x-auto">
+                        <table className="w-full border border-gray-300 rounded-lg">
+                          <thead>
+                            <tr className="bg-gray-100">
+                              <th className="border border-gray-300 px-3 py-2 text-left text-sm font-semibold">สี</th>
+                              {sizes.map(size => (
+                                <th key={size.id} className="border border-gray-300 px-3 py-2 text-center text-sm font-semibold">
+                                  {size.name}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {colors.map(color => (
+                              <tr key={color.id} className="hover:bg-gray-50">
+                                <td className="border border-gray-300 px-3 py-2 font-medium text-sm">
+                                  <div className="flex items-center gap-2">
+                                    <div 
+                                      className="w-4 h-4 rounded border"
+                                      style={{ backgroundColor: (color.code || '#000000') as string }}
+                                    ></div>
+                                    {color.name}
+                                  </div>
+                                </td>
+                                {sizes.map(size => (
+                                  <td key={size.id} className="border border-gray-300 px-1 py-1">
+                                    <Input
+                                      type="number"
+                                      min="0"
+                                      value={quantities[deptId]?.[color.id.toString()]?.[size.id.toString()] || ''}
+                                      onChange={(e) => updateQuantity(deptId, color.id.toString(), size.id.toString(), parseInt(e.target.value) || 0)}
+                                      className="w-16 h-8 text-center text-xs border-gray-200"
+                                      placeholder="0"
+                                    />
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button variant="outline" onClick={() => onOpenChange(false)}>
+                ยกเลิก
+              </Button>
+              <Button 
+                onClick={resetForm}
+                variant="outline"
+                className="text-gray-600"
+              >
+                รีเซ็ต
+              </Button>
+              <Button 
+                onClick={generateSubJobs}
+                className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
+                disabled={selectedDepartments.length === 0}
+              >
+                🚀 สร้าง SubJobs ทั้งหมด
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-bold text-green-800">👀 ตัวอย่าง SubJobs ที่จะสร้าง</DialogTitle>
+            <DialogDescription>
+              จำนวน SubJobs ที่จะสร้าง: {generatedSubJobs.length} รายการ
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="max-h-96 overflow-y-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ชื่อสินค้า</TableHead>
+                  <TableHead>แผนก</TableHead>
+                  <TableHead>ขั้นตอนงาน</TableHead>
+                  <TableHead>สี</TableHead>
+                  <TableHead>ขนาด</TableHead>
+                  <TableHead className="text-center">จำนวน</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {generatedSubJobs.map((subJob, index) => {
+                  const department = departments.find(d => d.id === subJob.departmentId);
+                  const workStep = workSteps.find(ws => ws.id === subJob.workStepId);
+                  const color = colors.find(c => c.id.toString() === subJob.colorId);
+                  const size = sizes.find(s => s.id.toString() === subJob.sizeId);
+
+                  return (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{subJob.productName}</TableCell>
+                      <TableCell>{department?.name}</TableCell>
+                      <TableCell>{workStep?.name}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-4 h-4 rounded border"
+                            style={{ backgroundColor: color?.code || '#000000' }}
+                          ></div>
+                          {color?.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>{size?.name}</TableCell>
+                      <TableCell className="text-center">{subJob.quantity}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4 border-t">
+            <Button variant="outline" onClick={() => setPreviewOpen(false)}>
+              แก้ไข
+            </Button>
+            <Button 
+              onClick={confirmGenerate}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+            >
+              ✅ ยืนยันและสร้าง
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
