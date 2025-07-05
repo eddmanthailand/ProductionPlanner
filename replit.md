@@ -130,6 +130,13 @@ This is a comprehensive SaaS multi-tenant business management system designed fo
 - **Security**: CSRF protection, secure sessions, and input validation
 
 ## Recent Changes
+- July 5, 2025: ✅ แก้ไขปัญหาการลบและการนำทางใบสั่งงานสำเร็จ
+  - **Fixed Work Order Deletion**: แก้ไขการเรียก API ลบจาก `"DELETE"` เป็น `{ method: "DELETE" }`
+  - **Enhanced apiRequest Function**: ปรับปรุง TypeScript type checking และ parameter handling
+  - **Fixed Navigation After Creation**: เพิ่มการนำทางกลับหน้ารายการหลังสร้างใบสั่งงานเสร็จ
+  - **Improved User Experience**: แสดงข้อความสำเร็จพร้อมเลขที่ใบสั่งงานก่อนนำทาง
+  - **Result**: ระบบลบและสร้างใบสั่งงานทำงานได้สมบูรณ์ พร้อมการนำทางที่ถูกต้อง
+
 - July 5, 2025: ✅ กำหนด Hybrid Development Workflow สำหรับ Production Planning System
   - **Repository**: https://github.com/eddmanthailand/ProductionPlanner
   - **Hybrid Workflow Strategy**:

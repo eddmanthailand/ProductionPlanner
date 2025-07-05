@@ -210,10 +210,15 @@ export default function WorkOrderForm() {
     onSuccess: (responseData: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
       
-      // If creating new work order, save the workOrderId and enable attachments tab
+      // If creating new work order, show success message and navigate back
       if (!isEditMode && responseData?.id) {
-        setSavedWorkOrderId(responseData.id);
-        setActiveTab("attachments");
+        toast({
+          title: "สำเร็จ",
+          description: "สร้างใบสั่งงานแล้ว เลขที่: " + responseData.order_number,
+        });
+        setTimeout(() => {
+          navigate("/production/work-orders");
+        }, 1500); // Navigate after 1.5 seconds to allow user to see the success message
       }
       
       if (isEditMode && workOrderId) {
