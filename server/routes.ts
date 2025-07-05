@@ -3786,7 +3786,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (updateData.items && Array.isArray(updateData.items)) {
         // Get existing sub-jobs with their details
         const existingSubJobsResult = await pool.query(
-          `SELECT id, product_name, department_id, work_step_id, color_id, size_id, quantity, production_cost, total_cost, sort_order 
+          `SELECT id, product_name, department_id, team_id, work_step_id, color_id, size_id, quantity, production_cost, total_cost, sort_order 
            FROM sub_jobs WHERE work_order_id = $1 ORDER BY sort_order`,
           [id]
         );
@@ -3815,14 +3815,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Update existing sub-job
             await pool.query(
               `UPDATE sub_jobs SET 
-                product_name = $1, department_id = $2, work_step_id = $3,
-                color_id = $4, size_id = $5, quantity = $6, 
-                production_cost = $7, total_cost = $8, sort_order = $9,
+                product_name = $1, department_id = $2, team_id = $3, work_step_id = $4,
+                color_id = $5, size_id = $6, quantity = $7, 
+                production_cost = $8, total_cost = $9, sort_order = $10,
                 updated_at = NOW()
-              WHERE id = $10 AND work_order_id = $11`,
+              WHERE id = $11 AND work_order_id = $12`,
               [
                 item.productName || '',
                 item.departmentId || null,
+                item.teamId || null,
                 item.workStepId || null,
                 item.colorId ? parseInt(item.colorId) : null,
                 item.sizeId ? parseInt(item.sizeId) : null,
@@ -3847,15 +3848,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
             // Insert new sub-job
             const subJobResult = await pool.query(
               `INSERT INTO sub_jobs (
-                work_order_id, product_name, department_id, work_step_id, 
+                work_order_id, product_name, department_id, team_id, work_step_id, 
                 color_id, size_id, quantity, production_cost, total_cost, 
                 status, sort_order, created_at, updated_at
-              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW(), NOW())
+              ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
               RETURNING id`,
               [
                 id,
                 item.productName || '',
                 item.departmentId || null,
+                item.teamId || null,
                 item.workStepId || null,
                 item.colorId ? parseInt(item.colorId) : null,
                 item.sizeId ? parseInt(item.sizeId) : null,
