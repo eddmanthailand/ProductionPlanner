@@ -19,7 +19,7 @@ export async function apiRequest(
   };
 
   // Handle old calling pattern: apiRequest(method, url, data)
-  if (typeof urlOrOptions === 'string') {
+  if (typeof urlOrOptions === 'string' && ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(urlOrMethod.toUpperCase())) {
     method = urlOrMethod;
     url = urlOrOptions;
     body = data;
