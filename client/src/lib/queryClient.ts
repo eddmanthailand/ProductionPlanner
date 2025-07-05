@@ -21,13 +21,13 @@ export async function apiRequest(
   // Handle old calling pattern: apiRequest(method, url, data)
   if (typeof urlOrOptions === 'string' && ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(urlOrMethod.toUpperCase())) {
     method = urlOrMethod;
-    url = urlOrOptions;
+    url = urlOrOptions as string;
     body = data;
   } 
   // Handle new calling pattern: apiRequest(url, options)
   else {
     url = urlOrMethod;
-    const options = urlOrOptions || {};
+    const options = (urlOrOptions as { method?: string; body?: unknown; headers?: Record<string, string> } | undefined) || {};
     method = options.method || 'GET';
     body = options.body;
     headers = { ...headers, ...options.headers };

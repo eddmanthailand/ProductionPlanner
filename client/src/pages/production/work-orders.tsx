@@ -150,7 +150,7 @@ export default function WorkOrders() {
   const updateWorkOrderMutation = useMutation({
     mutationFn: async (data: any) => {
       const { id, ...updateData } = data;
-      return await apiRequest(`/api/work-orders/${id}`, "PUT", updateData);
+      return await apiRequest(`/api/work-orders/${id}`, { method: "PUT", body: updateData });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
@@ -165,7 +165,7 @@ export default function WorkOrders() {
 
   const deleteWorkOrderMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest(`/api/work-orders/${id}`, "DELETE");
+      return await apiRequest(`/api/work-orders/${id}`, { method: "DELETE" });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/work-orders"] });
