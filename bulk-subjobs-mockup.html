@@ -191,6 +191,87 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        .dept-selector {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .dept-toggle {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            border: 2px solid #e5e7eb;
+        }
+        .dept-toggle > label {
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            cursor: pointer;
+        }
+        .team-checkboxes {
+            margin-left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .team-checkboxes label {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+        }
+        .dynamic-section {
+            background: #f8fafc;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .add-buttons {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+        .add-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .add-btn:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        .remove-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 10px;
+            cursor: pointer;
+            margin-left: 8px;
+        }
+        .editable-header {
+            background: #e5e7eb;
+            font-weight: 500;
+            position: relative;
+        }
+        .editable-header input {
+            background: transparent;
+            border: none;
+            font-weight: 500;
+            text-align: center;
+            width: 100%;
+        }
     </style>
 </head>
 <body>
@@ -203,24 +284,6 @@
         <div class="section">
             <div class="section-title">⚙️ ตั้งค่าเบื้องต้น</div>
             <div class="controls">
-                <div class="control-group">
-                    <label class="control-label">แผนก</label>
-                    <select>
-                        <option>ทั้งหมด</option>
-                        <option>แผนกตัด</option>
-                        <option>แผนกเย็บ</option>
-                        <option>แผนกแพ็ค</option>
-                    </select>
-                </div>
-                <div class="control-group">
-                    <label class="control-label">ทีม</label>
-                    <select>
-                        <option>ทั้งหมด</option>
-                        <option>ทีม A</option>
-                        <option>ทีม B</option>
-                        <option>ทีม C</option>
-                    </select>
-                </div>
                 <div class="control-group">
                     <label class="control-label">สินค้า</label>
                     <select>
@@ -242,139 +305,209 @@
         </div>
 
         <div class="section">
-            <div class="section-title">📊 ตารางจำนวนงาน</div>
-            <div class="table-container">
+            <div class="section-title">🏢 เลือกแผนกและทีม</div>
+            <div class="dept-selector">
+                <div class="dept-toggle">
+                    <label><input type="checkbox" checked> 🔪 แผนกตัด</label>
+                    <div class="team-checkboxes">
+                        <label><input type="checkbox" checked> ทีม A</label>
+                        <label><input type="checkbox" checked> ทีม B</label>
+                        <label><input type="checkbox"> ทีม C</label>
+                    </div>
+                </div>
+                <div class="dept-toggle">
+                    <label><input type="checkbox" checked> 🧵 แผนกเย็บ</label>
+                    <div class="team-checkboxes">
+                        <label><input type="checkbox" checked> ทีม A</label>
+                        <label><input type="checkbox"> ทีม B</label>
+                        <label><input type="checkbox"> ทีม C</label>
+                    </div>
+                </div>
+                <div class="dept-toggle">
+                    <label><input type="checkbox"> 📦 แผนกแพ็ค</label>
+                    <div class="team-checkboxes">
+                        <label><input type="checkbox"> ทีม A</label>
+                        <label><input type="checkbox"> ทีม B</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">📊 ตารางจำนวนงาน (แบบ Dynamic)</div>
+            
+            <div class="dynamic-section">
+                <div class="add-buttons">
+                    <button class="add-btn">+ เพิ่มสี</button>
+                    <button class="add-btn">+ เพิ่มไซส์</button>
+                </div>
                 
-                <!-- แผนกตัด -->
-                <div class="dept-section">
-                    <div class="dept-header">🔪 แผนกตัด</div>
-                    
-                    <div class="team-section">
-                        <div class="team-header">👥 ทีม A</div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>สี</th>
-                                    <th class="size-header">XS</th>
-                                    <th class="size-header">S</th>
-                                    <th class="size-header">M</th>
-                                    <th class="size-header">L</th>
-                                    <th class="size-header">XL</th>
-                                    <th class="size-header">รวม</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="color-cell">🔴 ขาว</td>
-                                    <td><input type="number" value="5"></td>
-                                    <td><input type="number" value="20"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="8"></td>
-                                    <td><input type="number" value="3"></td>
-                                    <td><strong>51</strong></td>
-                                </tr>
-                                <tr>
-                                    <td class="color-cell">⚫ ดำ</td>
-                                    <td><input type="number" value="10"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="10"></td>
-                                    <td><input type="number" value="5"></td>
-                                    <td><input type="number" value="2"></td>
-                                    <td><strong>42</strong></td>
-                                </tr>
-                                <tr>
-                                    <td class="color-cell">🟢 เขียว</td>
-                                    <td><input type="number" value="10"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="7"></td>
-                                    <td><input type="number" value="4"></td>
-                                    <td><strong>51</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                <div class="table-container">
+                    <!-- แผนกตัด -->
+                    <div class="dept-section">
+                        <div class="dept-header">🔪 แผนกตัด</div>
+                        
+                        <div class="team-section">
+                            <div class="team-header">👥 ทีม A</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>สี</th>
+                                        <th class="size-header editable-header">
+                                            <input type="text" value="XS">
+                                            <button class="remove-btn">×</button>
+                                        </th>
+                                        <th class="size-header editable-header">
+                                            <input type="text" value="S">
+                                            <button class="remove-btn">×</button>
+                                        </th>
+                                        <th class="size-header editable-header">
+                                            <input type="text" value="M">
+                                            <button class="remove-btn">×</button>
+                                        </th>
+                                        <th class="size-header editable-header">
+                                            <input type="text" value="L">
+                                            <button class="remove-btn">×</button>
+                                        </th>
+                                        <th class="size-header editable-header">
+                                            <input type="text" value="XL">
+                                            <button class="remove-btn">×</button>
+                                        </th>
+                                        <th class="size-header">รวม</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="color-cell">
+                                            <input type="text" value="ขาว" style="border:none; background:transparent; font-weight:500; width:60px;">
+                                            <button class="remove-btn">×</button>
+                                        </td>
+                                        <td><input type="number" value="5"></td>
+                                        <td><input type="number" value="20"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="8"></td>
+                                        <td><input type="number" value="3"></td>
+                                        <td><strong>51</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="color-cell">
+                                            <input type="text" value="ดำ" style="border:none; background:transparent; font-weight:500; width:60px;">
+                                            <button class="remove-btn">×</button>
+                                        </td>
+                                        <td><input type="number" value="10"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="10"></td>
+                                        <td><input type="number" value="5"></td>
+                                        <td><input type="number" value="2"></td>
+                                        <td><strong>42</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="color-cell">
+                                            <input type="text" value="เขียว" style="border:none; background:transparent; font-weight:500; width:60px;">
+                                            <button class="remove-btn">×</button>
+                                        </td>
+                                        <td><input type="number" value="10"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="7"></td>
+                                        <td><input type="number" value="4"></td>
+                                        <td><strong>51</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="team-section">
+                            <div class="team-header">👥 ทีม B</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>สี</th>
+                                        <th class="size-header">XS</th>
+                                        <th class="size-header">S</th>
+                                        <th class="size-header">M</th>
+                                        <th class="size-header">L</th>
+                                        <th class="size-header">XL</th>
+                                        <th class="size-header">รวม</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="color-cell">ขาว</td>
+                                        <td><input type="number" value="0"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="10"></td>
+                                        <td><input type="number" value="5"></td>
+                                        <td><input type="number" value="0"></td>
+                                        <td><strong>30</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="color-cell">ดำ</td>
+                                        <td><input type="number" value="8"></td>
+                                        <td><input type="number" value="12"></td>
+                                        <td><input type="number" value="8"></td>
+                                        <td><input type="number" value="3"></td>
+                                        <td><input type="number" value="1"></td>
+                                        <td><strong>32</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
-                    <div class="team-section">
-                        <div class="team-header">👥 ทีม B</div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>สี</th>
-                                    <th class="size-header">XS</th>
-                                    <th class="size-header">S</th>
-                                    <th class="size-header">M</th>
-                                    <th class="size-header">L</th>
-                                    <th class="size-header">XL</th>
-                                    <th class="size-header">รวม</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="color-cell">🔴 ขาว</td>
-                                    <td><input type="number" value="0"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="10"></td>
-                                    <td><input type="number" value="5"></td>
-                                    <td><input type="number" value="0"></td>
-                                    <td><strong>30</strong></td>
-                                </tr>
-                                <tr>
-                                    <td class="color-cell">⚫ ดำ</td>
-                                    <td><input type="number" value="8"></td>
-                                    <td><input type="number" value="12"></td>
-                                    <td><input type="number" value="8"></td>
-                                    <td><input type="number" value="3"></td>
-                                    <td><input type="number" value="1"></td>
-                                    <td><strong>32</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <!-- แผนกเย็บ -->
+                    <div class="dept-section">
+                        <div class="dept-header">🧵 แผนกเย็บ</div>
+                        
+                        <div class="team-section">
+                            <div class="team-header">👥 ทีม A</div>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>สี</th>
+                                        <th class="size-header">XS</th>
+                                        <th class="size-header">S</th>
+                                        <th class="size-header">M</th>
+                                        <th class="size-header">L</th>
+                                        <th class="size-header">XL</th>
+                                        <th class="size-header">รวม</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td class="color-cell">ขาว</td>
+                                        <td><input type="number" value="5"></td>
+                                        <td><input type="number" value="20"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="8"></td>
+                                        <td><input type="number" value="3"></td>
+                                        <td><strong>51</strong></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="color-cell">ดำ</td>
+                                        <td><input type="number" value="10"></td>
+                                        <td><input type="number" value="15"></td>
+                                        <td><input type="number" value="10"></td>
+                                        <td><input type="number" value="5"></td>
+                                        <td><input type="number" value="2"></td>
+                                        <td><strong>42</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- แผนกเย็บ -->
-                <div class="dept-section">
-                    <div class="dept-header">🧵 แผนกเย็บ</div>
-                    
-                    <div class="team-section">
-                        <div class="team-header">👥 ทีม A</div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>สี</th>
-                                    <th class="size-header">XS</th>
-                                    <th class="size-header">S</th>
-                                    <th class="size-header">M</th>
-                                    <th class="size-header">L</th>
-                                    <th class="size-header">XL</th>
-                                    <th class="size-header">รวม</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="color-cell">🔴 ขาว</td>
-                                    <td><input type="number" value="5"></td>
-                                    <td><input type="number" value="20"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="8"></td>
-                                    <td><input type="number" value="3"></td>
-                                    <td><strong>51</strong></td>
-                                </tr>
-                                <tr>
-                                    <td class="color-cell">⚫ ดำ</td>
-                                    <td><input type="number" value="10"></td>
-                                    <td><input type="number" value="15"></td>
-                                    <td><input type="number" value="10"></td>
-                                    <td><input type="number" value="5"></td>
-                                    <td><input type="number" value="2"></td>
-                                    <td><strong>42</strong></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                <div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 6px; font-size: 14px;">
+                    <strong>💡 วิธีใช้:</strong>
+                    <ul style="margin: 8px 0 0 16px;">
+                        <li>✅ <strong>เลือกแผนก/ทีม</strong>: ติ๊กเลือกด้านบน จะแสดงตารางตามที่เลือก</li>
+                        <li>✅ <strong>เพิ่มสี/ไซส์</strong>: กดปุ่ม "+ เพิ่มสี" หรือ "+ เพิ่มไซส์"</li>
+                        <li>✅ <strong>แก้ไขสี/ไซส์</strong>: คลิกในช่องเพื่อแก้ไขชื่อ</li>
+                        <li>✅ <strong>ลบสี/ไซส์</strong>: กดปุ่ม "×" ข้างชื่อ</li>
+                        <li>✅ <strong>กรอกจำนวน</strong>: ใส่ตัวเลขในแต่ละช่อง</li>
+                    </ul>
                 </div>
-
             </div>
         </div>
 
